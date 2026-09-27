@@ -60,7 +60,7 @@
     "https://www.wixapis.com/*",
     "https://*.wixmp.com/*",
     "https://api.duda.co/*",
-    "https://api-eu.duda.co/*",
+    "https://api.eu.duda.co/*",
     "https://api-sandbox.duda.co/*",
     "https://api.webflow.com/*",
     "https://webflow-prod-assets.s3.amazonaws.com/*",

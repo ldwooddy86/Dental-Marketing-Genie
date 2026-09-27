@@ -166,6 +166,22 @@ const CMS = (() => {
       if (/^h[1-6]$/.test(tag)) out.push({ type: 'heading', level: +tag[1], text }); else if (tag === 'li') out.push({ type: 'li', text }); else if (tag === 'blockquote') out.push({ type: 'quote', text }); else if (tag === 'dt') out.push({ type: 'heading', level: 3, text }); else out.push({ type: 'p', text }); }
     return out;
   }
+  /* Rich text subset for CMS fields that keep only editorial HTML (Wix Rich Text, Webflow RichText, HubSpot rich text modules):
+     drops style, script, form, details/summary wrappers, sticky bars and every attribute except href/src/alt/width/height; unwraps sections and divs;
+     turns definition lists into paragraphs. Options: {keep:Set of tags, attrs:{tag:[attr]}} override the defaults. */
+  const RT_KEEP = new Set(['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'ul', 'ol', 'li', 'a', 'strong', 'em', 'b', 'i', 'img', 'blockquote', 'br', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'figure', 'figcaption', 'video', 'source', 'iframe', 'small', 'sup', 'sub', 'code', 'pre']);
+  const RT_ATTRS = { a: ['href', 'target', 'rel'], img: ['src', 'alt', 'width', 'height'], video: ['src', 'poster', 'controls'], source: ['src', 'type'], iframe: ['src', 'title', 'allow', 'allowfullscreen'], th: ['scope'] };
+  const RT_DROP = ['style', 'script', 'form', 'button', 'input', 'select', 'textarea', 'label', 'nav', 'noscript', 'svg', 'template'];
+  function richText(html, o) {
+    o = o || {}; const keep = o.keep || RT_KEEP, attrs = o.attrs || RT_ATTRS;
+    let h = String(html || '');
+    for (const t of RT_DROP) h = h.replace(new RegExp('<' + t + '\\b[^>]*>[\\s\\S]*?</' + t + '>', 'gi'), '').replace(new RegExp('<' + t + '\\b[^>]*/?>', 'gi'), '');
+    h = h.replace(/<div\b[^>]*class="[^"]*forge-sticky[^"]*"[^>]*>[\s\S]*?<\/div>/gi, '').replace(/<!--[\s\S]*?-->/g, '');
+    h = h.replace(/<details\b[^>]*>([\s\S]*?)<\/details>/gi, '$1').replace(/<summary\b[^>]*>([\s\S]*?)<\/summary>/gi, (m, inner) => /<h[1-6]/i.test(inner) ? inner : '<p><strong>' + inner + '</strong></p>');
+    h = h.replace(/<dt\b[^>]*>([\s\S]*?)<\/dt>/gi, '<p><strong>$1</strong></p>').replace(/<dd\b[^>]*>([\s\S]*?)<\/dd>/gi, '<p>$1</p>');
+    h = h.replace(/<\/?([a-z][a-z0-9]*)\b([^>]*)>/gi, (m, tag, at) => { tag = tag.toLowerCase(); if (!keep.has(tag)) return ''; if (m[1] === '/') return '</' + tag + '>'; const out = []; for (const k of (attrs[tag] || [])) { const v = (at.match(new RegExp('(?:^|\\s)' + k + '="([^"]*)"', 'i')) || [])[1]; if (v != null) out.push(k + '="' + v + '"'); else if (/^(controls|allowfullscreen)$/.test(k) && new RegExp('(?:^|\\s)' + k + '(?=\\s|$)', 'i').test(at)) out.push(k); } return '<' + tag + (out.length ? ' ' + out.join(' ') : '') + '>'; });
+    return h.replace(/<p>\s*<\/p>/gi, '').replace(/[ \t]*\n[ \t\n]*/g, '\n').trim();
+  }
   /* inline html (a, strong, em, br) → runs [{text, bold, italic, link}] */
   function inlineRuns(html) { const runs = []; const re = /<a\b[^>]*href="([^"]*)"[^>]*>([\s\S]*?)<\/a>|<(strong|b)>([\s\S]*?)<\/\3>|<(em|i)>([\s\S]*?)<\/\5>|([^<]+)|<[^>]+>/gi; let m; const dec = t => stripTags(t); while ((m = re.exec(html))) { if (m[1] != null) runs.push({ text: dec(m[2]), link: m[1] }); else if (m[3]) runs.push({ text: dec(m[4]), bold: true }); else if (m[5]) runs.push({ text: dec(m[6]), italic: true }); else if (m[7] != null) { const t = m[7].replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#x27;|&#39;/g, "'"); if (t) runs.push({ text: t }); } } return runs; }
 
@@ -197,6 +213,6 @@ const CMS = (() => {
   }
   async function test(id) { const a = get(id); const c = cfg(id); if (!a) throw err('Unknown adapter'); if (!fieldsOk(a, c)) throw err('Fill in the required fields first'); if (a.dynamicHost) { const o = a.dynamicHost(c); if (o) { const p = await ensureOrigin(o); if (!p.granted) throw err(`Site access to ${p.origin} was not granted`, { status: 0 }); } } const r = await a.test(c, { http, log: () => { } }); S.cfg[id] = Object.assign({}, c, { _tested: { at: new Date().toISOString(), info: r.info || 'ok', meta: r.meta || null } }); await save(); return r; }
 
-  return { RT, CmsError, err, register, get, list, ADAPTERS, ORDER, esc, slug, trimSlash, originOf, b64, b64url, b64text, utf8, hex, fromHex, stripTags, stripScripts, words, sleep, sha256, hmacSha256, jwtHS256, md5, blobBytes, dataUrlToBlob, extOf, http, basicAuth, ensureOrigin, hasOrigin, ready: () => readyP, isReady: () => ready, get S() { return S; }, cfg, setCfg, setSettings, settings: () => S.settings, deployedFor, markDeployed, clearDeployed, clearCfg, status, fieldsOk, pageFromForge, pageFromHtml, pageFromBundle, brandCss, hexmix, FORGE_CSS_DEFAULT, schemaTag, styleTag, bodyHtml, fullHtml, rewriteMedia, resolveMedia, isPlaceholder, stripPlaceholders, htmlToBlocks, inlineRuns, deploy, test };
+  return { RT, CmsError, err, register, get, list, ADAPTERS, ORDER, esc, slug, trimSlash, originOf, b64, b64url, b64text, utf8, hex, fromHex, stripTags, stripScripts, words, sleep, sha256, hmacSha256, jwtHS256, md5, blobBytes, dataUrlToBlob, extOf, http, basicAuth, ensureOrigin, hasOrigin, ready: () => readyP, isReady: () => ready, get S() { return S; }, cfg, setCfg, setSettings, settings: () => S.settings, deployedFor, markDeployed, clearDeployed, clearCfg, status, fieldsOk, pageFromForge, pageFromHtml, pageFromBundle, brandCss, hexmix, FORGE_CSS_DEFAULT, schemaTag, styleTag, bodyHtml, fullHtml, rewriteMedia, resolveMedia, isPlaceholder, stripPlaceholders, richText, htmlToBlocks, inlineRuns, deploy, test };
 })();
 globalThis.CMS = CMS;

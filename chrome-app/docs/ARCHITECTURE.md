@@ -17,8 +17,9 @@ chrome-app/
   src/13..27_m*.js       modules 01 to 15 (each calls registerModule)
   src/30_m16_publish.js  module 16 · Publish (multi CMS)
   src/99_shell.js        boot: rail, hash routing
-  tests/                 Node 22 tests: `node tests/run.mjs` (mock HTTP servers, no network)
-  docs/                  this file, per platform setup guides
+  tests/                 Node 22 tests: `node tests/run.mjs` (mock HTTP servers, no network); tests/e2e/run.mjs is the Playwright run
+  docs/                  this file, PLATFORMS.md (per platform setup), CONNECTORS.md (ad accounts); docs/_*.md are working notes, not shipped
+  build.mjs              validates manifest, script order, global scope and host permissions, runs the tests, zips to ../dist/
 ```
 
 ## 1. Shared helpers available to modules (from src/00_core.js)
@@ -43,7 +44,7 @@ CSS classes for module UI (app.css): `.wrap .card .card-h .card-b .mt .split .sp
 - `CMS.basicAuth(user, pass)`, `CMS.b64`, `CMS.b64url`, `CMS.b64text`, `CMS.hex`, `CMS.fromHex`, `CMS.sha256`, `CMS.hmacSha256`, `CMS.jwtHS256`, `CMS.md5`,
   `CMS.blobBytes`, `CMS.dataUrlToBlob`, `CMS.extOf`, `CMS.slug`, `CMS.esc`, `CMS.stripTags`, `CMS.stripScripts`, `CMS.words`, `CMS.sleep`, `CMS.trimSlash`, `CMS.originOf`.
 - Rendering: `CMS.bodyHtml(page, {css, schema, stripScripts, mediaMap})`, `CMS.fullHtml(page, {headExtra, bodyExtra, mediaMap})`,
-  `CMS.schemaTag(schema)`, `CMS.styleTag(css)`, `CMS.htmlToBlocks(html)` → `[{type:'heading'|'p'|'li'|'quote'|'image', ...}]`, `CMS.inlineRuns(html)`.
+  `CMS.schemaTag(schema)`, `CMS.styleTag(css)`, `CMS.richText(html)` (editorial HTML only, for rich text fields), `CMS.htmlToBlocks(html)` → `[{type:'heading'|'p'|'li'|'quote'|'image', ...}]`, `CMS.inlineRuns(html)`.
 - `CMS.ensureOrigin(url)` requests the optional host permission for a user site (Chrome shows a prompt once). Adapters that talk to the user's own
   domain declare `dynamicHost(cfg) → origin`; the driver calls `ensureOrigin` before `test` and `deploy`. Fixed API hosts are in the manifest.
 
@@ -53,7 +54,8 @@ Adapter shape (all async functions receive `(cfg, ..., ctx)`; `ctx = {http, log(
 CMS.register({
   id: 'drupal', name: 'Drupal', group: 'Drupal 10 / 11', blurb: 'JSON:API core module, Basic auth or bearer token',
   docs: 'https://…', setup: ['step', 'step'],
-  fields: [{ k: 'url', l: 'Site URL', t: 'url', hint: '…' }, { k: 'user', l: 'Username', t: 'text' }, { k: 'pass', l: 'Password', t: 'password', secret: true }, { k: 'bundle', l: 'Content type', t: 'text', def: 'page', optional: true }],
+  fields: [{ k: 'url', l: 'Site URL', t: 'url', hint: '…' }, { k: 'user', l: 'Username', t: 'text' }, { k: 'pass', l: 'Password', t: 'password', secret: true }, { k: 'bundle', l: 'Content type', t: 'text', def: 'page', optional: true },
+           { k: 'mode', l: 'Mode', t: 'select', def: 'a', opts: [{ v: 'a', l: 'A' }] }, { k: 'flag', l: 'Flag', t: 'checkbox', optional: true }],   // t: text | url | password | textarea | select (opts) | checkbox
   dynamicHost: cfg => cfg.url,                     // or hosts: ['https://api.example.com/*'] for fixed hosts
   caps: { media: true, urls: true, publishSite: false, elementor: false, schema: 'inline', seo: true, postTypes: ['page', 'post'] },
   base(cfg) { return CMS.trimSlash(cfg.apiBase || cfg.url); },   // every adapter honours cfg.apiBase so tests can point it at a mock server
@@ -94,4 +96,8 @@ generated from `PROVIDERS[p].fields/setup/covers/scopes`. A provider may share a
 ## 4. Tests
 
 `node tests/run.mjs` runs `tests/*.test.mjs` each in its own process. `tests/lib/load.mjs` loads the classic scripts into Node; `tests/lib/mock.mjs`
-starts a recording HTTP server. Playwright (`tests/e2e/`) loads the unpacked extension into Chromium and clicks through every module.
+starts a recording HTTP server. Playwright: `node tests/e2e/run.mjs` loads the unpacked extension into headless Chromium (channel `chromium`,
+`--headless=new`), clicks through every module, checks the adapter and provider cards and deploys a composed page to a mock Webflow through
+`cfg.apiBase` (a fixed host adapter, so no permission prompt; the mock answers CORS preflights since 127.0.0.1 is not in the manifest);
+`node tests/e2e/publish.smoke.mjs` is the module 16 smoke test with a fake adapter. `node build.mjs` runs the validation, the unit tests and
+writes `../dist/thermal-atlas-extension.zip`.
