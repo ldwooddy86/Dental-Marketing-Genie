@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Thermal Debt Atlas · Options</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Open+Sans:wght@400;600;700&display=swap">
+<style>
+:root{--navy:#173a69;--navy2:#112337;--sky:#4f8bc9;--gold:#edd21c;--ink:#14213a;--ink2:#4b5566;--ink3:#7a8494;--line:#dfe4ec;--bg:#f6f8fb;--card:#fff}
+@media (prefers-color-scheme:dark){:root{--ink:#eef2f7;--ink2:#b9c2cf;--ink3:#8b95a5;--line:#2a3547;--bg:#0f1622;--card:#161f2e}}
+*{box-sizing:border-box}
+body{margin:0;font:14px/1.5 "Open Sans",system-ui,sans-serif;color:var(--ink);background:var(--bg)}
+header{background:linear-gradient(135deg,var(--navy),var(--navy2));color:#fff;padding:18px 24px}
+header h1{font-family:"Bebas Neue",Impact,sans-serif;font-weight:400;font-size:30px;letter-spacing:.02em;margin:0;line-height:1}
+header p{margin:4px 0 0;color:#c9d6ea;font-size:13px}
+main{max-width:760px;margin:0 auto;padding:20px 16px 40px;display:flex;flex-direction:column;gap:16px}
+section{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px 18px}
+h2{font-family:"Bebas Neue",Impact,sans-serif;font-weight:400;font-size:22px;margin:0 0 6px;letter-spacing:.02em}
+p.mini{color:var(--ink3);font-size:12.5px;margin:0 0 12px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px 16px}
+label{display:flex;flex-direction:column;gap:4px;font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--ink2)}
+input[type=text],input[type=number],select{font:inherit;padding:7px 9px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)}
+.chk{display:flex;gap:8px;align-items:center;text-transform:none;letter-spacing:0;font-weight:400;font-size:13.5px;color:var(--ink)}
+.chks{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px;margin-top:8px}
+.acts{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:14px}
+button{font:inherit;cursor:pointer;border-radius:8px;padding:9px 14px;border:1px solid var(--line);background:var(--card);color:var(--ink);font-weight:600}
+button.p{background:var(--navy);color:#fff;border-color:var(--navy)}
+button.g{background:var(--gold);color:#112337;border-color:var(--gold)}
+.msg{font-size:12.5px;color:var(--ink3)}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;background:var(--bg);padding:2px 6px;border-radius:5px;word-break:break-all}
+pre{font-size:12px;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px;white-space:pre-wrap;max-height:220px;overflow:auto}
+</style>
+</head>
+<body>
+<header><h1>Thermal Debt Atlas · Options</h1><p>Weather checks, notifications, the toolbar badge, and the addresses the provider consoles need.</p></header>
+<main>
+  <section>
+    <h2>Forecast point</h2>
+    <p class="mini">The background check and the weather desk read one National Weather Service grid. Headquarters at 4180 IH 30, Mesquite is the default; enter another point to follow a different part of the metro.</p>
+    <div class="grid">
+      <label>Label<input type="text" id="label"></label>
+      <label>Latitude<input type="number" id="lat" step="0.0001"></label>
+      <label>Longitude<input type="number" id="lon" step="0.0001"></label>
+      <label>Check every<select id="interval"><option value="15">15 minutes</option><option value="30">30 minutes</option><option value="60">60 minutes</option><option value="120">2 hours</option></select></label>
+    </div>
+  </section>
+  <section>
+    <h2>Notifications</h2>
+    <p class="mini">A desktop notification when a new NWS product touches any of the twelve counties, and once a day when the forecast peak heat index reaches 105°F.</p>
+    <label class="chk"><input type="checkbox" id="notify"> Notify on new alerts</label>
+    <div class="chks">
+      <label class="chk"><input type="checkbox" data-kind="heat"> Heat products (repair surge)</label>
+      <label class="chk"><input type="checkbox" data-kind="cold"> Winter and freeze products (heating surge)</label>
+      <label class="chk"><input type="checkbox" data-kind="air"> Air quality (indoor air push)</label>
+      <label class="chk"><input type="checkbox" data-kind="severe"> Severe thunderstorm, tornado, hail (hail standby)</label>
+      <label class="chk"><input type="checkbox" data-kind="flood"> Flood products (hold attic work)</label>
+      <label class="chk"><input type="checkbox" data-kind="wind"> Wind, dust, fire weather</label>
+    </div>
+  </section>
+  <section>
+    <h2>Toolbar badge</h2>
+    <p class="mini">What the number on the toolbar icon shows.</p>
+    <div class="grid">
+      <label>Badge<select id="badge"><option value="heatindex">Today's peak heat index (from the threshold below), alerts otherwise</option><option value="alerts">Active alert count only</option><option value="none">Nothing</option></select></label>
+      <label>Show heat index from<input type="number" id="heatBadgeFrom" min="70" max="120"></label>
+    </div>
+  </section>
+  <section>
+    <h2>Provider consoles</h2>
+    <p class="mini">Every OAuth client the business creates (Google Cloud, Meta for Developers, TikTok for Business, Azure, LinkedIn) needs this redirect address. The Accounts module shows it too. Publishing to your own WordPress, Drupal, Joomla or Ghost site asks for access to that site once, from module 16.</p>
+    <p>Redirect URL: <code id="redirect">—</code></p>
+    <p>Extension ID: <code id="extid">—</code></p>
+    <div class="acts"><button id="grant">Grant site access (Firefox)</button><span class="msg" id="grantMsg"></span></div>
+  </section>
+  <section>
+    <h2>Last weather check</h2>
+    <pre id="last">—</pre>
+    <div class="acts"><button id="refresh">Check now</button></div>
+  </section>
+  <div class="acts"><button class="p" id="save">Save options</button><button id="reset">Restore defaults</button><span class="msg" id="msg"></span></div>
+</main>
+<script src="options.js"></script>
+</body>
+</html>

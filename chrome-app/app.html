@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Integrity Air · DFW Thermal Debt Atlas</title>
+<meta name="description" content="Where Dallas Fort Worth's heating and cooling systems are aging out, which service lines the demand splits into, what the competitors are advertising, and the campaigns, pages and compliance checks built on it.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Bebas+Neue&family=Open+Sans:ital,wght@0,400;0,600;0,700;1,400&display=swap">
+<link rel="stylesheet" href="app.css">
+<link rel="stylesheet" href="publish.css">
+</head>
+<body>
+<header class="shell-top"><div class="in"><div class="brandmark"><svg width="36" height="36" viewBox="0 0 36 36" aria-hidden="true"><rect x="1" y="1" width="34" height="34" rx="9" fill="#0b6f6d"/><path d="M8 18.5 18 10l10 8.5" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M11 17v10h14V17" fill="none" stroke="#fff" stroke-width="2.4" stroke-linejoin="round"/><path d="M15.5 27v-5.2a2.5 2.5 0 0 1 5 0V27" fill="none" stroke="#fff" stroke-width="2"/><circle cx="27.5" cy="9" r="3.6" fill="#f39c61"/></svg><div><div class="nm">DFW Thermal Debt Atlas</div><div class="sb">Heating and cooling campaign intelligence for the 12 counties of Dallas Fort Worth: demand, service lines, competitors, the website and the accounts</div></div></div><div class="facts" id="shellFacts"></div></div></header>
+<nav class="rail" id="rail" aria-label="Modules"><div class="in" role="tablist"></div></nav>
+<main id="modules"></main>
+<footer class="shell-foot"><div class="in"><span>Compiled September 25, 2026 from public data: U.S. Census Bureau, EIA, NOAA, TDLR and city open data portals; Build 4 September 26, 2026 adds the multi CMS publisher (WordPress headless and Elementor, Drupal, Wix, Duda, Webflow, Shopify, HubSpot, Joomla, Ghost) and the Google Ads, Local Services Ads, YouTube, Meta and TikTok connectors.</span><span>Model figures are estimates and carry an A to D grade.</span><span>No keyword or Ahrefs data was pulled for this build.</span></div></footer>
+
+<!-- data -->
+<script src="atlas-data.js"></script>
+<script src="nws-snapshot.js"></script>
+<!-- shared layers -->
+<script src="src/00_core.js"></script>
+<script src="src/01_brand.js"></script>
+<script src="src/02_map.js"></script>
+<script src="src/03_charts.js"></script>
+<script src="src/04_content.js"></script>
+<script src="src/05_satchel_rules.js"></script>
+<script src="src/06_forge_compile.js"></script>
+<script src="src/07_forge_bridge_raw.js"></script>
+<script src="src/08_forge_copy.js"></script>
+<script src="src/09_sl_model.js"></script>
+<script src="src/10_watch_core.js"></script>
+<script src="src/11_nws_core.js"></script>
+<script src="src/12_accounts_core.js"></script>
+<!-- CMS publish layer: the contract, then one adapter per platform, then the headless kit -->
+<script src="src/cms/00_cms_core.js"></script>
+<script src="src/cms/10_wordpress.js"></script>
+<script src="src/cms/11_drupal.js"></script>
+<script src="src/cms/12_wix.js"></script>
+<script src="src/cms/13_duda.js"></script>
+<script src="src/cms/14_webflow.js"></script>
+<script src="src/cms/15_shopify.js"></script>
+<script src="src/cms/16_hubspot.js"></script>
+<script src="src/cms/17_joomla.js"></script>
+<script src="src/cms/18_ghost.js"></script>
+<script src="src/cms/19_headless_kit.js"></script>
+<!-- modules, in rail order -->
+<script src="src/13_m01_index.js"></script>
+<script src="src/14_m02_replace.js"></script>
+<script src="src/15_m03_rules.js"></script>
+<script src="src/16_m04_drivers.js"></script>
+<script src="src/17_m05_paid.js"></script>
+<script src="src/18_m06_ground.js"></script>
+<script src="src/19_m07_supply.js"></script>
+<script src="src/20_m08_desk.js"></script>
+<script src="src/21_m09_forge.js"></script>
+<script src="src/22_m10_satchel.js"></script>
+<script src="src/23_m11_dfw.js"></script>
+<script src="src/24_m12_lines.js"></script>
+<script src="src/25_m13_watch.js"></script>
+<script src="src/26_m14_weather.js"></script>
+<script src="src/27_m15_accounts.js"></script>
+<script src="src/30_m16_publish.js"></script>
+<!-- shell boot: builds the rail and shows the module in the hash -->
+<script src="src/99_shell.js"></script>
+</body>
+</html>
