@@ -1,0 +1,942 @@
+{
+ "_about": "Nilometer readings for the Digital Marketing edition 2026.09a: the hard signals the discourse is weighed against. Grades use the Admiralty scale: source reliability A-F, information credibility 1-6. Forecasts are graded as forecasts (the fact of the forecast, not its accuracy).",
+ "signals": [
+  {
+   "id": "N01",
+   "domain": "Search and AI answers",
+   "metric": "Google AI Mode monthly active users",
+   "value": "more than 1 billion",
+   "date": "2026-07-22",
+   "period": "Q2 2026",
+   "source": "Alphabet Q2 2026 earnings, CEO remarks",
+   "url": "https://blog.google/company-news/inside-google/message-ceo/alphabet-earnings-q2-2026/",
+   "grade": "A2",
+   "note": "Company-stated. AI Overviews and AI Mode now merged into one experience; AI Mode expanded globally in October 2025.",
+   "topics": [
+    "T01"
+   ]
+  },
+  {
+   "id": "N02",
+   "domain": "Search and AI answers",
+   "metric": "Gemini app monthly active users",
+   "value": "950 million",
+   "date": "2026-07-22",
+   "period": "Q2 2026",
+   "source": "Alphabet Q2 2026 earnings release",
+   "url": "https://www.sec.gov/Archives/edgar/data/0001652044/000165204426000066/googexhibit991q22026.htm",
+   "grade": "A2",
+   "note": "Company-stated user metric inside an SEC exhibit.",
+   "topics": [
+    "T28"
+   ]
+  },
+  {
+   "id": "N03",
+   "domain": "Search and AI answers",
+   "metric": "Google Search and other revenue",
+   "value": "$63.27B, +17% YoY (from $54.2B)",
+   "date": "2026-07-22",
+   "period": "Q2 2026",
+   "source": "Alphabet 8-K exhibit 99.1; Futurum summary",
+   "url": "https://futurumgroup.com/insights/alphabet-q2-fy-2026-google-cloud-leads-growth-amid-rising-ai-investment/",
+   "grade": "A1",
+   "note": "An acceleration, while independent experiments show AI surfaces cutting outbound clicks. Revenue retained by the platform, not passed through.",
+   "topics": [
+    "T01",
+    "T08"
+   ]
+  },
+  {
+   "id": "N04",
+   "domain": "Platforms",
+   "metric": "YouTube ads revenue",
+   "value": "$11.06B, +13% YoY",
+   "date": "2026-07-22",
+   "period": "Q2 2026",
+   "source": "Futurum summary of Alphabet Q2 2026",
+   "url": "https://futurumgroup.com/insights/alphabet-q2-fy-2026-google-cloud-leads-growth-amid-rising-ai-investment/",
+   "grade": "B1",
+   "note": "",
+   "topics": [
+    "T13",
+    "T14"
+   ]
+  },
+  {
+   "id": "N05",
+   "domain": "Search and AI answers",
+   "metric": "Alphabet 2026 capex guidance; AI Mode serving cost",
+   "value": "$195B to $205B; AI Mode response cost at its lowest since launch",
+   "date": "2026-07-22",
+   "period": "FY2026",
+   "source": "Alphabet Q2 2026 call",
+   "url": "https://finance.yahoo.com/technology/ai/articles/alphabet-q2-earnings-call-highlights-220547983.html",
+   "grade": "A2",
+   "note": "Compute economics are the hidden variable behind ad load in AI answers.",
+   "topics": [
+    "T28",
+    "T01"
+   ]
+  },
+  {
+   "id": "N06",
+   "domain": "Search and AI answers",
+   "metric": "AI Overviews presence",
+   "value": "39% of US desktop searches (Comscore: 39.4%)",
+   "date": "2026-09-22",
+   "period": "Q2 2026",
+   "source": "Comscore Q2 2026 AI Intelligence Report via Search Engine Land and PPC coverage",
+   "url": "https://www.relevantaudience.com/ai/comscore-q2-2026-chatgpt-share-falls-gemini-claude-gain/",
+   "grade": "B2",
+   "note": "Panel-based, desktop only.",
+   "topics": [
+    "T01"
+   ]
+  },
+  {
+   "id": "N07",
+   "domain": "Search and AI answers",
+   "metric": "AI Mode effect on outbound clicks (randomized field experiment)",
+   "value": "-18.8 pts share of searches reaching an external site; -0.92 Google sessions/day; Reddit clicks -21.2 pts; news -12.5 pts; Wikipedia -9.9 pts",
+   "date": "2026-08-18",
+   "period": "Mar 2026 fieldwork",
+   "source": "Preregistered randomized field experiment (UPenn and Northeastern), n=1,100, arXiv 2608.18352; reported by Search Engine Land",
+   "url": "https://arxiv.org/html/2608.18352",
+   "grade": "B2",
+   "note": "Lower satisfaction and more use of rival engines. Hiding AI Overviews raised external CTR about 8.8 pts, with a caveat on blocking coverage.",
+   "topics": [
+    "T01"
+   ]
+  },
+  {
+   "id": "N08",
+   "domain": "Search and AI answers",
+   "metric": "AI Overviews effect on organic clicks (randomized field experiment)",
+   "value": "-38% organic clicks on triggered queries; zero-click 54% to 72%; satisfaction unchanged",
+   "date": "2026-04-03",
+   "period": "Jan-Feb 2026 fieldwork",
+   "source": "Agarwal and Sen (ISB, Carnegie Mellon), SSRN, n=1,065, via Search Engine Journal",
+   "url": "https://www.searchenginejournal.com/ai-overviews-cut-organic-clicks-38-field-study-finds/573145/",
+   "grade": "B2",
+   "note": "Second independent experiment pointing the same way.",
+   "topics": [
+    "T01"
+   ]
+  },
+  {
+   "id": "N09",
+   "domain": "AI assistants",
+   "metric": "US AI assistant prompt share",
+   "value": "ChatGPT 70% to 50%; Gemini 17% to 30%; Claude 2% to 11% (Jan to Jun 2026)",
+   "date": "2026-09-22",
+   "period": "H1 2026",
+   "source": "Comscore Q2 2026 AI Intelligence Report",
+   "url": "https://www.globenewswire.com/news-release/2026/09/22/3366231/0/en/comscore-s-latest-ai-intelligence-report-shows-competition-intensifying-as-claude-and-gemini-gain-ground-on-chatgpt.html",
+   "grade": "B2",
+   "note": "Prompt volume, not reach: ChatGPT still had about 69% of AI-assistant unique visitors in June (Comscore, 3 Sep).",
+   "topics": [
+    "T28",
+    "T02"
+   ]
+  },
+  {
+   "id": "N10",
+   "domain": "Ads in AI",
+   "metric": "Sponsored ads in hotel-related AI prompts with source links",
+   "value": "6% (March) to 24% (May 2026)",
+   "date": "2026-09-22",
+   "period": "Mar-May 2026",
+   "source": "Comscore, via coverage",
+   "url": "https://www.relevantaudience.com/ai/comscore-q2-2026-chatgpt-share-falls-gemini-claude-gain/",
+   "grade": "B3",
+   "note": "Market coverage of the panel not stated in the release.",
+   "topics": [
+    "T10"
+   ]
+  },
+  {
+   "id": "N11",
+   "domain": "Search and AI answers",
+   "metric": "Search Console AI performance reports and AI opt-out",
+   "value": "Impressions-only AI reports plus a toggle to leave AI Overviews and AI Mode without ranking loss",
+   "date": "2026-06-03",
+   "period": "Jun-Sep 2026",
+   "source": "Google Search Console launch (UK-first under a CMA conduct requirement), global rollout September 2026",
+   "url": "https://www.digitalapplied.com/blog/google-search-console-ai-overviews-mode-controls-2026-guide",
+   "grade": "B2",
+   "note": "CMA also requires publisher opt-out of grounding by December 2026 and page-level controls by March 2027. Global date reported as 2 Sep and 16 Sep by different outlets.",
+   "topics": [
+    "T01",
+    "T27",
+    "T17"
+   ]
+  },
+  {
+   "id": "N12",
+   "domain": "AI assistants",
+   "metric": "Social platforms' share of AI citations",
+   "value": "4.3% in September vs 5.14% in August; Reddit the largest social source at 1.714%; Gemini cited LinkedIn zero times",
+   "date": "2026-09-25",
+   "period": "Aug-Sep 2026",
+   "source": "Otterly AI search tracking",
+   "url": "https://otterly.ai/blog/ai-search-updates-september",
+   "grade": "C3",
+   "note": "Vendor dataset; useful for direction, not level.",
+   "topics": [
+    "T02",
+    "T15"
+   ]
+  },
+  {
+   "id": "N13",
+   "domain": "Ads in AI",
+   "metric": "ChatGPT ads annualized revenue run rate",
+   "value": "$1B in under 200 days (about $83M a month); self-serve opened in India, Europe, MENA; 40+ markets",
+   "date": "2026-08-31",
+   "period": "Aug 2026",
+   "source": "OpenAI announcement (31 Aug 2026); Forbes and Digiday coverage",
+   "url": "https://openai.com/index/expanding-access-to-ai-with-chatgpt-ads/",
+   "grade": "A2",
+   "note": "Company-stated by a private company, unaudited. A run rate is a monthly pace times twelve, not a year of revenue.",
+   "topics": [
+    "T10"
+   ]
+  },
+  {
+   "id": "N14",
+   "domain": "Ads in AI",
+   "metric": "ChatGPT ads launch path and pricing",
+   "value": "Announced 16 Jan; first ads 9 Feb at $60 CPM with $200K minimum; by May minimum removed, about $25 CPM plus CPC bids ($3 to $5 floors); $100M+ annualized and 600+ advertisers by 26 Mar; self-serve Ads Manager 22 Jul",
+   "date": "2026-09-03",
+   "period": "Jan-Sep 2026",
+   "source": "Cloro and Launchcodex rollout trackers; WinBuzzer",
+   "url": "https://launchcodex.com/blog/performance-marketing/chatgpt-ads-breakdown/",
+   "grade": "C2",
+   "note": "Secondary trackers, mutually consistent. Price fell by more than half as supply opened.",
+   "topics": [
+    "T10"
+   ]
+  },
+  {
+   "id": "N15",
+   "domain": "Ads in AI",
+   "metric": "OpenAI ad revenue targets",
+   "value": "$2.5B in 2026; $11B (2027), $25B (2028), $53B (2029), $100B (2030)",
+   "date": "2026-06-01",
+   "period": "projection",
+   "source": "Axios via eMarketer",
+   "url": "https://www.emarketer.com/content/openai-projects--2-5-billion-ad-revenues-this-year--100-billion-by-2030",
+   "grade": "B3",
+   "note": "Investor projection. See Key Judgment 2 for the calendar-year arithmetic.",
+   "topics": [
+    "T10"
+   ]
+  },
+  {
+   "id": "N16",
+   "domain": "Ad spend",
+   "metric": "Global advertising revenue 2026",
+   "value": "+8.9% to about $1.3 trillion (ex US political), raised from 7.1%",
+   "date": "2026-06-16",
+   "period": "forecast",
+   "source": "WPP Media This Year Next Year, midyear 2026",
+   "url": "https://www.wppmedia.com/thought-leadership/this-year-next-year/midyear-2026",
+   "grade": "B2",
+   "note": "Credits the AI investment 'gold rush' and Asian advertisers.",
+   "topics": [
+    "T24"
+   ]
+  },
+  {
+   "id": "N17",
+   "domain": "Ad spend",
+   "metric": "US advertising revenue 2026",
+   "value": "+11.9% to $483.4B (ex political); social and other digital $161.4B (+16.3%)",
+   "date": "2026-06-15",
+   "period": "forecast",
+   "source": "WPP Media via The Measure",
+   "url": "https://www.themeasure.net/wpp-media-boosts-ad-revenue-forecast-sees-8-9-growth/",
+   "grade": "B2",
+   "note": "",
+   "topics": [
+    "T24",
+    "T13"
+   ]
+  },
+  {
+   "id": "N18",
+   "domain": "Ads in AI",
+   "metric": "Generative-search ad revenue outlook",
+   "value": "More than $100B by 2030; 39.2% of search ad revenue by 2031",
+   "date": "2026-06-16",
+   "period": "forecast",
+   "source": "WPP Media via Digiday and LBB",
+   "url": "https://digiday.com/media-buying/wpp-forecasts-ai-search-ads-to-become-fastest-growing-channel-in-advertising/",
+   "grade": "B3",
+   "note": "The 2026 base figure is reported inconsistently across trade coverage (from $0.3B to $5.1B); treat the level as unsettled, the direction as consistent.",
+   "topics": [
+    "T10"
+   ]
+  },
+  {
+   "id": "N19",
+   "domain": "Ad spend",
+   "metric": "Global ad spend growth 2026 (second forecaster)",
+   "value": "+5.0%",
+   "date": "2026-05-27",
+   "period": "forecast",
+   "source": "Dentsu, via Bionic Ads summary",
+   "url": "https://www.bionic-ads.com/2026/08/2026-advertising-media-spending-forecast/",
+   "grade": "C3",
+   "note": "Kept to show forecaster disagreement: 5.0% vs 8.9%.",
+   "topics": [
+    "T24"
+   ]
+  },
+  {
+   "id": "N20",
+   "domain": "Ad spend",
+   "metric": "IAB 2026 US ad spend outlook (September update)",
+   "value": "+12.3% (from 9.5% in January); optimizing for AI-generated answers is buyers' #1 area of increased focus (76%); AI LLMs 72%; creator partnerships 54%",
+   "date": "2026-09-10",
+   "period": "forecast and survey",
+   "source": "IAB Outlook Study, September update",
+   "url": "https://www.prnewswire.com/news-releases/iab-raises-2026-us-ad-spend-forecast-to-12-3-yoy-growth-as-strong-first-half-lifts-expectations-302873637.html",
+   "grade": "B2",
+   "note": "",
+   "topics": [
+    "T24",
+    "T02"
+   ]
+  },
+  {
+   "id": "N21",
+   "domain": "Ad spend",
+   "metric": "US CTV vs linear TV 2026",
+   "value": "CTV +15.6%; linear TV -1.5%",
+   "date": "2026-09-26",
+   "period": "forecast",
+   "source": "IAB via PPC Land explainer",
+   "url": "https://ppc.land/digital",
+   "grade": "B3",
+   "note": "",
+   "topics": [
+    "T11"
+   ]
+  },
+  {
+   "id": "N22",
+   "domain": "Ad spend",
+   "metric": "US internet ad revenue 2025",
+   "value": "$294.6B (+13.9%); programmatic $162.4B (+20.5%); commerce media $63.4B (+18.0%); video $78B (+25.4%)",
+   "date": "2026-04-16",
+   "period": "FY2025",
+   "source": "IAB/PwC Internet Advertising Revenue Report",
+   "url": "https://www.iab.com/news/digital-ad-revenue-climbs-to-nearly-300b-as-iab-celebrates-30-year-anniversary/",
+   "grade": "A2",
+   "note": "",
+   "topics": [
+    "T11",
+    "T24"
+   ]
+  },
+  {
+   "id": "N23",
+   "domain": "Creators",
+   "metric": "US creator ad spend",
+   "value": "$29.5B (2024), $37B (2025, +26%), $44B projected (2026)",
+   "date": "2026-09-21",
+   "period": "2024-2026",
+   "source": "IAB Creator Economy Ad Spend and Strategy Report; IAB CreatorFronts",
+   "url": "https://www.iab.com/insights/2025-creator-economy-ad-spend-strategy-report/",
+   "grade": "B2",
+   "note": "Growing about four times faster than total media.",
+   "topics": [
+    "T14"
+   ]
+  },
+  {
+   "id": "N24",
+   "domain": "Ad spend",
+   "metric": "US digital video ad spend 2026",
+   "value": "More than $80B (+11%); social video outpacing CTV for the first time",
+   "date": "2026-05-05",
+   "period": "forecast",
+   "source": "IAB Digital Video Ad Spend and Strategy Report",
+   "url": "https://www.iab.com/news/u-s-digital-video-ad-spend-to-surpass-80b-in-2026/",
+   "grade": "B2",
+   "note": "",
+   "topics": [
+    "T13",
+    "T11"
+   ]
+  },
+  {
+   "id": "N25",
+   "domain": "Budgets",
+   "metric": "Gartner 2026 CMO Spend Survey",
+   "value": "Budgets 7.8% of revenue (7.7% in 2025, 18% below four years earlier); 15.3% of budgets to AI; 30% AI-ready to scale; paid media 31.4% of budget, funded by cuts to agencies; 56% lack budget for strategy",
+   "date": "2026-05-11",
+   "period": "FY2026",
+   "source": "Gartner (n=401, US and Europe, companies above $1B revenue)",
+   "url": "https://www.businesswire.com/news/home/20260511321750/en/Gartner-2026-CMO-Spend-Survey-Finds-CMOs-Allocate-15.3-of-Marketing-Budgets-to-AI-but-Only-30-Are-Ready-to-Scale-AI-Capabilities",
+   "grade": "A2",
+   "note": "Paid-media detail from gartner.com/en/articles/cmo-spend.",
+   "topics": [
+    "T24",
+    "T26",
+    "T19"
+   ]
+  },
+  {
+   "id": "N26",
+   "domain": "Budgets",
+   "metric": "The CMO Survey, spring 2026",
+   "value": "Budgets 9.0% of revenue; marketing spend +1.7% over 12 months, weakest since 2021",
+   "date": "2026-07-30",
+   "period": "FY2026",
+   "source": "The CMO Survey (Deloitte, Duke, AMA) via secondary summary",
+   "url": "https://christopholivierconsulting.com/cmo-marketing-budget-statistics-2026/",
+   "grade": "C2",
+   "note": "Broader, smaller-company sample than Gartner.",
+   "topics": [
+    "T24"
+   ]
+  },
+  {
+   "id": "N27",
+   "domain": "Platforms",
+   "metric": "Meta advertising, Q2 2026",
+   "value": "Ad revenue $59.36B (+27%); impressions +14% (from +19% in Q1); average price per ad +12% for a second straight quarter; operating income -8%",
+   "date": "2026-07-29",
+   "period": "Q2 2026",
+   "source": "Meta 10-Q and earnings release",
+   "url": "https://www.sec.gov/Archives/edgar/data/0001326801/000162828026050705/meta-20260630.htm",
+   "grade": "A1",
+   "note": "Auction inflation inside the walled garden.",
+   "topics": [
+    "T09"
+   ]
+  },
+  {
+   "id": "N28",
+   "domain": "Platforms",
+   "metric": "Reddit, Q2 2026",
+   "value": "Revenue $805M (+61%, eighth straight quarter above 60%); ad revenue $762M (+64%); DAUq 130.3M (+18%); US DAUq 53.2M (+6%) vs international +28%; choppy search traffic flagged",
+   "date": "2026-07-30",
+   "period": "Q2 2026",
+   "source": "Reddit earnings release and call",
+   "url": "https://www.sec.gov/Archives/edgar/data/0001713445/000171344526000098/earningspressreleaseq226.htm",
+   "grade": "A1",
+   "note": "Search-referral volatility from the call transcript (Motley Fool).",
+   "topics": [
+    "T12",
+    "T15"
+   ]
+  },
+  {
+   "id": "N29",
+   "domain": "Platforms",
+   "metric": "Discord",
+   "value": "200M+ MAU and 90M+ DAU (Q4 2025); confidential IPO filing January 2026; secondary valuation about $8.5B; Quests ad format",
+   "date": "2026-08-29",
+   "period": "2025-2026",
+   "source": "Company figures compiled by CommentGrid; Tech Insider",
+   "url": "https://commentgrid.com/blog/discord-statistics",
+   "grade": "B3",
+   "note": "Company no longer leads with the MAU figure; revenue estimates vary.",
+   "topics": [
+    "T15"
+   ]
+  },
+  {
+   "id": "N30",
+   "domain": "Platforms",
+   "metric": "Telegram",
+   "value": "1B+ MAU (March 2025, Durov); about 500M DAU; Telegram Ads shares revenue with channel owners",
+   "date": "2026-08-10",
+   "period": "2025-2026",
+   "source": "DataRefs and RichAds compilations",
+   "url": "https://www.datarefs.com/statistics/social-media/telegram-users/",
+   "grade": "C2",
+   "note": "No fresh 2026 figure from Telegram itself.",
+   "topics": [
+    "T15"
+   ]
+  },
+  {
+   "id": "N31",
+   "domain": "Platforms",
+   "metric": "LinkedIn comment ranking and AI-generated comments",
+   "value": "Comments now ranked per viewer; Pangram Labs: 30% of comments on 57,000 public posts (Apr-Jun 2026) fully AI-generated, 41% of long-form posts flagged",
+   "date": "2026-08-09",
+   "period": "Apr-Aug 2026",
+   "source": "Social Media Today; Relevant Audience; SocialDay",
+   "url": "https://www.socialmediatoday.com/news/linkedin-updates-feed-display-to-drive-more-post-replies-and-comments/827394/",
+   "grade": "C3",
+   "note": "Third-party detector; LinkedIn has not confirmed the figure.",
+   "topics": [
+    "T13",
+    "T21"
+   ]
+  },
+  {
+   "id": "N32",
+   "domain": "Agencies",
+   "metric": "Omnicom after IPG",
+   "value": "Targeting about 105,000 employees by end-2026 from about 120,000; about 4,000 post-merger cuts; 2026 organic growth guidance 4.5-5.0%; lost PepsiCo media to Publicis",
+   "date": "2026-09-16",
+   "period": "2026",
+   "source": "Gradient Group; Investing.com sector outlook",
+   "url": "https://gradientgroup.com/news/omnicom-shrinks-wpp-cuts-publicis-grows",
+   "grade": "B2",
+   "note": "A headcount target is not a layoff count; it includes attrition and offshoring.",
+   "topics": [
+    "T26",
+    "T25"
+   ]
+  },
+  {
+   "id": "N33",
+   "domain": "Agencies",
+   "metric": "WPP",
+   "value": "Workforce down more than 10,000 since end-2024; negative organic growth expected through 2026 (Goldman); GBP 500M savings programme",
+   "date": "2026-09-16",
+   "period": "2026",
+   "source": "Gradient Group; Investing.com",
+   "url": "https://www.investing.com/news/stock-market-news/ad-agency-sector-outlook-publicis-leads-as-wpp-retreats-and-omnicom-integrates-ipg-93CH-4904181",
+   "grade": "B3",
+   "note": "",
+   "topics": [
+    "T26",
+    "T25"
+   ]
+  },
+  {
+   "id": "N34",
+   "domain": "Agencies",
+   "metric": "Publicis",
+   "value": "AI-powered marketing services 87% of net revenue; growth about 5.6%; won PepsiCo media",
+   "date": "2026-09-16",
+   "period": "2026",
+   "source": "Gradient Group; StrategyEye",
+   "url": "https://gradientgroup.com/news/omnicom-shrinks-wpp-cuts-publicis-grows",
+   "grade": "B3",
+   "note": "The divergence among holdcos is the signal.",
+   "topics": [
+    "T26"
+   ]
+  },
+  {
+   "id": "N35",
+   "domain": "Labor",
+   "metric": "CMI 2026 Career and Salary Outlook",
+   "value": "1 in 3 organizations reducing entry-level marketing hiring (net -19.8); overall team growth net +22.3; 76% doing more than one job; 11% replaced workers with AI",
+   "date": "2026-04-08",
+   "period": "2026",
+   "source": "Content Marketing Institute (n over 600)",
+   "url": "https://contentmarketinginstitute.com/press-room/ghost-workforce-2026-marketing-careers-job-market",
+   "grade": "B2",
+   "note": "",
+   "topics": [
+    "T25"
+   ]
+  },
+  {
+   "id": "N36",
+   "domain": "Labor",
+   "metric": "Agency job losses forecast",
+   "value": "15% of agency jobs expected to disappear during 2026 (Forrester); counter-case: Brainlabs entry-level hiring +237% (Oct 2023 to Apr 2026)",
+   "date": "2026-08-24",
+   "period": "2026",
+   "source": "Forbes analysis, via Under30CEO",
+   "url": "https://www.under30ceo.com/ai-marketing-jobs-agents-junior-work/",
+   "grade": "C3",
+   "note": "Secondhand. Kept because the counter-case matters.",
+   "topics": [
+    "T25",
+    "T26"
+   ]
+  },
+  {
+   "id": "N37",
+   "domain": "Regulation",
+   "metric": "US v Google (ad tech) remedies",
+   "value": "2 Sep 2026: AdX divestiture and other structural remedies rejected; opinion unsealed 16 Sep: Prebid interoperability, bid-data sharing, no self-preferencing, six-year monitor; AdX take rate found at 20% vs rivals near 10%",
+   "date": "2026-09-16",
+   "period": "2026",
+   "source": "Court order and opinion, via AdExchanger, FinanceFeeds, Corp INTL",
+   "url": "https://www.adexchanger.com/platforms/the-court-just-unsealed-judge-brinkemas-remedies-decision-in-the-google-ad-tech-antitrust-case-heres-your-tldr/",
+   "grade": "A1",
+   "note": "Joint proposed final judgment due about 2 October 2026.",
+   "topics": [
+    "T27",
+    "T11"
+   ]
+  },
+  {
+   "id": "N38",
+   "domain": "Regulation",
+   "metric": "EU AI Act transparency (Article 50)",
+   "value": "Applies from 2 Aug 2026 (chatbot disclosure, deepfake labels, public-interest AI text labels unless human editorial review); Digital Omnibus (Reg. 2026/1744, in force 27 Jul) moved high-risk duties to 2 Dec 2027; legacy generative systems' marking due 2 Dec 2026",
+   "date": "2026-07-27",
+   "period": "2026-2027",
+   "source": "European Commission FAQ; Legalithm",
+   "url": "https://digital-strategy.ec.europa.eu/en/faqs/transparency-obligations-under-article-50-ai-act",
+   "grade": "A1",
+   "note": "",
+   "topics": [
+    "T27",
+    "T21"
+   ]
+  },
+  {
+   "id": "N39",
+   "domain": "Regulation",
+   "metric": "Teen safety settlements",
+   "value": "Meta: up to about $18B over 10 years, default 2-hour daily limit for under-18s, midnight-6am block, hidden likes, 30% contingent on TikTok and YouTube matching; TikTok-Alabama settlement (25 Sep) mirrors the limits",
+   "date": "2026-09-25",
+   "period": "2026",
+   "source": "CNN; CNBC; Stateline; AFP via Sharjah24",
+   "url": "https://www.cnbc.com/2026/08/26/meta-social-media-trial-settlement.html",
+   "grade": "A1",
+   "note": "Removes teen attention inventory at the margin.",
+   "topics": [
+    "T16"
+   ]
+  },
+  {
+   "id": "N40",
+   "domain": "Platforms",
+   "metric": "TikTok US ownership",
+   "value": "USDS Joint Venture closed 22 Jan 2026: Oracle, Silver Lake, MGX 15% each, ByteDance 19.9%; algorithm licensed and retrained on US data; ads and commerce operations stay with ByteDance",
+   "date": "2026-01-23",
+   "period": "2026",
+   "source": "TikTok newsroom; Storika explainer",
+   "url": "https://newsroom.tiktok.com/announcement-from-the-new-tiktok-usds-joint-venture-llc?lang=en",
+   "grade": "A2",
+   "note": "",
+   "topics": [
+    "T16",
+    "T12"
+   ]
+  },
+  {
+   "id": "N41",
+   "domain": "Privacy",
+   "metric": "Privacy Sandbox",
+   "value": "Ten Privacy Sandbox APIs retired 17 Oct 2025 after Google abandoned cookie deprecation; third-party cookies remain in Chrome",
+   "date": "2025-10-17",
+   "period": "2020-2025",
+   "source": "SecurePrivacy; PPC Land",
+   "url": "https://secureprivacy.ai/blog/google-killed-privacy-sandbox-what-changes-for-cookie-consent-in-2026",
+   "grade": "A2",
+   "note": "The cookieless future that was announced for six years and never arrived.",
+   "topics": [
+    "T18"
+   ]
+  },
+  {
+   "id": "N42",
+   "domain": "Commerce",
+   "metric": "Agentic checkout on Google",
+   "value": "Universal Commerce Protocol announced 11 Jan 2026 with Shopify, Etsy, Wayfair, Target, Walmart; native checkout in AI Mode and Gemini switched on by default for eligible Shopify stores from 18 Sep 2026 (opt-out in Shopify admin)",
+   "date": "2026-09-22",
+   "period": "2026",
+   "source": "Search Engine Land; PPC Land",
+   "url": "https://searchengineland.com/google-opens-native-ai-checkout-to-eligible-shopify-merchants-490407",
+   "grade": "A2",
+   "note": "Default-on enrollment is the tell: the platform chooses participation for the merchant.",
+   "topics": [
+    "T20"
+   ]
+  },
+  {
+   "id": "N43",
+   "domain": "Ad spend",
+   "metric": "Prospecting display CPMs on AdRoll's platform",
+   "value": "-45% YoY (1 Jul to 8 Sep) and 25.5% below Q2",
+   "date": "2026-09-25",
+   "period": "Q3 2026",
+   "source": "AdRoll data release (22 Sep 2026), reported by Search Engine Land and Ignite Visibility",
+   "url": "https://www.globenewswire.com/news-release/2026/09/22/3366416/0/en/adroll-reports-45-drop-in-prospecting-cpms-ahead-of-the-holiday-advertising-season.html",
+   "grade": "C3",
+   "note": "One platform's client base: direction, not the market level. Open-web deflation against walled-garden inflation (N27).",
+   "topics": [
+    "T11"
+   ]
+  },
+  {
+   "id": "N44",
+   "domain": "Discourse",
+   "metric": "Floor chatter volume during ranking volatility",
+   "value": "Chatter 'generally slowing' as Google sends sites less traffic",
+   "date": "2026-09-24",
+   "period": "Sep 2026",
+   "source": "Search Engine Roundtable",
+   "url": "https://www.seroundtable.com/google-search-ranking-volatility-42157.html",
+   "grade": "B3",
+   "note": "Qualitative observation by the floor's own reporter: discourse attrition as a lagging indicator of economic exit.",
+   "topics": [
+    "T03",
+    "T15"
+   ]
+  },
+  {
+   "id": "N45",
+   "domain": "Discourse",
+   "metric": "Where SEO practitioners talk",
+   "value": "Niche SEO communities merged into a handful of broad social sites; the old forums are gone",
+   "date": "2026-09-24",
+   "period": "2026",
+   "source": "John Mueller (Google) on LinkedIn, surfaced by SER",
+   "url": "https://www.seroundtable.com/recap-09-24-2026-42158.html",
+   "grade": "B3",
+   "note": "",
+   "topics": [
+    "T15"
+   ]
+  },
+  {
+   "id": "N46",
+   "domain": "AI assistants",
+   "metric": "ChatGPT scale and OpenAI revenue",
+   "value": "About 1B weekly active users; OpenAI Q2 2026 revenue $6.7B",
+   "date": "2026-08-31",
+   "period": "2026",
+   "source": "TechResearchOnline; Quartz",
+   "url": "https://techresearchonline.com/news/openai-chatgpt-ads-revenue-billion/",
+   "grade": "C3",
+   "note": "",
+   "topics": [
+    "T28",
+    "T10"
+   ]
+  },
+  {
+   "id": "N47",
+   "domain": "Base rates",
+   "metric": "The voice-search prophecy",
+   "value": "'Half of all searches will be voice by 2020' circulated industry-wide, attributed to comScore; Forrester called voice 'incredibly over-hyped'",
+   "date": "2018-04-10",
+   "period": "2016-2020",
+   "source": "WordStream; Forrester",
+   "url": "https://www.wordstream.com/blog/ws/2018/04/10/voice-search-statistics-2018",
+   "grade": "B2",
+   "note": "Graded as evidence that the prophecy circulated, which it did.",
+   "topics": [
+    "T01"
+   ]
+  }
+ ],
+ "events": [
+  {
+   "date": "2025-10-17",
+   "label": "Google retires Privacy Sandbox; third-party cookies stay",
+   "topic": "T18",
+   "ref": "N41"
+  },
+  {
+   "date": "2025-10-01",
+   "date_approx": true,
+   "label": "AI Mode expands globally",
+   "topic": "T01",
+   "ref": "N01"
+  },
+  {
+   "date": "2025-11-26",
+   "date_approx": true,
+   "label": "Omnicom completes Interpublic acquisition",
+   "topic": "T26",
+   "ref": "N32"
+  },
+  {
+   "date": "2026-01-11",
+   "label": "Universal Commerce Protocol announced (NRF)",
+   "topic": "T20",
+   "ref": "N42"
+  },
+  {
+   "date": "2026-01-16",
+   "label": "OpenAI announces ads for ChatGPT Free and Go",
+   "topic": "T10",
+   "ref": "N14"
+  },
+  {
+   "date": "2026-01-22",
+   "label": "TikTok USDS Joint Venture closes",
+   "topic": "T16",
+   "ref": "N40"
+  },
+  {
+   "date": "2026-01-06",
+   "date_approx": true,
+   "label": "Discord files confidentially for IPO",
+   "topic": "T15",
+   "ref": "N29"
+  },
+  {
+   "date": "2026-02-09",
+   "label": "First paid ChatGPT ads ($60 CPM, $200K minimum)",
+   "topic": "T10",
+   "ref": "N14"
+  },
+  {
+   "date": "2026-04-03",
+   "label": "AI Overviews field experiment: -38% organic clicks",
+   "topic": "T01",
+   "ref": "N08"
+  },
+  {
+   "date": "2026-05-11",
+   "label": "Gartner CMO Spend: budgets 7.8% of revenue, 15.3% to AI",
+   "topic": "T24",
+   "ref": "N25"
+  },
+  {
+   "date": "2026-06-03",
+   "label": "Search Console AI reports and AI opt-out (CMA, UK-first)",
+   "topic": "T01",
+   "ref": "N11"
+  },
+  {
+   "date": "2026-06-16",
+   "label": "WPP Media lifts 2026 global forecast to +8.9%",
+   "topic": "T24",
+   "ref": "N16"
+  },
+  {
+   "date": "2026-07-22",
+   "label": "Alphabet Q2: AI Mode passes 1B MAU, Search +17%; ChatGPT self-serve Ads Manager",
+   "topic": "T01",
+   "ref": "N01"
+  },
+  {
+   "date": "2026-07-27",
+   "label": "EU Digital Omnibus in force; Article 50 applies 2 Aug",
+   "topic": "T27",
+   "ref": "N38"
+  },
+  {
+   "date": "2026-07-29",
+   "label": "Meta Q2: price per ad +12% for a second quarter",
+   "topic": "T09",
+   "ref": "N27"
+  },
+  {
+   "date": "2026-07-30",
+   "label": "Reddit Q2: revenue +61%, US DAUq +6%",
+   "topic": "T15",
+   "ref": "N28"
+  },
+  {
+   "date": "2026-08-09",
+   "label": "LinkedIn ranks comments per viewer; 30% of comments flagged AI",
+   "topic": "T13",
+   "ref": "N31"
+  },
+  {
+   "date": "2026-08-18",
+   "label": "AI Mode field experiment: -18.8 pts external clicks",
+   "topic": "T01",
+   "ref": "N07"
+  },
+  {
+   "date": "2026-08-26",
+   "label": "Meta teen-safety settlement, up to about $18B",
+   "topic": "T16",
+   "ref": "N39"
+  },
+  {
+   "date": "2026-08-31",
+   "label": "ChatGPT ads reach a $1B run rate",
+   "topic": "T10",
+   "ref": "N13"
+  },
+  {
+   "date": "2026-09-02",
+   "label": "Court rejects AdX divestiture; behavioral remedies",
+   "topic": "T27",
+   "ref": "N37"
+  },
+  {
+   "date": "2026-09-10",
+   "label": "IAB lifts 2026 US ad forecast to +12.3%",
+   "topic": "T24",
+   "ref": "N20"
+  },
+  {
+   "date": "2026-09-16",
+   "label": "Remedies opinion unsealed; OpenAI tests Sponsored Agents",
+   "topic": "T27",
+   "ref": "N37"
+  },
+  {
+   "date": "2026-09-18",
+   "label": "Google native AI checkout on by default for eligible Shopify stores",
+   "topic": "T20",
+   "ref": "N42"
+  },
+  {
+   "date": "2026-09-22",
+   "label": "Comscore: ChatGPT prompt share 50%, Gemini 30%, Claude 11%",
+   "topic": "T28",
+   "ref": "N09"
+  },
+  {
+   "date": "2026-09-24",
+   "label": "Google September 2026 spam update, the fourth of the year",
+   "topic": "T03",
+   "ref": "S001"
+  },
+  {
+   "date": "2026-09-25",
+   "label": "TikTok settles with Alabama on teen limits",
+   "topic": "T16",
+   "ref": "N39"
+  }
+ ],
+ "watch_calendar": [
+  {
+   "date": "2026-10-02",
+   "label": "Joint proposed final judgment due, US v Google (ad tech)",
+   "topic": "T27",
+   "indicator": "I9"
+  },
+  {
+   "date": "2026-10-28",
+   "date_approx": true,
+   "label": "Q3 results season: Alphabet, Meta, Reddit, holdcos (expected late October)",
+   "topic": "T01",
+   "indicator": "I2"
+  },
+  {
+   "date": "2026-11-27",
+   "date_approx": true,
+   "label": "Holiday season: first test of default-on agentic checkout",
+   "topic": "T20",
+   "indicator": "I7"
+  },
+  {
+   "date": "2026-12-02",
+   "label": "EU AI Act Article 50(2) marking deadline for legacy generative systems",
+   "topic": "T21",
+   "indicator": "I6"
+  },
+  {
+   "date": "2026-12-31",
+   "date_approx": true,
+   "label": "CMA deadline: publisher opt-out of grounding in Google AI features",
+   "topic": "T27",
+   "indicator": "I5"
+  },
+  {
+   "date": "2027-03-31",
+   "date_approx": true,
+   "label": "CMA deadline: page-level grounding controls",
+   "topic": "T27",
+   "indicator": "I5"
+  }
+ ]
+}

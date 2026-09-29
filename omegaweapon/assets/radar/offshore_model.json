@@ -1,0 +1,490 @@
+{
+ "_about": "The Monsoon model: how exposed each tracked agency's sold work is to offshore delivery, read from its own public record. Every table here is an analytic judgment, published so the arithmetic after it is inspectable. The winds are named for where the work goes: South Asia and Southeast Asia first (the English-language delivery hubs), the other shores beside them. Nothing here is a statement about any person; it is a read of labor economics on a sold mix.",
+ "version": "1.0",
+ "doctrine_date": "2026-09-28",
+ "horizon": "three years",
+ "offshorability": {
+  "_why": "0 to 3 per capability: how much of the capability's delivery labor is routinely bought from offshore hubs today, and how standardizable its output is (a rank, a link, a ticket, a page, a dashboard). 3 is a mature white-label offshore category; 0 would be work that cannot leave the client's market. Labor intensity is the share of the capability's cost that is hours rather than media or software; the arbitrage only bites where hours dominate, so each capability's points are share of the sold mix x offshorability / 3 x labor intensity x 100.",
+  "seo": {
+   "off": 3,
+   "labor": 0.9,
+   "why": "Link building, content production, technical execution and reporting are the original white-label offshore services; Philippine and Indian white-label SEO markets exist for exactly this work, and the output (rankings, links, audits) is standardized enough to buy by the unit."
+  },
+  "content_pr": {
+   "off": 2,
+   "labor": 0.85,
+   "why": "Content production is offshored at scale and now competes with AI generation; digital PR outreach and earned placements stay relationship- and language-bound."
+  },
+  "ai_search": {
+   "off": 2,
+   "labor": 0.7,
+   "why": "Audit, entity and structured-data work is standardizable and already appears in offshore catalogs; the strategy and tooling premium is still local, and the labor content per client is smaller than SEO's."
+  },
+  "paid_search": {
+   "off": 3,
+   "labor": 0.6,
+   "why": "Account management, search-term mining, bid operations and reporting are a mature offshore category (PPC white-label); the same hours are also the ones the platforms' automation absorbs (KJ4), so what leaves for the machine never leaves for a hub."
+  },
+  "paid_social": {
+   "off": 2,
+   "labor": 0.55,
+   "why": "Account operations offshore readily; creative resonance and cultural judgment do not; Advantage+ and native automation absorb part of the buying."
+  },
+  "programmatic_ctv": {
+   "off": 1,
+   "labor": 0.35,
+   "why": "Ad-ops and trading support are offshored inside the networks (India ad-ops hubs), but seat access, deals and CTV relationships are local and the skill is concentrated."
+  },
+  "retail_media": {
+   "off": 2,
+   "labor": 0.55,
+   "why": "Feed management, catalog and marketplace operations are offshore staples (marketplace account management from South Asia and the Philippines); retailer network relationships are local."
+  },
+  "creator_influencer": {
+   "off": 1,
+   "labor": 0.6,
+   "why": "Creator sourcing and outreach can move; relationships, brand safety judgment and local culture cannot. The smallest arbitrage of any line."
+  },
+  "cro": {
+   "off": 2,
+   "labor": 0.75,
+   "why": "Implementation and development of experiments offshore; research, hypothesis design and stakeholder work stay close to the client."
+  },
+  "web_dev": {
+   "off": 3,
+   "labor": 0.9,
+   "why": "The largest offshore category of all (India, Vietnam, Pakistan, Poland, Ukraine, the Philippines) on standardized stacks: WordPress, Shopify, headless builds."
+  },
+  "data_measurement": {
+   "off": 2,
+   "labor": 0.7,
+   "why": "Analytics engineering, tagging, pipelines and dashboards are offshored through global capability centres; privacy posture, measurement strategy and incrementality design stay local."
+  },
+  "email_crm": {
+   "off": 2,
+   "labor": 0.7,
+   "why": "Production, templating and platform operations offshore; lifecycle strategy and first-party data governance do not."
+  },
+  "b2b_abm": {
+   "off": 1,
+   "labor": 0.65,
+   "why": "Account intelligence, sales alignment and executive relationships are local; outsourced SDR desks exist but are a different business from ABM."
+  },
+  "local": {
+   "off": 3,
+   "labor": 0.85,
+   "why": "Citation building, Business Profile posting, review operations and location-page production are classic white-label local SEO tasks; the local knowledge premium sits in strategy, not in the hours."
+  },
+  "ai_automation": {
+   "off": 2,
+   "labor": 0.6,
+   "why": "Agent and workflow builds are development work and offshore like development; the line's purpose is to replace hours with software, and offshore shops adopt it first because it widens their own arbitrage."
+  }
+ },
+ "shores": {
+  "_why": "Where the work goes depends on the home market's language and time zone more than on the capability. Shares are the model's judgment of which hubs serve each home market's agencies, from the public geography of the offshore services industry (the signals below). South Asia and Southeast Asia are the English-language hubs; Eastern Europe is Western Europe's nearshore; Latin America is the United States' nearshore; Africa carries the francophone hubs and the UK-facing English ones.",
+  "regions": {
+   "south_asia": {
+    "label": "South Asia",
+    "hubs": [
+     "India",
+     "Pakistan",
+     "Bangladesh",
+     "Sri Lanka",
+     "Nepal"
+    ]
+   },
+   "southeast_asia": {
+    "label": "Southeast Asia",
+    "hubs": [
+     "Philippines",
+     "Vietnam",
+     "Indonesia",
+     "Malaysia",
+     "Thailand",
+     "Cambodia"
+    ]
+   },
+   "eastern_europe": {
+    "label": "Eastern Europe",
+    "hubs": [
+     "Poland",
+     "Ukraine",
+     "Romania",
+     "Serbia",
+     "Bulgaria",
+     "Czech Republic",
+     "Czechia",
+     "Hungary",
+     "Belarus",
+     "Moldova",
+     "North Macedonia",
+     "Albania",
+     "Bosnia and Herzegovina",
+     "Georgia",
+     "Armenia",
+     "Türkiye",
+     "Turkey"
+    ]
+   },
+   "latin_america": {
+    "label": "Latin America",
+    "hubs": [
+     "Argentina",
+     "Colombia",
+     "Mexico",
+     "Brazil",
+     "Costa Rica",
+     "Peru",
+     "Chile",
+     "Uruguay",
+     "Guatemala",
+     "Dominican Republic",
+     "Nicaragua",
+     "El Salvador",
+     "Honduras"
+    ]
+   },
+   "africa": {
+    "label": "Africa and the Maghreb",
+    "hubs": [
+     "South Africa",
+     "Kenya",
+     "Nigeria",
+     "Egypt",
+     "Morocco",
+     "Tunisia",
+     "Madagascar",
+     "Mauritius",
+     "Senegal",
+     "Ghana",
+     "Rwanda"
+    ]
+   }
+  },
+  "by_language": {
+   "en_us": {
+    "label": "United States and Canada",
+    "south_asia": 0.35,
+    "southeast_asia": 0.3,
+    "eastern_europe": 0.1,
+    "latin_america": 0.25,
+    "africa": 0.0,
+    "why": "English hubs first (India, Pakistan and the Philippines are the three largest English-language delivery economies); Latin America is the nearshore in the working day."
+   },
+   "en_uk": {
+    "label": "United Kingdom and Ireland",
+    "south_asia": 0.4,
+    "southeast_asia": 0.25,
+    "eastern_europe": 0.2,
+    "latin_america": 0.0,
+    "africa": 0.15,
+    "why": "English hubs first; Eastern Europe and South Africa share the working day."
+   },
+   "en_other": {
+    "label": "English-fluent markets (Netherlands, the Nordics, Finland, Luxembourg)",
+    "south_asia": 0.3,
+    "southeast_asia": 0.2,
+    "eastern_europe": 0.4,
+    "latin_america": 0.0,
+    "africa": 0.1,
+    "why": "Work is briefed in English; the nearshore in Poland, Ukraine and the Baltics carries most of it."
+   },
+   "de": {
+    "label": "German-speaking (Germany, Austria, Switzerland)",
+    "south_asia": 0.25,
+    "southeast_asia": 0.1,
+    "eastern_europe": 0.55,
+    "latin_america": 0.0,
+    "africa": 0.1,
+    "why": "German-language capacity sits in Poland, Romania, Serbia and Bulgaria; India serves the technical work; the language barrier keeps content close."
+   },
+   "fr": {
+    "label": "French-speaking (France, Belgium)",
+    "south_asia": 0.15,
+    "southeast_asia": 0.15,
+    "eastern_europe": 0.2,
+    "latin_america": 0.05,
+    "africa": 0.45,
+    "why": "The francophone hubs (Morocco, Tunisia, Madagascar, Mauritius, Senegal) carry content and operations; Vietnam and Romania carry development."
+   },
+   "es": {
+    "label": "Spanish-speaking (Spain)",
+    "south_asia": 0.15,
+    "southeast_asia": 0.05,
+    "eastern_europe": 0.1,
+    "latin_america": 0.6,
+    "africa": 0.1,
+    "why": "Latin America is the same-language shore; Morocco the near one."
+   },
+   "it": {
+    "label": "Italian-speaking (Italy)",
+    "south_asia": 0.25,
+    "southeast_asia": 0.1,
+    "eastern_europe": 0.4,
+    "latin_america": 0.1,
+    "africa": 0.15,
+    "why": "Italian-language capacity in Albania and Romania; Tunisia near; Argentina far."
+   },
+   "destination": {
+    "label": "Nearshore destination (Poland, Ukraine, Romania and the other hub economies)",
+    "south_asia": 0.45,
+    "southeast_asia": 0.3,
+    "eastern_europe": 0.15,
+    "latin_america": 0.0,
+    "africa": 0.1,
+    "why": "These agencies are the shore for Western Europe; what can still leave them goes further, to South and Southeast Asia."
+   }
+  },
+  "country_to_language": {
+   "US": "en_us",
+   "United States": "en_us",
+   "Canada": "en_us",
+   "UK": "en_uk",
+   "United Kingdom": "en_uk",
+   "Ireland": "en_uk",
+   "Netherlands": "en_other",
+   "Denmark": "en_other",
+   "Sweden": "en_other",
+   "Finland": "en_other",
+   "Norway": "en_other",
+   "Luxembourg": "en_other",
+   "Germany": "de",
+   "Austria": "de",
+   "Switzerland": "de",
+   "France": "fr",
+   "Belgium": "fr",
+   "Spain": "es",
+   "Italy": "it",
+   "Poland": "destination",
+   "Ukraine": "destination",
+   "Romania": "destination",
+   "Serbia": "destination",
+   "Bulgaria": "destination",
+   "Czech Republic": "destination",
+   "Hungary": "destination"
+  },
+  "default_language": "en_other"
+ },
+ "structure": {
+  "_why": "Adjustments to the sold-mix base, in index points, from what the agency's own record shows. Migration terms raise the chance the agency moves its own delivery offshore; displacement terms raise the chance an offshore-delivered competitor takes the client. Observed terms come from a listed office, a job posting or the agency's own words; the rest are inferred from structure and say so.",
+  "migration": {
+   "holdco": {
+    "pts": 10,
+    "why": "The networks run global delivery centres by design (Publicis Sapient set out to double its India workforce; the holding companies operate India and Philippine hubs for production, ad-ops and analytics)."
+   },
+   "consultancy_owned": {
+    "pts": 10,
+    "why": "Consultancy parents deliver from India-heavy global capability centres."
+   },
+   "public": {
+    "pts": 8,
+    "why": "Listed companies answer to margin every quarter; delivery cost is the lever."
+   },
+   "pe_backed": {
+    "pts": 8,
+    "why": "Private-equity ownership brings the cost-out playbook; offshore delivery is on page one of it."
+   },
+   "large": {
+    "pts": 5,
+    "threshold": 1000,
+    "why": "At a thousand people or more an agency can run its own hub rather than rent one."
+   },
+   "hub_office": {
+    "pts": 12,
+    "why": "An office listed in a hub economy is a delivery footprint already in place (observed)."
+   },
+   "hub_jobs": {
+    "pts": 12,
+    "why": "A job posted in a hub economy is hiring there now (observed)."
+   },
+   "delivery_language": {
+    "pts": 8,
+    "why": "The agency describes global delivery, offshore or nearshore teams, 24/7 or follow-the-sun coverage in its own words (observed)."
+   },
+   "destination": {
+    "pts": -15,
+    "why": "The agency is itself the nearshore: its clients are the ones offshoring, to it."
+   }
+  },
+  "displacement": {
+   "icp_smb": {
+    "pts": 12,
+    "why": "Small-business budgets are where offshore-delivered agencies and marketplace freelancers compete head-on, on price."
+   },
+   "icp_local": {
+    "pts": 12,
+    "why": "Local-market budgets meet the same price competition as small business."
+   },
+   "icp_mid": {
+    "pts": 5,
+    "why": "Mid-market buyers compare rates but still buy accountability."
+   },
+   "icp_mixed": {
+    "pts": 3,
+    "why": "A mixed book carries part of the small-business exposure."
+   },
+   "icp_enterprise": {
+    "pts": -5,
+    "why": "Enterprise buys relationships, governance and consulting; the offshore threat there is internal migration, not displacement."
+   },
+   "segment_scaled": {
+    "pts": 8,
+    "segments": [
+     "Scaled performance",
+     "SMB & local"
+    ],
+    "why": "High-volume, price-led models are the ones an offshore-delivered competitor can undercut line by line."
+   },
+   "hourly": {
+    "pts": 8,
+    "why": "Published hourly rates invite a direct rate comparison with hub rates (observed)."
+   },
+   "outcome": {
+    "pts": -5,
+    "why": "Outcome or productised pricing sells the result, not the hour (observed)."
+   },
+   "white_label": {
+    "pts": 5,
+    "why": "White-label language places the agency in the reseller supply chain, where offshore delivery is the norm (observed; the words alone do not say which side of the chain)."
+   }
+  },
+  "onshore_claim": {
+   "why": "Claims of in-house, US-based or UK-based delivery are recorded as the agency's own claim (the Sun eye). They move nothing; an agency that markets against offshoring is telling you the pressure exists in its segment."
+  }
+ },
+ "bands": [
+  [
+   70,
+   "Landfall",
+   "offshore delivery is present or the mix cannot avoid it"
+  ],
+  [
+   55,
+   "Onshore wind",
+   "most of the sold hours can move and the structure lets them"
+  ],
+  [
+   40,
+   "Breeze",
+   "a mixed picture: part of the work moves, part stays"
+  ],
+  [
+   0,
+   "Doldrums",
+   "little of the sold work can leave the client's market"
+  ]
+ ],
+ "automation_overlap": {
+  "_why": "Capabilities where the edition's KJ4 exposure is -1 or below: the platforms' own automation absorbs these hours before a hub does. The overlap is reported beside the index, never subtracted from it, because the two substitutes race for the same work.",
+  "capabilities": [
+   "paid_search",
+   "paid_social"
+  ]
+ },
+ "patterns": {
+  "delivery_language": "global delivery|delivery cent(?:re|er)s?|offshor\\w*|nearshor\\w*|follow[- ]the[- ]sun|24/7|24 hours a day|round[- ]the[- ]clock|remote team|distributed team|global team",
+  "white_label": "white[- ]label\\w*|reseller|resell",
+  "onshore_claim": "in[- ]house|us[- ]based|uk[- ]based|based in the (?:us|uk|united states|united kingdom)|no outsourcing|never outsourc\\w*|100% (?:us|uk|american|british)",
+  "hourly": "per hour|hourly|an hour|/hr|/hour",
+  "outcome": "performance[- ]based|pay (?:for|on) performance|or no fee|outcome[- ]based|outcome[- ]linked|productis\\w+|productiz\\w+|fixed[- ]price|fixed monthly"
+ },
+ "signals": [
+  {
+   "id": "N-OFF1",
+   "domain": "Southeast Asia",
+   "metric": "Philippine IT-BPM export revenue and headcount, 2025",
+   "value": "over $40 billion revenue, 1.9 million full-time workers; revenue up 5%, headcount up 4% on 2024; global industry growth 3%",
+   "date": "2026-01-29",
+   "source": "IBPAP figures reported by The Philippine Star and the Philippine Daily Inquirer",
+   "url": "https://www.philstar.com/business/2026/01/29/2504140/it-bpm-revenues-breach-40-billion-mark",
+   "grade": "B2",
+   "read": "The largest English-language delivery economy for marketing operations keeps growing faster than the world market; the 2026 baseline is $42 billion and 1.97 million workers."
+  },
+  {
+   "id": "N-OFF2",
+   "domain": "Southeast Asia",
+   "metric": "IBPAP roadmap to 2028 and the AI effect on headcount",
+   "value": "$50.5 billion with 2.14 million workers in the accelerated scenario; $43.3 billion with headcount easing from 1.89 to 1.85 million in the slower one; 'revenue will grow faster than headcount'; 56% of member companies implementing AI (December 2024 survey)",
+   "date": "2026-09-25",
+   "source": "IBPAP chief executive, reported by The Business Manual",
+   "url": "https://thebusinessmanual.ph/features/trend-reports/ibpap-ai-it-bpm-productivity-fewer-employees/",
+   "grade": "B2",
+   "read": "The hubs are adopting the same automation that hollows agency execution; the offshore substitute is shrinking its own labor content, which widens the arbitrage per worker and caps the headcount story."
+  },
+  {
+   "id": "N-OFF3",
+   "domain": "South Asia",
+   "metric": "India technology industry, FY2026",
+   "value": "$315 billion revenue, up 6.1%; exports above $246 billion, up 5.6%; almost 6 million workers, 135,000 added (2.3%)",
+   "date": "2026-02-24",
+   "source": "nasscom Strategic Review 2026, reported by CXOToday",
+   "url": "https://www.cxotoday.com/ai/nasscom-projects-indian-tech-sector-to-grow-at-6-1-to-315-billion-in-fy-2026/",
+   "grade": "B2",
+   "read": "The largest delivery economy grows revenue three times faster than headcount: capacity is there, and it is getting more productive per head."
+  },
+  {
+   "id": "N-OFF4",
+   "domain": "South Asia",
+   "metric": "Pakistan freelancer export earnings, FY2025-26",
+   "value": "$856.3 million, up 51% on the year; ICT exports $3.38 billion, up 19.7%",
+   "date": "2026-06-24",
+   "source": "Pakistan Economic Survey 2025-26 (Ministry of Finance), reported by INP-WealthPK",
+   "url": "https://www.inp.net.pk/article-detail/inp-wealthpk/pakistans-freelancer-exports-surge-51pc-to-856m-in-fy2025-26-1",
+   "grade": "A2",
+   "read": "The marketplace-freelancer shore (SEO, links, content, development bought by the task on Upwork and Fiverr) is the fastest-growing one; it is the small-business displacement channel."
+  },
+  {
+   "id": "N-OFF5",
+   "domain": "Policy",
+   "metric": "The $100,000 H-1B petition fee and the India hiring shift",
+   "value": "fee raised from about $5,000 to $100,000 per new petition; the large US technology companies added about 33,000 workers in India in 2025 (up about 18%); Alphabet leasing 2.4 million square feet in Bengaluru for up to 20,000 staff",
+   "date": "2026-02-09",
+   "source": "Rest of World",
+   "url": "https://restofworld.org/2026/h1b-visa-impact-india-tech-hiring-faamng/",
+   "grade": "B2",
+   "read": "When importing talent gets expensive, the work is exported instead; the holding companies and consultancies follow the same math for delivery."
+  },
+  {
+   "id": "N-OFF6",
+   "domain": "Policy",
+   "metric": "Forecast effect of the H-1B fee on IT services",
+   "value": "onsite billing rates up 2 to 3% on new contracts; 'increased offshoring, with Indian professionals and major IT vendors likely to intensify hiring and client support from India'",
+   "date": "2025-10",
+   "source": "Forrester blog",
+   "url": "https://www.forrester.com/blogs/the-long-term-impact-of-the-100000-h-1b-fee-higher-it-service-prices-and-more-offshore",
+   "grade": "B3",
+   "read": "An analyst forecast, not a measurement: the direction is offshore, the size is a guess."
+  },
+  {
+   "id": "N-OFF7",
+   "domain": "Marketplace",
+   "metric": "Payoneer freelancing-country ranking",
+   "value": "United States, United Kingdom, Brazil, Pakistan, Ukraine, Philippines, India, Bangladesh, Russia, Serbia",
+   "date": "undated (data 2021 to 2022)",
+   "source": "Payoneer resource page",
+   "url": "https://www.payoneer.com/resources/business/top-10-freelancing-countries/",
+   "grade": "C3",
+   "read": "Vendor ranking on stale data; used only to name the marketplace shores, never for a number."
+  },
+  {
+   "id": "N-OFF8",
+   "domain": "The Radar's own record",
+   "metric": "Observed delivery footprints and onshore claims among the tracked agencies",
+   "value": "computed at build from the registry: agencies with an office listed in a hub economy, with a job posted in one, with delivery language in their own words, and with in-house or onshore claims",
+   "date": "registry compile date",
+   "source": "assets/radar/radar.json",
+   "url": null,
+   "grade": "B1",
+   "read": "The only observed evidence in this layer; everything else is inferred from the sold mix and the structure and labeled so."
+  }
+ ],
+ "limitations": [
+  "No agency here discloses its delivery payroll or its vendors; the index is read from the sold mix, ownership, listed offices, job postings and the agency's own words. Every line carries its evidence class and most of them are inferred.",
+  "Absence of evidence is not evidence: no hub office and no hub job posting means none was listed on the public record the Radar read, not that none exists.",
+  "An office in a hub economy can be a sales office serving that market rather than a delivery hub; the observed term counts it as a footprint and the dossier names the country so the reader can judge.",
+  "Language shares by home market are the model's judgment of the offshore services geography, not a measured flow; the hub economies' own figures are national industry totals, not marketing-services totals.",
+  "Automation and offshoring compete for the same execution hours; the index reads exposure to hubs and reports the automation overlap beside it rather than netting one against the other.",
+  "The horizon is three years and the read is a score, not a probability; the bands name a posture, not a forecast."
+ ]
+}

@@ -1,0 +1,17 @@
+{
+  "_about": "OmegaWeapon grading constants. Every grade on the dashboard is computed by scripts/omega_metrics.py from these values and the manifest; nothing is typed by hand. The Method tab prints this file so a reader can see how a grade was made. A grade never rests on unverified evidence alone: unverified rows lower confidence, never the grade.",
+  "version": "1.0",
+  "severity_weight": {"High": 5.0, "Medium": 2.0, "Low": 0.5, "Info": 0.0, "Win": -1.0},
+  "evidence_multiplier": {"observed": 1.0, "inferred": 0.6, "unverified": 0.0},
+  "money_page_multiplier": 1.5,
+  "density_bands": {"_about": "weighted defect score divided by pages (or listings, apps, campaigns) assessed; the band gives the letter", "A": 0.5, "B": 1.5, "C": 3.5, "D": 7.0, "F": 1e9},
+  "confidence_bands": {"_about": "share of a pillar's evidence weight that is observed (fetched, measured, exported, screenshot)", "high": 0.75, "moderate": 0.45, "low": 0.0},
+  "exposure_grade": {"_about": "Compliance & Exposure is graded from dispositions, not density", "confirmed_high": "F", "confirmed_medium": "D", "confirmed_low": "C", "candidate_high": "C", "candidate_only": "B", "cleared_only": "A", "none": "A"},
+  "market_grade": {"_about": "Market Position is graded from the Moon eye: complaint share (intent C over counted floor items) and mean floor stance", "complaint_share_bands": {"A": 0.15, "B": 0.30, "C": 0.45, "D": 0.60, "F": 1.0}, "stance_floor_for_A": 0.3, "min_floor_items": 15},
+  "agency_fit_grade": {"_about": "Agency Fit is graded from inherited findings (template defects the agency of record shipped) as a share of all High and Medium findings, plus claims-screen rows", "inherited_share_bands": {"A": 0.10, "B": 0.25, "C": 0.45, "D": 0.65, "F": 1.0}},
+  "honest_count_rules": {"routable": "disposition CONFIRMED, confidence Confirmed, route not NONE and not PRIVATE", "confirmed_needs": ["cite_fetched date present or a vintage flag", "evidence quoted", "url present", "control gate passed (control null)"]},
+  "icd203": {"almost no chance": [1, 5], "very unlikely": [5, 20], "unlikely": [20, 45], "roughly even chance": [45, 55], "likely": [55, 80], "very likely": [80, 95], "almost certain": [95, 99]},
+  "confidence_terms": ["low", "low to moderate", "moderate", "moderate to high", "high"],
+  "forbidden_terms": {"_about": "strings the validator refuses in any client-facing field: vendor authority scores and guarantees", "authority_scores": ["domain rating", "domain authority", "authority score", "\\bDR\\s?\\d", "\\bDA\\s?\\d", "trust flow", "citation flow"], "guarantees": ["guaranteed ranking", "guarantee first page", "we guarantee", "guaranteed results"]},
+  "momentum": {"_about": "measured against the previous run of the same target in the same cache folder: grade letter delta, findings resolved and new, exposure count deltas, brand stereopsis share deltas with two-proportion z", "min_items_for_z": 10}
+}

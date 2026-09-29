@@ -1,0 +1,5 @@
+# HORUS collector: Python 3.11 or newer. The core (RSS, Reddit, YouTube, Bluesky, Mastodon, Hacker News,
+# Telegram Bot API, CSV import, SQLite store, exports) is standard library only.
+telethon>=1.36        # telegram lane: your own account through the official MTProto API
+discord.py>=2.3       # discord lane: bot token, REST reads on servers that invited the bot
+defusedxml>=0.7       # hardened XML parsing for feeds (recommended)

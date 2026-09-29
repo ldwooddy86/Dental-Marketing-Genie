@@ -1,0 +1,1342 @@
+{
+ "_about": "Horus analysis of record for Digital Marketing, edition 2026.09a. Written against the coded ledger (items S/M, rooms R) and the Nilometer readings (N). Probability language follows ICD 203: almost no chance 1-5%, very unlikely 5-20%, unlikely 20-45%, roughly even chance 45-55%, likely 55-80%, very likely 80-95%, almost certain 95-99%. Confidence (low, moderate, high) grades the evidence base, separately from likelihood.",
+ "headline": "The traffic economy is becoming an answer economy, and the platforms that own the answer are absorbing the work.",
+ "bluf": [
+  "Digital marketing is moving from a traffic economy to an answer economy. The companies that own the answer (Google first, then OpenAI, Meta and Amazon) are taking over the interface and the execution layer at the same time. Google AI Mode passed a billion monthly users; two independent randomized experiments show AI search surfaces cutting clicks to outside websites (AI Mode by 18.8 points of searches, AI Overviews by 38% on the queries they appear for); and Google's search revenue still grew 17%. The value is being kept inside the answer.",
+  "Paid placement is following the answer into the assistants. ChatGPT ads reached a $1B annualized pace in under 200 days while prices fell by more than half. At the same time Google and Meta are turning bidding, budgeting, creative, checkout and customer conversation into default-on automation, and Meta's price per ad rose 12% for a second straight quarter while prospecting display prices on one large ad platform (AdRoll) fell 45% year on year.",
+  "Over the next 24 months the money follows three rails: placement inside AI answers and agents; machine-readable data those systems consume (feeds, entities, reviews, first-party signals); and human-provenance content they cite and reward (creators, communities, named experts). The losers are hourly execution labor, informational publishers and anything priced on third-party click data.",
+  "The practitioner floor has not caught up. In this sample, links and local-listing tactics are 36% of floor conversation and 3% of broadcast, while AI answer and agent surfaces are 28% of broadcast and 5% of the floor. The rooms on Discord and Telegram are organized around the hustle economy and trend-chasing, not around where the budgets are going."
+ ],
+ "key_judgments": [
+  {
+   "id": "KJ1",
+   "title": "The click is being replaced by the citation",
+   "judgment": "Through end-2027 the share of Google informational searches that end without an outside click keeps rising while Google Search revenue keeps growing at least high single digits a year. Ranking to receive a click loses value; being the cited source inside the answer, and buying placement beside it, gain value.",
+   "likelihood": "very likely",
+   "range": "80-95%",
+   "confidence": "high",
+   "horizon": "to Dec 2027",
+   "topics": [
+    "T01",
+    "T02"
+   ],
+   "evidence": [
+    "N01",
+    "N03",
+    "N06",
+    "N07",
+    "N08",
+    "S038",
+    "S041",
+    "S114",
+    "S146"
+   ],
+   "falsifiers": [
+    "Google Search and other revenue grows below 5% YoY for two consecutive quarters",
+    "A replicated field experiment finds no click loss under AI Mode",
+    "Google restores link-first layouts as the AI Mode default"
+   ]
+  },
+  {
+   "id": "KJ2",
+   "title": "Ads inside AI answers scale faster than any channel before them, but the price and the proof are still unsettled",
+   "judgment": "OpenAI's ad business reaches a $2B annualized pace before the end of Q2 2027. It does not book the stated $2.5B of calendar-2026 ad revenue: from about $83M a month at the end of August, compound growth of 20%, 40% or 60% a month through December yields roughly $0.75B, $1.04B or $1.44B for the year; hitting $2.5B would need about 95% a month. Treat the run-rate milestone as real and the annual target as investor arithmetic, unless OpenAI defines the year or the revenue line differently.",
+   "likelihood": "very likely (run rate); very unlikely (calendar target)",
+   "range": "80-95% / 5-20%",
+   "confidence": "moderate",
+   "horizon": "to Jun 2027",
+   "topics": [
+    "T10"
+   ],
+   "evidence": [
+    "N13",
+    "N14",
+    "N15",
+    "N18",
+    "N09",
+    "S028",
+    "S063",
+    "S166",
+    "S161",
+    "M045"
+   ],
+   "falsifiers": [
+    "OpenAI discloses a run rate below $1.5B by March 2027",
+    "Ad load is pulled back after user backlash or regulatory consent rulings",
+    "OpenAI restates the $2.5B figure on a basis that includes commerce fees"
+   ],
+   "math": {
+    "base_month": "August 2026, about $83M (1B run rate / 12)",
+    "feb_to_aug_cumulative": "about $210M: the midpoint of a geometric ramp (about $175M) and a linear ramp (about $244M) from first ads on 9 Feb, through a $100M run rate on 26 Mar, to $1B on 31 Aug",
+    "sep_to_dec_growth": {
+     "20%": "about $0.75B for calendar 2026",
+     "40%": "about $1.04B",
+     "60%": "about $1.44B"
+    },
+    "required_for_2_5B": "about 95% compound monthly growth"
+   }
+  },
+  {
+   "id": "KJ3",
+   "title": "Discovery fragments at the assistant layer and re-concentrates at the distribution layer",
+   "judgment": "Comscore shows Gemini matching or passing ChatGPT in US prompt share in at least one month before July 2027. Separately, no single assistant regains a 60% prompt share during 2027. Google's advantage is distribution (Search, Android, Chrome, Gemini's 950M monthly users), not the chatbot itself.",
+   "likelihood": "roughly even chance (Gemini pass); very likely (no 60% leader)",
+   "range": "45-55% / 80-95%",
+   "confidence": "low to moderate",
+   "horizon": "to Jul 2027",
+   "topics": [
+    "T28",
+    "T02"
+   ],
+   "evidence": [
+    "N09",
+    "N01",
+    "N02",
+    "S156",
+    "S103"
+   ],
+   "falsifiers": [
+    "Comscore's second-half data shows ChatGPT back above 60% of prompt volume",
+    "A new distribution deal (Apple, Samsung, carriers) routes default queries to one assistant"
+   ]
+  },
+  {
+   "id": "KJ4",
+   "title": "The platforms are absorbing the execution layer",
+   "judgment": "By end-2027 default-on automation (AI Max replacing Dynamic Search Ads, Smart Bidding re-framed around conversion volume, budget and investment recommendations tied to forecasts, automated promotions, Advantage+, native AI checkout, Business Agents) governs the majority of spend on Google and Meta. The practitioner's job shifts from operating controls to supplying inputs: first-party data, creative volume, offers and feeds, and measurement governance.",
+   "likelihood": "very likely",
+   "range": "80-95%",
+   "confidence": "high",
+   "horizon": "to Dec 2027",
+   "topics": [
+    "T08",
+    "T09",
+    "T20"
+   ],
+   "evidence": [
+    "S019",
+    "S040",
+    "S011",
+    "S016",
+    "S060",
+    "S058",
+    "S106",
+    "S108",
+    "S187",
+    "N25",
+    "N42",
+    "M042",
+    "M043",
+    "M047",
+    "M048"
+   ],
+   "falsifiers": [
+    "Google or Meta broadly re-introduces granular manual controls under advertiser pressure",
+    "Regulators restrict default-on enrollment in ads or checkout"
+   ]
+  },
+  {
+   "id": "KJ5",
+   "title": "The price of attention splits in two",
+   "judgment": "Meta's average price per ad stays above +5% YoY in each of the next three reported quarters (Q3 2026 to Q1 2027) as AI-driven and AI-native demand bids into slower impression growth, while open-web display keeps deflating. Walled-garden inflation and open-web deflation are the same trend seen from two sides.",
+   "likelihood": "likely",
+   "range": "55-80%",
+   "confidence": "moderate",
+   "horizon": "Q3 2026 to Q1 2027 reports",
+   "topics": [
+    "T09",
+    "T11"
+   ],
+   "evidence": [
+    "N27",
+    "N43",
+    "S110",
+    "N16",
+    "N17"
+   ],
+   "falsifiers": [
+    "Meta reports price per ad at or below 0% YoY in Q3 or Q4 2026",
+    "Display CPMs recover to year-ago levels by Q1 2027"
+   ]
+  },
+  {
+   "id": "KJ6",
+   "title": "The agency middle is being hollowed out",
+   "judgment": "Combined headcount at the large holding companies falls at least another 5% by end-2027 while revenue per employee rises, and at least one top-five holdco moves most new retainers to output or outcome pricing. The cut lands on junior execution; experienced operators who direct and check AI keep their value.",
+   "likelihood": "likely",
+   "range": "55-80%",
+   "confidence": "moderate",
+   "horizon": "to Dec 2027",
+   "topics": [
+    "T26",
+    "T25"
+   ],
+   "evidence": [
+    "N32",
+    "N33",
+    "N34",
+    "N35",
+    "N36",
+    "N25",
+    "S170",
+    "S150"
+   ],
+   "falsifiers": [
+    "Holdco headcount rises in 2027",
+    "The CMI 2027 outlook shows entry-level hiring rebounding"
+   ]
+  },
+  {
+   "id": "KJ7",
+   "title": "Local discovery is being enclosed",
+   "judgment": "Through 2027 Google expands the prominence of pay-per-lead and sponsored local units (larger Local Services Ads, expanding Sponsored Places, LSAs drawing on Business Profile data) and turns more of the local panel into AI-generated summaries. Local SEO shifts from links and citations toward entity data, reviews and LSA operations.",
+   "likelihood": "likely",
+   "range": "55-80%",
+   "confidence": "moderate",
+   "horizon": "to Dec 2027",
+   "topics": [
+    "T05",
+    "T08"
+   ],
+   "evidence": [
+    "S013",
+    "S034",
+    "S003",
+    "S030",
+    "S025",
+    "S010",
+    "S006",
+    "S022",
+    "M010",
+    "M012",
+    "M022",
+    "M024",
+    "M025"
+   ],
+   "falsifiers": [
+    "Google rolls back the larger LSA and hover-expanding local ad tests",
+    "AI summaries are removed from local panels"
+   ]
+  },
+  {
+   "id": "KJ8",
+   "title": "Human provenance becomes a distribution signal",
+   "judgment": "By end-2027 at least two of Meta, LinkedIn, TikTok and YouTube expand throttling or labeling rules for undisclosed AI personas or automated engagement, and creator and human-provenance content keeps outgrowing total media spend.",
+   "likelihood": "likely",
+   "range": "55-80%",
+   "confidence": "moderate",
+   "horizon": "to Dec 2027",
+   "topics": [
+    "T21",
+    "T14",
+    "T13"
+   ],
+   "evidence": [
+    "N31",
+    "S195",
+    "N38",
+    "N23",
+    "S192",
+    "S150",
+    "S037"
+   ],
+   "falsifiers": [
+    "Platforms loosen AI-label enforcement",
+    "Creator ad spend growth falls below total media growth in 2027"
+   ]
+  },
+  {
+   "id": "KJ9",
+   "title": "Measurement gets worse before it gets better",
+   "judgment": "Third-party search-visibility data keeps degrading through Q2 2027 (scraping blocks, passthrough links) while first-party AI reporting stays impressions-only. Incrementality testing and open-source marketing mix models become the default substitute for click attribution in mid-market accounts.",
+   "likelihood": "very likely",
+   "range": "80-95%",
+   "confidence": "moderate",
+   "horizon": "to Jun 2027",
+   "topics": [
+    "T17"
+   ],
+   "evidence": [
+    "S198",
+    "N11",
+    "S055",
+    "S075",
+    "M048",
+    "M063",
+    "S140",
+    "S141",
+    "S206",
+    "S051"
+   ],
+   "falsifiers": [
+    "Google adds click data to the Search Console AI reports",
+    "Google relaxes anti-scraping measures for rank-tracking vendors"
+   ]
+  },
+  {
+   "id": "KJ10",
+   "title": "The floor lags the broadcast by a cycle",
+   "judgment": "The practitioner floor sampled here is still fighting the link-and-listing war while the broadcast agenda has moved to AI answers, agentic commerce and the AI platform race. The gap closes from the top down within 12 to 18 months as AI surfaces eat informational traffic; operators who translate AI-surface change into offers the floor understands capture the transition margin.",
+   "likelihood": "likely",
+   "range": "55-80%",
+   "confidence": "moderate",
+   "horizon": "to Mar 2028",
+   "topics": [
+    "T07",
+    "T05",
+    "T01",
+    "T02"
+   ],
+   "evidence": [
+    "metrics:T07",
+    "metrics:T05",
+    "metrics:clusters",
+    "census:Discord",
+    "census:Telegram",
+    "N44",
+    "N45"
+   ],
+   "falsifiers": [
+    "The next collector run shows floor share of AI-search and AI-visibility topics above 10% by Q1 2027 (the gap closing faster than judged)",
+    "Floor link-buying talk stays flat through 2027 with no pain signal (links still paying)"
+   ]
+  },
+  {
+   "id": "KJ11",
+   "title": "Regulation shapes the edges, not the direction",
+   "judgment": "No 2026-27 remedy or regulation (ad tech remedies, the search appeal, CMA conduct requirements, the EU AI Act) reverses the migration to AI answer surfaces. The CMA's grounding opt-out, due December 2026, gives large publishers leverage that shows up as licensing deals rather than restored clicks.",
+   "likelihood": "very unlikely (reversal); likely (licensing leverage)",
+   "range": "5-20% / 55-80%",
+   "confidence": "moderate",
+   "horizon": "to Dec 2027",
+   "topics": [
+    "T27"
+   ],
+   "evidence": [
+    "N37",
+    "N11",
+    "N38",
+    "S018",
+    "S076",
+    "S154",
+    "S167"
+   ],
+   "falsifiers": [
+    "A court or regulator orders AI answers off by default for commercial queries",
+    "Opt-out uptake among large publishers exceeds 25% and Google restores click-through surfaces to keep them"
+   ]
+  }
+ ],
+ "discourse_findings": [
+  {
+   "id": "D1",
+   "title": "The broadcast is the platforms' changelog",
+   "finding": "Two thirds of broadcast items (139 of 210) are news or announcements, and Google and Microsoft Ads product changes alone are one broadcast item in six (35 of 210). The trade press largely narrates what the platforms ship.",
+   "refs": [
+    "metrics:intents",
+    "metrics:T08"
+   ]
+  },
+  {
+   "id": "D2",
+   "title": "The search press now reads the AI industry itself",
+   "finding": "The AI platform race (model releases, assistant share, AI safety) is 14% of broadcast items, more than AI search disruption (6%). Search professionals are tracking the companies that will decide their traffic, not only the traffic.",
+   "refs": [
+    "metrics:T28",
+    "metrics:T01"
+   ]
+  },
+  {
+   "id": "D3",
+   "title": "The floor asks; the broadcast announces",
+   "finding": "On the floor, 31% of items are questions and 22% how-to; only 15% are news. Pain is concentrated: 10 of 11 floor items about links are questions or complaints, a market asking whether links still work.",
+   "refs": [
+    "metrics:intents",
+    "metrics:T07"
+   ]
+  },
+  {
+   "id": "D4",
+   "title": "Links and listings dominate the floor",
+   "finding": "Stereopsis puts links and PBNs (z = +4.0) and local listings (z = +3.1) far ahead on the floor compared with the broadcast. Together they are 36% of floor items and 3% of broadcast items.",
+   "refs": [
+    "metrics:T07",
+    "metrics:T05"
+   ]
+  },
+  {
+   "id": "D5",
+   "title": "AI answer and agent surfaces are a broadcast topic",
+   "finding": "AI search, AI visibility, ads in assistants, agentic commerce and the AI platform race are 28% of broadcast items and 5% of floor items. GEO, agentic commerce, creators, regulation and retail media do not appear on the floor sample at all.",
+   "refs": [
+    "metrics:T01",
+    "metrics:T02",
+    "metrics:T10",
+    "metrics:T20",
+    "metrics:T28"
+   ]
+  },
+  {
+   "id": "D6",
+   "title": "What the rooms are built around",
+   "finding": "19 of 34 marketing-tagged Discord servers in the census are hustle-economy rooms (affiliate, dropshipping, SMMA, digital products, make-money-online). The biggest channels TGStat files under Marketing are Russian-language short-form trend-curation channels (1.2M to 2.8M subscribers each), and the biggest adjacent deal channels are Indian affiliate broadcasters (up to 5.9M). Professional marketing practice barely registers in the room census.",
+   "refs": [
+    "census:Discord",
+    "census:Telegram"
+   ]
+  },
+  {
+   "id": "D7",
+   "title": "The grey economy is part of the floor",
+   "finding": "Ten floor items carry grey flags (Business Profile number tricks, review deletion, dropped-domain PBNs, group-buy seats for Semrush, Ahrefs and AI tools) and five items were filtered as spam or sponsored. The English and Hinglish SEO Telegram layer trades guest-post inventory, AdSense sites and discounted tool seats.",
+   "refs": [
+    "M025",
+    "M026",
+    "M027",
+    "M030",
+    "M032",
+    "M020",
+    "M010",
+    "R053"
+   ]
+  },
+  {
+   "id": "D8",
+   "title": "Discourse attrition",
+   "finding": "The floor's own reporter notes that chatter during ranking volatility is slowing because Google sends sites less traffic, and Google's search liaison notes the niche SEO forums have dissolved into a few general platforms. When a topic goes quiet, suspect that the money left before assuming the problem was solved.",
+   "refs": [
+    "N44",
+    "N45"
+   ]
+  },
+  {
+   "id": "D9",
+   "title": "Both eyes lean negative",
+   "finding": "Mean stance is slightly negative in both eyes (broadcast -0.08, floor -0.15). Broadcast optimism concentrates in agentic commerce (+0.6), creators (+0.44) and AI visibility (+0.29); pessimism in AI search disruption (-0.5), rankings (-0.5) and measurement (-0.44).",
+   "refs": [
+    "metrics:stance"
+   ]
+  }
+ ],
+ "stages": {
+  "T01": {
+   "stage": "Ra",
+   "why": "Loud and contested: 1B-user surface, two field experiments, publisher alarm; the floor has not operationalized it yet."
+  },
+  "T02": {
+   "stage": "Ra",
+   "why": "Buzzword at the Digiday Publishing Summit, tooling flood (Rank Math adds Gemini tracking), measurement scramble; no floor presence yet."
+  },
+  "T03": {
+   "stage": "Atum",
+   "why": "Perennial operational weather: four spam updates this year; chatter thinning as traffic thins."
+  },
+  "T04": {
+   "stage": "Atum",
+   "why": "Standardized craft, re-energized by AI crawlers and bot traffic."
+  },
+  "T05": {
+   "stage": "Atum",
+   "why": "A mature grind on the floor, now being enclosed by paid and AI local units."
+  },
+  "T06": {
+   "stage": "Atum",
+   "why": "AI-written content is normalized; the debate has moved to entities and provenance."
+  },
+  "T07": {
+   "stage": "Duat",
+   "why": "Still the floor's biggest topic, but framed as doubt: buying links barely moves authority, parasite hosts are being cut, value is leaving."
+  },
+  "T08": {
+   "stage": "Atum",
+   "why": "Automation is the default; the conversation is about living with defaults, not whether to adopt them."
+  },
+  "T09": {
+   "stage": "Atum",
+   "why": "Advantage+ is standard; auction prices are the live issue."
+  },
+  "T10": {
+   "stage": "Khepri",
+   "why": "Crossing into Ra: $1B run rate and new formats, but practitioners still ask whether it works."
+  },
+  "T11": {
+   "stage": "Atum",
+   "why": "Established growth lines (CTV, commerce media); open-web display deflating."
+  },
+  "T12": {
+   "stage": "Atum",
+   "why": "Stable secondary channels; Reddit is the growth outlier."
+  },
+  "T13": {
+   "stage": "Atum",
+   "why": "Feature churn and algorithm tips; the platforms reward originality and punish AI spam."
+  },
+  "T14": {
+   "stage": "Ra",
+   "why": "$44B market, CreatorFronts, IP licensing deals; creator marketing 'growing up'."
+  },
+  "T15": {
+   "stage": "Atum",
+   "why": "Where talk lives is shifting (forums dissolved, Discord IPO); community as channel is under-measured."
+  },
+  "T16": {
+   "stage": "Khepri",
+   "why": "Teen limits and settlements are new structural constraints on attention inventory."
+  },
+  "T17": {
+   "stage": "Atum",
+   "why": "Incrementality and MMM playbooks spreading; click attribution openly declared broken."
+  },
+  "T18": {
+   "stage": "Duat",
+   "why": "The cookieless narrative died with the Privacy Sandbox; identity work moved to first-party matching."
+  },
+  "T19": {
+   "stage": "Ra",
+   "why": "Everyone uses AI tools; skepticism about agents without business data; grey tool resale on the floor."
+  },
+  "T20": {
+   "stage": "Khepri",
+   "why": "Announced and switched on by default, but no floor discussion and no disclosed volume yet."
+  },
+  "T21": {
+   "stage": "Khepri",
+   "why": "Generation tools ship inside ad platforms; labeling rules and reach penalties just arriving."
+  },
+  "T22": {
+   "stage": "Atum",
+   "why": "Owned audience framed as a hedge against algorithms."
+  },
+  "T23": {
+   "stage": "Atum",
+   "why": "Feeds and task completion replace page-level CRO as the frontier."
+  },
+  "T24": {
+   "stage": "Atum",
+   "why": "Budgets flat as a share of revenue; spend reallocating, not growing."
+  },
+  "T25": {
+   "stage": "Ra",
+   "why": "Entry-level squeeze, layoffs and a 'ghost workforce' doing two jobs."
+  },
+  "T26": {
+   "stage": "Ra",
+   "why": "Holdco divergence, pricing-model change, contracts lagging AI."
+  },
+  "T27": {
+   "stage": "Ra",
+   "why": "Ad tech remedies, CMA requirements and the AI Act all landed in 2026."
+  },
+  "T28": {
+   "stage": "Ra",
+   "why": "Model race and assistant share shifts are front-page for marketers now."
+  },
+  "T29": {
+   "stage": "Duat",
+   "why": "A perennial undercurrent: the largest share of the rooms, almost none of the broadcast."
+  }
+ },
+ "momentum_direction": {
+  "_note": "Directional judgment from the Nilometer, not measured discourse momentum. Measured momentum starts with the second collector run.",
+  "T10": "up strongly",
+  "T01": "up",
+  "T02": "up",
+  "T20": "up",
+  "T14": "up",
+  "T28": "up",
+  "T25": "up",
+  "T26": "up",
+  "T27": "up",
+  "T19": "up",
+  "T21": "up",
+  "T16": "up",
+  "T08": "flat",
+  "T09": "flat",
+  "T11": "flat",
+  "T13": "flat",
+  "T17": "up",
+  "T05": "flat",
+  "T03": "flat",
+  "T04": "flat",
+  "T06": "flat",
+  "T12": "flat",
+  "T15": "flat",
+  "T22": "flat",
+  "T23": "flat",
+  "T24": "flat",
+  "T07": "down",
+  "T18": "down",
+  "T29": "flat"
+ },
+ "ach": {
+  "hypotheses": [
+   {
+    "id": "H1",
+    "label": "Answer capture",
+    "desc": "AI answer surfaces become the primary discovery layer; value moves to being cited and to paid placement inside answers."
+   },
+   {
+    "id": "H2",
+    "label": "Platform absorption",
+    "desc": "Platforms absorb execution end to end (bidding, creative, checkout, conversation); budgets concentrate in fewer walled gardens; agencies and tools shrink to input suppliers."
+   },
+   {
+    "id": "H3",
+    "label": "Pluralism",
+    "desc": "Discovery splinters across many assistants, communities and creators; no single gatekeeper; multi-surface specialists win."
+   },
+   {
+    "id": "H4",
+    "label": "Overshoot",
+    "desc": "The disruption is overstated; clicks stabilize, AI ads underperform and the industry reverts to known channels, as with voice search and the cookieless scare."
+   }
+  ],
+  "evidence": [
+   {
+    "id": "A1",
+    "text": "AI Mode above 1B MAU; AI Overviews on 39% of US desktop searches",
+    "refs": [
+     "N01",
+     "N06"
+    ],
+    "r": {
+     "H1": "C",
+     "H2": "C",
+     "H3": "N",
+     "H4": "I"
+    }
+   },
+   {
+    "id": "A2",
+    "text": "Two field experiments: AI Mode -18.8 pts external clicks; AI Overviews -38% organic clicks",
+    "refs": [
+     "N07",
+     "N08"
+    ],
+    "r": {
+     "H1": "C",
+     "H2": "C",
+     "H3": "N",
+     "H4": "I"
+    }
+   },
+   {
+    "id": "A3",
+    "text": "Google Search revenue +17% while outbound clicks fall",
+    "refs": [
+     "N03"
+    ],
+    "r": {
+     "H1": "C",
+     "H2": "C",
+     "H3": "I",
+     "H4": "C"
+    }
+   },
+   {
+    "id": "A4",
+    "text": "ChatGPT ads at a $1B run rate in under 200 days",
+    "refs": [
+     "N13"
+    ],
+    "r": {
+     "H1": "C",
+     "H2": "C",
+     "H3": "C",
+     "H4": "I"
+    }
+   },
+   {
+    "id": "A5",
+    "text": "ChatGPT prompt share 70% to 50%; Gemini 17% to 30%; Claude 2% to 11%",
+    "refs": [
+     "N09"
+    ],
+    "r": {
+     "H1": "C",
+     "H2": "N",
+     "H3": "C",
+     "H4": "N"
+    }
+   },
+   {
+    "id": "A6",
+    "text": "Default-on automation and default-on AI checkout",
+    "refs": [
+     "S019",
+     "N42"
+    ],
+    "r": {
+     "H1": "N",
+     "H2": "C",
+     "H3": "I",
+     "H4": "I"
+    }
+   },
+   {
+    "id": "A7",
+    "text": "Meta price per ad +12% two quarters running; prospecting display CPMs -45% on one ad platform",
+    "refs": [
+     "N27",
+     "N43"
+    ],
+    "r": {
+     "H1": "N",
+     "H2": "C",
+     "H3": "I",
+     "H4": "N"
+    }
+   },
+   {
+    "id": "A8",
+    "text": "Creator spend to $44B; Reddit revenue +61%",
+    "refs": [
+     "N23",
+     "N28"
+    ],
+    "r": {
+     "H1": "N",
+     "H2": "N",
+     "H3": "C",
+     "H4": "N"
+    }
+   },
+   {
+    "id": "A9",
+    "text": "Holdco headcount cuts; paid media funded by agency cuts",
+    "refs": [
+     "N32",
+     "N25"
+    ],
+    "r": {
+     "H1": "N",
+     "H2": "C",
+     "H3": "N",
+     "H4": "I"
+    }
+   },
+   {
+    "id": "A10",
+    "text": "Practitioner skepticism of ChatGPT ads and black-box automation",
+    "refs": [
+     "M045",
+     "M047",
+     "M048"
+    ],
+    "r": {
+     "H1": "N",
+     "H2": "N",
+     "H3": "N",
+     "H4": "C"
+    }
+   },
+   {
+    "id": "A11",
+    "text": "Base rate: the voice-search and cookieless prophecies failed",
+    "refs": [
+     "N47",
+     "N41"
+    ],
+    "r": {
+     "H1": "N",
+     "H2": "N",
+     "H3": "N",
+     "H4": "C"
+    }
+   },
+   {
+    "id": "A12",
+    "text": "The floor still trades links and listing tactics",
+    "refs": [
+     "metrics:T07",
+     "metrics:T05"
+    ],
+    "r": {
+     "H1": "N",
+     "H2": "N",
+     "H3": "N",
+     "H4": "C"
+    }
+   },
+   {
+    "id": "A13",
+    "text": "Behavioral remedies instead of breakups; opt-outs rather than reversals",
+    "refs": [
+     "N37",
+     "N11"
+    ],
+    "r": {
+     "H1": "C",
+     "H2": "C",
+     "H3": "I",
+     "H4": "N"
+    }
+   },
+   {
+    "id": "A14",
+    "text": "Gemini app at 950M MAU on Google's distribution",
+    "refs": [
+     "N02"
+    ],
+    "r": {
+     "H1": "C",
+     "H2": "C",
+     "H3": "I",
+     "H4": "N"
+    }
+   }
+  ],
+  "conclusion": "H1 and H2 carry no inconsistent evidence and are complements, not rivals: the answer layer is being captured by platforms that are absorbing execution at the same time. H3 holds at the assistant layer (prompt share is splintering) but fails at the distribution and structural layers. H4 carries five inconsistencies and survives only as a timing risk on specific bets (the pace of agentic commerce, the durability of AI-ad pricing), not as a reading of direction."
+ },
+ "scenarios": {
+  "axes": {
+   "x": {
+    "label": "Control of AI discovery",
+    "low": "Concentrated",
+    "high": "Fragmented"
+   },
+   "y": {
+    "label": "Open-web value exchange",
+    "low": "Eroded",
+    "high": "Restored"
+   }
+  },
+  "items": [
+   {
+    "id": "S1",
+    "name": "The Walled Oasis",
+    "x": "Concentrated",
+    "y": "Eroded",
+    "probability": 40,
+    "narrative": "Google's AI Mode and Gemini dominate discovery on the strength of distribution; clicks keep falling; marketing becomes feeding Google's systems (feeds, entities, first-party data) and buying placement inside them. Agencies that thrive are input suppliers and auditors.",
+    "signposts": [
+     "Gemini matches ChatGPT in prompt share",
+     "AI Mode ads scale with disclosed revenue",
+     "Low publisher uptake of the CMA grounding opt-out"
+    ]
+   },
+   {
+    "id": "S2",
+    "name": "The Bazaar of Agents",
+    "x": "Fragmented",
+    "y": "Eroded",
+    "probability": 30,
+    "narrative": "ChatGPT, Gemini, Claude, Perplexity and Meta AI each run ads, sponsored agents and checkouts. Brands must be present in every assistant; measurement is chaos; specialists who manage multi-assistant visibility and agent commerce thrive.",
+    "signposts": [
+     "No assistant above 50% prompt share through 2027",
+     "Paid placements in three or more assistants",
+     "Agent-to-agent commerce protocols proliferate beyond UCP and ACP"
+    ]
+   },
+   {
+    "id": "S3",
+    "name": "The Toll Road",
+    "x": "Concentrated",
+    "y": "Restored",
+    "probability": 15,
+    "narrative": "Regulators and licensing force Google to share value; publisher opt-outs bite; SEO revives as licensed-source management and citation negotiation.",
+    "signposts": [
+     "Opt-out uptake above 25% of major publishers",
+     "Disclosed licensing payments tied to AI answers",
+     "EU or UK mandates on click-through surfaces"
+    ]
+   },
+   {
+    "id": "S4",
+    "name": "The Commons Rebuilt",
+    "x": "Fragmented",
+    "y": "Restored",
+    "probability": 15,
+    "narrative": "Open protocols, creator and community networks and licensing restore a balanced ecosystem; human provenance becomes the currency; community discovery outgrows search.",
+    "signposts": [
+     "Open agent protocols dominate commerce",
+     "Creator and community referrals outgrow search referrals",
+     "AI citation traffic becomes material in analytics"
+    ]
+   }
+  ],
+  "note": "Probabilities are the analyst's judgment, not model output, and sum to 100."
+ },
+ "indicators": [
+  {
+   "id": "I1",
+   "indicator": "Comscore monthly AI prompt share",
+   "watch": "Gemini at or above 40%, or ChatGPT at or below 45%, favors S1; no assistant above 50% with Claude and Perplexity rising favors S2",
+   "next": "Comscore Q3 report (expected around December 2026)",
+   "kj": "KJ3"
+  },
+  {
+   "id": "I2",
+   "indicator": "Alphabet Q3 2026 search growth and AI Mode ad disclosures",
+   "watch": "Search and other growth below 10% flags cannibalization; above 15% with AI Mode ads live confirms S1",
+   "next": "late October 2026",
+   "kj": "KJ1"
+  },
+  {
+   "id": "I3",
+   "indicator": "OpenAI ad run-rate disclosures and CPM trend",
+   "watch": "Next milestone ($2B) and its timing; pricing below $20 CPM signals supply outrunning demand",
+   "next": "rolling",
+   "kj": "KJ2"
+  },
+  {
+   "id": "I4",
+   "indicator": "Meta Q3 2026 average price per ad",
+   "watch": "At or above +5% continues walled-garden inflation",
+   "next": "late October 2026",
+   "kj": "KJ5"
+  },
+  {
+   "id": "I5",
+   "indicator": "CMA grounding opt-out uptake and publisher licensing deals",
+   "watch": "Uptake above 25% of large publishers or disclosed payments favors S3",
+   "next": "December 2026",
+   "kj": "KJ11"
+  },
+  {
+   "id": "I6",
+   "indicator": "Platform AI-labeling enforcement after the EU Article 50(2) deadline",
+   "watch": "New reach penalties for unlabeled AI personas or engagement",
+   "next": "2 December 2026",
+   "kj": "KJ8"
+  },
+  {
+   "id": "I7",
+   "indicator": "Holiday 2026 agentic checkout volume and merchant opt-out rates",
+   "watch": "Any disclosed AI-checkout GMV; high Shopify opt-out rates would slow KJ4",
+   "next": "December 2026 to January 2027",
+   "kj": "KJ4"
+  },
+  {
+   "id": "I8",
+   "indicator": "Holdco Q3 organic growth, headcount and pricing-model disclosures",
+   "watch": "Output or outcome pricing announced at a top-five holdco",
+   "next": "October 2026",
+   "kj": "KJ6"
+  },
+  {
+   "id": "I9",
+   "indicator": "US v Google ad tech final judgment and monitor appointment",
+   "watch": "Prebid integration timelines; any appeal of liability",
+   "next": "about 2 October 2026",
+   "kj": "KJ11"
+  },
+  {
+   "id": "I10",
+   "indicator": "Reddit US daily users versus search referral volatility",
+   "watch": "US DAUq growth at or below 5% alongside AI Mode growth confirms the UGC-starvation risk",
+   "next": "late October 2026",
+   "kj": "KJ1"
+  },
+  {
+   "id": "I11",
+   "indicator": "Discord S-1: size of the Quests ad line",
+   "watch": "A material ad line makes community a media channel, not just a room",
+   "next": "unknown",
+   "kj": "KJ10"
+  },
+  {
+   "id": "I12",
+   "indicator": "Floor share of AI-surface topics in the next Horus collector run",
+   "watch": "Above 10% of floor items by Q1 2027 means the gap is closing faster than judged",
+   "next": "next run",
+   "kj": "KJ10"
+  }
+ ],
+ "graveyard": [
+  {
+   "prophecy": "Half of all searches will be voice searches by 2020",
+   "when": "2016 to 2020",
+   "outcome": "Never happened. Voice became a command channel, not a search channel; the stat was repeated far more often than it was sourced.",
+   "lesson": "Interface forecasts extrapolated from device sales and conference hype fail when the new interface cannot carry the old intent.",
+   "ref": "N47"
+  },
+  {
+   "prophecy": "The cookieless future: Chrome kills third-party cookies",
+   "when": "2020 to 2025",
+   "outcome": "Deadline pushed repeatedly, deprecation abandoned in 2024, the replacement APIs retired in October 2025. Cookies remain.",
+   "lesson": "Platform-announced deadlines are negotiable when the platform's own revenue is on the line.",
+   "ref": "N41"
+  },
+  {
+   "prophecy": "Google Discover comes to desktop",
+   "when": "2023 to 2026",
+   "outcome": "Tested, announced, partly rolled out, then quietly gone from the desktop home page.",
+   "lesson": "A feature announcement is not a channel until it survives a year.",
+   "ref": "S023"
+  }
+ ],
+ "graveyard_test": "Today's prophecies with the same shape: 'agentic checkout replaces the website' (platform-announced, default-on, platform-benefiting, silent on the floor) matches the cookieless shape and deserves the most skepticism on timing. 'AI answers replace the click' does not match the voice shape: it is backed by two randomized experiments and a billion-user surface.",
+ "unknowns": [
+  {
+   "id": "U1",
+   "unknown": "Will users tolerate ads inside answers?",
+   "why": "The AI Mode experiment found lower satisfaction and movement to rival engines. Rising ad load could cost usage, which would slow KJ2 and favor S2."
+  },
+  {
+   "id": "U2",
+   "unknown": "Compute economics",
+   "why": "Alphabet guides $195B to $205B of 2026 capex. If answer costs stop falling or capital tightens, monetization pressure rises: more ads, fewer free answers."
+  },
+  {
+   "id": "U3",
+   "unknown": "The dark rooms",
+   "why": "Discord and Telegram message content is unmeasured in this edition; the hustle economy is seen at census level only."
+  },
+  {
+   "id": "U4",
+   "unknown": "Reddit's position",
+   "why": "The fastest-growing ad platform in the sample, yet US daily users grew only 6% and AI Mode cut Reddit clicks by 21 points in the experiment. The human conversation layer that AI cites may be the layer AI starves."
+  },
+  {
+   "id": "U5",
+   "unknown": "A legal supply shock",
+   "why": "Copyright suits and opt-outs could shrink the content AI answers are built from, which would push value back toward sources."
+  },
+  {
+   "id": "U6",
+   "unknown": "Unauditable ROI",
+   "why": "AI reports without clicks mean no one outside the platforms can independently audit what AI-surface spend returns."
+  }
+ ],
+ "implications": [
+  {
+   "id": "P1",
+   "move": "Sell AI visibility as an audited product",
+   "detail": "Citation and mention share across ChatGPT, Gemini, AI Mode, Claude and Perplexity for each money query, tracked monthly and tied to branded search and direct traffic rather than rank.",
+   "kj": [
+    "KJ1",
+    "KJ3"
+   ]
+  },
+  {
+   "id": "P2",
+   "move": "Make feeds and entities a service line",
+   "detail": "Merchant Center and UCP feed quality, product attributes, Business Profile entity data, schema and review operations: the machine-readable layer answer engines consume.",
+   "kj": [
+    "KJ1",
+    "KJ4",
+    "KJ7"
+   ]
+  },
+  {
+   "id": "P3",
+   "move": "Treat LSAs and Sponsored Places as core local work",
+   "detail": "Lead-quality audits, dispute and credit handling, call-tracking integrity now that LSAs can pull the Business Profile number, and review velocity.",
+   "kj": [
+    "KJ7"
+   ]
+  },
+  {
+   "id": "P4",
+   "move": "Supply the inputs automation runs on",
+   "detail": "Human-reviewed creative volume for PMax and Advantage+, first-party data pipelines (Customer Match with IP and timestamp matching, conversions APIs), offer testing. Sell governance, not button-pushing.",
+   "kj": [
+    "KJ4",
+    "KJ5"
+   ]
+  },
+  {
+   "id": "P5",
+   "move": "Price on outputs and outcomes",
+   "detail": "The holdcos are moving off hours; mid-market clients will expect the same by 2027.",
+   "kj": [
+    "KJ6"
+   ]
+  },
+  {
+   "id": "P6",
+   "move": "Retrain juniors into agent operators",
+   "detail": "The cheapest execution layer is AI plus a reviewer. Keep the pipeline that produces future senior strategists; the counter-case in the data shows heavy AI adopters adding entry-level staff.",
+   "kj": [
+    "KJ6"
+   ]
+  },
+  {
+   "id": "P7",
+   "move": "Build owned-audience hedges",
+   "detail": "Email and community for the agency and its clients, because discovery is being enclosed.",
+   "kj": [
+    "KJ1",
+    "KJ7"
+   ]
+  },
+  {
+   "id": "P8",
+   "move": "Test ads inside assistants small, with holdouts",
+   "detail": "Put ChatGPT ads and AI Mode ads in test budgets now, with incrementality holdouts, and scale only when measurement matures.",
+   "kj": [
+    "KJ2",
+    "KJ9"
+   ]
+  }
+ ],
+ "channels": [
+  {
+   "channel": "Reddit",
+   "eye": "Moon",
+   "status": "blocked",
+   "collector": "reddit (official Data API, read-only script app)",
+   "grade": "-",
+   "match": {
+    "platform": [
+     "Reddit"
+    ]
+   },
+   "dossier": [
+    "Direct access is blocked for this environment's fetcher and the search index does not surface threads; the lane needs the collector.",
+    "Q2 2026 revenue $805M (+61%) and ad revenue +64%, but US daily users grew only 6% against 28% abroad, with choppy search traffic flagged.",
+    "Largest social source of AI citations in September (1.7% of citations).",
+    "AI Mode cut Reddit clicks by 21.2 points in the field experiment.",
+    "On the floor, Reddit is treated as a parasite-SEO host and an AI Overview placement vector."
+   ],
+   "signals": [
+    "N28",
+    "N12",
+    "N07"
+   ]
+  },
+  {
+   "channel": "Telegram",
+   "eye": "Moon",
+   "status": "census + one channel sampled",
+   "collector": "telegram_user (Telethon) and telegram_bot",
+   "grade": "C",
+   "match": {
+    "platform": [
+     "Telegram"
+    ]
+   },
+   "dossier": [
+    "1B+ monthly users; Telegram Ads shares revenue with channel owners.",
+    "TGStat's Marketing category is dominated by Russian-language trend-curation channels; the adjacent Sales category by Indian deal and affiliate broadcasters.",
+    "The English and Hinglish SEO layer trades links, AdSense sites, Business Profile tactics and group-buy tool seats.",
+    "ChatGPT's India ad launch reached this layer within days."
+   ],
+   "signals": [
+    "N30"
+   ]
+  },
+  {
+   "channel": "Discord",
+   "eye": "Moon",
+   "status": "census only",
+   "collector": "discord_bot (servers that invite the bot)",
+   "grade": "C",
+   "match": {
+    "platform": [
+     "Discord"
+    ]
+   },
+   "dossier": [
+    "200M+ monthly and 90M+ daily users; confidential IPO filing in January 2026; Quests is the ad product.",
+    "Marketing-tagged servers are dominated by the hustle economy; genuine practitioner rooms (Google Ads support, agency owners) are a minority.",
+    "Message content needs a bot invited by server admins; self-bots violate Discord's terms and are not supported."
+   ],
+   "signals": [
+    "N29"
+   ]
+  },
+  {
+   "channel": "BlackHatWorld and forums",
+   "eye": "Moon",
+   "status": "sampled (20 newest SEO threads)",
+   "collector": "rss (forum listing pages)",
+   "grade": "B",
+   "match": {
+    "platform": [
+     "BlackHatWorld"
+    ]
+   },
+   "dossier": [
+    "The floor's SEO agenda: whether links still work, Business Profile ranking, indexing failures, PBNs and parasite hosts.",
+    "The most-replied threads ask how much technical SEO matters in 2026 (41 replies), report a new site's traffic collapsing after day three (29) and ask where $500 of SEO budget should go (27).",
+    "Google's liaison says the old SEO forums have dissolved into general social platforms."
+   ],
+   "signals": [
+    "N45"
+   ]
+  },
+  {
+   "channel": "LinkedIn",
+   "eye": "Sun and Moon",
+   "status": "reported (practitioner curation)",
+   "collector": "csv_import (native export or listening tool)",
+   "grade": "C",
+   "match": {
+    "lane": [
+     "practitioner-curation"
+    ]
+   },
+   "dossier": [
+    "Where paid-search practitioners publish: smart-bidding reactions, credit disputes, modeled-conversion skepticism.",
+    "Comments now ranked per viewer after a third-party study flagged 30% of comments as fully AI-generated.",
+    "Gemini did not cite LinkedIn at all in September, in one vendor's tracking."
+   ],
+   "signals": [
+    "N31",
+    "N12"
+   ]
+  },
+  {
+   "channel": "X",
+   "eye": "Sun and Moon",
+   "status": "reported",
+   "collector": "csv_import (X API is paid; lane disabled by default)",
+   "grade": "C",
+   "match": {
+    "platform": [
+     "X"
+    ]
+   },
+   "dossier": [
+    "Still where Google's product liaisons and independent search analysts post first.",
+    "X published more detail on penalties that reduce post reach.",
+    "SEOs have been commandeering expired Google-affiliated X accounts."
+   ],
+   "signals": []
+  },
+  {
+   "channel": "Instagram, Facebook, Threads",
+   "eye": "Sun",
+   "status": "reported",
+   "collector": "csv_import",
+   "grade": "C",
+   "match": {
+    "platform": [
+     "Emplifi",
+     "Brand Nation",
+     "Social Media Today"
+    ]
+   },
+   "dossier": [
+    "Instagram's head published new ranking guidance and posting tips.",
+    "First Draft auto-builds Reels; profiles with undisclosed AI people lose reach under the new AI-generated profile label.",
+    "Business Agents are rolling out on Instagram.",
+    "Facebook is testing charging Pages for link posts; Threads ads no longer need an Instagram account.",
+    "Teen accounts get a default two-hour daily limit under the multistate settlement."
+   ],
+   "signals": [
+    "N39"
+   ]
+  },
+  {
+   "channel": "TikTok",
+   "eye": "Sun",
+   "status": "reported",
+   "collector": "csv_import (Research API is academic-only)",
+   "grade": "C",
+   "match": {
+    "platform": [
+     "FINN Partners"
+    ]
+   },
+   "dossier": [
+    "US joint venture closed in January: algorithm licensed and retrained on US data; ads and commerce stay with ByteDance.",
+    "Disney licensed its IP to TikTok creators; qualifying videos stream in Disney+.",
+    "Pulse Mentions extends brand adjacency to organic conversation; TikTok Shop exclusives (Sephora).",
+    "Settled with Alabama on teen time limits mirroring Meta's."
+   ],
+   "signals": [
+    "N40",
+    "N39"
+   ]
+  },
+  {
+   "channel": "YouTube",
+   "eye": "Sun",
+   "status": "reported",
+   "collector": "youtube (Data API v3)",
+   "grade": "C",
+   "match": {
+    "platform": [
+     "YouTube Blog"
+    ]
+   },
+   "dossier": [
+    "Ads revenue $11.06B (+13%) in Q2.",
+    "Public views now count as soon as playback starts, closer to Shorts and TikTok.",
+    "New creator monetization and brand-partnership tools announced at Made on YouTube."
+   ],
+   "signals": [
+    "N04"
+   ]
+  },
+  {
+   "channel": "Trade press",
+   "eye": "Sun",
+   "status": "sampled (listing pages)",
+   "collector": "rss",
+   "grade": "A",
+   "match": {
+    "lane": [
+     "trade-press"
+    ]
+   },
+   "dossier": [
+    "Search Engine Roundtable, Search Engine Land, Digiday, AdExchanger and Social Media Today listings, 3 to 25 September.",
+    "Two thirds of items are announcements; the press is largely the platforms' changelog."
+   ],
+   "signals": []
+  },
+  {
+   "channel": "Curated press (SER daily)",
+   "eye": "Sun",
+   "status": "sampled",
+   "collector": "rss",
+   "grade": "B",
+   "match": {
+    "lane": [
+     "curated-press"
+    ]
+   },
+   "dossier": [
+    "The wider press the search floor reads: heavy on the AI platform race and AI safety news."
+   ],
+   "signals": []
+  },
+  {
+   "channel": "Bluesky, Mastodon, Hacker News, podcasts",
+   "eye": "Moon and Sun",
+   "status": "not sampled",
+   "collector": "bluesky, mastodon, hackernews, podcast RSS",
+   "grade": "-",
+   "match": {
+    "platform": [
+     "Bluesky"
+    ]
+   },
+   "dossier": [
+    "Collector lanes ready; not sampled in this first-light edition."
+   ],
+   "signals": []
+  },
+  {
+   "channel": "Slack communities and WhatsApp",
+   "eye": "Moon",
+   "status": "blind",
+   "collector": "none (member exports only)",
+   "grade": "-",
+   "match": {
+    "platform": [
+     "Slack"
+    ]
+   },
+   "dossier": [
+    "The Paid Search Association Slack and similar rooms are where senior practitioners talk candidly; no lawful bulk route exists."
+   ],
+   "signals": []
+  }
+ ],
+ "limitations": [
+  "Reddit was unreachable in this environment (the site blocks the fetcher and the search index does not surface threads). The Reddit lane needs the collector and the official Data API.",
+  "Discord message content is invisible without a bot invited into servers; the census reflects directory listings, which skew promotional.",
+  "The Telegram content sample is one channel (@YTrank, 9.89K subscribers); the census reflects TGStat's top lists, which skew to mass channels.",
+  "The broadcast frame is search-heavy: Search Engine Roundtable and Search Engine Land supply about 150 of 211 broadcast items. Social and creator talk is under-sampled relative to its economic size.",
+  "The floor frame is a grey-hat SEO forum, one Hinglish SEO channel and paid-search practitioners curated by one newsletter (March to September). It is not a random sample of practitioners.",
+  "Momentum is not measured in this edition (one window). The first collector run sets the baseline; directional arrows come from the Nilometer.",
+  "LinkedIn, X, Instagram, TikTok, YouTube and Facebook discourse enters only through curation and platform reporting.",
+  "Items were coded by Claude. A blind second coder on a random 60 items agreed on topic 95% of the time (Cohen's kappa 0.95) and on intent 87% (kappa 0.80).",
+  "KJ7 (local discovery) rests on Google's own product tests as reported by the trade press, not on a hard number; no disclosed figure yet sizes Local Services Ads or Sponsored Places."
+ ]
+}

@@ -1,0 +1,1545 @@
+<title>__HORUS_TITLE__</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" data-horus-webfont>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin data-horus-webfont>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Public+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Zilla+Slab:wght@500;600;700&display=swap" data-horus-webfont>
+<style>
+/* HORUS dashboard template. Tokens first; every colour below comes from them. */
+:root{
+  color-scheme: light;
+  --ground:#F1F3F0; --surface:#FFFFFF; --surface-2:#F6F7F5; --sunken:#E5E9E6;
+  --ink:#11181D; --ink-2:#46525A; --ink-3:#687479;
+  --rule:#CFD6D2; --rule-2:#E1E6E3;
+  --sun:#9A6405; --sun-bar:#C68A19; --sun-soft:#EDD5A3; --sun-tint:#FAF2E1;
+  --moon:#34529E; --moon-bar:#4E6CBC; --moon-soft:#C9D4F1; --moon-tint:#EDF1FA;
+  --accent:#0B6C55; --accent-tint:#DCEEE7;
+  --crit:#AD3722; --crit-tint:#F7E2DC;
+  --on-strong:#FFFFFF;
+  --f-display:"Zilla Slab", Rockwell, "Roboto Slab", "DejaVu Serif", Georgia, serif;
+  --f-body:"Public Sans", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --f-mono:"IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme: dark;
+    --ground:#0B1114; --surface:#121A1E; --surface-2:#172125; --sunken:#1F2A2F;
+    --ink:#E2E8E6; --ink-2:#A8B3B3; --ink-3:#808D8F;
+    --rule:#2B373C; --rule-2:#202A2F;
+    --sun:#E6AE48; --sun-bar:#CF9632; --sun-soft:#5A4318; --sun-tint:#241D10;
+    --moon:#9DB0EC; --moon-bar:#7089D6; --moon-soft:#2E3D69; --moon-tint:#151C30;
+    --accent:#4FC7A2; --accent-tint:#0F2E27;
+    --crit:#F1886F; --crit-tint:#381C16;
+    --on-strong:#0B1114;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme: dark;
+  --ground:#0B1114; --surface:#121A1E; --surface-2:#172125; --sunken:#1F2A2F;
+  --ink:#E2E8E6; --ink-2:#A8B3B3; --ink-3:#808D8F;
+  --rule:#2B373C; --rule-2:#202A2F;
+  --sun:#E6AE48; --sun-bar:#CF9632; --sun-soft:#5A4318; --sun-tint:#241D10;
+  --moon:#9DB0EC; --moon-bar:#7089D6; --moon-soft:#2E3D69; --moon-tint:#151C30;
+  --accent:#4FC7A2; --accent-tint:#0F2E27;
+  --crit:#F1886F; --crit-tint:#381C16;
+  --on-strong:#0B1114;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;background:var(--ground);color:var(--ink);font:400 15px/1.55 var(--f-body)}
+img,svg{max-width:100%}
+[hidden]{display:none!important}
+a{color:var(--accent);text-decoration-thickness:1px;text-underline-offset:2px}
+a:hover{text-decoration-thickness:2px}
+button{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+p{margin:0}
+ul,ol{margin:0;padding-left:1.2em}
+li+li{margin-top:4px}
+.wrap{max-width:1240px;margin-inline:auto;padding-inline:clamp(16px,3.2vw,36px)}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.muted{color:var(--ink-3)}
+h1,h2,h3,h4{font-family:var(--f-display);color:var(--ink);margin:0;line-height:1.15;text-wrap:balance}
+h2{font-size:25px;font-weight:600}
+h3{font-size:18.5px;font-weight:600}
+h4{font:600 11.5px/1.3 var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3)}
+.eyebrow{font:500 11.5px/1.35 var(--f-mono);letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3)}
+.lede{max-width:76ch;color:var(--ink-2)}
+.small{font-size:13px}
+
+/* masthead */
+.mast{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:18px 40px;padding-block:22px 18px}
+.brand{display:flex;align-items:center;gap:16px;min-width:0}
+.wedjat{width:76px;height:auto;flex:none;color:var(--ink)}
+.wedjat .iris{fill:var(--sun)}
+.wedjat .tear{stroke:var(--moon)}
+.wordmark{font:700 32px/1 var(--f-display);letter-spacing:.16em;color:var(--ink)}
+.nomeline{margin-top:6px;font-size:13px;color:var(--ink-2)}
+.docket{display:grid;grid-template-columns:repeat(4,auto);gap:6px 26px;margin:0}
+.docket div{min-width:0}
+.docket dt{font:500 10.5px/1.3 var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3)}
+.docket dd{margin:2px 0 0;font:500 13px/1.35 var(--f-mono);color:var(--ink)}
+@media (max-width:760px){.docket{grid-template-columns:repeat(2,minmax(0,auto))}}
+
+/* tab rail */
+.rail{position:sticky;top:env(safe-area-inset-top,0px);z-index:30;background:var(--ground);border-block:1px solid var(--rule)}
+.tabs{display:flex;overflow-x:auto;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{appearance:none;background:none;border:0;border-bottom:3px solid transparent;margin-bottom:-1px;padding:12px 13px 10px;font:600 13.5px/1.2 var(--f-body);color:var(--ink-2);cursor:pointer;white-space:nowrap;display:inline-flex;align-items:baseline;gap:6px}
+.tab .n{font:500 11px/1 var(--f-mono);color:var(--ink-3)}
+.tab:hover{color:var(--ink)}
+.tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+
+/* layout */
+main{padding-block:28px 72px}
+.panel{display:grid;grid-template-columns:minmax(0,1fr);gap:46px}
+.sec{display:grid;grid-template-columns:minmax(0,1fr);gap:16px;min-width:0;scroll-margin-top:64px}
+.sec-head{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:4px 24px;padding-bottom:8px;border-bottom:1px solid var(--rule)}
+.sec-head .aside{font-size:13px;color:var(--ink-3)}
+.card{background:var(--surface);border:1px solid var(--rule-2);border-radius:6px;padding:16px 18px;min-width:0}
+.grid-2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,440px),1fr));gap:18px 28px}
+.grid-3{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,310px),1fr));gap:14px}
+.stack{display:grid;grid-template-columns:minmax(0,1fr);gap:10px;align-content:start;min-width:0}
+.kj-main,.kj-side,.find,.dos,.scen,.grave,.tile,.sig-body,.more-body,.arc-head{grid-template-columns:minmax(0,1fr)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:12.5px;color:var(--ink-2);align-items:center}
+.key{display:inline-flex;align-items:center;gap:6px}
+.key i{width:10px;height:10px;border-radius:50%;display:inline-block}
+.key i.sun{background:var(--sun-bar)} .key i.moon{background:var(--moon-bar)}
+.key i.bar{border-radius:1px;width:14px;height:8px}
+.key i.dash{width:0;height:12px;border-left:1px dashed var(--ink-3);border-radius:0}
+
+/* chips and tags */
+.chips{display:flex;flex-wrap:wrap;gap:5px;align-items:center}
+.chip{display:inline-flex;align-items:center;gap:5px;padding:3px 7px;border:1px solid var(--rule);border-radius:3px;background:var(--surface);color:var(--ink-2);font:500 11.5px/1.3 var(--f-mono);white-space:nowrap}
+button.chip{cursor:pointer}
+button.chip:hover{border-color:var(--ink-3);color:var(--ink)}
+button.chip[aria-pressed="true"]{background:var(--ink);color:var(--ground);border-color:var(--ink)}
+.chip .cn{color:var(--ink-3)}
+button.chip[aria-pressed="true"] .cn{color:var(--ground);opacity:.75}
+.tchip b{font-weight:600;color:var(--ink-3)}
+.ref{appearance:none;background:none;border:0;padding:0 1px;font:500 12px/1.4 var(--f-mono);color:var(--accent);text-decoration:underline dotted;text-underline-offset:3px;cursor:pointer}
+.ref:hover{text-decoration-style:solid}
+.ref.dead{color:var(--ink-3);text-decoration:none;cursor:default}
+.refs{display:flex;flex-wrap:wrap;gap:3px 9px}
+.eye{display:inline-flex;align-items:center;gap:5px;font:600 10.5px/1.2 var(--f-mono);letter-spacing:.06em;text-transform:uppercase;white-space:nowrap}
+.eye::before{content:"";width:8px;height:8px;border-radius:50%;background:currentColor;flex:none}
+.eye.sun{color:var(--sun)} .eye.moon{color:var(--moon)}
+.cls{display:inline-block;font:600 10.5px/1.2 var(--f-mono);padding:3px 6px;border-radius:3px;white-space:nowrap;border:1px solid transparent}
+.cls.floor-led{background:var(--moon);color:var(--on-strong)}
+.cls.leaning-floor{background:var(--moon-tint);color:var(--moon);border-color:var(--moon-soft)}
+.cls.balanced{background:var(--surface-2);color:var(--ink-3);border-color:var(--rule-2)}
+.cls.leaning-broadcast{background:var(--sun-tint);color:var(--sun);border-color:var(--sun-soft)}
+.cls.broadcast-led{background:var(--sun);color:var(--on-strong)}
+.cls.broadcast-only{color:var(--sun);border-color:var(--sun)}
+.cls.floor-only{color:var(--moon);border-color:var(--moon)}
+.grade{display:inline-block;font:600 11.5px/1 var(--f-mono);padding:4px 6px;border-radius:3px;border:1px solid var(--ink-3);color:var(--ink);white-space:nowrap}
+.grade.gA{background:var(--ink);color:var(--ground);border-color:var(--ink)}
+.grade.gB{background:var(--sunken)}
+.grade.gD,.grade.gE,.grade.gF,.grade.gX{border-style:dashed;color:var(--ink-3)}
+.flag{display:inline-block;font:600 10.5px/1.2 var(--f-mono);padding:2px 5px;border-radius:3px;text-transform:uppercase;letter-spacing:.04em}
+.flag.grey{background:var(--crit-tint);color:var(--crit)}
+.flag.set{border:1px dashed var(--ink-3);color:var(--ink-3)}
+.stage{display:inline-flex;align-items:center;gap:6px;white-space:nowrap;font-size:13px}
+.arc{flex:none;overflow:visible}
+.arc .hz{stroke:var(--ink-3);stroke-width:1.2}
+.arc .path{fill:none;stroke:var(--ink-3);stroke-width:1.1;stroke-dasharray:2 2}
+.arc .sunmark{fill:var(--ink)}
+.arc .sunmark.under{fill:var(--ground);stroke:var(--ink);stroke-width:1.4}
+.mom{font:500 12px/1 var(--f-mono);white-space:nowrap;color:var(--ink-2)}
+.mom b{font-weight:600;color:var(--ink);letter-spacing:-.1em;margin-right:4px}
+.mmwrap{display:inline-flex;gap:8px;font:500 11.5px/1 var(--f-mono);white-space:nowrap}
+.mm{opacity:.72}.mm.s{color:var(--sun)}.mm.m{color:var(--moon)}.mm.sig{opacity:1;font-weight:700}
+
+/* brief */
+.brief-top{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(280px,1fr);gap:28px 48px;align-items:start}
+@media (max-width:920px){.brief-top{grid-template-columns:minmax(0,1fr)}}
+.headline{font-size:clamp(28px,3.3vw,42px);font-weight:600;line-height:1.1;max-width:26ch;margin-block:10px 18px}
+.bluf{max-width:70ch;font-size:15.5px;color:var(--ink-2)}
+.bluf+.bluf{margin-top:12px}
+.bluf.first{font-size:17px;color:var(--ink)}
+.instruments{display:grid;gap:0;align-content:start}
+.inst{display:grid;grid-template-columns:78px minmax(0,1fr);gap:2px 14px;align-items:baseline;padding-block:11px;border-top:1px solid var(--rule-2)}
+.inst:first-of-type{border-top:0}
+.inst .big{font:600 26px/1 var(--f-mono);grid-row:span 2;color:var(--ink)}
+.inst .big.sun{color:var(--sun)} .inst .big.moon{color:var(--moon)}
+.inst .lab{font-size:13.5px;font-weight:600}
+.inst .sub{font-size:12.5px;color:var(--ink-3)}
+.cov-list{display:flex;flex-wrap:wrap;gap:6px}
+.cov{display:inline-flex;gap:7px;align-items:baseline;padding:4px 8px;border-radius:3px;font-size:12.5px;border:1px solid var(--rule);background:var(--surface);color:var(--ink)}
+.cov .st{font:500 10.5px/1.2 var(--f-mono);text-transform:uppercase;letter-spacing:.05em;color:var(--ink-3)}
+.cov.full{border-color:var(--ink-3)}
+.cov.none{border-style:dashed;color:var(--ink-3);background:transparent}
+.cov.blocked{border-color:var(--crit);color:var(--crit)}
+.cov.blocked .st{color:var(--crit)}
+.extremes{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,200px),1fr));gap:12px 22px}
+.ext-list{display:grid;gap:4px;font-size:13px}
+.ext-list div{display:flex;justify-content:space-between;gap:10px}
+
+/* key judgments */
+.kj-grid{display:grid;gap:14px}
+.kj{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(250px,1fr);gap:14px 34px;align-items:start;scroll-margin-top:70px}
+.kj-main,.kj-side{display:grid;gap:10px;align-content:start;min-width:0}
+@media (max-width:860px){.kj{grid-template-columns:minmax(0,1fr)}}
+.kj-top{display:flex;justify-content:space-between;gap:12px;align-items:baseline}
+.kj-id{font:600 12px/1 var(--f-mono);color:var(--ink-3);letter-spacing:.04em}
+.kj .txt{color:var(--ink-2);font-size:14.5px}
+.lik{display:grid;gap:6px}
+.lik-row{display:grid;grid-template-columns:minmax(0,150px) minmax(90px,1fr) auto;gap:12px;align-items:center}
+.lik-term{font-weight:600;font-size:13.5px;line-height:1.25}
+.lik-term span{display:block;font-weight:400;font-size:12px;color:var(--ink-3)}
+.lik-range{font:500 12px/1 var(--f-mono);color:var(--ink-2)}
+.prob{position:relative;height:10px;background:var(--sunken);border-radius:2px}
+.prob .band{position:absolute;top:0;bottom:0;background:var(--ink);border-radius:2px}
+.prob .tick{position:absolute;top:0;bottom:0;width:2px;margin-left:-1px;background:var(--surface)}
+.kj-meta{display:flex;flex-wrap:wrap;gap:6px 22px;font-size:13px;color:var(--ink-2);align-items:center}
+.kj-meta b{color:var(--ink);font-weight:600}
+.pips{display:inline-flex;gap:3px;margin-left:6px;vertical-align:middle}
+.pips i{width:8px;height:8px;border-radius:50%;border:1.5px solid var(--ink);display:inline-block}
+.pips i.on{background:var(--ink)}
+.pips i.half{background:linear-gradient(90deg,var(--ink) 50%,transparent 50%)}
+details.more{border-top:1px solid var(--rule-2);padding-top:9px}
+details.more summary{cursor:pointer;font:600 12px/1.4 var(--f-mono);color:var(--ink-2);letter-spacing:.02em}
+details.more summary:hover{color:var(--ink)}
+details.more[open] summary{margin-bottom:10px}
+.more-body{display:grid;gap:12px}
+.math{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 14px;font-size:13px;background:var(--surface-2);border:1px solid var(--rule-2);border-radius:4px;padding:10px 12px}
+.math dt{font:500 11.5px/1.5 var(--f-mono);color:var(--ink-3)}
+.math dd{margin:0}
+.moves{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,360px),1fr));gap:4px 28px}
+.move{display:grid;grid-template-columns:34px minmax(0,1fr);gap:4px 10px;padding-block:12px;border-top:1px solid var(--rule-2)}
+.move .mid{font:600 12px/1.6 var(--f-mono);color:var(--ink-3)}
+.move h3{font-size:16.5px}
+.move p{grid-column:2;font-size:13.5px;color:var(--ink-2)}
+.move .refs{grid-column:2}
+
+/* findings */
+.finds{row-gap:30px}
+.find{display:grid;gap:8px;align-content:start;border-top:2px solid var(--ink);padding-top:10px;scroll-margin-top:80px}
+.find .fid{font:600 11.5px/1 var(--f-mono);color:var(--ink-3)}
+.find h3{font-size:16.5px}
+.find p{font-size:13.5px;color:var(--ink-2)}
+
+/* diverging chart */
+.dv{display:grid;gap:1px}
+.dv-row,.dv-axis{display:grid;grid-template-columns:minmax(120px,210px) minmax(0,1fr) 54px;gap:12px;align-items:center}
+.dv-row{min-height:24px;border-radius:3px;scroll-margin-top:80px}
+.dv-row:hover{background:var(--surface-2)}
+.dv-lab{font-size:13px;line-height:1.2;padding-block:2px}
+.dv-lab .tid{font:500 11px var(--f-mono);color:var(--ink-3);margin-right:6px}
+.dv-track{position:relative;height:18px}
+.dv-track .axis{position:absolute;left:50%;top:-3px;bottom:-3px;width:1px;background:var(--ink-3)}
+.dv-track .crit{position:absolute;top:-3px;bottom:-3px;width:0;border-left:1px dashed var(--rule)}
+.dv-bar{position:absolute;top:3px;bottom:3px;border-radius:2px}
+.dv-bar.pos{background:var(--moon-bar)} .dv-bar.neg{background:var(--sun-bar)}
+.dv-bar.weak{opacity:.4}
+.dv-val{font:500 12px/1 var(--f-mono);text-align:right;font-variant-numeric:tabular-nums}
+.dv-ticks{position:relative;height:16px;font:500 10.5px/16px var(--f-mono);color:var(--ink-3)}
+.dv-ticks span{position:absolute;transform:translateX(-50%);white-space:nowrap}
+.dv-cap{display:flex;justify-content:space-between;font:600 10.5px/1.2 var(--f-mono);letter-spacing:.06em;text-transform:uppercase}
+.dv-cap .l{color:var(--sun)} .dv-cap .r{color:var(--moon)}
+
+/* dumbbell */
+.db{display:grid;gap:2px}
+.db-row,.db-axis{display:grid;grid-template-columns:minmax(110px,160px) minmax(0,1fr) 96px;gap:12px;align-items:center}
+.db-row{min-height:26px}
+.db-lab{font-size:13px;line-height:1.2}
+.db-track{position:relative;height:20px}
+.db-track .base{position:absolute;left:0;right:0;top:50%;height:1px;background:var(--rule-2)}
+.db-track .gl{position:absolute;top:2px;bottom:2px;width:1px;background:var(--rule-2)}
+.db-line{position:absolute;top:calc(50% - 1px);height:2px;background:var(--ink-3);opacity:.55}
+.db-dot{position:absolute;top:50%;width:12px;height:12px;border-radius:50%;transform:translate(-50%,-50%);border:2px solid var(--surface)}
+.db-dot.sun{background:var(--sun-bar)} .db-dot.moon{background:var(--moon-bar)}
+.db-vals{font:500 11.5px/1 var(--f-mono);display:flex;gap:8px;justify-content:flex-end;font-variant-numeric:tabular-nums}
+.db-vals .s{color:var(--sun)} .db-vals .m{color:var(--moon)}
+.db-ticks{position:relative;height:14px;font:500 10.5px/14px var(--f-mono);color:var(--ink-3)}
+.db-ticks span{position:absolute;transform:translateX(-50%)}
+.db-ticks span:first-child{transform:none}
+
+/* butterfly */
+.bf{display:grid;gap:3px}
+.bf-row,.bf-head{display:grid;grid-template-columns:minmax(0,1fr) minmax(100px,150px) minmax(0,1fr);gap:10px;align-items:center}
+.bf-row{min-height:24px}
+.bf-head{font:600 10.5px/1.2 var(--f-mono);letter-spacing:.06em;text-transform:uppercase}
+.bf-head .l{text-align:right;color:var(--sun)} .bf-head .r{color:var(--moon)}
+.bf-side{position:relative;height:16px}
+.bf-side .bar{position:absolute;top:0;bottom:0;border-radius:2px}
+.bf-side.l .bar{right:0;background:var(--sun-bar)}
+.bf-side.r .bar{left:0;background:var(--moon-bar)}
+.bf-side .v{position:absolute;top:0;font:500 11.5px/16px var(--f-mono);white-space:nowrap;color:var(--ink-2)}
+.bf-lab{text-align:center;font-size:12.5px;line-height:1.2}
+.bf-lab b{font:600 11px var(--f-mono);color:var(--ink-3);margin-right:4px}
+
+/* bar list */
+.bl{display:grid;gap:3px}
+.bl-row{display:grid;grid-template-columns:minmax(110px,190px) minmax(0,1fr) 78px;gap:12px;align-items:center;min-height:24px}
+.bl-lab{font-size:13px;line-height:1.2}
+.bl-track{position:relative;height:14px;background:var(--surface-2);border-radius:2px}
+.bl-track i{position:absolute;left:0;top:0;bottom:0;border-radius:2px;background:var(--moon-bar)}
+.bl-track.sun i{background:var(--sun-bar)}
+.bl-val{font:500 12px/1 var(--f-mono);text-align:right;font-variant-numeric:tabular-nums}
+
+/* tables */
+.tbl{overflow-x:auto;background:var(--surface);border:1px solid var(--rule-2);border-radius:6px}
+.tbl.scroll{max-height:74vh;overflow:auto}
+.tbl table{border-collapse:collapse;width:100%;font-size:13.5px}
+.tbl th{font:600 10.5px/1.3 var(--f-mono);letter-spacing:.07em;text-transform:uppercase;color:var(--ink-3);text-align:left;padding:10px 10px 8px;border-bottom:1px solid var(--rule);background:var(--surface-2);white-space:nowrap;vertical-align:bottom}
+.tbl.scroll th{position:sticky;top:0;z-index:1}
+.tbl td{padding:8px 10px;border-bottom:1px solid var(--rule-2);vertical-align:top}
+.tbl tbody tr:last-child td{border-bottom:0}
+.tbl .num{text-align:right;font-family:var(--f-mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+.tbl .nw{white-space:nowrap}
+.tbl tr{scroll-margin-top:90px}
+th .sort{appearance:none;background:none;border:0;padding:0;font:inherit;color:inherit;letter-spacing:inherit;text-transform:inherit;cursor:pointer;display:inline-flex;gap:4px;align-items:center}
+th .sort:hover{color:var(--ink)}
+th[aria-sort="ascending"] .sort::after{content:"\25B2";font-size:8px}
+th[aria-sort="descending"] .sort::after{content:"\25BC";font-size:8px}
+.tlab{display:grid;gap:1px;min-width:150px}
+.tbl.tg th{white-space:normal;padding-inline:8px}
+.tbl.tg td{padding-inline:8px}
+.tlab .t{font-weight:600;font-size:13.5px}
+.tlab .c{font:500 10.5px/1.3 var(--f-mono);color:var(--ink-3);letter-spacing:.03em}
+.mb{display:grid;grid-template-columns:48px auto;gap:7px;align-items:center;white-space:nowrap}
+.mb .tr{position:relative;height:8px;background:var(--sunken);border-radius:1px}
+.mb .tr i{position:absolute;left:0;top:0;bottom:0;border-radius:1px}
+.mb.sun .tr i{background:var(--sun-bar)} .mb.moon .tr i{background:var(--moon-bar)}
+.mb span{font:500 12px var(--f-mono);font-variant-numeric:tabular-nums}
+.mb span em{font-style:normal;color:var(--ink-3)}
+.zc{display:grid;justify-items:end;gap:4px;white-space:nowrap}
+
+/* heat matrix */
+.hm td.cell{position:relative;text-align:center;font:500 12px/1 var(--f-mono);min-width:58px;vertical-align:middle;padding:10px 6px}
+.hm .fill{position:absolute;inset:3px;border-radius:2px}
+.hm .fill.sun{background:var(--sun-bar)} .hm .fill.moon{background:var(--moon-bar)}
+.hm .v{position:relative}
+.hm td.zero{color:var(--ink-3)}
+.adm{border-collapse:separate;border-spacing:3px}
+.adm th{font:600 11px/1.2 var(--f-mono);color:var(--ink-3);padding:4px 6px;text-align:center}
+.adm th.rowh{text-align:left;white-space:nowrap}
+.adm td{width:46px;height:34px;text-align:center;position:relative;background:var(--surface-2);border-radius:3px;font:600 12.5px/1 var(--f-mono)}
+.adm td .fill{position:absolute;inset:0;background:var(--ink);border-radius:3px}
+.adm td .v{position:relative}
+.adm td.hi .v{color:var(--ground)}
+.adm-wrap{display:grid;grid-template-columns:auto minmax(0,1fr);gap:18px 32px;align-items:start}
+@media (max-width:760px){.adm-wrap{grid-template-columns:minmax(0,1fr)}}
+.scale-list{display:grid;grid-template-columns:auto minmax(0,1fr);gap:3px 10px;font-size:12.5px;color:var(--ink-2)}
+.scale-list b{font:600 12px var(--f-mono);color:var(--ink)}
+
+/* histogram */
+.hist{display:grid;gap:6px}
+.hist-bars{display:flex;align-items:flex-end;gap:3px;height:120px;border-bottom:1px solid var(--rule)}
+.hist-bars i{flex:1;background:var(--sun-bar);border-radius:2px 2px 0 0;min-height:1px;position:relative}
+.hist-bars i.zero{background:transparent}
+.hist-x{display:flex;gap:3px;font:500 10.5px/1 var(--f-mono);color:var(--ink-3)}
+.hist-x span{flex:1;text-align:center;overflow:visible;white-space:nowrap}
+
+/* dossiers */
+.dos{display:grid;gap:10px;align-content:start}
+.dos-top{display:flex;flex-wrap:wrap;justify-content:space-between;gap:6px 12px;align-items:baseline}
+.dos h3{font-size:17px}
+.dos .coll{font:500 11.5px/1.4 var(--f-mono);color:var(--ink-3)}
+.dos ul{font-size:13.5px;color:var(--ink-2)}
+.dos .talk{display:grid;gap:5px;padding:9px 10px;background:var(--surface-2);border-radius:4px}
+.status{font:600 10.5px/1.2 var(--f-mono);text-transform:uppercase;letter-spacing:.05em;padding:3px 6px;border-radius:3px;border:1px solid var(--ink-3);color:var(--ink-2);white-space:nowrap}
+.status.full{background:var(--ink);color:var(--ground);border-color:var(--ink)}
+.status.none{border-style:dashed;color:var(--ink-3)}
+.status.blocked{border-color:var(--crit);color:var(--crit)}
+
+/* nilometer */
+.sigs{display:grid;background:var(--surface);border:1px solid var(--rule-2);border-radius:6px}
+.sig{display:grid;grid-template-columns:48px minmax(0,1fr) auto;gap:4px 14px;padding:13px 14px;border-top:1px solid var(--rule-2);scroll-margin-top:90px}
+.sig:first-child{border-top:0}
+.sig-id{font:600 12px/1.5 var(--f-mono);color:var(--ink-3)}
+.sig-body{display:grid;gap:4px;min-width:0}
+.sig-metric{font-weight:600;font-size:14px;line-height:1.35}
+.sig-value{font:500 14px/1.4 var(--f-mono);color:var(--ink)}
+.sig-note{font-size:13px;color:var(--ink-2);max-width:92ch}
+.sig-foot{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:12px;color:var(--ink-3);align-items:center}
+.sig-dom{font:500 10.5px/1.2 var(--f-mono);letter-spacing:.05em;text-transform:uppercase;color:var(--ink-3)}
+@media (max-width:600px){.sig{grid-template-columns:40px minmax(0,1fr)}.sig-grade{grid-column:2}}
+.filters{display:flex;flex-wrap:wrap;gap:10px 12px;align-items:end}
+.field{display:grid;gap:4px;min-width:0}
+.field label{font:500 10.5px/1.2 var(--f-mono);letter-spacing:.07em;text-transform:uppercase;color:var(--ink-3)}
+select,input[type="search"]{font:400 13.5px/1.2 var(--f-body);color:var(--ink);background:var(--surface);border:1px solid var(--rule);border-radius:4px;padding:7px 9px;max-width:100%}
+input[type="search"]{width:min(100%,280px)}
+.btn{appearance:none;border:1px solid var(--rule);background:var(--surface);color:var(--ink);font:600 13px/1.2 var(--f-body);padding:8px 12px;border-radius:4px;cursor:pointer}
+.btn:hover{border-color:var(--ink-3)}
+.count{font:500 12.5px/1.2 var(--f-mono);color:var(--ink-3)}
+
+/* forecast */
+.arcband{display:grid;grid-template-columns:minmax(190px,240px) minmax(0,1fr);gap:14px 22px;padding-block:18px;border-top:1px solid var(--rule-2)}
+.arcband:first-child{border-top:0;padding-top:4px}
+@media (max-width:720px){.arcband{grid-template-columns:minmax(0,1fr)}}
+.arc-head{display:grid;gap:6px;align-content:start}
+.arc-head .nm{display:flex;align-items:center;gap:10px}
+.arc-head .nm h3{font-size:21px}
+.arc-head p{font-size:13px;color:var(--ink-2)}
+.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,232px),1fr));gap:10px}
+.tile{background:var(--surface);border:1px solid var(--rule-2);border-radius:5px;padding:10px 12px;display:grid;gap:5px;align-content:start}
+.tile-top{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.tile-top .t{font-weight:600;font-size:13.5px;line-height:1.25}
+.tile .why{font-size:12.5px;color:var(--ink-2);line-height:1.45}
+.tile .eyes{display:flex;gap:10px;font:500 11px/1 var(--f-mono)}
+.tile .eyes .s{color:var(--sun)} .tile .eyes .m{color:var(--moon)}
+.quad{display:grid;grid-template-columns:30px minmax(0,1fr) minmax(0,1fr);grid-template-rows:auto auto auto;gap:10px}
+.qx{font:600 10.5px/1.2 var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);text-align:center;align-self:end}
+.qy{writing-mode:vertical-rl;transform:rotate(180deg);font:600 10.5px/1.2 var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);text-align:center;justify-self:center}
+.qaxis{grid-column:2 / 4;display:flex;justify-content:space-between;font:500 11px/1.2 var(--f-mono);color:var(--ink-3)}
+.q-tl{grid-column:2;grid-row:1}.q-tr{grid-column:3;grid-row:1}.q-bl{grid-column:2;grid-row:2}.q-br{grid-column:3;grid-row:2}
+.qy.top{grid-column:1;grid-row:1}.qy.bot{grid-column:1;grid-row:2}
+.scen{display:grid;gap:9px;align-content:start;scroll-margin-top:80px}
+.scen-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.scen .p{font:600 30px/1 var(--f-mono);color:var(--ink)}
+.scen .pbar{height:4px;background:var(--sunken);border-radius:2px}
+.scen .pbar i{display:block;height:100%;background:var(--ink);border-radius:2px}
+.scen .ax{font:500 11px/1.3 var(--f-mono);color:var(--ink-3)}
+.scen p{font-size:13.5px;color:var(--ink-2)}
+.scen ul{font-size:13px;color:var(--ink-2)}
+@media (max-width:760px){
+  .quad{grid-template-columns:minmax(0,1fr)}
+  .q-tl,.q-tr,.q-bl,.q-br{grid-column:auto;grid-row:auto}
+  .qy,.qaxis{display:none}
+}
+.ach th.h{text-align:center;min-width:92px}
+.ach th.h span{display:block;font:500 10.5px/1.2 var(--f-body);text-transform:none;letter-spacing:0;color:var(--ink-2);margin-top:3px}
+.ach td.r{text-align:center;font:600 12px/1 var(--f-mono);vertical-align:middle}
+.ach td.rC{background:var(--sunken);color:var(--ink)}
+.ach td.rI{background:var(--crit-tint);color:var(--crit)}
+.ach td.rN{color:var(--ink-3)}
+.ach tfoot td{font:600 12px/1.2 var(--f-mono);border-top:1px solid var(--rule);background:var(--surface-2)}
+.ach tfoot td.best{color:var(--accent)}
+.hyps{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,250px),1fr));gap:10px 22px}
+.hyp{display:grid;grid-template-columns:30px minmax(0,1fr);gap:2px 8px;font-size:13px;color:var(--ink-2)}
+.hyp b{font:600 12px/1.5 var(--f-mono);color:var(--ink)}
+.hyp strong{color:var(--ink);font-weight:600}
+.callout{border-left:3px solid var(--ink);padding:10px 14px;background:var(--surface);font-size:14px;color:var(--ink-2);max-width:92ch}
+.callout b{color:var(--ink)}
+.grave{display:grid;gap:8px;align-content:start}
+.grave .when{font:500 11.5px/1.2 var(--f-mono);color:var(--ink-3)}
+.grave h3{font-size:16.5px}
+.grave p{font-size:13.5px;color:var(--ink-2)}
+.grave .lesson{color:var(--ink)}
+.unk{display:grid;grid-template-columns:36px minmax(0,1fr);gap:3px 10px;padding-block:12px;border-top:1px solid var(--rule-2)}
+.unk b{font:600 12px/1.6 var(--f-mono);color:var(--ink-3)}
+.unk h3{font-size:16px}
+.unk p{grid-column:2;font-size:13.5px;color:var(--ink-2)}
+.cal{display:grid;gap:0}
+.cal-row{display:grid;grid-template-columns:120px minmax(0,1fr) auto;gap:4px 14px;padding-block:9px;border-top:1px solid var(--rule-2);align-items:baseline;font-size:13.5px}
+.cal-row:first-child{border-top:0}
+.cal-row .d{font:500 12px/1.3 var(--f-mono);color:var(--ink)}
+@media (max-width:600px){.cal-row{grid-template-columns:minmax(0,1fr)}}
+
+/* timeline */
+.tl{display:grid;gap:18px}
+.tl-month{display:grid;grid-template-columns:100px minmax(0,1fr);gap:14px}
+.tl-mlab{font:600 11.5px/1.2 var(--f-mono);letter-spacing:.07em;text-transform:uppercase;color:var(--ink-3);padding-top:4px}
+.tl-list{display:grid;gap:10px;border-left:2px solid var(--rule);padding-left:18px}
+.tl-ev{display:grid;grid-template-columns:92px minmax(0,1fr);gap:4px 12px;position:relative;scroll-margin-top:90px}
+.tl-ev::before{content:"";position:absolute;left:-25px;top:5px;width:12px;height:12px;border-radius:50%;background:var(--ink);border:2px solid var(--ground)}
+.tl-ev.future::before{background:var(--ground);border:2px solid var(--accent)}
+.tl-ev .d{font:500 12px/1.5 var(--f-mono);color:var(--ink-2)}
+.tl-ev .l{font-size:14px;line-height:1.4}
+.tl-ev .meta{grid-column:2;display:flex;flex-wrap:wrap;gap:4px 10px;align-items:center}
+.tl-now{display:flex;align-items:center;gap:10px;font:600 11px/1.2 var(--f-mono);letter-spacing:.07em;text-transform:uppercase;color:var(--accent)}
+.tl-now::after{content:"";flex:1;border-top:1px dashed var(--accent)}
+.watchtag{font:600 10px/1.2 var(--f-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--accent);border:1px solid var(--accent);border-radius:3px;padding:2px 5px}
+@media (max-width:640px){.tl-month{grid-template-columns:minmax(0,1fr)}.tl-ev{grid-template-columns:minmax(0,1fr)}.tl-ev .meta{grid-column:1}}
+
+/* ledger */
+tr.is-set td{color:var(--ink-3)}
+tr.is-set .ttl{text-decoration:line-through;text-decoration-thickness:1px}
+.ttl{min-width:220px;max-width:440px;display:block}
+.src{display:grid;gap:1px;min-width:180px}
+.eyedot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:7px;vertical-align:1px}
+.eyedot.sun{background:var(--sun-bar)} .eyedot.moon{background:var(--moon-bar)}
+.filters select{width:auto;max-width:290px}
+.field{max-width:100%}
+.stagedef{display:flex;gap:8px;align-items:flex-start;margin-block:4px}
+.stagedef .arc{margin-top:-2px}
+.top{align-items:start}
+.src .p{font-weight:600;font-size:13px}
+.src .c{font-size:12px;color:var(--ink-3)}
+.st{font:600 12px var(--f-mono)}
+
+/* method */
+.defs{display:grid;grid-template-columns:minmax(150px,210px) minmax(0,1fr);gap:0 22px}
+.defs dt{font-weight:600;font-size:14px;padding-block:10px;border-top:1px solid var(--rule-2)}
+.defs dd{margin:0;padding-block:10px;border-top:1px solid var(--rule-2);font-size:14px;color:var(--ink-2)}
+@media (max-width:640px){.defs{grid-template-columns:minmax(0,1fr)}.defs dd{border-top:0;padding-top:0}}
+.formula{font:500 12.5px/1.7 var(--f-mono);background:var(--surface);border:1px solid var(--rule-2);border-radius:4px;padding:12px 14px;overflow-x:auto;white-space:pre;color:var(--ink)}
+.limits{display:grid;gap:8px;font-size:14px;color:var(--ink-2);max-width:92ch}
+.foot{padding-block:22px 40px;border-top:1px solid var(--rule);font-size:12.5px;color:var(--ink-3);display:flex;flex-wrap:wrap;gap:8px 24px;justify-content:space-between}
+.flash{animation:flash 2s ease-out 1}
+@keyframes flash{0%{background-color:var(--accent-tint);box-shadow:0 0 0 2px var(--accent)}70%{background-color:var(--accent-tint)}100%{box-shadow:0 0 0 0 transparent}}
+@media (prefers-reduced-motion:reduce){.flash{animation:none;outline:2px solid var(--accent)}}
+.noscript{padding:24px;border:1px solid var(--rule);background:var(--surface)}
+</style>
+<!--horus:head-end-->
+<header class="mast wrap">
+  <div class="brand">
+    <svg class="wedjat" viewBox="0 0 128 80" role="img" aria-label="Eye of Horus">
+      <path d="M9 17 C 33 4, 86 2, 119 12 L 117 20 C 86 10, 37 12, 12 25 Z" fill="currentColor"/>
+      <path d="M13 38 C 33 20, 82 16, 112 33 C 84 47, 38 51, 13 38 Z" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linejoin="round"/>
+      <circle class="iris" cx="60" cy="34" r="10.5"/>
+      <path d="M112 33 L 125 30.5" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"/>
+      <path class="tear" d="M52 48 L 47 74" fill="none" stroke-width="5.5" stroke-linecap="round"/>
+      <path d="M70 48 C 72 63, 86 71, 97 64.5 C 105 59.5, 99 49.5, 90.5 53.5" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"/>
+    </svg>
+    <div>
+      <div class="wordmark">HORUS</div>
+      <div class="nomeline" id="nomeline"></div>
+    </div>
+  </div>
+  <dl class="docket" id="docket"></dl>
+</header>
+<nav class="rail" aria-label="Dashboard sections"><div class="wrap tabs" role="tablist" id="tabs"></div></nav>
+<main class="wrap" id="main">
+  <noscript><div class="noscript">This dashboard draws its views with JavaScript. The edition data is embedded in this file as JSON (script id horus-data).</div></noscript>
+</main>
+<footer class="wrap foot" id="foot"></footer>
+<script type="application/json" id="horus-data">__HORUS_DATA__</script>
+<script>
+(function () {
+  'use strict';
+  var main = document.getElementById('main');
+  var D;
+  try { D = JSON.parse(document.getElementById('horus-data').textContent); }
+  catch (e) { main.textContent = 'The edition data embedded in this page could not be read.'; return; }
+
+  /* ---------- helpers: every data string enters the DOM as a text node ---------- */
+  function add(el, kids) {
+    kids.flat(Infinity).forEach(function (k) {
+      if (k === null || k === undefined || k === false) return;
+      el.append(k instanceof Node ? k : document.createTextNode(String(k)));
+    });
+    return el;
+  }
+  function h(tag, props) {
+    var el = document.createElement(tag);
+    if (props) Object.keys(props).forEach(function (k) {
+      var v = props[k];
+      if (v === null || v === undefined || v === false) return;
+      if (k === 'class') el.className = v;
+      else if (k === 'style') el.style.cssText = v;
+      else if (k === 'on') Object.keys(v).forEach(function (ev) { el.addEventListener(ev, v[ev]); });
+      else el.setAttribute(k, v === true ? '' : String(v));
+    });
+    return add(el, Array.prototype.slice.call(arguments, 2));
+  }
+  var SVGNS = 'http://www.w3.org/2000/svg';
+  function sv(tag, props) {
+    var el = document.createElementNS(SVGNS, tag);
+    if (props) Object.keys(props).forEach(function (k) { if (props[k] !== null && props[k] !== undefined) el.setAttribute(k, props[k]); });
+    return add(el, Array.prototype.slice.call(arguments, 2));
+  }
+  function safeUrl(u) { return (typeof u === 'string' && /^https?:\/\//i.test(u)) ? u : null; }
+  function ext(u, text, cls) {
+    var href = safeUrl(u);
+    return href ? h('a', { href: href, target: '_blank', rel: 'noopener noreferrer', class: cls || null }, text) : h('span', { class: cls || null }, text);
+  }
+  var MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  function fmtDate(d, approx) {
+    var m = /^(\d{4})-(\d{2})(?:-(\d{2}))?/.exec(d || '');
+    if (!m) return d || '';
+    var mon = MONTHS[+m[2] - 1];
+    if (!m[3] || approx) return mon + ' ' + m[1];
+    return (+m[3]) + ' ' + mon + ' ' + m[1];
+  }
+  function pct(x, dp) {
+    if (x === null || x === undefined || isNaN(x)) return '–';
+    var v = (x * 100).toFixed(dp === undefined ? 1 : dp);
+    return v.replace(/\.0$/, '') + '%';
+  }
+  function signed(x, dp) {
+    if (x === null || x === undefined || isNaN(x)) return '–';
+    var v = Math.abs(x).toFixed(dp === undefined ? 2 : dp);
+    return (x > 0 ? '+' : x < 0 ? '−' : '') + v;
+  }
+  function compact(n) {
+    if (n === null || n === undefined) return '–';
+    if (n >= 1e6) return (n / 1e6).toFixed(2).replace(/\.?0+$/, '') + 'M';
+    if (n >= 1e4) return Math.round(n / 1e3) + 'K';
+    if (n >= 1e3) return (n / 1e3).toFixed(1).replace(/\.0$/, '') + 'K';
+    return String(n);
+  }
+  function int(n) { return Number(n || 0).toLocaleString('en-US'); }
+  function fmtRange(s) {
+    var m = /^(\d{4})-(\d{2})-(\d{2}) to (\d{4})-(\d{2})-(\d{2})$/.exec(s || '');
+    if (!m) return s || '';
+    if (m[1] === m[4] && m[2] === m[5]) return (+m[3]) + '–' + (+m[6]) + ' ' + MONTHS[+m[2] - 1] + ' ' + m[1];
+    return fmtDate(m[1] + '-' + m[2] + '-' + m[3]) + ' to ' + fmtDate(m[4] + '-' + m[5] + '-' + m[6]);
+  }
+  function cap(s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : s; }
+  var REDUCED = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+
+  /* ---------- data ---------- */
+  var META = D.meta || {}, NOME = D.nome || {}, CODES = D.codes || {}, M = D.metrics || {}, A = D.analysis || {};
+  var ITEMS = D.items || [], ROOMS = D.rooms || [], SIGS = D.signals || [], EVENTS = D.events || [], WATCH = D.watch || [];
+  var TAX = NOME.taxonomy || [], TOPIC = {}, ORDER = {};
+  TAX.forEach(function (t, i) { TOPIC[t.id] = t; ORDER[t.id] = i; });
+  var CLUSTER_OF = {};
+  Object.keys(NOME.clusters || {}).forEach(function (c) { NOME.clusters[c].forEach(function (id) { CLUSTER_OF[id] = c; }); });
+  var TM = {}; (M.topics || []).forEach(function (t) { TM[t.id] = t; });
+  var SIG = {}; SIGS.forEach(function (s) { SIG[s.id] = s; });
+  var ITEM = {}; ITEMS.forEach(function (i) { ITEM[i.id] = i; });
+  var ROOM = {}; ROOMS.forEach(function (r) { ROOM[r.id] = r; });
+  var KJ = {}; (A.key_judgments || []).forEach(function (k) { KJ[k.id] = k; });
+  var STAGES = A.stages || {}, MOM = A.momentum_direction || {};
+  var STAGE_ORDER = ['Khepri', 'Ra', 'Atum', 'Duat'];
+  var STAGE_DEF = {
+    Khepri: ['Dawn', 'Announced by platforms or the trade press; little or no floor activity yet.'],
+    Ra: ['Noon', 'Loud and contested. Money, hype and pain are all visible at once.'],
+    Atum: ['Dusk', 'Operational. Standardised, how-to driven, lower heat.'],
+    Duat: ['Night', 'Residue. Floor-only, fading, or value already leaving.']
+  };
+  var LANE_LABEL = {
+    'trade-press': 'Trade press', 'curated-press': 'Curated press', 'agency-roundups': 'Agency roundups',
+    'platform-voice': 'Platform voices', 'forum': 'Forums', 'telegram': 'Telegram channels',
+    'practitioner-curation': 'Practitioner posts (curated)', 'practitioner-social': 'Practitioner social',
+    'reddit': 'Reddit', 'discord': 'Discord', 'youtube': 'YouTube', 'bluesky': 'Bluesky', 'mastodon': 'Mastodon',
+    'hackernews': 'Hacker News', 'podcast': 'Podcasts', 'newsletter': 'Newsletters'
+  };
+  function laneLabel(l) { return LANE_LABEL[l] || cap(String(l).replace(/-/g, ' ')); }
+  function tshort(id) { var t = TOPIC[id]; return t ? (t.short || t.label) : id; }
+  function tlabel(id) { var t = TOPIC[id]; return t ? t.label : id; }
+  var counted = function (i) { return (i.flags || []).indexOf('set') < 0; };
+
+  /* ---------- small components ---------- */
+  function eyeTag(eye) {
+    var e = String(eye || '').toLowerCase();
+    var out = [];
+    if (e.indexOf('sun') >= 0) out.push(h('span', { class: 'eye sun' }, 'Broadcast'));
+    if (e.indexOf('moon') >= 0) out.push(h('span', { class: 'eye moon' }, 'Floor'));
+    return out.length ? h('span', { class: 'chips' }, out) : h('span', { class: 'muted' }, eye || '');
+  }
+  function topicChip(id, extra) {
+    return h('button', { type: 'button', class: 'chip tchip', title: tlabel(id) + (TOPIC[id] && TOPIC[id].def ? '. ' + TOPIC[id].def : ''), on: { click: function () { go('metrics:' + id); } } },
+      h('b', null, id), tshort(id), extra !== undefined ? h('span', { class: 'cn' }, extra) : null);
+  }
+  function refInfo(ref) {
+    var m;
+    if (/^N\d+$/.test(ref) && SIG[ref]) return { tab: 'nilometer', target: 'sig-' + ref, tip: SIG[ref].metric + ': ' + SIG[ref].value };
+    if (/^[SM]\d{3,}$/.test(ref) && ITEM[ref]) return { tab: 'ledger', target: 'item-' + ref, tip: ITEM[ref].title, item: ref };
+    if (/^R\d{3,}$/.test(ref) && ROOM[ref]) return { tab: 'rooms', target: 'room-' + ref, tip: ROOM[ref].name };
+    if (/^KJ\d+$/.test(ref) && KJ[ref]) return { tab: 'brief', target: ref, tip: KJ[ref].title };
+    if ((m = /^metrics:([A-Z]\d\d)$/.exec(ref)) && TOPIC[m[1]]) return { tab: 'topics', target: 'topic-' + m[1], tip: 'Topic metrics: ' + tlabel(m[1]) };
+    if ((m = /^metrics:(clusters|intents|stance)$/.exec(ref))) return { tab: 'topics', target: m[1], tip: 'Measured ' + m[1] };
+    if ((m = /^census:(\w+)$/.exec(ref))) return { tab: 'rooms', target: 'census-' + m[1].toLowerCase(), tip: 'Room census: ' + m[1] };
+    if (/^I\d+$/.test(ref)) return { tab: 'forecast', target: 'ind-' + ref, tip: 'Indicator ' + ref };
+    if (/^S\d$/.test(ref)) return { tab: 'forecast', target: 'scen-' + ref, tip: 'Scenario ' + ref };
+    return null;
+  }
+  var METRIC_LABEL = { clusters: 'cluster shares', intents: 'intent profile', stance: 'stance' };
+  function refLabel(ref) {
+    var m;
+    if ((m = /^metrics:([A-Z]\d\d)$/.exec(ref))) return 'grid ' + m[1];
+    if ((m = /^metrics:(\w+)$/.exec(ref))) return METRIC_LABEL[m[1]] || m[1];
+    if ((m = /^census:(\w+)$/.exec(ref))) return m[1] + ' census';
+    return ref;
+  }
+  function refChip(ref, label) {
+    var info = refInfo(ref);
+    if (!info) return h('span', { class: 'ref dead' }, label || refLabel(ref));
+    return h('button', { type: 'button', class: 'ref', title: info.tip || ref, on: { click: function () { go(ref); } } }, label || refLabel(ref));
+  }
+  function refList(refs) { return h('span', { class: 'refs' }, (refs || []).map(function (r) { return refChip(r); })); }
+  function gradeChip(g) {
+    var L = /^[A-F]/.test(g || '') ? g.charAt(0) : 'X';
+    return h('span', { class: 'grade g' + L, title: admiraltyText(g) }, g || '–');
+  }
+  var ADM_R = { A: 'Completely reliable', B: 'Usually reliable', C: 'Fairly reliable', D: 'Not usually reliable', E: 'Unreliable', F: 'Reliability cannot be judged' };
+  var ADM_C = { '1': 'Confirmed by other sources', '2': 'Probably true', '3': 'Possibly true', '4': 'Doubtful', '5': 'Improbable', '6': 'Truth cannot be judged' };
+  function admiraltyText(g) {
+    var m = /^([A-F])([1-6])$/.exec(g || '');
+    return m ? 'Source: ' + ADM_R[m[1]] + '. Information: ' + ADM_C[m[2]] + '.' : 'Not graded';
+  }
+  function arcGlyph(stage) {
+    var pos = { Khepri: [7.8, 10.6], Ra: [20, 4.2], Atum: [32.2, 10.6], Duat: [20, 22] }[stage];
+    var svg = sv('svg', { class: 'arc', viewBox: '0 0 40 26', width: '34', height: '22', 'aria-hidden': 'true' },
+      sv('path', { class: 'hz', d: 'M2 17.5 H38' }),
+      sv('path', { class: 'path', d: 'M6 17.5 A14 13.3 0 0 1 34 17.5' }));
+    if (pos) svg.append(sv('circle', { class: 'sunmark' + (stage === 'Duat' ? ' under' : ''), cx: pos[0], cy: pos[1], r: '3.3' }));
+    return svg;
+  }
+  function stageTag(stage) {
+    if (!stage) return h('span', { class: 'muted' }, '–');
+    return h('span', { class: 'stage', title: stage + ' (' + (STAGE_DEF[stage] || [''])[0].toLowerCase() + '): ' + (STAGE_DEF[stage] || ['', ''])[1] }, arcGlyph(stage), stage);
+  }
+  var MOM_GLYPH = { 'up strongly': '▲▲', 'up': '▲', 'flat': '▬', 'down': '▼' };
+  function momTag(dir) {
+    if (!dir) return h('span', { class: 'muted' }, '–');
+    return h('span', { class: 'mom', title: 'Direction from the Nilometer, not measured discourse: ' + dir }, h('b', null, MOM_GLYPH[dir] || '·'), dir);
+  }
+  var MM = (M.momentum && M.momentum.topics) || null;
+  function measuredTag(id) {
+    var t = MM && MM[id];
+    if (!t) return h('span', { class: 'muted' }, '–');
+    function part(lbl, x, cls) {
+      if (!x) return null;
+      var sig = x.z !== null && x.z !== undefined && Math.abs(x.z) >= 1.96;
+      return h('span', { class: 'mm ' + cls + (sig ? ' sig' : ''), title: (lbl === 'B' ? 'Broadcast' : 'Floor') + ' share ' + pct(x.prev) + ' to ' + pct(x.cur) + (x.z !== null && x.z !== undefined ? ', z ' + signed(x.z) : '') }, lbl + ' ' + signed(x.delta * 100, 1));
+    }
+    return h('span', { class: 'mmwrap' }, part('B', t.sun, 's'), part('F', t.moon, 'm'));
+  }
+  function momCell(id) { return MM ? measuredTag(id) : momTag(MOM[id]); }
+  function clsChip(c) { return h('span', { class: 'cls ' + String(c || '').replace(/\s+/g, '-') }, c || '–'); }
+  function secHead(title, aside, id) {
+    return h('div', { class: 'sec-head' }, h('h2', { id: id || null }, title), aside ? h('span', { class: 'aside' }, aside) : null);
+  }
+  function eyesLegend() {
+    return h('div', { class: 'legend' },
+      h('span', { class: 'key' }, h('i', { class: 'sun' }), 'Broadcast, the Sun eye (trade press, platforms, curated press, agency roundups)'),
+      h('span', { class: 'key' }, h('i', { class: 'moon' }), 'Floor, the Moon eye (forums, Telegram, practitioner posts)'));
+  }
+  function niceMax(v, step) { step = step || 0.1; return Math.max(step, Math.ceil((v + 1e-9) / step) * step); }
+
+  /* ---------- charts ---------- */
+  function dumbbell(rows, opts) {
+    opts = opts || {};
+    var max = niceMax(Math.max.apply(null, rows.map(function (r) { return Math.max(r.sun, r.moon); }).concat([0.05])), opts.step || 0.1);
+    var ticks = []; for (var t = 0; t <= max + 1e-9; t += (opts.tick || 0.2)) ticks.push(t);
+    var box = h('div', { class: 'db', id: opts.id || null });
+    box.append(h('div', { class: 'db-axis' }, h('span'), h('div', { class: 'db-ticks' }, ticks.map(function (t) { return h('span', { style: 'left:' + (t / max * 100) + '%' }, pct(t, 0)); })), h('span')));
+    rows.forEach(function (r) {
+      var a = r.sun / max * 100, b = r.moon / max * 100;
+      var track = h('div', { class: 'db-track' }, h('div', { class: 'base' }),
+        ticks.map(function (t) { return h('div', { class: 'gl', style: 'left:' + (t / max * 100) + '%' }); }),
+        h('div', { class: 'db-line', style: 'left:' + Math.min(a, b) + '%;width:' + Math.abs(a - b) + '%' }),
+        h('div', { class: 'db-dot sun', style: 'left:' + a + '%', title: 'Broadcast ' + pct(r.sun) }),
+        h('div', { class: 'db-dot moon', style: 'left:' + b + '%', title: 'Floor ' + pct(r.moon) }));
+      box.append(h('div', { class: 'db-row' }, h('div', { class: 'db-lab' }, r.label), track,
+        h('div', { class: 'db-vals' }, h('span', { class: 's' }, pct(r.sun, 0)), h('span', { class: 'm' }, pct(r.moon, 0)))));
+    });
+    return box;
+  }
+  function barList(rows, opts) {
+    opts = opts || {};
+    var max = Math.max.apply(null, rows.map(function (r) { return r.value; }).concat([1]));
+    return h('div', { class: 'bl' }, rows.map(function (r) {
+      return h('div', { class: 'bl-row', id: r.id || null },
+        h('div', { class: 'bl-lab', title: r.title || null }, r.label),
+        h('div', { class: 'bl-track' + (opts.sun ? ' sun' : '') }, h('i', { style: 'width:' + (r.value / max * 100) + '%' })),
+        h('div', { class: 'bl-val' }, r.text !== undefined ? r.text : String(r.value)));
+    }));
+  }
+
+  /* ---------- masthead and footer ---------- */
+  document.getElementById('nomeline').append(
+    (NOME.name || META.title || '') + (NOME.nome ? ' · nome of ' + NOME.nome : ''));
+  var docket = document.getElementById('docket');
+  [['Edition', META.edition], ['Run', fmtDate(META.run_date)], ['Broadcast window', fmtRange((META.window && META.window.sun) || '')], ['Mode', (META.collection_mode || '').split(' (')[0]]]
+    .forEach(function (p) { if (p[1]) docket.append(h('div', null, h('dt', null, p[0]), h('dd', null, p[1]))); });
+
+  /* ---------- tabs ---------- */
+  var TABS = [
+    { id: 'brief', label: 'Brief' },
+    { id: 'topics', label: 'Topics', n: TAX.length },
+    { id: 'channels', label: 'Channels', n: (A.channels || []).length || null },
+    { id: 'rooms', label: 'Rooms', n: ROOMS.length || null },
+    { id: 'nilometer', label: 'Nilometer', n: SIGS.length || null },
+    { id: 'forecast', label: 'Forecast' },
+    { id: 'timeline', label: 'Timeline', n: (EVENTS.length + WATCH.length) || null },
+    { id: 'ledger', label: 'Ledger', n: ITEMS.length },
+    { id: 'method', label: 'Method' }
+  ];
+  var tabsEl = document.getElementById('tabs'), panels = {}, tabBtns = {};
+  TABS.forEach(function (t) {
+    var b = h('button', { type: 'button', class: 'tab', role: 'tab', id: 't-' + t.id, 'aria-controls': 'p-' + t.id, 'aria-selected': 'false', tabindex: '-1',
+      on: { click: function () { showTab(t.id, true); } } }, t.label, t.n ? h('span', { class: 'n' }, String(t.n)) : null);
+    tabBtns[t.id] = b; tabsEl.append(b);
+    var p = h('section', { class: 'panel', id: 'p-' + t.id, role: 'tabpanel', 'aria-labelledby': 't-' + t.id, hidden: true });
+    panels[t.id] = p; main.append(p);
+  });
+  tabsEl.addEventListener('keydown', function (e) {
+    var ids = TABS.map(function (t) { return t.id; });
+    var cur = ids.indexOf((document.activeElement && document.activeElement.id || '').replace('t-', ''));
+    if (cur < 0) return;
+    var nxt = null;
+    if (e.key === 'ArrowRight') nxt = ids[(cur + 1) % ids.length];
+    else if (e.key === 'ArrowLeft') nxt = ids[(cur - 1 + ids.length) % ids.length];
+    else if (e.key === 'Home') nxt = ids[0];
+    else if (e.key === 'End') nxt = ids[ids.length - 1];
+    if (nxt) { e.preventDefault(); showTab(nxt, true); tabBtns[nxt].focus(); }
+  });
+  var current = null;
+  function showTab(id, user) {
+    if (!panels[id]) id = 'brief';
+    if (current === id) return;
+    current = id;
+    TABS.forEach(function (t) {
+      var on = t.id === id;
+      tabBtns[t.id].setAttribute('aria-selected', on ? 'true' : 'false');
+      tabBtns[t.id].tabIndex = on ? 0 : -1;
+      panels[t.id].hidden = !on;
+    });
+    try { history.replaceState(null, '', '#' + id); } catch (e) { /* frame may refuse */ }
+    if (user) {
+      var rail = document.querySelector('.rail');
+      var top = main.getBoundingClientRect().top + window.scrollY - (rail ? rail.offsetHeight : 0) - 8;
+      if (window.scrollY > top) window.scrollTo({ top: top, behavior: 'auto' });
+      tabBtns[id].scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    }
+  }
+  function flash(id) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    if (el.tagName === 'DETAILS') el.open = true;
+    el.scrollIntoView({ block: 'center', behavior: REDUCED ? 'auto' : 'smooth' });
+    el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash');
+    setTimeout(function () { el.classList.remove('flash'); }, 2100);
+  }
+  var ledgerFocus = function () {};
+  function go(ref) {
+    var info = refInfo(ref);
+    if (!info) return;
+    if (info.item) ledgerFocus(info.item);
+    showTab(info.tab, true);
+    requestAnimationFrame(function () { flash(info.target); });
+  }
+
+  /* ==================== BRIEF ==================== */
+  var ICD = [['almost no chance', 1, 5], ['very unlikely', 5, 20], ['unlikely', 20, 45], ['roughly even chance', 45, 55], ['likely', 55, 80], ['very likely', 80, 95], ['almost certain', 95, 99]];
+  var ICD_BY_LEN = ICD.slice().sort(function (a, b) { return b[0].length - a[0].length; });
+  function parseLik(lik, range) {
+    var parts = String(lik || '').split(';').map(function (x) { return x.trim(); }).filter(Boolean);
+    var ranges = String(range || '').split('/').map(function (x) { return x.trim(); });
+    return parts.map(function (p, i) {
+      var lower = p.toLowerCase(), term = null;
+      for (var k = 0; k < ICD_BY_LEN.length; k++) { if (lower.indexOf(ICD_BY_LEN[k][0]) === 0) { term = ICD_BY_LEN[k]; break; } }
+      var q = /\(([^)]*)\)/.exec(p), r = /(\d+)\s*-\s*(\d+)/.exec(ranges[i] || '');
+      return { text: term ? term[0] : p, qual: q ? q[1] : null, lo: r ? +r[1] : (term ? term[1] : null), hi: r ? +r[2] : (term ? term[2] : null), range: ranges[i] || '' };
+    });
+  }
+  function probBar(lo, hi) {
+    var bar = h('div', { class: 'prob', role: 'img', 'aria-label': 'Probability ' + lo + ' to ' + hi + ' percent' });
+    if (lo !== null) bar.append(h('div', { class: 'band', style: 'left:' + lo + '%;width:' + Math.max(1.5, hi - lo) + '%' }));
+    [5, 20, 45, 55, 80, 95].forEach(function (t) { bar.append(h('i', { class: 'tick', style: 'left:' + t + '%' })); });
+    return bar;
+  }
+  function pips(conf) {
+    var c = String(conf || '').toLowerCase();
+    var n = c === 'high' ? 3 : c === 'moderate to high' ? 2.5 : c === 'moderate' ? 2 : c === 'low to moderate' ? 1.5 : c === 'low' ? 1 : 0;
+    var out = h('span', { class: 'pips', 'aria-hidden': 'true' });
+    for (var i = 1; i <= 3; i++) out.append(h('i', { class: n >= i ? 'on' : (n >= i - 0.5 ? 'half' : null) }));
+    return out;
+  }
+  var MATH_LABEL = { base_month: 'Base month', feb_to_aug_cumulative: 'Feb to Aug, booked', sep_to_dec_growth: 'Sep to Dec, at monthly growth of', required_for_2_5B: 'Needed for $2.5B' };
+  function mathBlock(mo) {
+    var dl = h('dl', { class: 'math' });
+    Object.keys(mo).forEach(function (k) {
+      var v = mo[k];
+      var dd = (v && typeof v === 'object') ? Object.keys(v).map(function (kk, i) { return [i ? '; ' : '', h('b', { class: 'mono' }, kk), ' → ', v[kk]]; }) : v;
+      dl.append(h('dt', null, MATH_LABEL[k] || k.replace(/_/g, ' ')), h('dd', null, dd));
+    });
+    return dl;
+  }
+  function kjCard(k) {
+    var lik = parseLik(k.likelihood, k.range);
+    var evidence = k.evidence || [], fals = k.falsifiers || [];
+    return h('article', { class: 'kj card', id: k.id },
+      h('div', { class: 'kj-main' },
+        h('div', { class: 'kj-top' }, h('span', { class: 'kj-id' }, k.id), h('span', { class: 'eyebrow' }, k.horizon || '')),
+        h('h3', null, k.title),
+        h('p', { class: 'txt' }, k.judgment)),
+      h('div', { class: 'kj-side' },
+      h('div', { class: 'lik' }, lik.map(function (l) {
+        return h('div', { class: 'lik-row' },
+          h('div', { class: 'lik-term' }, cap(l.text), l.qual ? h('span', null, l.qual) : null),
+          probBar(l.lo, l.hi),
+          h('span', { class: 'lik-range' }, l.range));
+      })),
+      h('div', { class: 'kj-meta' },
+        h('span', null, 'Confidence ', h('b', null, k.confidence || '–'), pips(k.confidence)),
+        h('span', { class: 'chips' }, (k.topics || []).map(function (t) { return topicChip(t); }))),
+      h('details', { class: 'more' },
+        h('summary', null, 'Evidence ' + evidence.length + ' · would change this judgment ' + fals.length + (k.math ? ' · arithmetic' : '')),
+        h('div', { class: 'more-body' },
+          h('div', null, h('h4', null, 'Evidence'), refList(evidence)),
+          fals.length ? h('div', null, h('h4', null, 'Would change this judgment'), h('ul', { class: 'small' }, fals.map(function (f) { return h('li', null, f); }))) : null,
+          k.math ? h('div', null, h('h4', null, 'Arithmetic'), mathBlock(k.math)) : null))));
+  }
+  function coverageLevel(status) {
+    var s = String(status || '').toLowerCase();
+    if (s.indexOf('blocked') >= 0) return 'blocked';
+    if (s.indexOf('blind') >= 0 || s.indexOf('not sampled') >= 0) return 'none';
+    if (s.indexOf('sampled') === 0) return 'full';
+    return 'partial';
+  }
+  (function renderBrief() {
+    var p = panels.brief, n = M.n || {};
+    var sunLanes = (M.lanes || []).filter(function (l) { return l.eye === 'sun'; }).length;
+    var moonLanes = (M.lanes || []).filter(function (l) { return l.eye === 'moon'; }).length;
+    var disc = (M.census || {}).Discord, tg = (M.census || {}).Telegram;
+    var kap = D.kappa || null;
+    var inst = h('aside', { class: 'instruments', 'aria-label': 'Edition instruments' },
+      h('div', { class: 'inst' }, h('span', { class: 'big sun' }, String(n.sun_total || 0)), h('span', { class: 'lab' }, 'Broadcast items'),
+        h('span', { class: 'sub' }, int(n.sun_counted) + ' counted across ' + sunLanes + ' lanes' + (META.window && META.window.sun ? ', ' + fmtRange(META.window.sun) : ''))),
+      h('div', { class: 'inst' }, h('span', { class: 'big moon' }, String(n.moon_total || 0)), h('span', { class: 'lab' }, 'Floor items'),
+        h('span', { class: 'sub' }, int(n.moon_counted) + ' counted across ' + moonLanes + ' lanes; ' + (n.set_flagged || 0) + ' filtered as spam or sponsored')),
+      h('div', { class: 'inst' }, h('span', { class: 'big' }, String(n.rooms || 0)), h('span', { class: 'lab' }, 'Rooms in the census'),
+        h('span', { class: 'sub' }, [disc ? disc.n + ' Discord servers' : null, tg ? tg.n + ' Telegram channels' : null].filter(Boolean).join(', '))),
+      h('div', { class: 'inst' }, h('span', { class: 'big' }, String(SIGS.length)), h('span', { class: 'lab' }, 'Nilometer signals'),
+        h('span', { class: 'sub' }, 'Hard numbers the talk is weighed against, graded on the Admiralty scale')),
+      kap ? h('div', { class: 'inst' }, h('span', { class: 'big' }, (kap.topic.kappa || 0).toFixed(2)), h('span', { class: 'lab' }, 'Coder agreement, κ'),
+        h('span', { class: 'sub' }, 'Topic, blind second coder on ' + kap.topic.n + ' random items; intent κ ' + (kap.intent.kappa || 0).toFixed(2))) : null);
+
+    var bl = (A.bluf || []).map(function (t, i) { return h('p', { class: 'bluf' + (i === 0 ? ' first' : '') }, t); });
+    p.append(h('div', { class: 'brief-top' },
+      h('div', null,
+        h('p', { class: 'eyebrow' }, 'Bottom line up front · ' + (NOME.name || '') + ' · edition ' + (META.edition || '')),
+        h('h1', { class: 'headline' }, A.headline || NOME.name || 'Horus'),
+        bl),
+      inst));
+
+    // coverage strip
+    var chans = A.channels || [];
+    if (chans.length) {
+      p.append(h('div', { class: 'sec' },
+        secHead('What Horus could see', META.collection_mode || ''),
+        h('div', { class: 'cov-list' }, chans.map(function (c) {
+          var lvl = coverageLevel(c.status);
+          return h('span', { class: 'cov ' + lvl, title: (c.collector ? 'Collector: ' + c.collector : '') }, c.channel, h('span', { class: 'st' }, c.status));
+        })),
+        h('p', { class: 'small muted' }, 'Solid outline: sampled at item level. Plain: census, curation or platform reporting only. Dashed: not seen. Red: blocked. Details under Channels and Method.')));
+    }
+
+    // two eyes at a glance
+    var clusters = Object.keys(M.clusters || {}).map(function (c) { return { label: c, sun: M.clusters[c].sun, moon: M.clusters[c].moon }; });
+    var tops = (M.topics || []).filter(function (t) { return tlabel(t.id) !== 'Other'; });
+    var floorLed = tops.slice().sort(function (a, b) { return b.stereo_z - a.stereo_z; }).slice(0, 4);
+    var bcLed = tops.slice().sort(function (a, b) { return a.stereo_z - b.stereo_z; }).slice(0, 4);
+    function extList(list) {
+      return h('div', { class: 'ext-list' }, list.map(function (t) {
+        return h('div', null, h('button', { type: 'button', class: 'ref', on: { click: function () { go('metrics:' + t.id); } } }, tshort(t.id)), h('span', { class: 'mono' }, 'z ' + signed(t.stereo_z)));
+      }));
+    }
+    p.append(h('div', { class: 'sec' },
+      secHead('Two eyes at a glance', Object.keys(M.clusters || {}).length > 1 ? 'Share of counted items by cluster' : 'Share of counted items, ten loudest topics'),
+      eyesLegend(),
+      h('div', { class: 'grid-2' },
+        clusters.length > 1 ? dumbbell(clusters, { step: 0.1, tick: 0.2 }) : dumbbell(tops.slice().sort(function (a, b) { return (b.sun_share + b.moon_share) - (a.sun_share + a.moon_share); }).slice(0, 10).map(function (t) { return { label: tshort(t.id), sun: t.sun_share, moon: t.moon_share }; }), { step: 0.1, tick: 0.1 }),
+        h('div', { class: 'stack' },
+          h('p', { class: 'lede small' }, 'Stereopsis compares what each eye talks about. Positive z means the floor talks about a topic more than the broadcast does; negative means the broadcast leads. Beyond ±1.96 the gap is unlikely to be sampling noise.'),
+          h('div', { class: 'extremes' },
+            h('div', { class: 'stack' }, h('h4', null, 'The floor leads'), extList(floorLed)),
+            h('div', { class: 'stack' }, h('h4', null, 'The broadcast leads'), extList(bcLed)))))));
+
+    // key judgments
+    var kjs = A.key_judgments || [];
+    p.append(h('div', { class: 'sec' },
+      secHead('Key judgments', kjs.length + ' judgments · likelihood in ICD 203 terms · confidence grades the evidence'),
+      h('div', { class: 'legend' },
+        h('span', { class: 'key' }, h('i', { class: 'bar', style: 'background:var(--ink)' }), 'Stated probability range on a 0 to 100% scale; gaps mark the ICD 203 bands'),
+        h('span', { class: 'key' }, 'Confidence pips: low, moderate, high')),
+      h('div', { class: 'kj-grid' }, kjs.map(kjCard))));
+
+    var moves = A.implications || [];
+    if (moves.length) p.append(h('div', { class: 'sec' },
+      secHead('Moves', 'What an operator does about it'),
+      h('div', { class: 'moves' }, moves.map(function (m) {
+        return h('div', { class: 'move' }, h('span', { class: 'mid' }, m.id), h('h3', null, m.move), h('p', null, m.detail),
+          h('span', { class: 'refs' }, [].concat(m.kj || []).map(function (k) { return refChip(k); })));
+      }))));
+  })();
+
+  /* ==================== TOPICS ==================== */
+  (function renderTopics() {
+    var p = panels.topics;
+    var finds = A.discourse_findings || [];
+    if (finds.length) p.append(h('div', { class: 'sec' },
+      secHead('What people are talking about', finds.length + ' findings from the coded ledger'),
+      h('div', { class: 'grid-3 finds' }, finds.map(function (f) {
+        return h('article', { class: 'find', id: f.id }, h('span', { class: 'fid' }, f.id), h('h3', null, f.title), h('p', null, f.finding), refList(f.refs));
+      }))));
+
+    // stereopsis diverging chart
+    var rows = (M.topics || []).slice().sort(function (a, b) { return b.stereo_z - a.stereo_z; });
+    var zmax = Math.max(3, Math.ceil(Math.max.apply(null, rows.map(function (r) { return Math.abs(r.stereo_z); })) + 0.5));
+    function xz(z) { return 50 + (z / zmax) * 50; }
+    var tickVals = []; for (var z = -Math.floor(zmax); z <= Math.floor(zmax); z++) if (z % 2 === 0 || zmax <= 4) tickVals.push(z);
+    var dv = h('div', { class: 'dv', role: 'img', 'aria-label': 'Stereopsis z-scores by topic' });
+    dv.append(h('div', { class: 'dv-axis' }, h('span'), h('div', { class: 'dv-cap' }, h('span', { class: 'l' }, '← Broadcast leads'), h('span', { class: 'r' }, 'Floor leads →')), h('span')));
+    rows.forEach(function (r) {
+      var z = r.stereo_z, x0 = xz(Math.min(0, z)), x1 = xz(Math.max(0, z));
+      var weak = Math.abs(z) < 1.96;
+      dv.append(h('div', { class: 'dv-row', id: 'dv-' + r.id, title: tlabel(r.id) + ': broadcast ' + r.sun_n + ' items (' + pct(r.sun_share) + '), floor ' + r.moon_n + ' items (' + pct(r.moon_share) + '), ' + r.stereo_class },
+        h('div', { class: 'dv-lab' }, h('span', { class: 'tid' }, r.id), tshort(r.id)),
+        h('div', { class: 'dv-track' },
+          h('div', { class: 'crit', style: 'left:' + xz(-1.96) + '%' }), h('div', { class: 'crit', style: 'left:' + xz(1.96) + '%' }),
+          h('div', { class: 'axis' }),
+          h('div', { class: 'dv-bar ' + (z >= 0 ? 'pos' : 'neg') + (weak ? ' weak' : ''), style: 'left:' + x0 + '%;width:' + Math.max(0.6, x1 - x0) + '%' })),
+        h('div', { class: 'dv-val' }, signed(z))));
+    });
+    dv.append(h('div', { class: 'dv-axis' }, h('span'), h('div', { class: 'dv-ticks' }, tickVals.map(function (t) { return h('span', { style: 'left:' + xz(t) + '%' }, t > 0 ? '+' + t : t < 0 ? '−' + Math.abs(t) : '0'); })), h('span')));
+    p.append(h('div', { class: 'sec' },
+      secHead('Stereopsis', 'Weighted log-odds with an informative Dirichlet prior'),
+      h('p', { class: 'lede' }, 'Each bar is the z-score of the gap between the two eyes for one topic. Solid bars clear ±1.96 (dashed lines); faded bars are within sampling noise. Topics that one eye never mentions are marked in the grid below as broadcast-only or floor-only.'),
+      h('div', { class: 'legend' }, h('span', { class: 'key' }, h('i', { class: 'bar', style: 'background:var(--moon-bar)' }), 'Floor leads'), h('span', { class: 'key' }, h('i', { class: 'bar', style: 'background:var(--sun-bar)' }), 'Broadcast leads'), h('span', { class: 'key' }, h('i', { class: 'dash' }), '±1.96')),
+      dv));
+
+    // topic grid
+    var trows = (M.topics || []).map(function (t) { var o = Object.assign({}, t); o.stage = (STAGES[t.id] || {}).stage || null; o.mom = MOM[t.id] || null; return o; });
+    var maxShare = Math.max.apply(null, trows.map(function (r) { return Math.max(r.sun_share, r.moon_share); }).concat([0.01]));
+    function mini(eye, share, n) {
+      return h('div', { class: 'mb ' + eye }, h('div', { class: 'tr' }, h('i', { style: 'width:' + (share / maxShare * 100) + '%' })), h('span', null, pct(share), h('em', null, ' (' + n + ')')));
+    }
+    var MOMV = { 'up strongly': 3, 'up': 2, 'flat': 1, 'down': 0 };
+    var cols = [
+      { lab: 'Topic', get: function (r) { return ORDER[r.id]; }, asc: true },
+      { lab: 'Broadcast', get: function (r) { return r.sun_share; } },
+      { lab: 'Floor', get: function (r) { return r.moon_share; } },
+      { lab: 'Floor, reply-weighted', get: function (r) { return r.moon_share_weighted; }, num: true },
+      { lab: 'Stereopsis', get: function (r) { return r.stereo_z; }, num: true },
+      { lab: 'Pain', get: function (r) { return r.pain; }, num: true },
+      { lab: 'Stance B', get: function (r) { return r.stance_sun; }, num: true },
+      { lab: 'Stance F', get: function (r) { return r.stance_moon; }, num: true },
+      { lab: 'Grey', get: function (r) { return r.grey_n; }, num: true },
+      { lab: 'Stage', get: function (r) { return STAGE_ORDER.indexOf(r.stage); }, asc: true },
+      { lab: MM ? 'Change in share, pts' : 'Momentum', get: function (r) { return MM ? (MM[r.id] && MM[r.id].moon ? MM[r.id].moon.delta : null) : (r.mom in MOMV ? MOMV[r.mom] : null); } }
+    ];
+    var trEls = trows.map(function (r) {
+      return { r: r, el: h('tr', { id: 'topic-' + r.id },
+        h('td', null, h('div', { class: 'tlab', title: TOPIC[r.id] && TOPIC[r.id].def || null }, h('span', { class: 't' }, h('span', { class: 'mono muted' }, r.id + ' '), tshort(r.id)), h('span', { class: 'c' }, CLUSTER_OF[r.id] || ''))),
+        h('td', null, mini('sun', r.sun_share, r.sun_n)),
+        h('td', null, mini('moon', r.moon_share, r.moon_n)),
+        h('td', { class: 'num' }, pct(r.moon_share_weighted)),
+        h('td', { class: 'num' }, h('div', { class: 'zc' }, h('span', { class: 'mono' }, signed(r.stereo_z)), clsChip(r.stereo_class))),
+        h('td', { class: 'num' }, r.pain === null ? '–' : pct(r.pain, 0)),
+        h('td', { class: 'num' }, signed(r.stance_sun)),
+        h('td', { class: 'num' }, signed(r.stance_moon)),
+        h('td', { class: 'num' }, r.grey_n ? String(r.grey_n) : '–'),
+        h('td', { title: (STAGES[r.id] || {}).why || null }, stageTag(r.stage)),
+        h('td', null, momCell(r.id))) };
+    });
+    var tbody = h('tbody', null, trEls.map(function (x) { return x.el; }));
+    var ths = cols.map(function (c, i) {
+      var th = h('th', { class: c.num ? 'num' : null, scope: 'col' });
+      th.append(h('button', { type: 'button', class: 'sort', on: { click: function () { sortBy(i); } } }, c.lab));
+      return th;
+    });
+    var sortState = { i: 0, dir: 1 };
+    function sortBy(i) {
+      var c = cols[i];
+      if (sortState.i === i) sortState.dir = -sortState.dir; else sortState = { i: i, dir: c.asc ? 1 : -1 };
+      trEls.sort(function (a, b) {
+        var va = c.get(a.r), vb = c.get(b.r);
+        var na = va === null || va === undefined || va === -1 && c.asc, nb = vb === null || vb === undefined || vb === -1 && c.asc;
+        if (na && nb) return ORDER[a.r.id] - ORDER[b.r.id];
+        if (na) return 1; if (nb) return -1;
+        return (va - vb) * sortState.dir || ORDER[a.r.id] - ORDER[b.r.id];
+      });
+      trEls.forEach(function (x) { tbody.append(x.el); });
+      ths.forEach(function (th, j) { if (j === i) th.setAttribute('aria-sort', sortState.dir > 0 ? 'ascending' : 'descending'); else th.removeAttribute('aria-sort'); });
+    }
+    ths[0].setAttribute('aria-sort', 'ascending');
+    p.append(h('div', { class: 'sec' },
+      secHead('Topic grid', trows.length + ' topics · select a column heading to sort'),
+      h('p', { class: 'lede small' }, 'Shares are of counted items in each eye (spam and sponsored items excluded). Reply-weighted floor share weights forum threads by replies and Telegram posts by views. Pain is the share of floor items that ask for help or complain. Stance runs from −1 (threat) to +1 (opportunity). Stage is the analyst’s call. ' + (MM ? 'Change in share is measured against edition ' + M.momentum.previous_edition + ', in percentage points for broadcast (B) and floor (F); bold changes clear |z| 1.96.' : 'Momentum comes from the hard signals until a second edition can measure it.')),
+      h('div', { class: 'tbl tg' }, h('table', null, h('thead', null, h('tr', null, ths)), tbody))));
+
+    // clusters, intents, stance
+    var clusters = Object.keys(M.clusters || {}).map(function (c) { return { label: c, sun: M.clusters[c].sun, moon: M.clusters[c].moon }; });
+    var ints = M.intents || { sun: {}, moon: {} };
+    var sunN = (M.n || {}).sun_counted || 1, moonN = (M.n || {}).moon_counted || 1;
+    var codes = Object.keys(CODES.intent || {});
+    var imax = Math.max.apply(null, codes.map(function (c) { return Math.max((ints.sun[c] || 0) / sunN, (ints.moon[c] || 0) / moonN); }).concat([0.05]));
+    var bf = h('div', { class: 'bf', id: 'intents', role: 'img', 'aria-label': 'Intent profile by eye' },
+      h('div', { class: 'bf-head' }, h('span', { class: 'l' }, 'Broadcast'), h('span'), h('span', { class: 'r' }, 'Floor')));
+    codes.forEach(function (c) {
+      var a = (ints.sun[c] || 0) / sunN, b = (ints.moon[c] || 0) / moonN;
+      var wa = a / imax * 82, wb = b / imax * 82;
+      bf.append(h('div', { class: 'bf-row' },
+        h('div', { class: 'bf-side l' }, h('div', { class: 'bar', style: 'width:' + wa + '%' }), h('span', { class: 'v', style: 'right:calc(' + wa + '% + 5px)' }, pct(a, 0))),
+        h('div', { class: 'bf-lab', title: CODES.intent[c] }, h('b', null, c), CODES.intent[c].split(/[,(]/)[0]),
+        h('div', { class: 'bf-side r' }, h('div', { class: 'bar', style: 'width:' + wb + '%' }), h('span', { class: 'v', style: 'left:calc(' + wb + '% + 5px)' }, pct(b, 0)))));
+    });
+    var st = M.stance || {};
+    var stanceTbl = h('div', { class: 'tbl', id: 'stance' }, h('table', null,
+      h('thead', null, h('tr', null, h('th', null, 'Eye'), h('th', { class: 'num' }, 'Mean stance'), h('th', { class: 'num' }, 'Items'))),
+      h('tbody', null,
+        h('tr', null, h('td', null, eyeTag('sun')), h('td', { class: 'num' }, signed(st.sun)), h('td', { class: 'num' }, String(sunN))),
+        h('tr', null, h('td', null, eyeTag('moon')), h('td', { class: 'num' }, signed(st.moon)), h('td', { class: 'num' }, String(moonN))))));
+    p.append(h('div', { class: 'sec' },
+      secHead('Clusters, intent and stance', 'Where each eye looks, and how it talks'),
+      eyesLegend(),
+      h('div', { class: 'grid-2' },
+        h('div', { class: 'stack', id: 'clusters' }, h('h4', null, 'Share by cluster'), dumbbell(clusters, { step: 0.1, tick: 0.2 })),
+        h('div', { class: 'stack' }, h('h4', null, 'Share by intent'), bf,
+          h('h4', null, 'Mean stance, −1 threat to +1 opportunity'), stanceTbl))));
+  })();
+
+  /* ==================== CHANNELS ==================== */
+  function matchItems(rule) {
+    if (!rule) return [];
+    return ITEMS.filter(function (i) {
+      return Object.keys(rule).every(function (k) { return (rule[k] || []).indexOf(i[k]) >= 0; });
+    });
+  }
+  function topTopics(list, n) {
+    var c = {}; list.filter(counted).forEach(function (i) { c[i.topic] = (c[i.topic] || 0) + 1; });
+    return Object.keys(c).sort(function (a, b) { return c[b] - c[a] || ORDER[a] - ORDER[b]; }).slice(0, n || 3).map(function (t) { return [t, c[t]]; });
+  }
+  (function renderChannels() {
+    var p = panels.channels;
+    var lanes = (M.lanes || []).slice().sort(function (a, b) { return (a.eye === b.eye ? 0 : a.eye === 'sun' ? -1 : 1) || b.n - a.n; });
+    var laneRows = lanes.map(function (l) {
+      var its = ITEMS.filter(function (i) { return i.lane === l.lane; });
+      var nCounted = its.filter(counted).length;
+      return h('tr', null,
+        h('td', { class: 'nw' }, h('b', null, laneLabel(l.lane))),
+        h('td', null, eyeTag(l.eye)),
+        h('td', { class: 'num' }, String(l.n)),
+        h('td', { class: 'num' }, String(nCounted)),
+        h('td', { class: 'small' }, h('span', { class: 'mono muted' }, l.platforms.length + ' '), l.platforms.slice(0, 6).join(', ') + (l.platforms.length > 6 ? ' and ' + (l.platforms.length - 6) + ' more' : '')),
+        h('td', null, h('span', { class: 'chips' }, topTopics(its, 3).map(function (x) { return topicChip(x[0], String(x[1])); }))));
+    });
+    p.append(h('div', { class: 'sec' },
+      secHead('Lanes', 'Where each eye was read, and what it talks about'),
+      h('div', { class: 'tbl' }, h('table', null,
+        h('thead', null, h('tr', null, h('th', null, 'Lane'), h('th', null, 'Eye'), h('th', { class: 'num' }, 'Items'), h('th', { class: 'num' }, 'Counted'), h('th', null, 'Sources'), h('th', null, 'Top topics'))),
+        h('tbody', null, laneRows)))));
+
+    // lane x cluster heat matrix
+    var cl = Object.keys(NOME.clusters || {});
+    if (cl.length) {
+      var lt = M.lane_topic || {};
+      var hmRows = lanes.map(function (l) {
+        var row = lt[l.lane] || {}, byC = {}, tot = 0;
+        Object.keys(row).forEach(function (t) { var c = CLUSTER_OF[t] || 'Other'; byC[c] = (byC[c] || 0) + row[t]; tot += row[t]; });
+        return h('tr', null,
+          h('th', { scope: 'row', class: 'nw', style: 'text-transform:none;letter-spacing:0;font:600 13px var(--f-body);color:var(--ink);background:var(--surface)' }, laneLabel(l.lane)),
+          cl.map(function (c) {
+            var v = byC[c] || 0, share = tot ? v / tot : 0;
+            return h('td', { class: 'cell' + (v ? '' : ' zero'), title: laneLabel(l.lane) + ', ' + c + ': ' + v + ' of ' + tot + ' (' + pct(share, 0) + ')' },
+              v ? h('span', { class: 'fill ' + l.eye, style: 'opacity:' + (0.1 + share * 0.75).toFixed(3) }) : null,
+              h('span', { class: 'v' }, v ? String(v) : '·'));
+          }),
+          h('td', { class: 'num' }, String(tot)));
+      });
+      p.append(h('div', { class: 'sec' },
+        secHead('Lane by cluster', 'Counted items; shade is the share of that lane’s items'),
+        h('div', { class: 'tbl hm' }, h('table', null,
+          h('thead', null, h('tr', null, h('th', null, 'Lane'), cl.map(function (c) { return h('th', { style: 'text-align:center' }, c); }), h('th', { class: 'num' }, 'Total'))),
+          h('tbody', null, hmRows)))));
+    }
+
+    // dossiers
+    var chans = A.channels || [];
+    if (chans.length) p.append(h('div', { class: 'sec' },
+      secHead('Channel dossiers', chans.length + ' channels · status, collector and what the channel is saying'),
+      h('div', { class: 'grid-3 top' }, chans.map(function (c) {
+        var its = matchItems(c.match), tops = topTopics(its, 4), lvl = coverageLevel(c.status);
+        return h('article', { class: 'card dos' },
+          h('div', { class: 'dos-top' }, h('h3', null, c.channel), h('span', { class: 'status ' + lvl }, c.status)),
+          h('div', { class: 'chips' }, eyeTag(c.eye), c.grade && c.grade !== '-' ? h('span', { class: 'chip', title: 'Coverage grade for this edition' }, 'Coverage ' + c.grade) : null),
+          h('div', { class: 'coll' }, 'Collector: ' + (c.collector || 'none')),
+          its.length ? h('div', { class: 'talk' }, h('h4', null, its.length + ' items in the ledger · top topics'), h('div', { class: 'chips' }, tops.map(function (x) { return topicChip(x[0], String(x[1])); })))
+                     : h('div', { class: 'talk' }, h('h4', null, 'No items in this edition’s ledger')),
+          h('ul', null, (c.dossier || []).map(function (d) { return h('li', null, d); })),
+          (c.signals || []).length ? h('div', null, h('h4', null, 'Signals'), refList(c.signals)) : null);
+      }))));
+
+    // broadcast sampling by date
+    var byDate = M.sun_by_date || {};
+    var keys = Object.keys(byDate).sort();
+    if (keys.length > 1) {
+      var d0 = new Date(keys[0] + 'T00:00:00Z'), d1 = new Date(keys[keys.length - 1] + 'T00:00:00Z'), days = [];
+      for (var d = new Date(d0); d <= d1; d.setUTCDate(d.getUTCDate() + 1)) days.push(d.toISOString().slice(0, 10));
+      var mx = Math.max.apply(null, days.map(function (k) { return byDate[k] || 0; }));
+      var every = days.length > 20 ? 3 : days.length > 10 ? 2 : 1;
+      p.append(h('div', { class: 'sec' },
+        secHead('Broadcast sampling by day', 'Items with exact dates; the tallest day holds ' + mx + ' items'),
+        h('div', { class: 'hist' },
+          h('div', { class: 'hist-bars', role: 'img', 'aria-label': 'Broadcast items per day' }, days.map(function (k) {
+            var v = byDate[k] || 0;
+            return h('i', { class: v ? null : 'zero', style: 'height:' + (v / mx * 100) + '%', title: fmtDate(k) + ': ' + v + ' items' });
+          })),
+          h('div', { class: 'hist-x' }, days.map(function (k, i) { return h('span', null, i % every === 0 ? String(+k.slice(8)) : ''); }))),
+        h('p', { class: 'small muted' }, 'Days of ' + MONTHS[+keys[0].slice(5, 7) - 1] + ' ' + keys[0].slice(0, 4) + '. Spikes follow the listing pages and daily recaps that were read, so this shows sampling coverage, not news volume.')));
+    }
+  })();
+
+  /* ==================== ROOMS ==================== */
+  (function renderRooms() {
+    var p = panels.rooms, census = M.census || {};
+    var plats = Object.keys(census);
+    p.append(h('div', { class: 'sec' },
+      secHead('Room census', 'What the rooms are organised around'),
+      h('p', { class: 'lede' }, 'Rooms are the places the floor gathers: Discord servers and Telegram channels found through public directories. The census codes each room by the topic it is built around. It measures what rooms exist and how big they are, not what is said inside them.'),
+      h('div', { class: 'grid-2' }, plats.map(function (pl) {
+        var c = census[pl], useSize = c.size_total > 0 && Object.keys(c.by_topic_size).length >= Object.keys(c.by_topic_count).length / 2;
+        var src = useSize ? c.by_topic_size : c.by_topic_count;
+        var rows = Object.keys(src).map(function (t) { return { label: tshort(t), title: tlabel(t), value: src[t], text: useSize ? compact(src[t]) : String(src[t]) }; })
+          .sort(function (a, b) { return b.value - a.value; });
+        return h('div', { class: 'stack', id: 'census-' + pl.toLowerCase() },
+          h('h3', null, pl),
+          h('p', { class: 'small muted' }, c.n + ' rooms, ' + c.set_flagged + ' filtered as spam or promotion. ' + (useSize ? 'Bars: combined subscribers by topic (' + compact(c.size_total) + ' in all).' : 'Bars: number of rooms by topic.') +
+            ' Languages: ' + Object.keys(c.langs).map(function (l) { return l + ' ' + c.langs[l]; }).join(', ') + '.'),
+          barList(rows, { sun: false }));
+      }))));
+    plats.forEach(function (pl) {
+      var rs = ROOMS.filter(function (r) { return r.platform === pl; });
+      p.append(h('div', { class: 'sec' },
+        secHead(pl + ' rooms', rs.length + ' in the census'),
+        h('div', { class: 'tbl' }, h('table', null,
+          h('thead', null, h('tr', null, h('th', null, 'ID'), h('th', null, 'Room'), h('th', { class: 'num' }, 'Size'), h('th', null, 'Lang'), h('th', null, 'Built around'), h('th', null, 'Note'), h('th', null, 'Flags'))),
+          h('tbody', null, rs.map(function (r) {
+            return h('tr', { id: 'room-' + r.id, class: (r.flags || []).indexOf('set') >= 0 ? 'is-set' : null },
+              h('td', { class: 'mono muted nw' }, r.id),
+              h('td', null, ext(r.url, r.name, 'ttl')),
+              h('td', { class: 'num' }, r.size ? compact(r.size) : '–'),
+              h('td', { class: 'mono nw' }, r.lang || ''),
+              h('td', null, h('span', { class: 'chips' }, topicChip(r.topic), r.topic2 ? topicChip(r.topic2) : null)),
+              h('td', { class: 'small' }, r.note || ''),
+              h('td', null, (r.flags || []).map(function (f) { return h('span', { class: 'flag ' + f, title: (CODES.flags || {})[f] || f }, f); })));
+          }))))));
+    });
+  })();
+
+  /* ==================== NILOMETER ==================== */
+  (function renderNilometer() {
+    var p = panels.nilometer;
+    var counts = {}, max = 0;
+    SIGS.forEach(function (s) { counts[s.grade] = (counts[s.grade] || 0) + 1; max = Math.max(max, counts[s.grade]); });
+    var adm = h('table', { class: 'adm', 'aria-label': 'Signals by Admiralty grade' },
+      h('thead', null, h('tr', null, h('th'), ['1', '2', '3', '4', '5', '6'].map(function (c) { return h('th', { title: ADM_C[c] }, c); }))),
+      h('tbody', null, ['A', 'B', 'C', 'D', 'E', 'F'].map(function (r) {
+        return h('tr', null, h('th', { class: 'rowh', title: ADM_R[r] }, r),
+          ['1', '2', '3', '4', '5', '6'].map(function (c) {
+            var v = counts[r + c] || 0, op = v ? 0.14 + 0.8 * v / max : 0;
+            return h('td', { class: op > 0.5 ? 'hi' : null, title: r + c + ': ' + v + ' signals. ' + admiraltyText(r + c) },
+              v ? h('span', { class: 'fill', style: 'opacity:' + op.toFixed(3) }) : null, h('span', { class: 'v' }, v ? String(v) : ''));
+          }));
+      })));
+    p.append(h('div', { class: 'sec' },
+      secHead('Nilometer', SIGS.length + ' hard signals'),
+      h('p', { class: 'lede' }, 'The Nile’s flood was read on a graded stair, not by the mood on the riverbank. These are the measured numbers the discourse is weighed against: earnings, forecasts, surveys, field experiments and rulings. Each carries an Admiralty grade for the source (A to F) and for the information (1 to 6). Forecasts are graded as the fact of a forecast, not its accuracy.'),
+      h('div', { class: 'adm-wrap' }, adm,
+        h('div', { class: 'grid-2', style: 'gap:14px 28px' },
+          h('div', { class: 'scale-list' }, ['A', 'B', 'C', 'D', 'E', 'F'].map(function (r) { return [h('b', null, r), h('span', null, ADM_R[r])]; })),
+          h('div', { class: 'scale-list' }, ['1', '2', '3', '4', '5', '6'].map(function (c) { return [h('b', null, c), h('span', null, ADM_C[c])]; }))))));
+
+    var domains = {}; SIGS.forEach(function (s) { domains[s.domain] = (domains[s.domain] || 0) + 1; });
+    var active = null, q = '';
+    var list = h('div', { class: 'sigs' });
+    var sigEls = SIGS.map(function (s) {
+      var el = h('article', { class: 'sig', id: 'sig-' + s.id },
+        h('span', { class: 'sig-id' }, s.id),
+        h('div', { class: 'sig-body' },
+          h('span', { class: 'sig-dom' }, s.domain),
+          h('div', { class: 'sig-metric' }, s.metric),
+          h('div', { class: 'sig-value' }, s.value),
+          s.note ? h('p', { class: 'sig-note' }, s.note) : null,
+          h('div', { class: 'sig-foot' },
+            h('span', { class: 'mono' }, [s.period, fmtDate(s.date)].filter(Boolean).join(' · ')),
+            ext(s.url, s.source || 'source'),
+            h('span', { class: 'chips' }, (s.topics || []).map(function (t) { return topicChip(t); })))),
+        h('div', { class: 'sig-grade' }, gradeChip(s.grade)));
+      list.append(el);
+      return { s: s, el: el, text: [s.id, s.domain, s.metric, s.value, s.note, s.source].join(' ').toLowerCase() };
+    });
+    var countEl = h('span', { class: 'count' });
+    function apply() {
+      var n = 0;
+      sigEls.forEach(function (x) {
+        var ok = (!active || x.s.domain === active) && (!q || x.text.indexOf(q) >= 0);
+        x.el.hidden = !ok; if (ok) n++;
+      });
+      countEl.textContent = n + ' of ' + SIGS.length + ' signals';
+    }
+    var chipEls = [];
+    var chipBox = h('div', { class: 'chips' }, [null].concat(Object.keys(domains).sort(function (a, b) { return domains[b] - domains[a]; })).map(function (d) {
+      var b = h('button', { type: 'button', class: 'chip', 'aria-pressed': d === null ? 'true' : 'false', on: { click: function () {
+        active = d; chipEls.forEach(function (c) { c.setAttribute('aria-pressed', c === b ? 'true' : 'false'); }); apply();
+      } } }, d === null ? 'All domains' : d, h('span', { class: 'cn' }, String(d === null ? SIGS.length : domains[d])));
+      chipEls.push(b); return b;
+    }));
+    var search = h('input', { type: 'search', id: 'sig-q', placeholder: 'Search signals', 'aria-label': 'Search signals', on: { input: function (e) { q = e.target.value.trim().toLowerCase(); apply(); } } });
+    apply();
+    p.append(h('div', { class: 'sec' },
+      secHead('Readings', 'Filter by domain or search'),
+      chipBox,
+      h('div', { class: 'filters' }, h('div', { class: 'field' }, h('label', { for: 'sig-q' }, 'Search'), search), countEl),
+      list));
+  })();
+
+  /* ==================== FORECAST ==================== */
+  (function renderForecast() {
+    var p = panels.forecast;
+    // solar arc
+    var byStage = {};
+    Object.keys(STAGES).forEach(function (t) { var s = STAGES[t].stage; (byStage[s] = byStage[s] || []).push(t); });
+    var bands = STAGE_ORDER.filter(function (s) { return byStage[s]; }).map(function (s) {
+      var ts = byStage[s].sort(function (a, b) { var za = TM[a] ? TM[a].sun_share + TM[a].moon_share : 0, zb = TM[b] ? TM[b].sun_share + TM[b].moon_share : 0; return zb - za; });
+      return h('div', { class: 'arcband' },
+        h('div', { class: 'arc-head' },
+          h('div', { class: 'nm' }, arcGlyph(s), h('h3', null, s), h('span', { class: 'eyebrow' }, STAGE_DEF[s][0])),
+          h('p', null, STAGE_DEF[s][1]),
+          h('span', { class: 'count' }, ts.length + ' topics')),
+        h('div', { class: 'tiles' }, ts.map(function (t) {
+          var m = TM[t] || {};
+          return h('div', { class: 'tile' },
+            h('div', { class: 'tile-top' }, h('button', { type: 'button', class: 'ref', style: 'text-decoration:none;color:var(--ink);font:600 13.5px/1.25 var(--f-body);text-align:left', on: { click: function () { go('metrics:' + t); } } }, h('span', { class: 'mono muted', style: 'font-size:11px' }, t + ' '), tshort(t)), momCell(t)),
+            h('div', { class: 'eyes' }, h('span', { class: 's' }, 'B ' + pct(m.sun_share)), h('span', { class: 'm' }, 'F ' + pct(m.moon_share)), h('span', { class: 'muted' }, 'z ' + signed(m.stereo_z))),
+            h('p', { class: 'why' }, STAGES[t].why));
+        })));
+    });
+    p.append(h('div', { class: 'sec' },
+      secHead('The Solar Arc', 'Where each topic sits in its life cycle'),
+      h('p', { class: 'lede' }, 'Ra’s daily passage is the life cycle of a topic: Khepri at dawn when it is announced, Ra at noon when it is loud and contested, Atum at dusk when it has become routine, the Duat at night when only residue remains. Stages are the analyst’s judgment, informed by both eyes and the hard signals. B and F are broadcast and floor share; the arrow is direction from the hard signals.'),
+      h('div', null, bands)));
+
+    // scenarios
+    var sc = A.scenarios;
+    if (sc && sc.items) {
+      var ax = sc.axes || { x: {}, y: {} };
+      var ranked = sc.items.slice().sort(function (a, b) { return b.probability - a.probability; });
+      var pos = function (it) { return (it.y === ax.y.high ? 'q-t' : 'q-b') + (it.x === ax.x.low ? 'l' : 'r'); };
+      var quad = h('div', { class: 'quad' },
+        h('span', { class: 'qy top' }, ax.y.label + ': ' + ax.y.high),
+        h('span', { class: 'qy bot' }, ax.y.label + ': ' + ax.y.low),
+        sc.items.map(function (it) {
+          return h('article', { class: 'card scen ' + pos(it), id: 'scen-' + it.id, style: 'order:' + ranked.indexOf(it) },
+            h('div', { class: 'scen-top' }, h('div', { class: 'stack', style: 'gap:4px' }, h('span', { class: 'eyebrow' }, it.id), h('h3', null, it.name)), h('span', { class: 'p' }, it.probability + '%')),
+            h('div', { class: 'pbar' }, h('i', { style: 'width:' + it.probability + '%' })),
+            h('span', { class: 'ax' }, ax.x.label + ': ' + it.x + ' · ' + ax.y.label + ': ' + it.y),
+            h('p', null, it.narrative),
+            h('div', null, h('h4', null, 'Signposts'), h('ul', null, (it.signposts || []).map(function (s) { return h('li', null, s); }))));
+        }),
+        h('div', { class: 'qaxis', style: 'grid-row:3' }, h('span', null, '← ' + ax.x.label + ': ' + ax.x.low), h('span', null, ax.x.label + ': ' + ax.x.high + ' →')));
+      p.append(h('div', { class: 'sec' },
+        secHead('Scenarios', 'Two uncertainties, four futures · ' + (sc.note || '')),
+        quad));
+    }
+
+    // ACH
+    var ach = A.ach;
+    if (ach && ach.hypotheses) {
+      var H = ach.hypotheses, E = ach.evidence || [];
+      var incon = {}, cons = {};
+      H.forEach(function (x) { incon[x.id] = 0; cons[x.id] = 0; });
+      E.forEach(function (e) { H.forEach(function (x) { var r = (e.r || {})[x.id]; if (r === 'I') incon[x.id]++; if (r === 'C') cons[x.id]++; }); });
+      var minI = Math.min.apply(null, H.map(function (x) { return incon[x.id]; }));
+      p.append(h('div', { class: 'sec' },
+        secHead('Competing hypotheses', 'Heuer’s ACH: judge by inconsistency, not by consistent evidence'),
+        h('div', { class: 'hyps' }, H.map(function (x) { return h('div', { class: 'hyp' }, h('b', null, x.id), h('strong', null, x.label), h('span', { style: 'grid-column:2' }, x.desc)); })),
+        h('div', { class: 'tbl ach' }, h('table', null,
+          h('thead', null, h('tr', null, h('th', null, 'Evidence'), h('th', null, 'Refs'), H.map(function (x) { return h('th', { class: 'h' }, x.id, h('span', null, x.label)); }))),
+          h('tbody', null, E.map(function (e) {
+            return h('tr', null, h('td', null, h('span', { class: 'mono muted' }, e.id + ' '), e.text), h('td', null, refList(e.refs)),
+              H.map(function (x) { var r = (e.r || {})[x.id] || 'N'; return h('td', { class: 'r r' + r, title: { C: 'Consistent', I: 'Inconsistent', N: 'Neutral or not applicable' }[r] }, r === 'N' ? '·' : r); }));
+          })),
+          h('tfoot', null,
+            h('tr', null, h('td', { colspan: '2' }, 'Inconsistent (fewer is stronger)'), H.map(function (x) { return h('td', { class: 'r' + (incon[x.id] === minI ? ' best' : '') }, String(incon[x.id])); })),
+            h('tr', null, h('td', { colspan: '2' }, 'Consistent'), H.map(function (x) { return h('td', { class: 'r' }, String(cons[x.id])); }))))),
+        h('div', { class: 'legend' }, h('span', null, 'C consistent'), h('span', null, 'I inconsistent'), h('span', null, '· neutral')),
+        ach.conclusion ? h('p', { class: 'callout' }, h('b', null, 'Reading. '), ach.conclusion) : null));
+    }
+
+    // indicators and calendar
+    var inds = A.indicators || [];
+    if (inds.length) p.append(h('div', { class: 'sec' },
+      secHead('Indicators and warnings', 'What to watch, and what each reading would mean'),
+      h('div', { class: 'tbl' }, h('table', null,
+        h('thead', null, h('tr', null, h('th', null, 'ID'), h('th', null, 'Indicator'), h('th', null, 'What would move the judgment'), h('th', null, 'Next reading'), h('th', null, 'Tests'))),
+        h('tbody', null, inds.map(function (i) {
+          return h('tr', { id: 'ind-' + i.id }, h('td', { class: 'mono muted nw' }, i.id), h('td', null, h('b', null, i.indicator)), h('td', { class: 'small' }, i.watch), h('td', { class: 'small nw' }, i.next), h('td', null, refChip(i.kj)));
+        }))))));
+    if (WATCH.length) p.append(h('div', { class: 'sec' },
+      secHead('Watch calendar', 'Dated readings ahead'),
+      h('div', { class: 'cal card' }, WATCH.slice().sort(function (a, b) { return a.date < b.date ? -1 : 1; }).map(function (w) {
+        return h('div', { class: 'cal-row' }, h('span', { class: 'd' }, (w.date_approx ? 'about ' : '') + fmtDate(w.date)), h('span', null, w.label), h('span', { class: 'chips' }, topicChip(w.topic), w.indicator ? refChip(w.indicator) : null));
+      }))));
+
+    // scorecard of the previous edition's judgments
+    var scs = A.scorecard || [];
+    if (scs.length) p.append(h('div', { class: 'sec' },
+      secHead('Scorecard', 'How the previous edition\u2019s judgments are holding up'),
+      h('div', { class: 'tbl' }, h('table', null,
+        h('thead', null, h('tr', null, h('th', null, 'Judgment'), h('th', null, 'Status'), h('th', null, 'What happened'))),
+        h('tbody', null, scs.map(function (c) {
+          var st = String(c.status || '').toLowerCase();
+          return h('tr', null, h('td', null, h('b', null, c.kj || ''), c.title ? h('div', { class: 'small muted' }, c.title) : null),
+            h('td', null, h('span', { class: 'status ' + (st === 'falsified' ? 'blocked' : st === 'confirmed' ? 'full' : st === 'weakened' ? 'none' : '') }, c.status || '')),
+            h('td', { class: 'small' }, c.note || ''));
+        }))))));
+
+    // graveyard
+    var gy = A.graveyard || [];
+    if (gy.length) p.append(h('div', { class: 'sec' },
+      secHead('The graveyard', 'Prophecies from earlier cycles that failed, and what they teach'),
+      h('div', { class: 'grid-3' }, gy.map(function (g) {
+        return h('article', { class: 'card grave' }, h('span', { class: 'when' }, g.when), h('h3', null, g.prophecy), h('p', null, g.outcome), h('p', { class: 'lesson' }, g.lesson), g.ref ? refList([g.ref]) : null);
+      })),
+      A.graveyard_test ? h('p', { class: 'callout' }, h('b', null, 'Today’s test. '), A.graveyard_test) : null));
+
+    // the 64th part
+    var unk = A.unknowns || [];
+    if (unk.length) p.append(h('div', { class: 'sec' },
+      secHead('The 64th part', 'What this edition cannot see'),
+      h('p', { class: 'lede' }, 'In the traditional reading, the six parts of the Eye of Horus are fractions from one half to one sixty-fourth, and together they sum to 63/64. The missing sixty-fourth is what cannot be measured. These are the unknowns most able to break the judgments above.'),
+      h('div', { class: 'moves' }, unk.map(function (u) { return h('div', { class: 'unk' }, h('b', null, u.id), h('h3', null, u.unknown), h('p', null, u.why)); }))));
+  })();
+
+  /* ==================== TIMELINE ==================== */
+  (function renderTimeline() {
+    var p = panels.timeline;
+    var all = EVENTS.map(function (e) { return { d: e.date, approx: e.date_approx, label: e.label, topic: e.topic, ref: e.ref, future: false }; })
+      .concat(WATCH.map(function (w) { return { d: w.date, approx: w.date_approx, label: w.label, topic: w.topic, ref: w.indicator, future: true }; }))
+      .sort(function (a, b) { return a.d < b.d ? -1 : a.d > b.d ? 1 : 0; });
+    var groups = [], cur = null, nowPlaced = false, run = META.run_date || '';
+    all.forEach(function (e) {
+      var key = e.d.slice(0, 7);
+      if (!cur || cur.key !== key) { cur = { key: key, items: [] }; groups.push(cur); }
+      cur.items.push(e);
+    });
+    var tl = h('div', { class: 'tl' });
+    groups.forEach(function (g) {
+      var list = h('div', { class: 'tl-list' });
+      g.items.forEach(function (e) {
+        if (!nowPlaced && run && e.d > run) { nowPlaced = true; list.append(h('div', { class: 'tl-now' }, 'Edition run · ' + fmtDate(run))); }
+        list.append(h('div', { class: 'tl-ev' + (e.future ? ' future' : '') },
+          h('span', { class: 'd' }, (e.approx ? 'about ' : '') + fmtDate(e.d, false)),
+          h('span', { class: 'l' }, e.label),
+          h('div', { class: 'meta' }, e.future ? h('span', { class: 'watchtag' }, 'Watch') : null, e.topic ? topicChip(e.topic) : null, e.ref ? refChip(e.ref) : null)));
+      });
+      tl.append(h('div', { class: 'tl-month' }, h('span', { class: 'tl-mlab' }, MONTHS[+g.key.slice(5, 7) - 1] + ' ' + g.key.slice(0, 4)), list));
+    });
+    p.append(h('div', { class: 'sec' },
+      secHead('Timeline', EVENTS.length + ' events behind the judgments · ' + WATCH.length + ' dated readings ahead'),
+      h('p', { class: 'lede small' }, 'Filled marks are events that happened; open marks are readings to watch. Each links to the signal or indicator it belongs to.'),
+      tl));
+  })();
+
+  /* ==================== LEDGER ==================== */
+  (function renderLedger() {
+    var p = panels.ledger;
+    var lanes = []; ITEMS.forEach(function (i) { if (lanes.indexOf(i.lane) < 0) lanes.push(i.lane); });
+    function sel(id, label, opts) {
+      var s = h('select', { id: id }, opts.map(function (o) { return h('option', { value: o[0] }, o[1]); }));
+      return { el: h('div', { class: 'field' }, h('label', { for: id }, label), s), s: s };
+    }
+    var fEye = sel('f-eye', 'Eye', [['', 'Both eyes'], ['sun', 'Broadcast'], ['moon', 'Floor']]);
+    var fLane = sel('f-lane', 'Lane', [['', 'All lanes']].concat(lanes.map(function (l) { return [l, laneLabel(l)]; })));
+    var topicOpts = [['', 'All topics']];
+    Object.keys(NOME.clusters || {}).forEach(function (c) { NOME.clusters[c].forEach(function (t) { topicOpts.push([t, t + ' ' + tshort(t) + ' (' + c + ')']); }); });
+    if (topicOpts.length === 1) TAX.forEach(function (t) { topicOpts.push([t.id, t.id + ' ' + tshort(t.id)]); });
+    var fTopic = sel('f-topic', 'Topic', topicOpts);
+    var fIntent = sel('f-intent', 'Intent', [['', 'All intents']].concat(Object.keys(CODES.intent || {}).map(function (c) { return [c, c + ' ' + CODES.intent[c]]; })));
+    var fFlag = sel('f-flag', 'Flags', [['', 'Any'], ['grey', 'Grey-hat only'], ['set', 'Filtered (set) only'], ['none', 'No flags']]);
+    var fQ = h('input', { type: 'search', id: 'f-q', placeholder: 'ID, title or source', 'aria-label': 'Search the ledger' });
+    var countEl = h('span', { class: 'count', 'aria-live': 'polite' });
+    var clear = h('button', { type: 'button', class: 'btn' }, 'Clear filters');
+    var tbody = h('tbody');
+    var rows = ITEMS.map(function (i) {
+      var e = i.engagement || {};
+      var eng = e.replies !== undefined ? e.replies + ' replies' : e.views !== undefined ? compact(e.views) + ' views' : e.comments !== undefined ? e.comments + ' comments' : '';
+      var tr = h('tr', { id: 'item-' + i.id, class: counted(i) ? null : 'is-set' },
+        h('td', { class: 'mono nw' }, h('span', { class: 'eyedot ' + i.eye, title: i.eye === 'sun' ? 'Broadcast (Sun eye)' : 'Floor (Moon eye)' }), i.id),
+        h('td', { class: 'mono nw small' }, fmtDate(i.date, i.date_approx)),
+        h('td', null, h('div', { class: 'src' }, h('span', { class: 'p' }, i.platform), h('span', { class: 'c' }, laneLabel(i.lane) + (i.community ? ' · ' + i.community : '')))),
+        h('td', null, ext(i.url, i.title, 'ttl')),
+        h('td', null, h('span', { class: 'chips' }, topicChip(i.topic), i.topic2 ? topicChip(i.topic2) : null)),
+        h('td', { class: 'mono nw', title: (CODES.intent || {})[i.intent] || '' }, i.intent),
+        h('td', { class: 'st', title: (CODES.stance || {})[String(i.stance)] || '' }, i.stance > 0 ? '+1' : i.stance < 0 ? '−1' : '0'),
+        h('td', { class: 'nw' }, (i.flags || []).map(function (f) { return h('span', { class: 'flag ' + f, title: (CODES.flags || {})[f] || f }, f); })),
+        h('td', { class: 'mono small nw' }, eng));
+      tbody.append(tr);
+      return { i: i, el: tr, text: [i.id, i.title, i.platform, i.community, i.lane].join(' ').toLowerCase() };
+    });
+    function apply() {
+      var eye = fEye.s.value, lane = fLane.s.value, topic = fTopic.s.value, intent = fIntent.s.value, flag = fFlag.s.value, q = fQ.value.trim().toLowerCase();
+      var n = 0;
+      rows.forEach(function (x) {
+        var i = x.i, fl = i.flags || [];
+        var ok = (!eye || i.eye === eye) && (!lane || i.lane === lane) && (!topic || i.topic === topic || i.topic2 === topic) &&
+          (!intent || i.intent === intent) && (!flag || (flag === 'none' ? fl.length === 0 : fl.indexOf(flag) >= 0)) && (!q || x.text.indexOf(q) >= 0);
+        x.el.hidden = !ok; if (ok) n++;
+      });
+      countEl.textContent = n + ' of ' + ITEMS.length + ' items';
+    }
+    [fEye.s, fLane.s, fTopic.s, fIntent.s, fFlag.s].forEach(function (s) { s.addEventListener('change', apply); });
+    fQ.addEventListener('input', apply);
+    clear.addEventListener('click', function () { [fEye.s, fLane.s, fTopic.s, fIntent.s, fFlag.s].forEach(function (s) { s.value = ''; }); fQ.value = ''; apply(); });
+    ledgerFocus = function (id) { [fEye.s, fLane.s, fTopic.s, fIntent.s, fFlag.s].forEach(function (s) { s.value = ''; }); fQ.value = id; apply(); };
+    apply();
+    p.append(h('div', { class: 'sec' },
+      secHead('Ledger', 'Every coded item, with its source link'),
+      h('p', { class: 'lede small' }, 'Gold dots are broadcast items (Sun eye), blue dots floor items (Moon eye). Struck-through rows were filtered by the Set rule (spam, sponsored, group-buy) and do not count toward share of voice. Grey flags mark grey-hat or terms-of-service-risky tactics; they count, and are tallied separately. Floor authors are not named.'),
+      h('div', { class: 'filters' }, fEye.el, fLane.el, fTopic.el, fIntent.el, fFlag.el, h('div', { class: 'field' }, h('label', { for: 'f-q' }, 'Search'), fQ), clear, countEl),
+      h('div', { class: 'tbl scroll' }, h('table', null,
+        h('thead', null, h('tr', null, ['ID', 'Date', 'Source', 'Title', 'Topic', 'Intent', 'Stance', 'Flags', 'Engagement'].map(function (t) { return h('th', { scope: 'col' }, t); }))),
+        tbody))));
+  })();
+
+  /* ==================== METHOD ==================== */
+  (function renderMethod() {
+    var p = panels.method, w = META.window || {}, n = M.n || {};
+    p.append(h('div', { class: 'sec' },
+      secHead('How this edition was made', META.collection_mode || ''),
+      h('dl', { class: 'defs' },
+        h('dt', null, 'Broadcast window'), h('dd', null, fmtRange(w.sun) || '–'),
+        h('dt', null, 'Floor window'), h('dd', null, w.moon_floor || '–'),
+        h('dt', null, 'Room census'), h('dd', null, w.rooms || '–'),
+        h('dt', null, 'Counting rule'), h('dd', null, 'Only items read from defined listing pages and channel pages count toward share of voice. Topical search results were used as evidence for the analysis, never counted. ' + int(n.sun_counted) + ' broadcast and ' + int(n.moon_counted) + ' floor items are counted; ' + (n.set_flagged || 0) + ' are kept in the ledger but excluded by the Set filter.'),
+        h('dt', null, 'Coding'), h('dd', null, 'Each item gets a primary topic from the nome’s taxonomy, an optional second topic, an intent code, a stance (−1, 0, +1) and flags. Rooms are coded by the topic they are built around.'))));
+
+    var md = M.method || {};
+    p.append(h('div', { class: 'sec' },
+      secHead('Measures', 'What each number on this page means'),
+      h('dl', { class: 'defs' },
+        h('dt', null, 'Share of voice'), h('dd', null, cap(md.sov || 'primary topic share of counted items in each eye') + '.'),
+        h('dt', null, 'Stereopsis'), h('dd', null, cap(md.stereopsis || '') + '. Following Monroe, Colaresi and Quinn (2008), the prior shrinks small counts so that rare topics do not produce extreme gaps by chance.',
+          h('pre', { class: 'formula', style: 'margin-top:10px' },
+            'delta_w = log[(yF_w + a_w) / (nF + a0 − yF_w − a_w)] − log[(yB_w + a_w) / (nB + a0 − yB_w − a_w)]\n' +
+            'var_w   ≈ 1 / (yF_w + a_w) + 1 / (yB_w + a_w)          z_w = delta_w / sqrt(var_w)\n' +
+            'a0 = number of topics;  a_w = a0 × max(pooled_w, 0.5) / (n_pooled + 0.5 × topics)')),
+        h('dt', null, 'Class'), h('dd', null, 'Floor-led or broadcast-led beyond |z| 1.96; leaning between 1 and 1.96; balanced below 1. A topic with no items in one eye (and at least three, or two, in the other) is broadcast-only or floor-only.'),
+        h('dt', null, 'Pain'), h('dd', null, cap(md.pain || '') + '.'),
+        h('dt', null, 'Reply-weighted floor'), h('dd', null, cap(md.weighted_floor || '') + '.'),
+        h('dt', null, 'Set filter'), h('dd', null, (CODES.flags || {}).set || ''),
+        h('dt', null, 'Grey flag'), h('dd', null, (CODES.flags || {}).grey || ''),
+        h('dt', null, 'Stage'), h('dd', null, STAGE_ORDER.map(function (s) { return h('div', { class: 'stagedef' }, arcGlyph(s), h('span', null, h('b', null, s + ' (' + STAGE_DEF[s][0].toLowerCase() + ').'), ' ' + STAGE_DEF[s][1])); })),
+        h('dt', null, 'Momentum'), h('dd', null, MM ? 'Measured against edition ' + M.momentum.previous_edition + ' (run ' + fmtDate(M.momentum.previous_run_date) + '): the change in each eye’s share of counted items, with a two-proportion z-score. Bold changes clear |z| 1.96.' : (MOM._note || 'Directional judgment from the hard signals.')),
+        h('dt', null, 'Likelihood'), h('dd', null, h('div', { class: 'scale-list' }, ICD.map(function (t) { return [h('b', null, t[1] + '–' + t[2] + '%'), h('span', null, t[0])]; })), h('p', { class: 'small muted', style: 'margin-top:6px' }, 'ICD 203 expressions of likelihood. Confidence (low, moderate, high) grades the evidence base separately.')),
+        h('dt', null, 'Intent codes'), h('dd', null, h('div', { class: 'scale-list' }, Object.keys(CODES.intent || {}).map(function (c) { return [h('b', null, c), h('span', null, CODES.intent[c])]; }))))));
+
+    var kap = D.kappa;
+    if (kap) {
+      var dis = kap.disagreements || [];
+      p.append(h('div', { class: 'sec' },
+        secHead('Reliability', 'Blind second coder on a random sample'),
+        h('div', { class: 'tbl' }, h('table', null,
+          h('thead', null, h('tr', null, h('th', null, 'Code'), h('th', { class: 'num' }, 'Items'), h('th', { class: 'num' }, 'Agreement'), h('th', { class: 'num' }, 'Cohen’s κ'), h('th', null, 'Reading (Landis and Koch)'))),
+          h('tbody', null, ['topic', 'cluster', 'intent'].filter(function (k) { return kap[k]; }).map(function (k) {
+            return h('tr', null, h('td', null, cap(k)), h('td', { class: 'num' }, String(kap[k].n)), h('td', { class: 'num' }, pct(kap[k].agreement, 1)), h('td', { class: 'num' }, (kap[k].kappa || 0).toFixed(3)), h('td', null, kap[k].reading || ''));
+          })))),
+        dis.length ? h('details', { class: 'more' }, h('summary', null, dis.length + ' items with any disagreement'),
+          h('div', { class: 'tbl' }, h('table', null,
+            h('thead', null, h('tr', null, h('th', null, 'Item'), h('th', null, 'Title'), h('th', null, 'First coder'), h('th', null, 'Second coder'))),
+            h('tbody', null, dis.map(function (d) {
+              return h('tr', null, h('td', null, refChip(d.id)), h('td', { class: 'small' }, d.title), h('td', { class: 'mono nw' }, d.first.join(' · ')), h('td', { class: 'mono nw' }, d.second.join(' · ')));
+            }))))) : null));
+    }
+
+    var lim = A.limitations || [];
+    if (lim.length) p.append(h('div', { class: 'sec' },
+      secHead('Limitations', lim.length + ' known limits of this edition'),
+      h('ol', { class: 'limits' }, lim.map(function (l) { return h('li', null, l); }))));
+    var sq = NOME.standing_questions || [];
+    if (sq.length) p.append(h('div', { class: 'sec' },
+      secHead('Standing questions', 'Asked of every edition of this nome'),
+      h('ol', { class: 'limits' }, sq.map(function (q) { return h('li', null, q); }))));
+    p.append(h('div', { class: 'sec' },
+      secHead('Rebuild this page', 'From the Horus skill folder'),
+      h('pre', { class: 'formula' },
+        'python scripts/horus_validate.py --edition ' + (META.ledger_file || 'assets/editions/<edition>.json') + '\n' +
+        'python scripts/horus_build.py --edition ' + (META.ledger_file || 'assets/editions/<edition>.json') + ' --out horus-dashboard.html')));
+  })();
+
+  /* ---------- footer ---------- */
+  document.getElementById('foot').append(
+    h('span', null, 'Horus · ' + (NOME.name || '') + ' · edition ' + (META.edition || '') + ' · run ' + fmtDate(META.run_date)),
+    h('span', null, int(ITEMS.length) + ' items · ' + int(ROOMS.length) + ' rooms · ' + int(SIGS.length) + ' signals, each linked to its source'));
+
+  var start = (location.hash || '').replace('#', '');
+  showTab(panels[start] ? start : 'brief', false);
+})();
+</script>

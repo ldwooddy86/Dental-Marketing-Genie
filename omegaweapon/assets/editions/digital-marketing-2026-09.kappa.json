@@ -1,0 +1,154 @@
+{
+ "topic": {
+  "n": 60,
+  "agreement": 0.95,
+  "kappa": 0.947,
+  "reading": "almost perfect"
+ },
+ "cluster": {
+  "n": 60,
+  "agreement": 0.95,
+  "kappa": 0.939,
+  "reading": "almost perfect"
+ },
+ "intent": {
+  "n": 60,
+  "agreement": 0.867,
+  "kappa": 0.797,
+  "reading": "substantial"
+ },
+ "disagreements": [
+  {
+   "id": "S158",
+   "title": "Ad Tech Briefing: Google's ad tech remedies arrive just as the platform battle moves to AI",
+   "first": [
+    "T27",
+    "D"
+   ],
+   "second": [
+    "T27",
+    "N"
+   ]
+  },
+  {
+   "id": "M017",
+   "title": "New adult-niche site: 13k organic visits on day 3, then under 1k a day",
+   "first": [
+    "T03",
+    "C"
+   ],
+   "second": [
+    "T03",
+    "R"
+   ]
+  },
+  {
+   "id": "M039",
+   "title": "Rank a WhatsApp number (follow-up)",
+   "first": [
+    "T05",
+    "H"
+   ],
+   "second": [
+    "T05",
+    "Q"
+   ]
+  },
+  {
+   "id": "S062",
+   "title": "How to segment SEO data for multi-location brands",
+   "first": [
+    "T05",
+    "H"
+   ],
+   "second": [
+    "T17",
+    "H"
+   ]
+  },
+  {
+   "id": "S138",
+   "title": "Snap is launching a new Specs AI tool, coming to iOS and Mac",
+   "first": [
+    "T28",
+    "N"
+   ],
+   "second": [
+    "T00",
+    "N"
+   ]
+  },
+  {
+   "id": "M032",
+   "title": "How to delete negative Google reviews",
+   "first": [
+    "T05",
+    "H"
+   ],
+   "second": [
+    "T05",
+    "Q"
+   ]
+  },
+  {
+   "id": "S073",
+   "title": "Inside Google Maps: 72 ranking signals and the architecture behind local search",
+   "first": [
+    "T05",
+    "H"
+   ],
+   "second": [
+    "T05",
+    "R"
+   ]
+  },
+  {
+   "id": "S120",
+   "title": "AI must not outrun safety controls, DeepMind co-founder warns",
+   "first": [
+    "T28",
+    "D"
+   ],
+   "second": [
+    "T28",
+    "N"
+   ]
+  },
+  {
+   "id": "S019",
+   "title": "Test Google Ads AI Max Against Dynamic Search Ads",
+   "first": [
+    "T08",
+    "H"
+   ],
+   "second": [
+    "T08",
+    "N"
+   ]
+  },
+  {
+   "id": "S159",
+   "title": "Future of TV Briefing: Inside The Wall Street Journal's new shows strategy",
+   "first": [
+    "T11",
+    "N"
+   ],
+   "second": [
+    "T13",
+    "N"
+   ]
+  },
+  {
+   "id": "S157",
+   "title": "Some marketers see 'no ceiling' for beauty brands advertising in sports",
+   "first": [
+    "T24",
+    "D"
+   ],
+   "second": [
+    "T24",
+    "N"
+   ]
+  }
+ ]
+}

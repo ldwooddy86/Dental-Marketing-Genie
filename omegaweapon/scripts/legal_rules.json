@@ -1,0 +1,667 @@
+{
+  "_meta": {
+    "version": "2026.08",
+    "as_of": "2026-08-14",
+    "note": "Scanner rule data for LegalMarketingContent.Skill. Edit this file to keep the skill current — the scanner reads it at runtime, so no code changes are needed to add a new stale-claim pattern. Every entry should carry a 'source' so a flag can cite primary authority. Keep 'severity' honest: BLOCKER = publishing this exposes the firm; HIGH = materially wrong; MEDIUM = probably stale, verify; LOW = advisory.",
+    "review_cadence": "Refresh in January (IRS/SSA/HHS/USCIS annual figures), in July (SCOTUS term ends, mid-year IRS adjustments), and whenever a state bar amends its advertising rules."
+  },
+  "dead_authority": [
+    {
+      "id": "chevron",
+      "pattern": "\\bChevron\\b(?!\\s+(?:Corp|U\\.S\\.A\\.?,? Inc\\.? v\\.? NRDC.{0,40}overrul))",
+      "severity": "BLOCKER",
+      "label": "Chevron deference",
+      "why": "Chevron U.S.A. v. NRDC was OVERRULED by Loper Bright Enterprises v. Raimondo, No. 22-451 (June 28, 2024). Courts now exercise independent judgment on statutory interpretation; agency readings get no binding deference (Skidmore respect survives).",
+      "fix": "Remove any claim that courts defer to an agency's interpretation. If the page discusses agency interpretation at all, it must reflect Loper Bright.",
+      "source": "https://www.supremecourt.gov/opinions/23pdf/22-451_7m58.pdf"
+    },
+    {
+      "id": "humphreys",
+      "pattern": "Humphrey'?s Executor|independent agenc(?:y|ies)[^.]{0,80}(?:insulated|for cause|fixed terms)|(?:FTC|NLRB|SEC|FCC)[^.]{0,60}only be removed for cause",
+      "severity": "HIGH",
+      "label": "Independent-agency removal protection",
+      "why": "Humphrey's Executor v. United States was OVERRULED by Trump v. Slaughter, No. 25-332 (June 29, 2026). For-cause removal protection for FTC commissioners violates separation of powers; the President may remove at will. The Court expressly reserved the Federal Reserve question.",
+      "fix": "Do not describe the FTC/NLRB/SEC/FCC as insulated from presidential removal.",
+      "source": "https://www.supremecourt.gov/opinions/25pdf/25-332_qn12.pdf"
+    },
+    {
+      "id": "ftc-noncompete",
+      "pattern": "FTC[^.]{0,60}non-?compete[^.]{0,80}(?:ban|rule|unenforceable)|non-?competes? (?:are|is) (?:now )?banned|September 4,? 2024|16 C\\.?F\\.?R\\.? (?:Part )?910",
+      "severity": "BLOCKER",
+      "label": "FTC Non-Compete Clause Rule",
+      "why": "The rule NEVER TOOK EFFECT. Set aside nationwide by N.D. Tex. (Ryan LLC v. FTC) in August 2024, two weeks before its September 4, 2024 compliance date. The FTC voted 3-1 on September 5, 2025 to dismiss its appeals and accede to vacatur, then removed the rule from the CFR. Noncompete enforceability is entirely a matter of state law.",
+      "fix": "Delete. Do not say noncompetes are banned, that the rule is 'on appeal,' or that employers had to send rescission notices. Replace with the governing state-law analysis.",
+      "source": "https://www.ftc.gov/news-events/news/press-releases/2025/09/federal-trade-commission-files-accede-vacatur-non-compete-clause-rule"
+    },
+    {
+      "id": "dol-overtime-2024",
+      "pattern": "\\$58,656|\\$1,128 ?(?:/|per )?week|\\$43,888|\\$844 ?(?:/|per )?week|\\$132,964|\\$151,164",
+      "severity": "BLOCKER",
+      "label": "2024 DOL overtime salary threshold",
+      "why": "The April 2024 overtime rule was VACATED nationwide on November 15, 2024 (State of Texas v. DOL, E.D. Tex.), and DOL formally removed the language from the CFR on May 14-15, 2026. Current law is the 2019 level: $684/week ($35,568/yr); HCE $107,432. The automatic triennial update mechanism is gone.",
+      "fix": "Replace with $684/week ($35,568) and HCE $107,432. Do not say an increase 'is scheduled' or the litigation is 'pending.'",
+      "source": "https://www.dol.gov/agencies/whd/overtime/salary-levels"
+    },
+    {
+      "id": "cta-boi-domestic",
+      "pattern": "(?:Corporate Transparency Act|beneficial ownership information|BOI report|FinCEN)[^.]{0,120}(?:must file|required to file|January 1,? 2025|\\$500 per day)|every (?:LLC|corporation|business)[^.]{0,60}FinCEN",
+      "severity": "BLOCKER",
+      "label": "CTA / FinCEN beneficial ownership reporting",
+      "why": "FinCEN finalized its rule August 11, 2026: ALL entities created in the United States are EXEMPT from beneficial ownership reporting, and reporting companies need not report BOI for U.S.-person beneficial owners or company applicants. Only certain foreign entities must file.",
+      "fix": "Delete any claim that domestic LLCs/corporations must file a BOI report or face $500/day penalties. Business-formation pages and BOI-filing service offerings built on this are dead.",
+      "source": "https://www.fincen.gov/boi"
+    },
+    {
+      "id": "estate-sunset",
+      "pattern": "(?:sunset|expire|revert|cut in half|drop)[^.]{0,80}(?:2026|January 1,? 2026)|2026 sunset|use it or lose it[^.]{0,40}2026|exemption[^.]{0,60}(?:\\$7 ?million|\\$6\\.[0-9] ?million|roughly half)",
+      "severity": "BLOCKER",
+      "label": "The estate-tax sunset that did not happen",
+      "why": "The One Big Beautiful Bill Act (P.L. 119-21, July 4, 2025) set the estate/gift basic exclusion at $15,000,000 per person for 2026, indexed thereafter. The scheduled TCJA sunset to roughly $7M NEVER OCCURRED. This is the single most widespread stale claim in estate-planning marketing.",
+      "fix": "Replace with the 2026 figure: $15,000,000 basic exclusion, $19,000 annual gift exclusion, $194,000 to a non-citizen spouse.",
+      "source": "https://www.irs.gov/newsroom/irs-releases-tax-inflation-adjustments-for-tax-year-2026-including-amendments-from-the-one-big-beautiful-bill"
+    },
+    {
+      "id": "subchapter-v",
+      "pattern": "\\$7\\.5 ?million|\\$7,500,000|\\$2,750,000|\\$2\\.75 ?million",
+      "severity": "HIGH",
+      "label": "Subchapter V / Chapter 13 debt limits that sunset",
+      "why": "The Bankruptcy Threshold Adjustment and Technical Corrections Act raised the Subchapter V limit to $7,500,000 and created a combined $2,750,000 Chapter 13 limit. BOTH SUNSET on June 21, 2024. Current: Subchapter V $3,424,000; Chapter 13 reverted to separate limits of $526,700 unsecured / $1,580,125 secured (eff. April 1, 2025; next adjustment April 1, 2028).",
+      "fix": "Replace with the April 1, 2025 threshold table. A page saying 'businesses with up to $7.5 million in debt can use Subchapter V' is wrong by more than double.",
+      "source": "https://www.federalregister.gov/documents/2025/02/04/2025-02207/adjustment-of-certain-dollar-amounts-applicable-to-bankruptcy-cases"
+    },
+    {
+      "id": "wep-gpo",
+      "pattern": "Windfall Elimination Provision|Government Pension Offset|\\bWEP\\b|\\bGPO\\b",
+      "severity": "HIGH",
+      "label": "WEP / GPO repeal",
+      "why": "The Social Security Fairness Act (H.R. 82, P.L. 118-273, enacted January 5, 2025) REPEALED both the Windfall Elimination Provision and the Government Pension Offset, retroactive to benefits payable after December 2023. SSA's historical explainer pages remain online — their existence is not evidence the provisions are live.",
+      "fix": "Any page telling teachers, firefighters, police, or CSRS retirees that WEP will reduce their benefit or GPO will offset two-thirds of a pension is wrong. Affects elder law, divorce/QDRO, and public-employee benefits pages.",
+      "source": "https://www.ssa.gov/benefits/retirement/social-security-fairness-act.html"
+    },
+    {
+      "id": "micra-250k",
+      "pattern": "MICRA[^.]{0,80}\\$250,000|\\$250,000[^.]{0,80}(?:cap|MICRA|non-?economic)",
+      "severity": "HIGH",
+      "label": "California MICRA cap",
+      "why": "AB 35 replaced the $250,000 MICRA cap. For 2026 the non-death cap is $470,000 and the wrongful-death cap is $650,000, escalating +$40,000/yr and +$50,000/yr respectively through 2033 ($750,000 / $1,000,000), then indexed 2%/yr.",
+      "fix": "State the cap as a schedule with the current year's figure, not a single number. Verify the current-year value before publishing.",
+      "source": "https://law.justia.com/codes/california/code-civ/part-4/title-2/section-3333-2/"
+    },
+    {
+      "id": "ca-survival-damages",
+      "pattern": "(?:survival action|pre-?death)[^.]{0,100}(?:pain and suffering|CCP 377\\.34|377\\.34)",
+      "severity": "HIGH",
+      "label": "California survival-action pain and suffering",
+      "why": "The SB 447 window (CCP § 377.34) allowing recovery of a decedent's pre-death pain, suffering, and disfigurement applied only to actions filed January 1, 2022 through January 1, 2026. It SUNSET and was not extended (SB 29 failed). California has reverted to economic damages plus punitive only in survival actions.",
+      "fix": "Remove any promise of pre-death pain and suffering recovery on California wrongful-death and survival pages.",
+      "source": "https://law.justia.com/codes/california/code-ccp/part-2/title-3/chapter-1/section-377-34/"
+    },
+    {
+      "id": "cfpb-medical-debt",
+      "pattern": "medical debt[^.]{0,100}(?:removed from|cannot appear on|banned from)[^.]{0,40}credit report|CFPB[^.]{0,60}medical debt rule",
+      "severity": "HIGH",
+      "label": "CFPB medical debt credit reporting rule",
+      "why": "The rule was VACATED in July 2025 (E.D. Tex.); the court also held FCRA preempts contrary state laws. Medical debt is reportable again as a matter of federal law.",
+      "fix": "Remove claims that medical debt has been removed from credit reports by federal rule.",
+      "source": "https://www.consumerfinance.gov/rules-policy/final-rules/prohibition-on-creditors-and-consumer-reporting-agencies-concerning-medical-information-regulation-v/"
+    },
+    {
+      "id": "click-to-cancel",
+      "pattern": "click-?to-?cancel|negative option rule",
+      "severity": "MEDIUM",
+      "label": "FTC Click-to-Cancel / Negative Option Rule",
+      "why": "VACATED by the Eighth Circuit on July 8, 2025, days before the compliance deadline. The FTC restarted rulemaking (signaled February 2026). ROSCA enforcement continues.",
+      "fix": "Do not describe the rule as in force or as something businesses had to comply with. ROSCA is the live authority.",
+      "source": "https://www.gibsondunn.com/ftc-restarts-negative-option-rulemaking-after-eighth-circuit-vacatur-enforcement-under-rosca-continues/"
+    },
+    {
+      "id": "background-circumstances",
+      "pattern": "background circumstances|reverse discrimination[^.]{0,100}(?:harder|higher burden|additional proof|heightened)",
+      "severity": "HIGH",
+      "label": "Title VII 'background circumstances' rule",
+      "why": "Ames v. Ohio Dept. of Youth Services, No. 23-1039 (June 5, 2025), 9-0, ELIMINATED the heightened prima facie showing for majority-group Title VII plaintiffs. The McDonnell Douglas burden is identical regardless of the plaintiff's group.",
+      "fix": "Remove any claim that reverse-discrimination plaintiffs face a higher burden.",
+      "source": "https://www.supremecourt.gov/opinions/24pdf/23-1039_c0n2.pdf"
+    },
+    {
+      "id": "moment-of-threat",
+      "pattern": "moment of threat",
+      "severity": "MEDIUM",
+      "label": "Fifth Circuit 'moment of threat' doctrine",
+      "why": "Rejected in Barnes v. Felix, No. 23-1239 (May 15, 2025). Excessive-force analysis considers the totality of the circumstances, not only the instant of the threat.",
+      "fix": "Update excessive-force and civil-rights pages.",
+      "source": "https://www.supremecourt.gov/opinions/24pdf/23-1239_c07d.pdf"
+    },
+    {
+      "id": "material-adverse-action",
+      "pattern": "materially adverse (?:employment )?action|significant (?:harm|disadvantage)[^.]{0,60}(?:transfer|Title VII)|lateral transfer[^.]{0,60}not actionable",
+      "severity": "MEDIUM",
+      "label": "Title VII 'materially adverse action' standard",
+      "why": "Muldrow v. City of St. Louis, No. 22-193 (April 17, 2024), holds a transfer plaintiff need show only SOME harm to a term or condition of employment — not 'significant,' 'material,' or 'serious' harm.",
+      "fix": "Update the standard described on discrimination pages.",
+      "source": "https://supreme.justia.com/cases/federal/us/601/22-193/"
+    },
+    {
+      "id": "third-party-release",
+      "pattern": "third-?party release|Purdue[^.]{0,60}(?:structure|settlement model)",
+      "severity": "MEDIUM",
+      "label": "Non-consensual third-party releases in Chapter 11",
+      "why": "Harrington v. Purdue Pharma L.P., No. 23-124 (June 27, 2024), holds the Bankruptcy Code does not authorize non-consensual releases of claims against non-debtors.",
+      "fix": "Update mass-tort and bankruptcy pages describing that settlement structure as available.",
+      "source": "https://supreme.justia.com/cases/federal/us/603/23-124/"
+    },
+    {
+      "id": "eo-14026",
+      "pattern": "\\$17\\.75|\\$17\\.20[^.]{0,60}contractor|Executive Order 14026|EO 14026",
+      "severity": "MEDIUM",
+      "label": "Federal contractor minimum wage (EO 14026)",
+      "why": "EO 14026 was REVOKED by Executive Order 14236 on March 14, 2025; DOL no longer enforces it or 29 CFR part 23. EO 13658 still applies to older contracts: $13.65 non-tipped / $9.55 tipped, effective May 11, 2026 (there was no January 1, 2026 change).",
+      "fix": "Replace the $17.75 figure with the EO 13658 analysis for covered contracts.",
+      "source": "https://www.dol.gov/agencies/whd/government-contracts/eo14026"
+    },
+    {
+      "id": "defunct-agencies",
+      "pattern": "\\bINS\\b(?! ?[a-z])|Immigration and Naturalization Service|Office of Disability Adjudication and Review|\\bODAR\\b|Bureau of Citizenship and Immigration Services",
+      "severity": "MEDIUM",
+      "label": "Agency that no longer exists",
+      "why": "INS was abolished in 2003 (functions split among USCIS, ICE, CBP). SSA's ODAR was renamed the Office of Hearings Operations (OHO) in 2017.",
+      "fix": "Use the current agency name.",
+      "source": "https://www.uscis.gov/about-us/our-history"
+    },
+    {
+      "id": "cfpb-reliable-remedy",
+      "pattern": "CFPB[^.]{0,100}(?:will investigate|will respond|within 15 days|actively supervises)",
+      "severity": "MEDIUM",
+      "label": "CFPB as a reliable consumer remedy",
+      "why": "The CFPB has undergone sustained defunding attempts, major reorganization, and staffing cuts through 2025-2026. Presenting CFPB complaint handling as a dependable remedy with a service-level guarantee is no longer safe.",
+      "fix": "Soften or remove. Verify current agency posture before describing CFPB enforcement.",
+      "source": "https://www.gao.gov/products/gao-26-107967"
+    },
+    {
+      "id": "ny-grieving-families",
+      "pattern": "Grieving Families Act",
+      "severity": "MEDIUM",
+      "label": "New York Grieving Families Act",
+      "why": "VETOED for the fourth consecutive year on December 5, 2025 (S4423). New York's wrongful-death SOL remains 2 years and emotional-anguish damages remain unavailable.",
+      "fix": "Do not describe the GFA as passed, imminent, or as expanding available damages.",
+      "source": "https://www.nysenate.gov/legislation/bills/2025/S4423"
+    },
+    {
+      "id": "pwfa-abortion",
+      "pattern": "PWFA[^.]{0,120}abortion|Pregnant Workers Fairness Act[^.]{0,120}abortion",
+      "severity": "MEDIUM",
+      "label": "PWFA elective-abortion accommodation provision",
+      "why": "That provision of the EEOC's PWFA final rule was VACATED in May 2025 (Louisiana v. EEOC, W.D. La.). The rest of the PWFA rule stands.",
+      "fix": "Remove the elective-abortion accommodation claim; keep the rest of the PWFA discussion.",
+      "source": "https://www.eeoc.gov/pregnant-workers-fairness-act"
+    }
+  ],
+  "stale_figures": [
+    {
+      "pattern": "\\$13,990,000|\\$13\\.99 ?million|\\$13,610,000|\\$13\\.61 ?million|\\$12,920,000",
+      "current": "$15,000,000 (2026 estate/gift basic exclusion)",
+      "label": "Estate/gift exclusion",
+      "source": "https://www.irs.gov/newsroom/irs-releases-tax-inflation-adjustments-for-tax-year-2026-including-amendments-from-the-one-big-beautiful-bill"
+    },
+    {
+      "pattern": "\\$18,000[^.]{0,60}(?:gift|annual exclusion)|(?:gift|annual exclusion)[^.]{0,60}\\$18,000|\\$17,000[^.]{0,40}annual exclusion",
+      "current": "$19,000 annual gift tax exclusion (2026); $194,000 to a non-citizen spouse",
+      "label": "Annual gift exclusion",
+      "source": "https://www.irs.gov/newsroom/irs-releases-tax-inflation-adjustments-for-tax-year-2026-including-amendments-from-the-one-big-beautiful-bill"
+    },
+    {
+      "pattern": "\\$1,620|\\$1,550|\\$1,470",
+      "current": "2026 SGA: $1,690/mo non-blind, $2,830/mo blind; trial work period $1,210/mo",
+      "label": "Social Security SGA",
+      "source": "https://www.ssa.gov/oact/cola/sga.html"
+    },
+    {
+      "pattern": "\\$967|\\$943",
+      "current": "2026 SSI federal payment: $994/mo individual, $1,491/mo couple",
+      "label": "SSI federal benefit rate",
+      "source": "https://www.ssa.gov/news/en/cola/factsheets/2026.html"
+    },
+    {
+      "pattern": "67 ?cents|\\$0\\.67|70 ?cents|\\$0\\.70|65\\.5 ?cents|72\\.5 ?cents",
+      "current": "IRS standard mileage, July 1 - Dec 31 2026: 76.0 cents business, 23.5 cents medical/moving, 14 cents charitable (statutory, never changes)",
+      "label": "IRS mileage rate",
+      "source": "https://www.irs.gov/tax-professionals/standard-mileage-rates"
+    },
+    {
+      "pattern": "\\$640[^.]{0,40}(?:N-400|citizenship|naturalization)|\\$535[^.]{0,40}I-130|\\$1,140[^.]{0,40}I-485|\\$410[^.]{0,40}I-765|\\$595[^.]{0,40}I-751",
+      "current": "Post-April 2024 fee schedule (8 CFR 106.2): N-400 $760, I-130 $675, I-485 $1,440, I-765 $520, I-751 $750",
+      "label": "USCIS filing fees",
+      "source": "https://www.ecfr.gov/current/title-8/chapter-I/subchapter-B/part-106/subpart-A/section-106.2"
+    },
+    {
+      "pattern": "\\$110[^.]{0,60}(?:BIA|Board of Immigration Appeals|appeal)|EOIR-?42B[^.]{0,40}\\$100|\\$100[^.]{0,40}EOIR-?42B",
+      "current": "FY2026 EOIR fees (eff. Feb 1, 2026): BIA appeal $1,030; EOIR-42B cancellation (non-LPR) $1,640; EOIR-42A $710; motion to reopen (IJ) $1,065",
+      "label": "EOIR filing fees",
+      "source": "https://www.federalregister.gov/documents/2026/01/21/2026-01012/inflation-adjustment-for-eoir-obbba-fees-fiscal-year-2026"
+    },
+    {
+      "pattern": "asylum[^.]{0,60}(?:is free|no fee|free to (?:file|apply))|no (?:filing )?fee[^.]{0,40}asylum",
+      "current": "Asylum is NO LONGER FREE. The One Big Beautiful Bill Act created a $100 I-589 application fee plus a $100/year Annual Asylum Fee for each year the application remains pending; nonpayment within 30 days causes rejection. Non-waivable statutory minimums.",
+      "label": "Asylum filing fee",
+      "source": "https://www.federalregister.gov/documents/2026/04/29/2026-08333/uscis-immigration-fees-and-related-procedures-required-by-hr1-reconciliation-bill"
+    },
+    {
+      "pattern": "\\$402[^.]{0,60}filing fee|filing fee[^.]{0,40}\\$402",
+      "current": "Federal civil filing fee: $350 statutory + $55 administrative = $405 (schedule effective Dec 1, 2023)",
+      "label": "Federal court filing fee",
+      "source": "https://www.uscourts.gov/court-programs/fees/district-court-miscellaneous-fee-schedule"
+    },
+    {
+      "pattern": "\\$185(?:\\.00)?[^.]{0,40}Part B|Part B[^.]{0,40}\\$185|\\$257[^.]{0,40}deductible|\\$1,676",
+      "current": "2026 Medicare: Part B premium $202.90/mo, Part B deductible $283, Part A inpatient deductible $1,736",
+      "label": "Medicare figures",
+      "source": "https://www.cms.gov/newsroom/fact-sheets/2026-medicare-parts-b-premiums-deductibles"
+    },
+    {
+      "pattern": "Medicare[^.]{0,120}(?:\\$300|\\$1,000)|(?:\\$300|\\$1,000)[^.]{0,60}(?:Medicare|conditional payment|lien threshold)",
+      "current": "CY2026 Medicare Secondary Payer recovery threshold: $750 for physical-trauma-based liability, no-fault, and workers' comp. Does NOT apply to ingestion, implantation, or exposure claims.",
+      "label": "Medicare conditional payment threshold",
+      "source": "https://www.cms.gov/files/document/2026-recovery-thresholds-certain-liability-insurance-no-fault-insurance-workers-compensation.pdf"
+    },
+    {
+      "pattern": "\\$23,500|\\$7,000[^.]{0,40}IRA|IRA[^.]{0,40}\\$7,000|\\$1,000[^.]{0,40}IRA catch",
+      "current": "2026: 401(k) deferral $24,500; catch-up 50+ $8,000; ages 60-63 $11,250; IRA $7,500; IRA catch-up $1,100 (now indexed); SIMPLE $17,000",
+      "label": "Retirement contribution limits",
+      "source": "https://www.irs.gov/newsroom/401k-limit-increases-to-24500-for-2026-ira-limit-increases-to-7500"
+    },
+    {
+      "pattern": "\\$4,300|\\$8,550|\\$4,150|\\$8,300[^.]{0,30}HSA",
+      "current": "2026 HSA: $4,400 self-only, $8,750 family; HDHP min deductible $1,700/$3,400; max OOP $8,500/$17,000",
+      "label": "HSA / HDHP limits",
+      "source": "https://www.irs.gov/pub/irs-drop/rp-25-19.pdf"
+    },
+    {
+      "pattern": "\\$465,275|\\$1,395,875|\\$3,024,725|\\$27,900[^.]{0,40}homestead",
+      "current": "Bankruptcy thresholds eff. April 1, 2025: Ch.13 unsecured $526,700 / secured $1,580,125; Subchapter V $3,424,000; § 522(d)(1) homestead $31,575. Next adjustment April 1, 2028.",
+      "label": "Bankruptcy dollar thresholds",
+      "source": "https://www.federalregister.gov/documents/2025/02/04/2025-02207/adjustment-of-certain-dollar-amounts-applicable-to-bankruptcy-cases"
+    },
+    {
+      "pattern": "125 ?% of the (?:federal )?poverty[^.]{0,120}\\$(?:3[0-9],[0-9]{3}|2[0-9],[0-9]{3})",
+      "current": "2026 HHS poverty guidelines (48 states): household of 4 = $33,000; 125% = $41,250 for I-864 sponsors. Effective January 13, 2026.",
+      "label": "Poverty guidelines / I-864 sponsor income",
+      "source": "https://www.federalregister.gov/documents/2026/01/15/2026-00755/annual-update-of-the-hhs-poverty-guidelines"
+    },
+    {
+      "pattern": "\\$176,100|\\$168,600|\\$160,200",
+      "current": "2026 Social Security taxable wage base: $184,500; COLA 2.8%",
+      "label": "Social Security wage base",
+      "source": "https://www.ssa.gov/oact/cola/cbb.html"
+    },
+    {
+      "pattern": "Colorado[^.]{0,120}\\$250,000[^.]{0,40}cap|\\$300,000[^.]{0,60}Colorado",
+      "current": "Colorado HB24-1472: general tort noneconomic cap rose from $250,000 to $1,500,000 effective January 1, 2025; wrongful death $2,125,000. Med-mal figures phase to $875,000 by 2030. Verify the current-year value.",
+      "label": "Colorado damage caps",
+      "source": "https://leg.colorado.gov/bills/hb24-1472"
+    },
+    {
+      "pattern": "Maryland[^.]{0,140}\\$1\\.5 ?million|\\$1,500,000[^.]{0,80}(?:per incident|Child Victims)",
+      "current": "Maryland SB 1 (2025): for CVA claims filed on or after June 1, 2025 the noneconomic cap drops to $700,000 (private) / $400,000 (public), and 'claim' replaced 'incident or occurrence' so a claimant cannot exceed one cap per defendant. Claims filed before June 1, 2025 keep the old caps.",
+      "label": "Maryland Child Victims Act caps",
+      "source": "https://mgaleg.maryland.gov/mgawebsite/Legislation/Details/sb0001?ys=2025RS"
+    }
+  ],
+  "jurisdiction_traps": [
+    {
+      "state": "LA",
+      "pattern": "(?:one|1) year[^.]{0,80}(?:statute of limitations|prescriptive period|file (?:your|a) (?:claim|lawsuit|suit))|prescriptive period[^.]{0,60}(?:one|1) year",
+      "label": "Louisiana delictual prescription",
+      "why": "Louisiana extended the prescriptive period for delictual actions from 1 year to 2 years, La. C.C. art. 3493.1, Acts 2024 No. 423, effective July 1, 2024 — PROSPECTIVE ONLY. Both a bare 'one year' and a bare 'two years' are wrong; the correct statement is two-part.",
+      "fix": "State it as: two years for causes of action arising on or after July 1, 2024; one year for those arising before.",
+      "source": "https://www.legis.la.gov/Legis/Law.aspx?d=1386443"
+    },
+    {
+      "state": "LA",
+      "pattern": "(?:pure )?comparative (?:fault|negligence)[^.]{0,120}(?:even if you (?:are|were) 9[0-9]|regardless of[^.]{0,30}fault|any percentage)",
+      "label": "Louisiana comparative fault",
+      "why": "Louisiana moved from pure comparative fault to MODIFIED comparative fault with a 51% bar, La. C.C. art. 2323, Acts 2025 No. 15 (HB 431), effective January 1, 2026 — prospective only (incidents before that date stay under pure comparative fault).",
+      "fix": "State the 51% bar for post-1/1/2026 incidents and the prior pure rule for earlier ones.",
+      "source": "https://www.legis.la.gov/legis/ViewDocument.aspx?d=1419039"
+    },
+    {
+      "state": "FL",
+      "pattern": "(?:four|4) years?[^.]{0,100}(?:negligence|personal injury|statute of limitations|file (?:your|a) (?:claim|lawsuit))",
+      "label": "Florida negligence SOL",
+      "why": "HB 837 cut Florida's general negligence SOL from four years to two, effective March 24, 2023, prospective only. Fla. Stat. § 95.11(5)(a) now reads 'WITHIN TWO YEARS — An action founded on negligence.' An enormous volume of Florida PI copy still says four years. This is probably the highest-yield SOL check in the country.",
+      "fix": "Two years for causes of action accruing on or after March 24, 2023; four years before that.",
+      "source": "https://www.flsenate.gov/Laws/Statutes/2024/95.11"
+    },
+    {
+      "state": "FL",
+      "pattern": "Florida[^.]{0,140}pure comparative",
+      "label": "Florida comparative negligence",
+      "why": "HB 837 (2023) moved Florida from pure to modified comparative negligence with a 51% bar for non-medical-negligence claims.",
+      "fix": "Update to the 51% bar with the effective-date qualifier.",
+      "source": "https://www.flsenate.gov/Laws/Statutes/2024/768.81"
+    },
+    {
+      "state": "GA",
+      "pattern": "Georgia[^.]{0,160}(?:anchor|suggest a (?:number|figure)|billed (?:amount|charges)|litigation funding)",
+      "label": "Georgia SB 68 / SB 69 tort reform",
+      "why": "Signed April 21, 2025. Anchoring restrictions, bifurcation, voluntary-dismissal limits, and single-fee-award rules were effective immediately. Phantom-damages limits apply only to causes of action arising on or after April 21, 2025. SB 69 litigation-funding registration and control restrictions took effect January 1, 2026.",
+      "fix": "Check the effective-date tier for each provision. Premises liability, seat-belt evidence, and negligent-security changes are UNVERIFIED — do not assert them.",
+      "source": "https://www.legis.ga.gov/legislation/68983"
+    }
+  ],
+  "temporal_language": {
+    "pattern": "\\b(?:recently|recent|newly|just (?:ruled|decided|passed|announced)|this year|currently|as of (?:20(?:1[0-9]|2[0-5]))|new law|latest|upcoming|will take effect|takes effect|is scheduled to|scheduled for|pending appeal|on appeal|expected to|soon|in the coming (?:months|weeks)|landmark 20(?:1[0-9]|2[0-4]) (?:decision|ruling)|last year the Supreme Court)\\b",
+    "severity": "MEDIUM",
+    "why": "Temporal language decays. A claim that was accurate when published becomes false without anyone editing it, and a reader relying on it can miss a deadline. Every instance needs either a dated qualifier or a rewrite to a timeless formulation."
+  },
+  "claim_extractors": [
+    {
+      "id": "money",
+      "pattern": "\\$\\s?[\\d,]+(?:\\.\\d+)?\\s*(?:million|billion|thousand|[KMB])?\\b",
+      "label": "dollar figure",
+      "note": "Every bare dollar figure is a dated claim. It needs a source and an as-of year, or it is presumptively stale."
+    },
+    {
+      "id": "us-cite",
+      "pattern": "\\b\\d{1,3}\\s+U\\.?\\s?S\\.?\\s+\\d{1,4}\\b|\\b\\d{1,3}\\s+S\\.\\s?Ct\\.\\s+\\d+\\b|\\b\\d{1,3}\\s+F\\.\\s?(?:2d|3d|4th|Supp\\.?\\s?\\d?d?)\\s+\\d+\\b",
+      "label": "reported citation"
+    },
+    {
+      "id": "case-name",
+      "pattern": "\\b[A-Z][A-Za-z'&.\\-]+(?:\\s+[A-Z][A-Za-z'&.\\-]+){0,3}\\s+v\\.\\s+[A-Z][A-Za-z'&.\\-]+(?:\\s+[A-Za-z'&.\\-]+){0,3}",
+      "label": "case name"
+    },
+    {
+      "id": "statute",
+      "pattern": "\\b\\d{1,2}\\s+U\\.?S\\.?C\\.?\\s*§*\\s*[\\d\\w.\\-()]+|\\b\\d{1,2}\\s+C\\.?F\\.?R\\.?\\s*§*\\s*[\\d.\\-()]+|§+\\s?[\\d]+[\\d.\\-()a-zA-Z]*",
+      "label": "statute or regulation citation"
+    },
+    {
+      "id": "sol",
+      "pattern": "statute of limitations|prescriptive period|time limit to file|deadline to file|you have\\s+(?:only\\s+)?(?:\\w+|\\d+)\\s+(?:year|month|day)s?|within\\s+(?:\\w+|\\d+)\\s+(?:year|month|day)s?\\s+of|must (?:file|sue|bring)[^.]{0,40}within",
+      "label": "limitations-period claim",
+      "note": "The most dangerous stale claim a firm can publish, because a reader may miss a deadline. Requires a two-part statement wherever the state changed its period."
+    },
+    {
+      "id": "cap",
+      "pattern": "damage cap|cap on damages|capped at|maximum (?:recovery|damages|award)|noneconomic damages[^.]{0,40}(?:limit|cap)",
+      "label": "damages cap claim"
+    },
+    {
+      "id": "percent",
+      "pattern": "\\b\\d{1,3}(?:\\.\\d+)?\\s?%|\\b\\d{1,3}\\s?percent\\b",
+      "label": "percentage claim"
+    },
+    {
+      "id": "fee",
+      "pattern": "filing fee|court costs?|application fee|filing cost",
+      "label": "fee claim"
+    },
+    {
+      "id": "agency-rule",
+      "pattern": "\\b(?:DOL|EEOC|USCIS|SSA|IRS|FTC|CFPB|CMS|NLRB|OSHA|EOIR|BIA|ICE|CBP|DHS|HUD|VA)\\b",
+      "label": "agency reference"
+    },
+    {
+      "id": "recent-scotus",
+      "pattern": "Supreme Court[^.]{0,80}(?:ruled|held|decided|found)|SCOTUS[^.]{0,60}(?:ruled|held|decided)",
+      "label": "Supreme Court holding claim"
+    }
+  ],
+  "bar_triggers": [
+    {
+      "id": "guarantee",
+      "severity": "BLOCKER",
+      "pattern": "\\bwe (?:will|'ll) (?:win|get you|recover|obtain)\\b|guarantee[ds]?\\b|guaranty|100% (?:success|win)|we always win|risk-?free|you will (?:receive|get|recover|win)|promise[ds]? (?:you )?(?:a|the) (?:win|result|recovery|settlement)|(?:maximum|full) (?:compensation|recovery)[^.]{0,20}guaranteed",
+      "label": "Guarantee or prediction of outcome",
+      "rule": "ABA Model Rule 7.1 + Cmt [4]; CA Rule 7.1 Cmt [2] (express guarantee is per se false or misleading); FL 4-7.13(b)(1); CA SB 37 (statutory, eff. 1/1/2026)",
+      "fix": "Rewrite. No disclaimer cures an express guarantee — this is the one category where a footnote does not help. Replace with what the firm actually does ('we pursue the maximum compensation available under your policy limits')."
+    },
+    {
+      "id": "superlative",
+      "severity": "HIGH",
+      "pattern": "\\b(?:best|top|#\\s?1|number one|premier|leading|most experienced|most successful|toughest|unmatched|unrivaled|greatest|finest|strongest)\\b[^.]{0,40}(?:lawyer|attorney|firm|litigator|counsel)|(?:lawyer|attorney|firm)[^.]{0,30}\\b(?:in the (?:state|country|city)|nationwide)\\b",
+      "label": "Unsubstantiated superlative or comparison",
+      "rule": "Model Rule 7.1 Cmt [4]; FL 4-7.13(b)(3) (characterizations must be 'objectively verifiable'); TX 7.02; NJ RPC 7.1(a)(3) (comparisons require the comparing organization named, a substantiable basis, AND the verbatim NJ disclaimer); LA 7.2(c)(1); CA SB 37",
+      "fix": "Either make it objectively verifiable (name the award, the conferring organization, and the year) or rewrite to a factual claim ('handled more than 400 trucking cases since 2009')."
+    },
+    {
+      "id": "specialist",
+      "severity": "HIGH",
+      "pattern": "\\bspecial(?:ist|izes?|izing|ization)\\b|\\bexpert(?:s|ise)?\\b|board[- ]certified|certified specialist",
+      "label": "Specialist / expert / certification claim",
+      "rule": "Model Rule 7.2(c) permits 'specializes in' if substantiable, but TX 7.04, PA 7.2(c)(3), NJ RPC 7.4, and CA Rule 7.4 restrict or condition it. PA uniquely bars claiming specialization in more than one field and requires a 'not certified in the claimed specialty' disclaimer for experience-based claims. TX requires the exact form 'Board Certified, [area] — Texas Board of Legal Specialization'.",
+      "fix": "Check the governing state. If board-certified, name the certifying organization. If not, either add the state's required disclaimer or rewrite to 'focuses on' / 'practice limited to'."
+    },
+    {
+      "id": "past-results",
+      "severity": "HIGH",
+      "pattern": "\\$[\\d,.]+\\s*(?:million|billion|[KMB])?\\s*(?:verdict|settlement|recovery|award|recovered|judgment)|(?:recovered|won|obtained|secured)\\s+(?:over\\s+)?\\$[\\d,.]+|results speak for themselves|our (?:track record|case results)|won (?:hundreds|thousands|dozens) of",
+      "label": "Past results claim",
+      "rule": "Model Rule 7.1 Cmt [4] (disclaimer is the recognized cure). NY 22 NYCRR 1200.7.1(e)(3) mandates the verbatim string 'Prior results do not guarantee a similar outcome'. TX 7.02 requires lead-counsel status, the amount ACTUALLY RECEIVED by the client, the nature of the case and injuries, and — if a gross amount is stated — attorney fees and expenses. FL 4-7.13(b)(2) requires objective verifiability. LA 7.2(c)(1)(D) requires a disclaimer 'such as' Results May Vary (content prescribed, wording not).",
+      "fix": "Add the governing state's disclaimer. In Texas, also add the fee/expense breakdown and case description, or remove the figure."
+    },
+    {
+      "id": "testimonial",
+      "severity": "MEDIUM",
+      "pattern": "testimonial|client review|what our clients say|five[- ]star|\"[^\"]{40,}\"\\s*[,\\-—–]\\s*[A-Z]|“[^”]{40,}”\\s*[,\\-—–]\\s*[A-Z]",
+      "label": "Testimonial or endorsement",
+      "rule": "FL 4-7.13(b)(9) — deceptive if the lawyer wrote it, if it was given for value, if it does not reflect what clients generally experience, or if it omits a disclaimer that a prospective client may not obtain the same results. NY 1200.7.1(c)(1) requires disclosing paid endorsements, plus written informed consent for testimonials about pending matters. PA 7.2(e) FLATLY BANS celebrity and public-figure endorsements.",
+      "fix": "Confirm the testimonial is authentic, unpaid or disclosed, and add the results disclaimer."
+    },
+    {
+      "id": "no-fee",
+      "severity": "HIGH",
+      "pattern": "no fee unless|no win,? no fee|you (?:pay|owe) nothing unless|nothing unless we win|free unless we win|only pay if we win|no recovery,? no fee",
+      "label": "Contingency fee statement without cost disclosure",
+      "rule": "The most consistently enforced disclosure requirement in the country. Model Rule 7.1 Cmt [3]; CA Rule 7.1 Cmt [3] (verbatim: a 'no fee without recovery' statement is misleading unless the communication expressly discloses whether the client will be liable for costs); PA 7.2(g)(1); FL 4-7.14(a)(7); TX 7.04 (must state whether the client owes court costs and whether the percentage is computed before or after expenses).",
+      "fix": "Add the costs-versus-fees disclosure. This is prescribed in substance, not verbatim — write compliant wording rather than quoting a rule."
+    },
+    {
+      "id": "free-consult",
+      "severity": "LOW",
+      "pattern": "free (?:case )?(?:consultation|evaluation|review|case review)",
+      "label": "Free consultation offer",
+      "rule": "No general prohibition; governed by Rule 7.1 truthfulness. The offer must actually be free and unconditioned. If the 'free consultation' is really a screening call by non-lawyer staff or an AI chatbot, that creates a separate disclosure problem.",
+      "fix": "Confirm accuracy. If an AI chatbot handles intake, see Florida Ethics Op. 24-1."
+    },
+    {
+      "id": "ai-chatbot",
+      "severity": "MEDIUM",
+      "pattern": "chat ?bot|AI assistant|virtual assistant|instant (?:chat|answers)|talk to (?:our )?AI",
+      "label": "AI intake / chatbot",
+      "rule": "Florida Ethics Opinion 24-1 (Jan. 24, 2024) is the clearest on-point authority: 'A lawyer must inform prospective clients that they are communicating with an AI program.' The lawyer is responsible for misleading chatbot output. New York GBL § 396-b (eff. June 9, 2026) separately requires conspicuous disclosure of AI-generated synthetic performers in ads ($1,000 / $5,000 penalties).",
+      "fix": "Disclose that the user is talking to an AI. Note: no state requires labeling AI-WRITTEN marketing copy — that is governed by ordinary Rule 7.1 accuracy and Rule 5.1/5.3 supervision."
+    },
+    {
+      "id": "jurisdiction-disclosure",
+      "severity": "MEDIUM",
+      "pattern": "[Ss]erving\\s+[A-Z][A-Za-z.'-]+(?:\\s+[A-Z][A-Za-z.'-]+)*(?:,\\s*(?:and\\s+)?[A-Z][A-Za-z.'-]+(?:\\s+[A-Z][A-Za-z.'-]+)*){2,}|(?:offices?|locations?) in [A-Z][A-Za-z.'-]+(?:,\\s*(?:and\\s+)?[A-Z][A-Za-z.'-]+(?:\\s+[A-Z][A-Za-z.'-]+)*){2,}|nationwide representation|all 50 states",
+      "label": "Multi-city / multi-state footprint claim",
+      "rule": "PA 7.2(h), TX 7.04, LA 7.2, MO 4-7.2(e) and CA SB 37 all require disclosing a bona fide office location by city or town. A national landing page listing cities where the firm has no bona fide office implicates all of them simultaneously. MO and TX additionally require satellite offices to be staffed three days a week or disclosed as appointment-only.",
+      "fix": "List only bona fide offices, or add the required disclosure. This is the highest-risk artifact on multi-state firm sites."
+    },
+    {
+      "id": "trade-name",
+      "severity": "LOW",
+      "pattern": "legal (?:clinic|center|aid|help ?line)|justice (?:center|network)|injury (?:center|helpline)",
+      "label": "Trade name that may imply a public or charitable service",
+      "rule": "Model Rule 7.1 Cmt [6]: a geographic trade name like 'Springfield Legal Clinic' may require an express statement that it is not a public legal aid organization. TX Rule 7.01 bars trade names outright in private practice.",
+      "fix": "Add the disclaimer, or check whether the governing state permits the trade name at all."
+    },
+    {
+      "id": "attorney-advertising-label",
+      "severity": "MEDIUM",
+      "pattern": "attorney advertising|advertising material",
+      "label": "Attorney Advertising label present",
+      "rule": "The Model Rules DROPPED this in 2018; states did not follow uniformly. NY 1200.7.1(f) requires 'Attorney Advertising' on the website HOME PAGE (not just a footer) and 'ATTORNEY ADVERTISING' in email subject lines. TX Rule 7.05 requires 'ADVERTISEMENT' on the first page and envelope of written solicitations at 3/8 inch or 3x body text. Do not add the label in states that do not require it if it would be inaccurate.",
+      "fix": "Verify the label is placed where the governing state requires it."
+    }
+  ],
+  "mandatory_verbatim": [
+    {
+      "state": "NY",
+      "text": "Prior results do not guarantee a similar outcome",
+      "trigger": "Results claims, comparisons, testimonials, quality characterizations",
+      "rule": "22 NYCRR 1200.7.1(e)(3)",
+      "source": "https://www.law.cornell.edu/regulations/new-york/22-NYCRR-1200.7.1",
+      "confidence": "verified verbatim"
+    },
+    {
+      "state": "NY",
+      "text": "Attorney Advertising",
+      "trigger": "Website home page; 'ATTORNEY ADVERTISING' in email subject lines",
+      "rule": "22 NYCRR 1200.7.1(f)",
+      "source": "https://www.law.cornell.edu/regulations/new-york/22-NYCRR-1200.7.1",
+      "confidence": "verified verbatim"
+    },
+    {
+      "state": "MO",
+      "text": "The choice of a lawyer is an important decision and should not be based solely upon advertisements.",
+      "trigger": "All ads except the narrow Rule 4-7.2(g) limited-content safe harbor (firm/lawyer names, fields of practice, admission dates, contact info and hours). Adding results, testimonials, or fee claims takes the ad outside the safe harbor.",
+      "rule": "Missouri Rule 4-7.2(f)",
+      "source": "https://www.courts.mo.gov/page.jsp?id=198957",
+      "confidence": "verified verbatim from courts.mo.gov"
+    },
+    {
+      "state": "NJ",
+      "text": "No aspect of this advertisement has been approved by the Supreme Court of New Jersey",
+      "trigger": "COMPARATIVE claims only — not a blanket disclaimer for all NJ advertising. This is the precision point most checklists get wrong.",
+      "rule": "NJ RPC 7.1(a)(3)",
+      "source": "https://www.njcourts.gov",
+      "confidence": "verify against njcourts.gov before inserting"
+    },
+    {
+      "state": "NJ",
+      "text": "Before making your choice of attorney, you should give this matter careful thought. The selection of an attorney is an important decision.",
+      "trigger": "Bottom of the last page of text on solicitation letters",
+      "rule": "NJ RPC 7.3(b)(5)",
+      "source": "https://www.njcourts.gov",
+      "confidence": "verify against njcourts.gov before inserting"
+    },
+    {
+      "state": "NJ",
+      "text": "You arrived at this page via a paid advertisement on [insert name of search engine provider] through paid keyword search results. This website and the legal business it describes are affiliated only with [insert name of purchasing attorney] and the attorneys referenced within this website.",
+      "trigger": "Landing pages reached from a sponsored result purchased on a COMPETITOR'S name. Must match the font size and color predominantly used on the page.",
+      "rule": "ACPE Opinion 735 Supplement, notice dated Dec. 8, 2025, implementing In re Opinion No. 735 (decided May 22, 2025)",
+      "source": "https://www.njcourts.gov/notices/advisory-committee-professional-ethics-acpe-opinion-735-supplement-lawyers-use-of-internet",
+      "confidence": "verified — the only genuinely new mandatory verbatim string added anywhere in 2025-2026"
+    },
+    {
+      "state": "TX",
+      "text": "Board Certified, [area of specialization] — Texas Board of Legal Specialization",
+      "trigger": "Certification claims",
+      "rule": "TDRPC 7.04",
+      "source": "https://www.texasbar.com/Content/NavigationMenu/ForLawyers/MembershipInformation/AdvertisingReview2/TDRPC_VII.pdf",
+      "confidence": "verified verbatim"
+    }
+  ],
+  "not_verbatim_do_not_quote": [
+    "Louisiana 'Results May Vary' / 'Past Results are not a Guarantee of Future Success' — Rule 7.2(c)(1)(D) says 'a disclaimer such as,' so the content is prescribed but the wording is not. Generate compliant wording instead of quoting.",
+    "All Florida disclaimers — Florida DELETED its mandated wording effective August 21, 2023, including the 'Not Certified as a Specialist by The Florida Bar' string and the direct-mail opening sentence. Any checklist still inserting those is wrong.",
+    "Pennsylvania's 'not certified in the claimed specialty' and dramatization disclosures — content prescribed, wording not.",
+    "Contingency-fee cost disclosures in every state — prescribed in substance only.",
+    "Georgia — NOTHING Georgia-specific is verified. The rules changed effective March 1, 2026 (Supreme Court order S24U0172, approved Nov. 18, 2025) and no official verbatim text was obtainable. Do not represent any Georgia disclaimer as verbatim; retrieve the order first."
+  ],
+  "ai_tells": {
+    "phrases": [
+      "delve into",
+      "delving",
+      "it's important to note",
+      "it is important to note",
+      "it's worth noting",
+      "in today's fast-paced",
+      "in today's digital",
+      "in the ever-evolving",
+      "ever-evolving landscape",
+      "navigating the complexities",
+      "navigate the complexities",
+      "the complexities of",
+      "when it comes to",
+      "at the end of the day",
+      "that being said",
+      "rest assured",
+      "leverage",
+      "utilize",
+      "seamless",
+      "seamlessly",
+      "robust",
+      "holistic",
+      "synergy",
+      "unlock the",
+      "unlocking",
+      "elevate your",
+      "empower you to",
+      "embark on",
+      "a testament to",
+      "plays a crucial role",
+      "plays a vital role",
+      "crucial role in",
+      "in conclusion",
+      "to summarize",
+      "in summary",
+      "let's dive in",
+      "dive deep",
+      "furthermore",
+      "moreover",
+      "additionally, it",
+      "notably,",
+      "importantly,",
+      "whether you're",
+      "whether you are",
+      "look no further",
+      "you're not alone",
+      "peace of mind",
+      "tailored to your",
+      "tailored solutions",
+      "personalized approach",
+      "we understand that",
+      "we know that",
+      "here's the thing",
+      "the bottom line is",
+      "cutting-edge",
+      "state-of-the-art",
+      "game-changer",
+      "game changing",
+      "first and foremost",
+      "last but not least",
+      "needless to say",
+      "as an ai",
+      "i hope this helps",
+      "certainly!",
+      "great question",
+      "i'd be happy to",
+      "here's a",
+      "here is a",
+      "feel free to",
+      "don't hesitate to"
+    ],
+    "legal_specific": [
+      "fight tirelessly",
+      "fight for you",
+      "fight for the compensation you deserve",
+      "you deserve",
+      "aggressive representation",
+      "aggressively pursue",
+      "we're here to help",
+      "we are here to help",
+      "let us fight",
+      "don't go it alone",
+      "time is of the essence",
+      "time is not on your side",
+      "the insurance company is not on your side",
+      "insurance companies are not your friend",
+      "every case is unique",
+      "no two cases are alike",
+      "the legal landscape",
+      "navigating the legal system",
+      "the legal process can be",
+      "complex legal process",
+      "our experienced team",
+      "our dedicated team",
+      "our skilled attorneys",
+      "compassionate representation",
+      "trusted advocate",
+      "by your side"
+    ]
+  }
+}

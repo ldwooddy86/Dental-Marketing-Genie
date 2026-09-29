@@ -1,0 +1,5464 @@
+{
+ "_about": "Horus media-industry packs (nomes). Each nome = scope, taxonomy (topic ids, labels, prefilter keywords), the two eyes (Sun = broadcast sources, Moon = practitioner rooms), Nilometer hard-signal sources and standing forecast questions. Every channel listed here is a SEED to verify at run time, never a guarantee it is live. Nome names are the Egyptian provinces the packs are named for; they are labels, not claims.",
+ "version": "1.0.0",
+ "intent_codes": {
+  "Q": "Question or help-seeking",
+  "C": "Complaint, vent, pain report",
+  "R": "Result, data, study or case evidence",
+  "H": "How-to or guide",
+  "N": "News or announcement",
+  "D": "Debate, opinion, prediction",
+  "P": "Promotion, sales, vendor pitch",
+  "J": "Jobs, hiring, career",
+  "O": "Other (intro, meta, humor)"
+ },
+ "stance_codes": {
+  "1": "opportunity / optimism",
+  "0": "neutral",
+  "-1": "threat / pessimism"
+ },
+ "flags": {
+  "set": "Set filter: spam, sponsored, self-promo, engagement selling, pirated or group-buy tools. Kept in the ledger, excluded from share of voice.",
+  "grey": "Grey-hat or terms-of-service-risky tactic. Counted, but tallied separately."
+ },
+ "nomes": [
+  {
+   "id": "digital-marketing",
+   "name": "Digital Marketing",
+   "nome": "Wetjes-Hor (Throne of Horus, Edfu)",
+   "flagship": true,
+   "scope": "Search, paid media, social, creators, measurement, commerce, agencies and the labor market of performance and brand marketing.",
+   "clusters": {
+    "Search": [
+     "T01",
+     "T02",
+     "T03",
+     "T04",
+     "T05",
+     "T06",
+     "T07"
+    ],
+    "Paid": [
+     "T08",
+     "T09",
+     "T10",
+     "T11",
+     "T12"
+    ],
+    "Social & Community": [
+     "T13",
+     "T14",
+     "T15",
+     "T16"
+    ],
+    "Data": [
+     "T17",
+     "T18"
+    ],
+    "AI & Commerce": [
+     "T19",
+     "T20",
+     "T21",
+     "T28"
+    ],
+    "Owned & Web": [
+     "T22",
+     "T23"
+    ],
+    "Business": [
+     "T24",
+     "T25",
+     "T26",
+     "T29"
+    ],
+    "Rules": [
+     "T27"
+    ],
+    "Other": [
+     "T00"
+    ]
+   },
+   "taxonomy": [
+    {
+     "id": "T01",
+     "label": "AI search disruption",
+     "short": "AI search",
+     "def": "AI Overviews, AI Mode, answer engines, zero-click behavior and the traffic consequences.",
+     "kw": [
+      "ai overview",
+      "ai overviews",
+      "ai mode",
+      "zero-click",
+      "zero click",
+      "answer engine",
+      "sge",
+      "perplexity",
+      "chatgpt search",
+      "clicks fell",
+      "traffic loss",
+      "ctr drop",
+      "dive deeper",
+      "discover traffic"
+     ]
+    },
+    {
+     "id": "T02",
+     "label": "GEO / AEO and AI visibility",
+     "short": "GEO / AI visibility",
+     "def": "Optimizing and measuring brand presence, citations and mentions inside LLM answers.",
+     "kw": [
+      "geo",
+      "aeo",
+      "llmo",
+      "ai visibility",
+      "llm visibility",
+      "ai citations",
+      "cited by chatgpt",
+      "llms.txt",
+      "generative engine optimization",
+      "answer engine optimization",
+      "brand mentions in ai"
+     ]
+    },
+    {
+     "id": "T03",
+     "label": "Rankings, updates and SERP change",
+     "short": "Rankings & updates",
+     "def": "Core and spam updates, volatility, SERP features, ranking case studies and traffic drops.",
+     "kw": [
+      "core update",
+      "spam update",
+      "algorithm update",
+      "volatility",
+      "ranking drop",
+      "traffic drop",
+      "serp",
+      "sitelinks",
+      "helpful content",
+      "deindexed",
+      "recovery"
+     ]
+    },
+    {
+     "id": "T04",
+     "label": "Technical SEO, crawling and bots",
+     "short": "Technical SEO",
+     "def": "Indexing, rendering, schema, crawl budget, AI crawlers and non-human traffic.",
+     "kw": [
+      "indexing",
+      "indexed",
+      "crawl budget",
+      "render",
+      "javascript seo",
+      "schema",
+      "structured data",
+      "hreflang",
+      "robots.txt",
+      "googlebot",
+      "ai crawler",
+      "bot traffic",
+      "core web vitals",
+      "crux"
+     ]
+    },
+    {
+     "id": "T05",
+     "label": "Local search and Google Business Profile",
+     "short": "Local & GBP",
+     "def": "GBP, map pack, reviews, local knowledge panels and local lead generation.",
+     "kw": [
+      "gbp",
+      "google business profile",
+      "gmb",
+      "map pack",
+      "local seo",
+      "reviews",
+      "citations",
+      "local knowledge panel",
+      "service area",
+      "nap"
+     ]
+    },
+    {
+     "id": "T06",
+     "label": "Content, E-E-A-T and AI-written content",
+     "short": "Content & E-E-A-T",
+     "def": "Content quality, entities, programmatic content and AI-generated text.",
+     "kw": [
+      "content strategy",
+      "e-e-a-t",
+      "eeat",
+      "ai content",
+      "ai-generated content",
+      "programmatic seo",
+      "topical authority",
+      "entity seo",
+      "keyword research",
+      "ai slop"
+     ]
+    },
+    {
+     "id": "T07",
+     "label": "Links, digital PR, PBNs and parasite SEO",
+     "short": "Links & PBNs",
+     "def": "Link acquisition, guest posts, expired domains, PBNs and site-reputation abuse.",
+     "kw": [
+      "backlink",
+      "backlinks",
+      "link building",
+      "guest post",
+      "pbn",
+      "expired domain",
+      "parasite seo",
+      "digital pr",
+      "dr ",
+      "domain rating",
+      "site reputation abuse"
+     ]
+    },
+    {
+     "id": "T08",
+     "label": "Google and Microsoft Ads automation and account ops",
+     "short": "Google & Microsoft Ads",
+     "def": "PMax, AI Max, Smart Bidding, LSAs, ads policy, invalid clicks, account health.",
+     "kw": [
+      "google ads",
+      "pmax",
+      "performance max",
+      "ai max",
+      "smart bidding",
+      "target roas",
+      "troas",
+      "local services ads",
+      "lsa",
+      "microsoft ads",
+      "quality score",
+      "invalid clicks",
+      "demand gen",
+      "broad match",
+      "suspended"
+     ]
+    },
+    {
+     "id": "T09",
+     "label": "Meta ads and creative testing",
+     "short": "Meta ads",
+     "def": "Advantage+, Andromeda, creative volume, CPM and account issues on Meta.",
+     "kw": [
+      "meta ads",
+      "facebook ads",
+      "advantage+",
+      "andromeda",
+      "creative testing",
+      "cpm",
+      "ad account disabled",
+      "capi",
+      "meta pixel",
+      "instagram ads"
+     ]
+    },
+    {
+     "id": "T10",
+     "label": "Ads inside AI assistants",
+     "short": "Ads in AI assistants",
+     "def": "ChatGPT ads, AI Mode ads, Perplexity and Copilot ads, sponsored agents.",
+     "kw": [
+      "chatgpt ads",
+      "ads in chatgpt",
+      "sponsored agents",
+      "ai mode ads",
+      "ads in ai overviews",
+      "perplexity ads",
+      "copilot ads",
+      "conversational ads",
+      "openai ads"
+     ]
+    },
+    {
+     "id": "T11",
+     "label": "Retail media, CTV and programmatic",
+     "short": "Retail, CTV, programmatic",
+     "def": "Commerce media networks, streaming TV ads, programmatic supply and display.",
+     "kw": [
+      "retail media",
+      "commerce media",
+      "ctv",
+      "connected tv",
+      "programmatic",
+      "dsp",
+      "ssp",
+      "display ads",
+      "walmart connect",
+      "amazon ads",
+      "trade desk"
+     ]
+    },
+    {
+     "id": "T12",
+     "label": "Paid social beyond Meta",
+     "short": "Paid social (non-Meta)",
+     "def": "TikTok, LinkedIn, Reddit, Pinterest, X and Threads advertising.",
+     "kw": [
+      "tiktok ads",
+      "linkedin ads",
+      "reddit ads",
+      "pinterest ads",
+      "x ads",
+      "threads ads",
+      "snapchat ads",
+      "thought leader ads"
+     ]
+    },
+    {
+     "id": "T13",
+     "label": "Organic social and platform algorithms",
+     "short": "Organic social",
+     "def": "Reach, algorithm changes, short-form trends and platform features.",
+     "kw": [
+      "algorithm",
+      "reach",
+      "reels",
+      "shorts",
+      "tiktok trend",
+      "linkedin feed",
+      "engagement",
+      "posting tips",
+      "carousel",
+      "for you page"
+     ]
+    },
+    {
+     "id": "T14",
+     "label": "Creators, influencers and UGC",
+     "short": "Creators & UGC",
+     "def": "Creator partnerships, UGC, creator programs and creator monetization.",
+     "kw": [
+      "creator",
+      "creators",
+      "influencer",
+      "ugc",
+      "brand deal",
+      "sponsorship",
+      "creator economy",
+      "clipping",
+      "youtube partner"
+     ]
+    },
+    {
+     "id": "T15",
+     "label": "Community and dark social",
+     "short": "Community & dark social",
+     "def": "Discord, Slack, Telegram, Reddit communities, forums and word of mouth.",
+     "kw": [
+      "community",
+      "discord",
+      "slack community",
+      "telegram",
+      "forum",
+      "dark social",
+      "word of mouth",
+      "reddit community",
+      "private group"
+     ]
+    },
+    {
+     "id": "T16",
+     "label": "Platform risk, ownership and safety regulation",
+     "short": "Platform risk & safety",
+     "def": "TikTok ownership, bans, teen limits, policy shocks and platform settlements.",
+     "kw": [
+      "tiktok ban",
+      "joint venture",
+      "usds",
+      "teen",
+      "time limit",
+      "age verification",
+      "settlement",
+      "ban",
+      "account ban wave"
+     ]
+    },
+    {
+     "id": "T17",
+     "label": "Measurement, attribution and SEO data",
+     "short": "Measurement",
+     "def": "GA4, MMM, incrementality, attribution, rank tracking and Search Console data.",
+     "kw": [
+      "ga4",
+      "google analytics",
+      "attribution",
+      "mmm",
+      "marketing mix",
+      "incrementality",
+      "rank tracker",
+      "search console",
+      "gsc",
+      "modeled conversions",
+      "roas"
+     ]
+    },
+    {
+     "id": "T18",
+     "label": "Privacy, identity and tracking",
+     "short": "Privacy & identity",
+     "def": "Cookies, consent, CAPI, server-side tagging, identity matching, ATT.",
+     "kw": [
+      "cookies",
+      "third-party cookies",
+      "privacy sandbox",
+      "consent mode",
+      "server-side",
+      "capi",
+      "customer match",
+      "att",
+      "app tracking transparency",
+      "alternative id",
+      "identity"
+     ]
+    },
+    {
+     "id": "T19",
+     "label": "AI tools, martech and workflow automation",
+     "short": "AI tools & martech",
+     "def": "How practitioners use AI and martech: agents, prompts, n8n/Make/Zapier, tool access.",
+     "kw": [
+      "chatgpt",
+      "claude",
+      "gemini",
+      "ai agent",
+      "ai agents",
+      "automation",
+      "n8n",
+      "zapier",
+      "make.com",
+      "prompt",
+      "martech",
+      "workflow",
+      "group buy"
+     ]
+    },
+    {
+     "id": "T20",
+     "label": "Agentic and conversational commerce",
+     "short": "Agentic commerce",
+     "def": "AI checkout, UCP/ACP protocols, business agents and machine customers.",
+     "kw": [
+      "agentic commerce",
+      "ucp",
+      "universal commerce protocol",
+      "acp",
+      "instant checkout",
+      "ai checkout",
+      "business agents",
+      "agentic storefront",
+      "universal cart"
+     ]
+    },
+    {
+     "id": "T21",
+     "label": "AI creative and synthetic media",
+     "short": "AI creative",
+     "def": "AI image/video generation, AI avatars and influencers, AI content labels.",
+     "kw": [
+      "veo",
+      "sora",
+      "ai video",
+      "ai image",
+      "ai avatar",
+      "ai influencer",
+      "synthetic",
+      "first draft",
+      "ai-generated profile",
+      "ai creative"
+     ]
+    },
+    {
+     "id": "T22",
+     "label": "Email, SMS and owned audiences",
+     "short": "Email & owned",
+     "def": "Deliverability, newsletters, SMS, owned-audience strategy.",
+     "kw": [
+      "email",
+      "newsletter",
+      "deliverability",
+      "sms",
+      "owned audience",
+      "list building",
+      "inbox"
+     ]
+    },
+    {
+     "id": "T23",
+     "label": "Websites, CRO and ecommerce stack",
+     "short": "Web, CRO, ecommerce",
+     "def": "Site UX, conversion, Shopify/WordPress stack, product feeds and shopping surfaces.",
+     "kw": [
+      "cro",
+      "conversion rate",
+      "landing page",
+      "shopify",
+      "wordpress",
+      "ecommerce",
+      "product feed",
+      "merchant center",
+      "checkout",
+      "ux"
+     ]
+    },
+    {
+     "id": "T24",
+     "label": "Strategy, brand, budgets and market outlook",
+     "short": "Strategy & budgets",
+     "def": "Brand vs performance, budgets, forecasts, B2B strategy and planning.",
+     "kw": [
+      "brand",
+      "budget",
+      "forecast",
+      "strategy",
+      "b2b",
+      "positioning",
+      "cmo",
+      "ad spend",
+      "planning"
+     ]
+    },
+    {
+     "id": "T25",
+     "label": "Careers, skills and labor",
+     "short": "Careers & labor",
+     "def": "Jobs, layoffs, skills, learning paths and burnout.",
+     "kw": [
+      "job",
+      "jobs",
+      "hiring",
+      "layoff",
+      "layoffs",
+      "career",
+      "salary",
+      "learn seo",
+      "course",
+      "burnout"
+     ]
+    },
+    {
+     "id": "T26",
+     "label": "Agency and freelance economics",
+     "short": "Agency economics",
+     "def": "Client acquisition, pricing, retainers, holdcos, agency M&A, freelancing.",
+     "kw": [
+      "agency",
+      "agencies",
+      "client",
+      "retainer",
+      "pricing",
+      "holding company",
+      "holdco",
+      "freelance",
+      "white label",
+      "smma",
+      "account ownership"
+     ]
+    },
+    {
+     "id": "T27",
+     "label": "Antitrust and regulation",
+     "short": "Antitrust & regulation",
+     "def": "Google cases, CMA, DMA, EU AI Act, FTC and privacy law as they bear on marketing.",
+     "kw": [
+      "antitrust",
+      "remedies",
+      "doj",
+      "cma",
+      "dma",
+      "ai act",
+      "ftc",
+      "regulation",
+      "lawsuit",
+      "court",
+      "monitor"
+     ]
+    },
+    {
+     "id": "T28",
+     "label": "AI platform race and governance",
+     "short": "AI platform race",
+     "def": "Model releases, assistant market share, AI safety and the AI industry itself.",
+     "kw": [
+      "gemini 4",
+      "gpt-6",
+      "claude",
+      "openai",
+      "anthropic",
+      "deepmind",
+      "model",
+      "prompt share",
+      "ai safety",
+      "misalignment"
+     ]
+    },
+    {
+     "id": "T29",
+     "label": "Hustle economy",
+     "short": "Hustle economy",
+     "def": "Affiliate, arbitrage, dropshipping, SMMA, AdSense sites, deal channels and make-money-online.",
+     "kw": [
+      "affiliate",
+      "dropshipping",
+      "dropship",
+      "smma",
+      "make money",
+      "money-making",
+      "adsense",
+      "arbitrage",
+      "cpa offer",
+      "side hustle",
+      "passive income",
+      "kiwify",
+      "deals"
+     ]
+    },
+    {
+     "id": "T00",
+     "label": "Other",
+     "short": "Other",
+     "def": "Off-taxonomy items.",
+     "kw": []
+    }
+   ],
+   "sun": {
+    "trade_press": [
+     "searchengineland.com",
+     "seroundtable.com",
+     "searchenginejournal.com",
+     "ppc.land",
+     "digiday.com",
+     "adexchanger.com",
+     "socialmediatoday.com",
+     "marketingdive.com",
+     "martech.org",
+     "adweek.com",
+     "adage.com",
+     "thedrum.com",
+     "marketingbrew.com"
+    ],
+    "newsletters": [
+     "SEOFOMO (Aleyda Solis)",
+     "Paid Search Association weekly links",
+     "SER Daily Search Forum Recap",
+     "PPC News Feed",
+     "Digiday briefings"
+    ],
+    "platform_voices": [
+     "Google Search Central blog",
+     "Google Ads & Commerce blog / AdsLiaison",
+     "Meta for Business newsroom",
+     "OpenAI ads help center",
+     "LinkedIn Marketing blog",
+     "TikTok newsroom"
+    ],
+    "podcasts": [
+     "Search Off the Record",
+     "PPC Live The Podcast",
+     "Marketing Against the Grain"
+    ]
+   },
+   "moon": {
+    "subreddits": [
+     "r/SEO",
+     "r/bigseo",
+     "r/TechSEO",
+     "r/PPC",
+     "r/googleads",
+     "r/FacebookAds",
+     "r/marketing",
+     "r/digital_marketing",
+     "r/socialmedia",
+     "r/content_marketing",
+     "r/Emailmarketing",
+     "r/agency",
+     "r/juststart",
+     "r/Affiliatemarketing",
+     "r/b2bmarketing",
+     "r/GoogleAnalytics",
+     "r/shopify",
+     "r/ecommerce"
+    ],
+    "forums": [
+     "BlackHatWorld (/tags/seo/, /forums/)",
+     "WebmasterWorld",
+     "Google Search Central Help Community",
+     "Google Ads Community",
+     "Warrior Forum",
+     "Indie Hackers"
+    ],
+    "discord_discovery": [
+     "disboard tags: digital-marketing, marketing, seo, smma, dropshipping, affiliate-marketing, social-media-marketing, online-business, google-ads",
+     "discord.me tag: digital-marketing"
+    ],
+    "telegram_discovery": [
+     "TGStat category 'Marketing, PR, advertising' (Global, India, Russia regions)",
+     "TGStat category 'Sales' (deal and affiliate channels)",
+     "tgram.io topic lists (SEO/SMM/Marketing)"
+    ],
+    "slack_and_paid": [
+     "Paid Search Association Slack",
+     "Online Geniuses",
+     "Traffic Think Tank"
+    ],
+    "practitioner_social": [
+     "LinkedIn and X posts curated by SER 'Other Great Search Threads', SEOFOMO and PSA weekly links"
+    ]
+   },
+   "nilometer": [
+    "WPP Media This Year Next Year (June, December)",
+    "Magna global ad forecast",
+    "IAB/PwC Internet Advertising Revenue Report (April)",
+    "IAB Outlook Study (January, September)",
+    "Gartner CMO Spend Survey (May)",
+    "The CMO Survey (Deloitte/Duke/AMA)",
+    "Alphabet, Meta, Amazon, Reddit, Pinterest, Snap quarterly results (8-K)",
+    "Comscore AI Intelligence Report",
+    "Holdco results: Publicis, Omnicom, WPP, Havas, Dentsu",
+    "Content Marketing Institute career outlook",
+    "Search Console and platform policy changelogs",
+    "Court dockets: US v Google (ad tech, search), CMA conduct requirements, EU AI Act"
+   ],
+   "standing_questions": [
+    "Where is discovery moving, and who is monetizing the interface?",
+    "Which execution tasks are platforms absorbing into defaults this quarter?",
+    "What are practitioners asking for help with that the press is not covering?",
+    "Which prophecies from the last cycle failed, and does today's hype share their shape?",
+    "What does the labor market say that the conference stages do not?"
+   ]
+  },
+  {
+   "id": "advertising-adtech",
+   "name": "Advertising and Ad Tech",
+   "nome": "Waset (Thebes)",
+   "scope": "Holding companies, media buying, programmatic, CTV, retail media, identity, measurement and ad-tech regulation.",
+   "taxonomy": [
+    {
+     "id": "A01",
+     "label": "Holdcos and agency M&A",
+     "kw": [
+      "holding company",
+      "holdco",
+      "merger",
+      "omnicom",
+      "wpp",
+      "publicis",
+      "ipg",
+      "havas",
+      "dentsu"
+     ]
+    },
+    {
+     "id": "A02",
+     "label": "Principal media and agency trading",
+     "kw": [
+      "principal media",
+      "principal-based",
+      "trading desk",
+      "rebates",
+      "transparency"
+     ]
+    },
+    {
+     "id": "A03",
+     "label": "Programmatic supply path and curation",
+     "kw": [
+      "spo",
+      "supply path",
+      "curation",
+      "ssp",
+      "dsp",
+      "header bidding",
+      "prebid"
+     ]
+    },
+    {
+     "id": "A04",
+     "label": "CTV and streaming ads",
+     "kw": [
+      "ctv",
+      "connected tv",
+      "streaming ads",
+      "fast channels",
+      "upfront"
+     ]
+    },
+    {
+     "id": "A05",
+     "label": "Retail and commerce media",
+     "kw": [
+      "retail media",
+      "commerce media",
+      "rmn",
+      "clean room"
+     ]
+    },
+    {
+     "id": "A06",
+     "label": "Identity and addressability",
+     "kw": [
+      "identity",
+      "uid2",
+      "alternative id",
+      "cookies",
+      "addressability"
+     ]
+    },
+    {
+     "id": "A07",
+     "label": "Measurement and attention",
+     "kw": [
+      "measurement",
+      "attention",
+      "mmm",
+      "incrementality",
+      "viewability",
+      "currency"
+     ]
+    },
+    {
+     "id": "A08",
+     "label": "AI and agentic media buying",
+     "kw": [
+      "agentic",
+      "ai buying",
+      "automation",
+      "ai planning"
+     ]
+    },
+    {
+     "id": "A09",
+     "label": "AI creative production",
+     "kw": [
+      "ai creative",
+      "generative",
+      "dco",
+      "production"
+     ]
+    },
+    {
+     "id": "A10",
+     "label": "Ads in AI assistants",
+     "kw": [
+      "chatgpt ads",
+      "ai ads",
+      "sponsored agents",
+      "ai mode ads"
+     ]
+    },
+    {
+     "id": "A11",
+     "label": "Antitrust and ad-tech regulation",
+     "kw": [
+      "antitrust",
+      "remedies",
+      "doj",
+      "cma",
+      "dma",
+      "divestiture"
+     ]
+    },
+    {
+     "id": "A12",
+     "label": "Brand safety and MFA",
+     "kw": [
+      "brand safety",
+      "mfa",
+      "made for advertising",
+      "fraud",
+      "ivt"
+     ]
+    },
+    {
+     "id": "A13",
+     "label": "Creator budgets",
+     "kw": [
+      "creator",
+      "influencer",
+      "creatorfronts"
+     ]
+    },
+    {
+     "id": "A14",
+     "label": "Talent, layoffs and pricing models",
+     "kw": [
+      "layoffs",
+      "headcount",
+      "outcome-based",
+      "fees",
+      "pricing model"
+     ]
+    },
+    {
+     "id": "A15",
+     "label": "Sports and live",
+     "kw": [
+      "sports",
+      "live",
+      "nfl",
+      "olympics",
+      "world cup"
+     ]
+    },
+    {
+     "id": "A00",
+     "label": "Other",
+     "kw": []
+    }
+   ],
+   "sun": {
+    "trade_press": [
+     "adexchanger.com",
+     "digiday.com",
+     "adweek.com",
+     "adage.com",
+     "campaignlive.com",
+     "thedrum.com",
+     "mediapost.com",
+     "ppc.land"
+    ]
+   },
+   "moon": {
+    "subreddits": [
+     "r/advertising",
+     "r/adops",
+     "r/programmatic",
+     "r/marketing"
+    ],
+    "forums": [
+     "AdExchanger comments",
+     "LinkedIn ad-ops groups (practitioner social)"
+    ],
+    "discord_discovery": [
+     "disboard tags: advertising, adtech, media-buying"
+    ],
+    "telegram_discovery": [
+     "TGStat 'Marketing, PR, advertising'"
+    ]
+   },
+   "nilometer": [
+    "WPP Media TYNY",
+    "Magna",
+    "IAB/PwC",
+    "Holdco quarterly results",
+    "Court dockets (US v Google ad tech)",
+    "Trade Desk, Magnite, PubMatic results"
+   ],
+   "standing_questions": [
+    "Is agency revenue decoupling from media spend?",
+    "Where is programmatic value pooling: curation, retail media, CTV?",
+    "What do remedies change in practice?"
+   ]
+  },
+  {
+   "id": "film-tv-streaming",
+   "name": "Film, TV and Streaming",
+   "nome": "Ineb-hedj (White Walls, Memphis)",
+   "scope": "Studios, streamers, theatrical, FAST/AVOD, production labor, AI in production and distribution.",
+   "taxonomy": [
+    {
+     "id": "F01",
+     "label": "Streaming economics and churn",
+     "kw": [
+      "churn",
+      "subscribers",
+      "streaming",
+      "price increase",
+      "password sharing"
+     ]
+    },
+    {
+     "id": "F02",
+     "label": "Theatrical box office and windows",
+     "kw": [
+      "box office",
+      "theatrical",
+      "window",
+      "opening weekend"
+     ]
+    },
+    {
+     "id": "F03",
+     "label": "FAST and AVOD",
+     "kw": [
+      "fast",
+      "avod",
+      "free ad-supported",
+      "ad tier"
+     ]
+    },
+    {
+     "id": "F04",
+     "label": "Bundling and aggregation",
+     "kw": [
+      "bundle",
+      "bundling",
+      "aggregation"
+     ]
+    },
+    {
+     "id": "F05",
+     "label": "Consolidation and M&A",
+     "kw": [
+      "merger",
+      "acquisition",
+      "spin-off",
+      "consolidation"
+     ]
+    },
+    {
+     "id": "F06",
+     "label": "Production volume and labor",
+     "kw": [
+      "production",
+      "strike",
+      "union",
+      "tax incentive",
+      "runaway production",
+      "layoffs"
+     ]
+    },
+    {
+     "id": "F07",
+     "label": "AI in production and likeness rights",
+     "kw": [
+      "ai",
+      "vfx",
+      "likeness",
+      "digital replica",
+      "training data"
+     ]
+    },
+    {
+     "id": "F08",
+     "label": "Creators and YouTube vs Hollywood",
+     "kw": [
+      "youtube",
+      "creator",
+      "youtube tv share"
+     ]
+    },
+    {
+     "id": "F09",
+     "label": "Live sports rights",
+     "kw": [
+      "sports rights",
+      "nfl",
+      "nba",
+      "live sports"
+     ]
+    },
+    {
+     "id": "F10",
+     "label": "Film and TV marketing",
+     "kw": [
+      "trailer",
+      "marketing",
+      "campaign",
+      "social buzz"
+     ]
+    },
+    {
+     "id": "F11",
+     "label": "International and local-language content",
+     "kw": [
+      "international",
+      "k-drama",
+      "anime",
+      "local language"
+     ]
+    },
+    {
+     "id": "F12",
+     "label": "Piracy",
+     "kw": [
+      "piracy",
+      "pirate",
+      "illegal streaming"
+     ]
+    },
+    {
+     "id": "F13",
+     "label": "Microdramas and new formats",
+     "kw": [
+      "microdrama",
+      "vertical drama",
+      "short drama"
+     ]
+    },
+    {
+     "id": "F00",
+     "label": "Other",
+     "kw": []
+    }
+   ],
+   "sun": {
+    "trade_press": [
+     "variety.com",
+     "deadline.com",
+     "hollywoodreporter.com",
+     "indiewire.com",
+     "thewrap.com",
+     "puck.news"
+    ]
+   },
+   "moon": {
+    "subreddits": [
+     "r/Filmmakers",
+     "r/editors",
+     "r/cinematography",
+     "r/screenwriting",
+     "r/vfx",
+     "r/boxoffice"
+    ],
+    "discord_discovery": [
+     "disboard tags: filmmaking, film, editing, screenwriting"
+    ],
+    "telegram_discovery": [
+     "TGStat 'Video and films'"
+    ]
+   },
+   "nilometer": [
+    "MPA THEME report",
+    "Nielsen The Gauge",
+    "Antenna churn data",
+    "The Numbers / Box Office Mojo",
+    "Streamer earnings",
+    "FilmLA production reports"
+   ],
+   "standing_questions": [
+    "Is YouTube's share of TV time converting into Hollywood budget shifts?",
+    "Does AI in production move from VFX to principal photography?",
+    "Is the microdrama format a real category?"
+   ]
+  },
+  {
+   "id": "music",
+   "name": "Music",
+   "nome": "Seshesh (the sistrum nome)",
+   "scope": "Recorded music, streaming, publishing, live, AI music and artist marketing.",
+   "taxonomy": [
+    {
+     "id": "U01",
+     "label": "Streaming payouts and royalty models",
+     "kw": [
+      "royalties",
+      "payout",
+      "streaming",
+      "artist-centric",
+      "per stream"
+     ]
+    },
+    {
+     "id": "U02",
+     "label": "AI-generated music and training rights",
+     "kw": [
+      "ai music",
+      "suno",
+      "udio",
+      "training",
+      "voice clone"
+     ]
+    },
+    {
+     "id": "U03",
+     "label": "Superfans and direct-to-fan",
+     "kw": [
+      "superfan",
+      "direct to fan",
+      "fan club",
+      "vip"
+     ]
+    },
+    {
+     "id": "U04",
+     "label": "Short-form virality",
+     "kw": [
+      "tiktok sound",
+      "viral",
+      "reels audio",
+      "trend"
+     ]
+    },
+    {
+     "id": "U05",
+     "label": "Live, touring and ticketing",
+     "kw": [
+      "tour",
+      "ticketing",
+      "live nation",
+      "dynamic pricing",
+      "festival"
+     ]
+    },
+    {
+     "id": "U06",
+     "label": "Label deals and distribution",
+     "kw": [
+      "label",
+      "distribution",
+      "distrokid",
+      "deal",
+      "independent"
+     ]
+    },
+    {
+     "id": "U07",
+     "label": "Catalog acquisitions",
+     "kw": [
+      "catalog",
+      "acquisition",
+      "rights fund"
+     ]
+    },
+    {
+     "id": "U08",
+     "label": "Streaming fraud",
+     "kw": [
+      "fraud",
+      "artificial streams",
+      "bot streams"
+     ]
+    },
+    {
+     "id": "U09",
+     "label": "Artist marketing and release strategy",
+     "kw": [
+      "release strategy",
+      "pre-save",
+      "marketing",
+      "playlist pitching"
+     ]
+    },
+    {
+     "id": "U10",
+     "label": "Publishing and songwriter rights",
+     "kw": [
+      "publishing",
+      "songwriter",
+      "mechanical",
+      "mlc"
+     ]
+    },
+    {
+     "id": "U11",
+     "label": "Vinyl and physical",
+     "kw": [
+      "vinyl",
+      "cd",
+      "physical"
+     ]
+    },
+    {
+     "id": "U12",
+     "label": "Regulation",
+     "kw": [
+      "copyright",
+      "ticketing law",
+      "ftc",
+      "antitrust"
+     ]
+    },
+    {
+     "id": "U00",
+     "label": "Other",
+     "kw": []
+    }
+   ],
+   "sun": {
+    "trade_press": [
+     "musicbusinessworldwide.com",
+     "billboard.com",
+     "musically.com (Music Ally)",
+     "hypebot.com",
+     "digitalmusicnews.com"
+    ]
+   },
+   "moon": {
+    "subreddits": [
+     "r/WeAreTheMusicMakers",
+     "r/musicproduction",
+     "r/musicmarketing",
+     "r/edmproduction",
+     "r/musicbusiness"
+    ],
+    "discord_discovery": [
+     "disboard tags: music-production, producers, musicians"
+    ],
+    "telegram_discovery": [
+     "TGStat 'Music'"
+    ]
+   },
+   "nilometer": [
+    "Luminate midyear and year-end reports",
+    "IFPI Global Music Report",
+    "RIAA revenue statistics",
+    "MIDiA Research",
+    "Spotify Loud & Clear"
+   ],
+   "standing_questions": [
+    "Is AI music flooding supply faster than platforms can filter it?",
+    "Are superfan tiers real revenue?",
+    "Who captures short-form virality value?"
+   ]
+  },
+  {
+   "id": "publishing-books",
+   "name": "Books and Publishing",
+   "nome": "Wenet (Hermopolis, city of Thoth)",
+   "scope": "Trade and self-publishing, audiobooks, discovery, AI licensing and author economics.",
+   "taxonomy": [
+    {
+     "id": "B01",
+     "label": "AI training and licensing deals",
+     "kw": [
+      "ai licensing",
+      "training data",
+      "lawsuit",
+      "settlement"
+     ]
+    },
+    {
+     "id": "B02",
+     "label": "AI-written books and detection",
+     "kw": [
+      "ai-written",
+      "ai generated books",
+      "detection"
+     ]
+    },
+    {
+     "id": "B03",
+     "label": "Self-publishing and KDP economics",
+     "kw": [
+      "kdp",
+      "self-publish",
+      "indie author",
+      "kindle unlimited"
+     ]
+    },
+    {
+     "id": "B04",
+     "label": "BookTok and social discovery",
+     "kw": [
+      "booktok",
+      "bookstagram",
+      "social discovery"
+     ]
+    },
+    {
+     "id": "B05",
+     "label": "Retail and Amazon",
+     "kw": [
+      "amazon",
+      "bookstore",
+      "retail",
+      "barnes"
+     ]
+    },
+    {
+     "id": "B06",
+     "label": "Audiobooks and AI narration",
+     "kw": [
+      "audiobook",
+      "narration",
+      "ai voice"
+     ]
+    },
+    {
+     "id": "B07",
+     "label": "Advances and author income",
+     "kw": [
+      "advance",
+      "author income",
+      "royalty"
+     ]
+    },
+    {
+     "id": "B08",
+     "label": "Bans and censorship",
+     "kw": [
+      "book ban",
+      "censorship",
+      "challenged"
+     ]
+    },
+    {
+     "id": "B09",
+     "label": "Publisher consolidation",
+     "kw": [
+      "merger",
+      "acquisition",
+      "imprint"
+     ]
+    },
+    {
+     "id": "B10",
+     "label": "Agents and querying",
+     "kw": [
+      "query",
+      "literary agent",
+      "submission"
+     ]
+    },
+    {
+     "id": "B11",
+     "label": "Serialized fiction and subscriptions",
+     "kw": [
+      "serial",
+      "web novel",
+      "subscription",
+      "substack fiction"
+     ]
+    },
+    {
+     "id": "B12",
+     "label": "Book marketing and launches",
+     "kw": [
+      "launch",
+      "marketing",
+      "ads",
+      "newsletter swap"
+     ]
+    },
+    {
+     "id": "B00",
+     "label": "Other",
+     "kw": []
+    }
+   ],
+   "sun": {
+    "trade_press": [
+     "publishersweekly.com",
+     "thebookseller.com",
+     "publishersmarketplace.com (Publishers Lunch)",
+     "janefriedman.com (The Hot Sheet)"
+    ]
+   },
+   "moon": {
+    "subreddits": [
+     "r/publishing",
+     "r/selfpublish",
+     "r/writing",
+     "r/PubTips",
+     "r/KDP"
+    ],
+    "discord_discovery": [
+     "disboard tags: writing, authors, self-publishing"
+    ],
+    "telegram_discovery": [
+     "TGStat 'Books'"
+    ]
+   },
+   "nilometer": [
+    "Circana BookScan",
+    "AAP StatShot",
+    "Audio Publishers Association survey",
+    "Court dockets on AI training"
+   ],
+   "standing_questions": [
+    "Is AI narration commoditizing audiobooks?",
+    "Does social discovery still move backlist?",
+    "Are licensing deals a real revenue line?"
+   ]
+  },
+  {
+   "id": "news-journalism",
+   "name": "News and Journalism",
+   "nome": "Heqa-andj (Heliopolis, city of the sun)",
+   "scope": "Newsrooms, distribution, AI referral collapse, licensing, subscriptions and trust.",
+   "taxonomy": [
+    {
+     "id": "J01",
+     "label": "Search and AI referral collapse",
+     "kw": [
+      "referral",
+      "google traffic",
+      "ai overviews",
+      "discover",
+      "zero-click"
+     ]
+    },
+    {
+     "id": "J02",
+     "label": "AI licensing and lawsuits",
+     "kw": [
+      "licensing",
+      "lawsuit",
+      "openai deal",
+      "content deal"
+     ]
+    },
+    {
+     "id": "J03",
+     "label": "Subscriptions and paywalls",
+     "kw": [
+      "subscription",
+      "paywall",
+      "subscribers"
+     ]
+    },
+    {
+     "id": "J04",
+     "label": "Video and social distribution",
+     "kw": [
+      "video",
+      "tiktok",
+      "youtube",
+      "vertical video"
+     ]
+    },
+    {
+     "id": "J05",
+     "label": "Layoffs and closures",
+     "kw": [
+      "layoffs",
+      "closure",
+      "shut down",
+      "cuts"
+     ]
+    },
+    {
+     "id": "J06",
+     "label": "Local news and philanthropy",
+     "kw": [
+      "local news",
+      "news desert",
+      "nonprofit",
+      "philanthropy"
+     ]
+    },
+    {
+     "id": "J07",
+     "label": "Trust, misinformation and AI slop",
+     "kw": [
+      "trust",
+      "misinformation",
+      "ai slop",
+      "fake"
+     ]
+    },
+    {
+     "id": "J08",
+     "label": "Newsletters and independent journalists",
+     "kw": [
+      "newsletter",
+      "substack",
+      "independent",
+      "creator journalist"
+     ]
+    },
+    {
+     "id": "J09",
+     "label": "Platform policy",
+     "kw": [
+      "meta news",
+      "discover",
+      "platform policy",
+      "news ban"
+     ]
+    },
+    {
+     "id": "J10",
+     "label": "AI tools in newsrooms",
+     "kw": [
+      "ai tools",
+      "newsroom ai",
+      "automation"
+     ]
+    },
+    {
+     "id": "J11",
+     "label": "Press freedom and legal threats",
+     "kw": [
+      "press freedom",
+      "lawsuit",
+      "subpoena",
+      "defamation"
+     ]
+    },
+    {
+     "id": "J12",
+     "label": "Bot traffic and scraping",
+     "kw": [
+      "bot traffic",
+      "scraping",
+      "non-human",
+      "crawler"
+     ]
+    },
+    {
+     "id": "J00",
+     "label": "Other",
+     "kw": []
+    }
+   ],
+   "sun": {
+    "trade_press": [
+     "niemanlab.org",
+     "pressgazette.co.uk",
+     "poynter.org",
+     "cjr.org",
+     "digiday.com/media",
+     "semafor.com (media newsletter)"
+    ]
+   },
+   "moon": {
+    "subreddits": [
+     "r/Journalism",
+     "r/media"
+    ],
+    "discord_discovery": [
+     "disboard tags: journalism, news"
+    ],
+    "telegram_discovery": [
+     "TGStat 'News and media' (for distribution, not practice)"
+    ]
+   },
+   "nilometer": [
+    "Reuters Institute Digital News Report (June)",
+    "Pew Research State of the News Media",
+    "Chartbeat and Similarweb referral data",
+    "Press Gazette traffic tables"
+   ],
+   "standing_questions": [
+    "How fast is search referral falling for news?",
+    "Are AI licensing payments offsetting it?",
+    "Is video-first news a business or a cost?"
+   ]
+  },
+  {
+   "id": "games-interactive",
+   "name": "Games and Interactive",
+   "nome": "Aa-ta (Dendera, house of Hathor)",
+   "scope": "Studios, platforms, live service, UGC platforms, mobile UA and game marketing.",
+   "taxonomy": [
+    {
+     "id": "G01",
+     "label": "Layoffs and studio closures",
+     "kw": [
+      "layoffs",
+      "studio closure",
+      "shut down"
+     ]
+    },
+    {
+     "id": "G02",
+     "label": "Live service and monetization",
+     "kw": [
+      "live service",
+      "battle pass",
+      "monetization",
+      "microtransactions"
+     ]
+    },
+    {
+     "id": "G03",
+     "label": "AI in development and voice rights",
+     "kw": [
+      "ai",
+      "voice actors",
+      "generative",
+      "asset generation"
+     ]
+    },
+    {
+     "id": "G04",
+     "label": "Platform fees and storefronts",
+     "kw": [
+      "steam cut",
+      "app store fees",
+      "epic",
+      "storefront"
+     ]
+    },
+    {
+     "id": "G05",
+     "label": "Discovery and wishlists",
+     "kw": [
+      "wishlist",
+      "steam next fest",
+      "discovery",
+      "algorithm"
+     ]
+    },
+    {
+     "id": "G06",
+     "label": "UGC platforms",
+     "kw": [
+      "roblox",
+      "fortnite creative",
+      "uefn",
+      "ugc"
+     ]
+    },
+    {
+     "id": "G07",
+     "label": "Mobile UA and privacy",
+     "kw": [
+      "user acquisition",
+      "ua",
+      "idfa",
+      "skan",
+      "mobile ads"
+     ]
+    },
+    {
+     "id": "G08",
+     "label": "Consoles and hardware",
+     "kw": [
+      "console",
+      "switch",
+      "playstation",
+      "xbox",
+      "handheld"
+     ]
+    },
+    {
+     "id": "G09",
+     "label": "Esports and streaming",
+     "kw": [
+      "esports",
+      "twitch",
+      "streamers",
+      "kick"
+     ]
+    },
+    {
+     "id": "G10",
+     "label": "Game marketing and influencers",
+     "kw": [
+      "trailer",
+      "influencer",
+      "marketing",
+      "launch"
+     ]
+    },
+    {
+     "id": "G11",
+     "label": "Funding and M&A",
+     "kw": [
+      "funding",
+      "acquisition",
+      "investment",
+      "vc"
+     ]
+    },
+    {
+     "id": "G12",
+     "label": "Regulation",
+     "kw": [
+      "loot box",
+      "age rating",
+      "regulation"
+     ]
+    },
+    {
+     "id": "G00",
+     "label": "Other",
+     "kw": []
+    }
+   ],
+   "sun": {
+    "trade_press": [
+     "gamesindustry.biz",
+     "gamedeveloper.com",
+     "pocketgamer.biz",
+     "mobilegamer.biz",
+     "naavik.co"
+    ]
+   },
+   "moon": {
+    "subreddits": [
+     "r/gamedev",
+     "r/IndieDev",
+     "r/Unity3D",
+     "r/unrealengine",
+     "r/gamedesign"
+    ],
+    "discord_discovery": [
+     "disboard tags: gamedev, indie-games, game-development"
+    ],
+    "telegram_discovery": [
+     "TGStat 'Games'"
+    ]
+   },
+   "nilometer": [
+    "Circana US games reports",
+    "Newzoo global games market",
+    "SteamDB",
+    "Sensor Tower",
+    "Publisher earnings (EA, Take-Two, Roblox, Nintendo)"
+   ],
+   "standing_questions": [
+    "Are layoffs structural or cyclical this year?",
+    "Where is discovery happening for indies?",
+    "Is UGC-platform revenue share sustainable for creators?"
+   ]
+  },
+  {
+   "id": "podcasting-audio",
+   "name": "Podcasting and Audio",
+   "nome": "Nekhen (city of the falcon)",
+   "scope": "Podcasts, video podcasts, audio advertising, measurement and discovery.",
+   "taxonomy": [
+    {
+     "id": "P01",
+     "label": "Video podcasts and YouTube",
+     "kw": [
+      "video podcast",
+      "youtube podcasts",
+      "vodcast"
+     ]
+    },
+    {
+     "id": "P02",
+     "label": "Ad revenue and CPMs",
+     "kw": [
+      "ad revenue",
+      "cpm",
+      "host-read",
+      "programmatic audio"
+     ]
+    },
+    {
+     "id": "P03",
+     "label": "Measurement",
+     "kw": [
+      "downloads",
+      "measurement",
+      "iab certified",
+      "attribution"
+     ]
+    },
+    {
+     "id": "P04",
+     "label": "Discovery and charts",
+     "kw": [
+      "charts",
+      "discovery",
+      "recommendations"
+     ]
+    },
+    {
+     "id": "P05",
+     "label": "Creator deals and networks",
+     "kw": [
+      "deal",
+      "network",
+      "exclusive",
+      "licensing"
+     ]
+    },
+    {
+     "id": "P06",
+     "label": "AI voice and cloning",
+     "kw": [
+      "ai voice",
+      "clone",
+      "synthetic host",
+      "notebooklm"
+     ]
+    },
+    {
+     "id": "P07",
+     "label": "Subscriptions and premium",
+     "kw": [
+      "subscription",
+      "premium",
+      "patreon",
+      "supporting"
+     ]
+    },
+    {
+     "id": "P08",
+     "label": "Clips and short-form",
+     "kw": [
+      "clips",
+      "short-form",
+      "clipping"
+     ]
+    },
+    {
+     "id": "P09",
+     "label": "Radio and streaming audio",
+     "kw": [
+      "radio",
+      "streaming audio",
+      "audio ads"
+     ]
+    },
+    {
+     "id": "P10",
+     "label": "Industry layoffs and consolidation",
+     "kw": [
+      "layoffs",
+      "consolidation",
+      "acquisition"
+     ]
+    },
+    {
+     "id": "P00",
+     "label": "Other",
+     "kw": []
+    }
+   ],
+   "sun": {
+    "trade_press": [
+     "podnews.net",
+     "podcastbusinessjournal.com",
+     "soundsprofitable.com",
+     "bellocollective.com"
+    ]
+   },
+   "moon": {
+    "subreddits": [
+     "r/podcasting",
+     "r/podcast",
+     "r/audioengineering"
+    ],
+    "discord_discovery": [
+     "disboard tags: podcast, podcasting"
+    ],
+    "telegram_discovery": [
+     "TGStat 'Music' and 'Blogs' (sparse)"
+    ]
+   },
+   "nilometer": [
+    "Edison Research Infinite Dial",
+    "IAB/PwC US Podcast Advertising Revenue Study",
+    "Triton Digital rankings",
+    "Podtrac",
+    "YouTube and Spotify podcast disclosures"
+   ],
+   "standing_questions": [
+    "Is video eating audio-only podcasting?",
+    "Are CPMs holding as supply grows?",
+    "Does AI voice break the host-read premium?"
+   ]
+  },
+  {
+   "id": "creator-economy",
+   "name": "Creator Economy",
+   "nome": "Ta-Seti (Land of the Bow, the trading frontier)",
+   "scope": "Creators, platforms' creator programs, brand deals, creator commerce and the clipping economy.",
+   "taxonomy": [
+    {
+     "id": "C01",
+     "label": "Brand deals and rates",
+     "kw": [
+      "brand deal",
+      "rate card",
+      "sponsorship",
+      "ugc rates"
+     ]
+    },
+    {
+     "id": "C02",
+     "label": "Platform payouts and funds",
+     "kw": [
+      "payout",
+      "creator fund",
+      "partner program",
+      "rpm"
+     ]
+    },
+    {
+     "id": "C03",
+     "label": "Short-form algorithms and reach",
+     "kw": [
+      "reach",
+      "algorithm",
+      "views",
+      "shadowban"
+     ]
+    },
+    {
+     "id": "C04",
+     "label": "Creator commerce and shops",
+     "kw": [
+      "tiktok shop",
+      "affiliate",
+      "storefront",
+      "shop"
+     ]
+    },
+    {
+     "id": "C05",
+     "label": "AI creators, avatars and clipping",
+     "kw": [
+      "ai influencer",
+      "avatar",
+      "clipping",
+      "faceless"
+     ]
+    },
+    {
+     "id": "C06",
+     "label": "Subscriptions and memberships",
+     "kw": [
+      "patreon",
+      "substack",
+      "membership",
+      "subscription"
+     ]
+    },
+    {
+     "id": "C07",
+     "label": "Burnout and wellbeing",
+     "kw": [
+      "burnout",
+      "mental health",
+      "quit"
+     ]
+    },
+    {
+     "id": "C08",
+     "label": "Agencies and management",
+     "kw": [
+      "management",
+      "agency",
+      "mcn",
+      "talent manager"
+     ]
+    },
+    {
+     "id": "C09",
+     "label": "Measurement and attribution",
+     "kw": [
+      "measurement",
+      "attribution",
+      "roi",
+      "benchmarks"
+     ]
+    },
+    {
+     "id": "C10",
+     "label": "Platform risk and bans",
+     "kw": [
+      "ban",
+      "demonetized",
+      "policy",
+      "account removed"
+     ]
+    },
+    {
+     "id": "C11",
+     "label": "Creator-led brands",
+     "kw": [
+      "creator brand",
+      "product line",
+      "launch"
+     ]
+    },
+    {
+     "id": "C12",
+     "label": "Live streaming and gifting",
+     "kw": [
+      "live",
+      "gifts",
+      "tiktok live",
+      "twitch"
+     ]
+    },
+    {
+     "id": "C13",
+     "label": "Disclosure and regulation",
+     "kw": [
+      "ftc",
+      "disclosure",
+      "#ad",
+      "regulation"
+     ]
+    },
+    {
+     "id": "C00",
+     "label": "Other",
+     "kw": []
+    }
+   ],
+   "sun": {
+    "trade_press": [
+     "tubefilter.com",
+     "passionfru.it (Passionfruit)",
+     "ICYMI newsletter (Lia Haberman)",
+     "The Publish Press",
+     "socialmediatoday.com"
+    ]
+   },
+   "moon": {
+    "subreddits": [
+     "r/NewTubers",
+     "r/PartneredYoutube",
+     "r/youtubers",
+     "r/Twitch",
+     "r/InstagramMarketing"
+    ],
+    "discord_discovery": [
+     "disboard tags: content-creation, youtubers, clipping, ugc"
+    ],
+    "telegram_discovery": [
+     "TGStat 'Blogs' and 'Instagram'"
+    ]
+   },
+   "nilometer": [
+    "IAB Creator Economy Ad Spend report",
+    "YouTube partner payout disclosures",
+    "Kit/Linktree creator surveys",
+    "Platform creator program changelogs"
+   ],
+   "standing_questions": [
+    "Are brand budgets shifting from ads to creators faster than creators can absorb?",
+    "Is AI clipping a new labor market or a race to zero?",
+    "Which platform pays creators best this year?"
+   ]
+  },
+  {
+   "id": "pr-communications",
+   "name": "PR and Communications",
+   "nome": "Input (the jackal nome, keepers of the scales)",
+   "scope": "Earned media, reputation, AI answers about brands, executive visibility and comms measurement.",
+   "taxonomy": [
+    {
+     "id": "R01",
+     "label": "AI answers and brand reputation",
+     "kw": [
+      "ai answers",
+      "what chatgpt says",
+      "reputation",
+      "llm"
+     ]
+    },
+    {
+     "id": "R02",
+     "label": "Earned media as AI citation",
+     "kw": [
+      "earned media",
+      "citations",
+      "ai visibility",
+      "press coverage"
+     ]
+    },
+    {
+     "id": "R03",
+     "label": "Media relations and journalist access",
+     "kw": [
+      "pitch",
+      "journalist",
+      "media relations",
+      "newsroom cuts"
+     ]
+    },
+    {
+     "id": "R04",
+     "label": "Crisis and reputation management",
+     "kw": [
+      "crisis",
+      "backlash",
+      "reputation"
+     ]
+    },
+    {
+     "id": "R05",
+     "label": "PR measurement",
+     "kw": [
+      "measurement",
+      "share of voice",
+      "attribution"
+     ]
+    },
+    {
+     "id": "R06",
+     "label": "Creator and influencer relations",
+     "kw": [
+      "influencer",
+      "creator",
+      "seeding"
+     ]
+    },
+    {
+     "id": "R07",
+     "label": "Executive visibility and LinkedIn",
+     "kw": [
+      "thought leadership",
+      "ceo",
+      "linkedin",
+      "executive"
+     ]
+    },
+    {
+     "id": "R08",
+     "label": "Internal comms and employee advocacy",
+     "kw": [
+      "internal comms",
+      "employee advocacy",
+      "culture"
+     ]
+    },
+    {
+     "id": "R09",
+     "label": "Misinformation and deepfakes",
+     "kw": [
+      "deepfake",
+      "misinformation",
+      "fake"
+     ]
+    },
+    {
+     "id": "R10",
+     "label": "Agency economics and talent",
+     "kw": [
+      "agency",
+      "layoffs",
+      "retainer",
+      "talent"
+     ]
+    },
+    {
+     "id": "R11",
+     "label": "AI in PR tools",
+     "kw": [
+      "ai pr",
+      "muck rack",
+      "cision",
+      "ai tools"
+     ]
+    },
+    {
+     "id": "R00",
+     "label": "Other",
+     "kw": []
+    }
+   ],
+   "sun": {
+    "trade_press": [
+     "prweek.com",
+     "prdaily.com",
+     "ragan.com",
+     "odwyerpr.com",
+     "muckrack.com/blog"
+    ]
+   },
+   "moon": {
+    "subreddits": [
+     "r/PublicRelations",
+     "r/marketing"
+    ],
+    "discord_discovery": [
+     "disboard tags: public-relations, pr, communications"
+    ],
+    "telegram_discovery": [
+     "TGStat 'Marketing, PR, advertising'"
+    ]
+   },
+   "nilometer": [
+    "Muck Rack State of PR and State of Journalism",
+    "USC Annenberg Global Communication Report",
+    "Cision State of the Media",
+    "Holdco PR segment results"
+   ],
+   "standing_questions": [
+    "Does earned media become the main lever for AI visibility?",
+    "Is journalist access collapsing as newsrooms shrink?",
+    "Who measures reputation inside AI answers?"
+   ]
+  },
+  {
+   "id": "local-services",
+   "name": "Local Services and Trades",
+   "nome": "Client vertical pack (OmegaWeapon)",
+   "flagship": false,
+   "scope": "Home services, trades, clinics, salons, restaurants and every business that wins or loses in a map pack: the local pack, Google Business Profile, reviews, Local Services Ads, lead marketplaces, private equity roll ups, pricing and the labor squeeze.",
+   "clusters": {
+    "Local visibility": [
+     "V01",
+     "V02",
+     "V03"
+    ],
+    "Demand": [
+     "V04",
+     "V05",
+     "V06"
+    ],
+    "Operations": [
+     "V07",
+     "V08",
+     "V09"
+    ],
+    "Reputation and rules": [
+     "V10",
+     "V11"
+    ],
+    "Money": [
+     "V12",
+     "V13"
+    ],
+    "Other": [
+     "V00"
+    ]
+   },
+   "taxonomy": [
+    {
+     "id": "V01",
+     "label": "Google Business Profile and the local pack",
+     "short": "GBP and pack",
+     "def": "Ranking, suspensions, edits, categories, justifications, the finder and Maps.",
+     "kw": [
+      "google business profile",
+      "gbp",
+      "map pack",
+      "local pack",
+      "3-pack",
+      "suspended listing",
+      "reinstatement",
+      "maps ranking",
+      "local finder",
+      "categories"
+     ]
+    },
+    {
+     "id": "V02",
+     "label": "Reviews and reputation systems",
+     "short": "Reviews",
+     "def": "Review acquisition, gating, removal, fake review enforcement, review platforms.",
+     "kw": [
+      "reviews",
+      "review request",
+      "fake reviews",
+      "review removal",
+      "yelp",
+      "reputation",
+      "5 star",
+      "review gating",
+      "consumer review rule"
+     ]
+    },
+    {
+     "id": "V03",
+     "label": "Local Services Ads and Google Guaranteed",
+     "short": "LSA",
+     "def": "LSA eligibility, lead quality, disputes, ranking, the badge, pricing changes.",
+     "kw": [
+      "local services ads",
+      "lsa",
+      "google guaranteed",
+      "google screened",
+      "lead dispute",
+      "lsa leads",
+      "pay per lead"
+     ]
+    },
+    {
+     "id": "V04",
+     "label": "Lead marketplaces and aggregators",
+     "short": "Lead marketplaces",
+     "def": "Angi, Thumbtack, HomeAdvisor, Networx, Bark, Zocdoc and pay per lead economics.",
+     "kw": [
+      "angi",
+      "thumbtack",
+      "homeadvisor",
+      "networx",
+      "bark",
+      "zocdoc",
+      "lead gen",
+      "shared leads",
+      "pay per lead",
+      "lead quality"
+     ]
+    },
+    {
+     "id": "V05",
+     "label": "Paid search and Meta for local",
+     "short": "Local paid",
+     "def": "Google Ads, PMax for local, Meta lead ads, call tracking, CPL benchmarks.",
+     "kw": [
+      "google ads",
+      "ppc",
+      "cost per lead",
+      "cpl",
+      "meta lead ads",
+      "facebook ads",
+      "pmax",
+      "call tracking",
+      "ad spend"
+     ]
+    },
+    {
+     "id": "V06",
+     "label": "Seasonality and demand shifts",
+     "short": "Seasonality",
+     "def": "Weather, seasons, economic mood, demand collapses and spikes by trade.",
+     "kw": [
+      "slow season",
+      "busy season",
+      "demand down",
+      "phones stopped ringing",
+      "heat wave",
+      "storm season",
+      "recession",
+      "calls dropped"
+     ]
+    },
+    {
+     "id": "V07",
+     "label": "Software, CRM and AI receptionists",
+     "short": "Software and AI",
+     "def": "Field service software, CRMs, booking tools, AI answering and chat, automation.",
+     "kw": [
+      "servicetitan",
+      "housecall pro",
+      "jobber",
+      "crm",
+      "ai receptionist",
+      "answering service",
+      "booking software",
+      "automation",
+      "dispatch software",
+      "ai chat"
+     ]
+    },
+    {
+     "id": "V08",
+     "label": "Labor, hiring and technician shortage",
+     "short": "Labor",
+     "def": "Hiring, wages, training, retention and the skilled trades gap.",
+     "kw": [
+      "hiring",
+      "technicians",
+      "labor shortage",
+      "apprentice",
+      "wages",
+      "turnover",
+      "recruiting",
+      "trade school",
+      "staffing"
+     ]
+    },
+    {
+     "id": "V09",
+     "label": "Pricing, financing and consumer credit",
+     "short": "Pricing",
+     "def": "Flat rate vs time and materials, financing offers, BNPL for services, price transparency laws.",
+     "kw": [
+      "pricing",
+      "flat rate",
+      "financing",
+      "consumer financing",
+      "bnpl",
+      "price transparency",
+      "estimates",
+      "upsell",
+      "membership plans"
+     ]
+    },
+    {
+     "id": "V10",
+     "label": "Licensing, compliance and enforcement",
+     "short": "Compliance",
+     "def": "License boards, unlicensed work, advertising rules, telemarketing and review law enforcement.",
+     "kw": [
+      "license",
+      "unlicensed",
+      "board complaint",
+      "fine",
+      "tcpa",
+      "ftc",
+      "attorney general",
+      "permit",
+      "contractor law",
+      "advertising rule"
+     ]
+    },
+    {
+     "id": "V11",
+     "label": "Spam, fake listings and lead theft",
+     "short": "Listing spam",
+     "def": "Fake GBP listings, keyword stuffed names, virtual offices, call hijacking, brand bidding by rivals.",
+     "kw": [
+      "fake listing",
+      "keyword stuffing",
+      "spam listing",
+      "virtual office",
+      "lead gen sites",
+      "brand bidding",
+      "call hijack",
+      "redressal"
+     ]
+    },
+    {
+     "id": "V12",
+     "label": "Private equity, consolidation and exits",
+     "short": "Consolidation",
+     "def": "PE roll ups, platform acquisitions, valuations, franchising and what they do to marketing.",
+     "kw": [
+      "private equity",
+      "roll up",
+      "acquired",
+      "acquisition",
+      "platform company",
+      "valuation",
+      "exit",
+      "franchise",
+      "consolidation"
+     ]
+    },
+    {
+     "id": "V13",
+     "label": "Websites, SEO and AI search for local",
+     "short": "Local SEO and AI",
+     "def": "Service and city pages, schema, AI Overviews for local queries, site platforms.",
+     "kw": [
+      "local seo",
+      "service pages",
+      "city pages",
+      "schema",
+      "ai overview",
+      "ai mode",
+      "wordpress",
+      "website",
+      "near me"
+     ]
+    },
+    {
+     "id": "V00",
+     "label": "Other",
+     "short": "Other",
+     "def": "Items outside the vertical that the frame included; the Other share measures frame noise.",
+     "kw": []
+    }
+   ],
+   "sun": {
+    "trade_press": [
+     "searchengineland.com (local)",
+     "localu.org",
+     "brightlocal.com/blog",
+     "sterlingsky.ca",
+     "whitespark.ca/blog",
+     "servicetitan.com/blog",
+     "contractingbusiness.com",
+     "pctonline.com",
+     "achrnews.com",
+     "pmmag.com",
+     "dentistryiq.com",
+     "restaurantbusinessonline.com"
+    ],
+    "newsletters": [
+     "Local Search Forum digest",
+     "Near Media newsletter",
+     "Whitespark Local Search Insider"
+    ],
+    "platform_voices": [
+     "Google Business Profile Help updates",
+     "Google Ads and Commerce blog (LSA)",
+     "Yelp for Business blog",
+     "Angi and Thumbtack pro blogs"
+    ],
+    "podcasts": [
+     "Near Memo",
+     "The Local Marketing Institute podcast",
+     "To The Point (home services)"
+    ]
+   },
+   "moon": {
+    "subreddits": [
+     "r/localseo",
+     "r/smallbusiness",
+     "r/HVAC",
+     "r/Plumbing",
+     "r/electricians",
+     "r/pestcontrol",
+     "r/Dentistry",
+     "r/Entrepreneur",
+     "r/sweatystartup",
+     "r/googleads"
+    ],
+    "forums": [
+     "Local Search Forum",
+     "Google Business Profile Help Community",
+     "ContractorTalk",
+     "HVAC-Talk",
+     "The Lawn Forum",
+     "Dentaltown"
+    ],
+    "discord_discovery": [
+     "disboard tags: local-seo, home-services, contractors, small-business"
+    ],
+    "telegram_discovery": [
+     "TGStat category 'Marketing, PR, advertising' filtered by local seo"
+    ],
+    "practitioner_social": [
+     "Local SEO practitioners' public threads on X and LinkedIn (curated only)"
+    ]
+   },
+   "nilometer": [
+    "Angi Inc. quarterly results (home services demand and lead pricing)",
+    "Yelp Inc. quarterly results (local ad revenue, request a quote volume)",
+    "Alphabet 8-K and Ads blog (LSA and local ad changes)",
+    "BrightLocal Local Consumer Review Survey (annual)",
+    "Whitespark Local Search Ranking Factors (annual)",
+    "Sterling Sky GBP suspension trackers",
+    "BLS employment and wages for construction, HVAC, plumbing, dental and personal care",
+    "ServiceTitan public filings",
+    "FTC Consumer Review Rule enforcement and state license board actions",
+    "Census Bureau County Business Patterns (establishment counts)"
+   ],
+   "standing_questions": [
+    "What is moving map pack visibility this quarter, and how much of it is within a single business's control?",
+    "Where is lead cost heading on LSA, Google Ads and the marketplaces, and who is capturing the margin?",
+    "What are owners asking for help with that the local search press is not covering?",
+    "Which local tactics are being punished (suspensions, review enforcement) and which grey tactics still pay?",
+    "What is consolidation doing to marketing in the trades?"
+   ]
+  },
+  {
+   "id": "legal-services",
+   "name": "Legal Services Marketing",
+   "nome": "Client vertical pack (OmegaWeapon)",
+   "flagship": false,
+   "scope": "Law firm marketing: intake, LSA, the local pack, mass tort advertising, bar advertising enforcement, legal lead generation, AI in legal research and intake, pricing and the firm labor market.",
+   "clusters": {
+    "Acquisition": [
+     "V01",
+     "V02",
+     "V03",
+     "V04"
+    ],
+    "Rules": [
+     "V05",
+     "V06"
+    ],
+    "Operations": [
+     "V07",
+     "V08",
+     "V09"
+    ],
+    "Market": [
+     "V10",
+     "V11",
+     "V12"
+    ],
+    "Other": [
+     "V00"
+    ]
+   },
+   "taxonomy": [
+    {
+     "id": "V01",
+     "label": "Legal LSA and paid search",
+     "short": "Legal paid",
+     "def": "LSA legal categories, Google Screened, CPC inflation, brand bidding between firms.",
+     "kw": [
+      "lsa",
+      "google screened",
+      "legal ppc",
+      "cost per click",
+      "personal injury ads",
+      "brand bidding",
+      "google ads lawyers"
+     ]
+    },
+    {
+     "id": "V02",
+     "label": "Local pack and firm SEO",
+     "short": "Firm SEO",
+     "def": "GBP for firms, practice area pages, city pages, AI Overviews for legal queries.",
+     "kw": [
+      "law firm seo",
+      "attorney seo",
+      "practice area page",
+      "gbp",
+      "map pack",
+      "ai overview",
+      "legal keywords"
+     ]
+    },
+    {
+     "id": "V03",
+     "label": "Legal lead generation and case marketplaces",
+     "short": "Lead gen",
+     "def": "Mass tort lead gen, case marketplaces, referral fees, lead quality, TCPA exposure.",
+     "kw": [
+      "lead generation",
+      "mass tort leads",
+      "case leads",
+      "signed cases",
+      "referral fee",
+      "lead vendor",
+      "tcpa"
+     ]
+    },
+    {
+     "id": "V04",
+     "label": "Mass tort and TV advertising",
+     "short": "Mass tort",
+     "def": "Docket driven advertising, TV and streaming buys, ad disclosure statutes.",
+     "kw": [
+      "mass tort",
+      "tv ads",
+      "streaming ads",
+      "camp lejeune",
+      "talc",
+      "roundup",
+      "advertising spend",
+      "docket"
+     ]
+    },
+    {
+     "id": "V05",
+     "label": "Bar advertising rules and enforcement",
+     "short": "Bar rules",
+     "def": "Rule 7 series, filing states, disclaimers, testimonial rules, discipline for ads.",
+     "kw": [
+      "bar rules",
+      "rule 7.1",
+      "attorney advertising",
+      "disclaimer",
+      "state bar",
+      "filing",
+      "testimonials",
+      "specialist",
+      "discipline"
+     ]
+    },
+    {
+     "id": "V06",
+     "label": "Ethics of AI and technology in practice",
+     "short": "AI ethics",
+     "def": "Generative AI in research and intake, hallucinated citations, confidentiality, court orders.",
+     "kw": [
+      "hallucinated",
+      "ai in law",
+      "chatgpt lawyer",
+      "sanctions",
+      "confidentiality",
+      "legal ai",
+      "harvey",
+      "co-counsel",
+      "ai intake"
+     ]
+    },
+    {
+     "id": "V07",
+     "label": "Intake, call handling and conversion",
+     "short": "Intake",
+     "def": "Answering services, intake software, speed to lead, chat, conversion rates.",
+     "kw": [
+      "intake",
+      "answering service",
+      "speed to lead",
+      "chat",
+      "conversion",
+      "missed calls",
+      "intake software",
+      "crm"
+     ]
+    },
+    {
+     "id": "V08",
+     "label": "Pricing, fees and alternative fee models",
+     "short": "Fees",
+     "def": "Contingency, flat fees, subscription legal, fee transparency.",
+     "kw": [
+      "contingency",
+      "flat fee",
+      "subscription",
+      "billable hour",
+      "fee transparency",
+      "pricing"
+     ]
+    },
+    {
+     "id": "V09",
+     "label": "Hiring, associates and firm labor",
+     "short": "Firm labor",
+     "def": "Associate pay, lateral moves, paralegal shortage, remote work.",
+     "kw": [
+      "associate salary",
+      "lateral",
+      "paralegal",
+      "hiring",
+      "remote",
+      "turnover",
+      "law school"
+     ]
+    },
+    {
+     "id": "V10",
+     "label": "Reviews and reputation for firms",
+     "short": "Reviews",
+     "def": "Client reviews, Avvo, review solicitation rules, negative review responses.",
+     "kw": [
+      "reviews",
+      "avvo",
+      "google reviews",
+      "reputation",
+      "negative review",
+      "client testimonial"
+     ]
+    },
+    {
+     "id": "V11",
+     "label": "Legal directories and referral platforms",
+     "short": "Directories",
+     "def": "Avvo, FindLaw, Justia, Martindale, Nolo, Super Lawyers and pay to play badges.",
+     "kw": [
+      "avvo",
+      "findlaw",
+      "justia",
+      "martindale",
+      "super lawyers",
+      "best lawyers",
+      "directory",
+      "badge"
+     ]
+    },
+    {
+     "id": "V12",
+     "label": "Private equity, ABS and non-lawyer ownership",
+     "short": "Ownership",
+     "def": "Arizona ABS, litigation funding, MSOs, private equity in law firm marketing.",
+     "kw": [
+      "alternative business structure",
+      "abs",
+      "arizona",
+      "litigation funding",
+      "private equity",
+      "mso",
+      "non-lawyer ownership"
+     ]
+    },
+    {
+     "id": "V00",
+     "label": "Other",
+     "short": "Other",
+     "def": "Items outside the vertical that the frame included; the Other share measures frame noise.",
+     "kw": []
+    }
+   ],
+   "sun": {
+    "trade_press": [
+     "law.com",
+     "abajournal.com",
+     "lawyerist.com",
+     "attorneyatwork.com",
+     "legalmarketingassociation (strategies)",
+     "above the law",
+     "law360 (legal industry)",
+     "jdsupra (marketing sections)"
+    ],
+    "newsletters": [
+     "Lawyerist Insider",
+     "LMA weekly",
+     "Clio Legal Trends briefings"
+    ],
+    "platform_voices": [
+     "Google Ads blog (LSA legal)",
+     "Clio blog",
+     "Avvo for Lawyers blog",
+     "Smokeball and MyCase blogs"
+    ],
+    "podcasts": [
+     "Lawyerist Podcast",
+     "The Un-Billable Hour",
+     "Legal Marketing 2.0"
+    ]
+   },
+   "moon": {
+    "subreddits": [
+     "r/Lawyertalk",
+     "r/LawFirm",
+     "r/legaladvice (consumer side, as evidence of demand)",
+     "r/paralegal"
+    ],
+    "forums": [
+     "Lawyerist community",
+     "Reddit legal marketing threads",
+     "Legal Marketing Association member forums (public pages only)"
+    ],
+    "discord_discovery": [
+     "disboard tags: law, lawyers, legal"
+    ],
+    "telegram_discovery": [
+     "TGStat legal marketing channels (rare)"
+    ],
+    "practitioner_social": [
+     "Law firm marketers' public posts on LinkedIn (curated only)"
+    ]
+   },
+   "nilometer": [
+    "Clio Legal Trends Report (annual)",
+    "ABA Profile of the Legal Profession (annual)",
+    "X Ante mass tort TV spend reports",
+    "Thomson Reuters Law Firm Financial Index",
+    "State bar discipline summaries and advertising committee opinions",
+    "Google Ads legal CPC benchmarks (vendor, C3)",
+    "Court dockets for MDL volume (JPML statistics)",
+    "BLS legal occupations employment and wages"
+   ],
+   "standing_questions": [
+    "Where is legal client acquisition cost heading, and which channels are firms abandoning?",
+    "Which bar advertising rules are actually enforced, and where?",
+    "What are firm marketers asking about that the legal press ignores?",
+    "Is AI in intake and research changing how firms market, or only how they bill?",
+    "What is capital (PE, ABS, funders) doing to competition for cases?"
+   ]
+  },
+  {
+   "id": "healthcare-practices",
+   "name": "Healthcare Practice Marketing",
+   "nome": "Client vertical pack (OmegaWeapon)",
+   "flagship": false,
+   "scope": "Practices, clinics, med spas, telehealth, therapy providers and wellness brands: patient acquisition, reviews, health data and pixel enforcement, FDA and FTC claims enforcement, platform health policies, staffing and consolidation.",
+   "clusters": {
+    "Acquisition": [
+     "V01",
+     "V02",
+     "V03"
+    ],
+    "Rules": [
+     "V04",
+     "V05",
+     "V06"
+    ],
+    "Operations": [
+     "V07",
+     "V08"
+    ],
+    "Market": [
+     "V09",
+     "V10",
+     "V11"
+    ],
+    "Other": [
+     "V00"
+    ]
+   },
+   "taxonomy": [
+    {
+     "id": "V01",
+     "label": "Patient acquisition: search, pack and directories",
+     "short": "Acquisition",
+     "def": "Healthcare SEO, GBP for practitioners, Zocdoc, Healthgrades, AI Overviews for symptoms and providers.",
+     "kw": [
+      "healthcare seo",
+      "zocdoc",
+      "healthgrades",
+      "gbp",
+      "map pack",
+      "patient acquisition",
+      "ai overview",
+      "provider search"
+     ]
+    },
+    {
+     "id": "V02",
+     "label": "Paid media under health policies",
+     "short": "Health paid",
+     "def": "Google Healthcare certification, Meta health data restrictions, LegitScript, telehealth ads.",
+     "kw": [
+      "google ads healthcare",
+      "legitscript",
+      "meta health",
+      "data source restrictions",
+      "telehealth ads",
+      "certification",
+      "restricted"
+     ]
+    },
+    {
+     "id": "V03",
+     "label": "Reviews and patient reputation",
+     "short": "Reviews",
+     "def": "Review requests under HIPAA, negative reviews, response rules, review platforms.",
+     "kw": [
+      "patient reviews",
+      "hipaa reviews",
+      "google reviews",
+      "negative review",
+      "reputation",
+      "review response"
+     ]
+    },
+    {
+     "id": "V04",
+     "label": "Health data privacy and tracking enforcement",
+     "short": "Health data",
+     "def": "Pixels on patient pages, MHMDA, HIPAA tracking guidance, litigation, consent.",
+     "kw": [
+      "pixel",
+      "meta pixel",
+      "hipaa",
+      "mhmda",
+      "tracking",
+      "class action",
+      "consent",
+      "session replay",
+      "ocr guidance"
+     ]
+    },
+    {
+     "id": "V05",
+     "label": "Claims enforcement: FDA, FTC, boards",
+     "short": "Claims",
+     "def": "Warning letters, GLP-1 compounding claims, supplements, board certified claims, before and after rules.",
+     "kw": [
+      "warning letter",
+      "fda",
+      "ftc",
+      "glp-1",
+      "semaglutide",
+      "compounded",
+      "board certified",
+      "before and after",
+      "claims"
+     ]
+    },
+    {
+     "id": "V06",
+     "label": "Scope, licensing and corporate practice",
+     "short": "Licensing",
+     "def": "Med spa supervision, corporate practice of medicine, telehealth licensing, DEA flexibilities.",
+     "kw": [
+      "medical director",
+      "corporate practice",
+      "med spa",
+      "licensing",
+      "telehealth license",
+      "dea",
+      "scope of practice"
+     ]
+    },
+    {
+     "id": "V07",
+     "label": "Intake, scheduling and patient experience tech",
+     "short": "Practice tech",
+     "def": "Online scheduling, patient portals, AI scribes and receptionists, EHR marketing integrations.",
+     "kw": [
+      "online scheduling",
+      "patient portal",
+      "ai scribe",
+      "ai receptionist",
+      "ehr",
+      "no show",
+      "intake",
+      "automation"
+     ]
+    },
+    {
+     "id": "V08",
+     "label": "Staffing and clinician labor",
+     "short": "Staffing",
+     "def": "Nurse and clinician shortages, wages, burnout, hiring.",
+     "kw": [
+      "staffing",
+      "nurse shortage",
+      "burnout",
+      "hiring",
+      "wages",
+      "turnover",
+      "locum"
+     ]
+    },
+    {
+     "id": "V09",
+     "label": "Consolidation, PE and payer pressure",
+     "short": "Consolidation",
+     "def": "PE in dental, derm, vet and physio; hospital acquisitions; reimbursement pressure.",
+     "kw": [
+      "private equity",
+      "dso",
+      "acquired",
+      "reimbursement",
+      "payer",
+      "consolidation",
+      "roll up",
+      "hospital system"
+     ]
+    },
+    {
+     "id": "V10",
+     "label": "Telehealth and DTC health brands",
+     "short": "Telehealth DTC",
+     "def": "Hims and Hers model, compounding, subscription health, weight loss brands.",
+     "kw": [
+      "telehealth",
+      "dtc",
+      "hims",
+      "ro",
+      "weight loss",
+      "subscription",
+      "compounding pharmacy",
+      "online prescription"
+     ]
+    },
+    {
+     "id": "V11",
+     "label": "Content, trust and AI answers about health",
+     "short": "Health content",
+     "def": "YMYL content, medical review bylines, AI answers citing providers, misinformation.",
+     "kw": [
+      "ymyl",
+      "medical review",
+      "content",
+      "ai answers",
+      "misinformation",
+      "eeat",
+      "author bylines"
+     ]
+    },
+    {
+     "id": "V00",
+     "label": "Other",
+     "short": "Other",
+     "def": "Items outside the vertical that the frame included; the Other share measures frame noise.",
+     "kw": []
+    }
+   ],
+   "sun": {
+    "trade_press": [
+     "fiercehealthcare.com",
+     "medcitynews.com",
+     "healthcareitnews.com",
+     "physicianspractice.com",
+     "dentaleconomics.com",
+     "americanspa.com",
+     "modernhealthcare.com",
+     "mmm-online.com"
+    ],
+    "newsletters": [
+     "Fierce Healthcare briefings",
+     "Rock Health Weekly",
+     "Healthcare Marketing Network digest"
+    ],
+    "platform_voices": [
+     "Google Ads Healthcare policy updates",
+     "Meta business help (health and wellness)",
+     "Zocdoc for practices blog",
+     "LegitScript blog"
+    ],
+    "podcasts": [
+     "Healthcare Rap",
+     "The Dental Marketer",
+     "Rock Health podcast"
+    ]
+   },
+   "moon": {
+    "subreddits": [
+     "r/medicine (practice management threads)",
+     "r/Dentistry",
+     "r/physicaltherapy",
+     "r/therapists",
+     "r/healthIT",
+     "r/medspa",
+     "r/Nurse (workplace voice)"
+    ],
+    "forums": [
+     "Dentaltown",
+     "Student Doctor Network practice forums",
+     "Google Ads Community (healthcare threads)"
+    ],
+    "discord_discovery": [
+     "disboard tags: healthcare, medical, dental"
+    ],
+    "telegram_discovery": [
+     "TGStat health marketing channels (rare)"
+    ],
+    "practitioner_social": [
+     "Practice owners' public posts (curated only)"
+    ]
+   },
+   "nilometer": [
+    "FDA warning letters database and openFDA enforcement",
+    "FTC health claims actions and Consumer Review Rule letters",
+    "HHS OCR enforcement and tracking guidance status",
+    "CMS and payer rate notices",
+    "Hims and Hers, Teladoc, Zocdoc (private; reported), Henry Schein and Align quarterly results",
+    "BLS healthcare employment and wages",
+    "State attorney general health privacy actions",
+    "Rock Health digital health funding report"
+   ],
+   "standing_questions": [
+    "What can a practice lawfully track and advertise this quarter, and what just got enforced?",
+    "Where is patient acquisition cost moving by specialty?",
+    "What are practice owners asking for help with that the health marketing press does not cover?",
+    "Which DTC health claims are being punished, and does the claim shape repeat in local practice marketing?",
+    "What is consolidation doing to marketing budgets and brand names?"
+   ]
+  },
+  {
+   "id": "ecommerce-retail",
+   "name": "E-commerce and Retail Marketing",
+   "nome": "Client vertical pack (OmegaWeapon)",
+   "flagship": false,
+   "scope": "Online stores, DTC brands, marketplaces sellers and omnichannel retailers: Shopping and PMax, Meta Advantage+, TikTok Shop, agentic commerce and AI shopping, feeds, marketplaces, tariffs, retention and the platform rules of selling.",
+   "clusters": {
+    "Paid": [
+     "V01",
+     "V02",
+     "V03"
+    ],
+    "Discovery": [
+     "V04",
+     "V05",
+     "V06"
+    ],
+    "Operations": [
+     "V07",
+     "V08",
+     "V09"
+    ],
+    "Rules and money": [
+     "V10",
+     "V11",
+     "V12"
+    ],
+    "Other": [
+     "V00"
+    ]
+   },
+   "taxonomy": [
+    {
+     "id": "V01",
+     "label": "Google Shopping, PMax and Merchant Center",
+     "short": "Shopping and PMax",
+     "def": "Feeds, PMax channel reporting, brand exclusions, Merchant Center suspensions, free listings.",
+     "kw": [
+      "pmax",
+      "performance max",
+      "merchant center",
+      "shopping ads",
+      "feed",
+      "suspension",
+      "misrepresentation",
+      "brand exclusion",
+      "free listings"
+     ]
+    },
+    {
+     "id": "V02",
+     "label": "Meta, TikTok and social commerce ads",
+     "short": "Social commerce ads",
+     "def": "Advantage+, Andromeda, creative testing, TikTok Shop ads, Pinterest Performance+.",
+     "kw": [
+      "advantage+",
+      "andromeda",
+      "meta ads",
+      "tiktok ads",
+      "tiktok shop",
+      "pinterest",
+      "creative testing",
+      "roas",
+      "cpa"
+     ]
+    },
+    {
+     "id": "V03",
+     "label": "Retail media and marketplaces advertising",
+     "short": "Retail media",
+     "def": "Amazon Ads, Walmart Connect, Instacart, Target Roundel and marketplace fee changes.",
+     "kw": [
+      "amazon ads",
+      "retail media",
+      "walmart connect",
+      "instacart ads",
+      "sponsored products",
+      "marketplace fees",
+      "fba"
+     ]
+    },
+    {
+     "id": "V04",
+     "label": "AI shopping and agentic commerce",
+     "short": "Agentic commerce",
+     "def": "ChatGPT shopping and checkout, Google AI Mode shopping, product feeds for assistants, agent protocols.",
+     "kw": [
+      "agentic commerce",
+      "chatgpt shopping",
+      "instant checkout",
+      "ai mode shopping",
+      "acp",
+      "agent",
+      "ai shopping",
+      "product feed ai"
+     ]
+    },
+    {
+     "id": "V05",
+     "label": "Organic search and content for stores",
+     "short": "Store SEO",
+     "def": "Category and product page SEO, faceted navigation, AI Overviews on product queries, content.",
+     "kw": [
+      "ecommerce seo",
+      "category pages",
+      "faceted",
+      "product page",
+      "ai overview",
+      "collections",
+      "shopify seo",
+      "indexing"
+     ]
+    },
+    {
+     "id": "V06",
+     "label": "Creators, affiliates and UGC",
+     "short": "Creators",
+     "def": "Creator programs, affiliate networks, disclosure, whitelisting and Partnership ads.",
+     "kw": [
+      "creators",
+      "influencers",
+      "affiliate",
+      "ugc",
+      "partnership ads",
+      "whitelisting",
+      "disclosure",
+      "commission"
+     ]
+    },
+    {
+     "id": "V07",
+     "label": "Platforms, storefronts and checkout",
+     "short": "Platforms",
+     "def": "Shopify, WooCommerce, BigCommerce, headless, checkout and payments changes.",
+     "kw": [
+      "shopify",
+      "woocommerce",
+      "bigcommerce",
+      "headless",
+      "checkout",
+      "shop pay",
+      "payments",
+      "app store shopify"
+     ]
+    },
+    {
+     "id": "V08",
+     "label": "Email, SMS and retention",
+     "short": "Retention",
+     "def": "Klaviyo, SMS consent, loyalty, subscriptions, churn and lifetime value.",
+     "kw": [
+      "klaviyo",
+      "email marketing",
+      "sms",
+      "retention",
+      "loyalty",
+      "subscription",
+      "ltv",
+      "churn",
+      "10dlc"
+     ]
+    },
+    {
+     "id": "V09",
+     "label": "Logistics, returns and customer service",
+     "short": "Operations",
+     "def": "Shipping costs, returns policy, fulfillment, service tech and chatbots.",
+     "kw": [
+      "shipping",
+      "returns",
+      "fulfillment",
+      "3pl",
+      "customer service",
+      "chatbot",
+      "delivery",
+      "returns fraud"
+     ]
+    },
+    {
+     "id": "V10",
+     "label": "Tariffs, costs and pricing",
+     "short": "Costs",
+     "def": "Tariffs, de minimis, input costs, pricing strategy, discounting.",
+     "kw": [
+      "tariff",
+      "de minimis",
+      "cogs",
+      "pricing",
+      "discount",
+      "margin",
+      "inflation",
+      "import"
+     ]
+    },
+    {
+     "id": "V11",
+     "label": "Consumer protection and platform rules",
+     "short": "Rules",
+     "def": "Fake reviews, negative option, junk fees, INFORM Act, marketplace policy enforcement.",
+     "kw": [
+      "fake reviews",
+      "ftc",
+      "negative option",
+      "click to cancel",
+      "junk fees",
+      "inform act",
+      "policy",
+      "suspended",
+      "compliance"
+     ]
+    },
+    {
+     "id": "V12",
+     "label": "Measurement, attribution and privacy signals",
+     "short": "Measurement",
+     "def": "GA4, CAPI, EMQ, incrementality, MMM, consent and signal loss.",
+     "kw": [
+      "ga4",
+      "capi",
+      "attribution",
+      "incrementality",
+      "mmm",
+      "consent mode",
+      "signal loss",
+      "emq",
+      "server side"
+     ]
+    },
+    {
+     "id": "V00",
+     "label": "Other",
+     "short": "Other",
+     "def": "Items outside the vertical that the frame included; the Other share measures frame noise.",
+     "kw": []
+    }
+   ],
+   "sun": {
+    "trade_press": [
+     "modernretail.co",
+     "digitalcommerce360.com",
+     "practicalecommerce.com",
+     "retaildive.com",
+     "marketplacepulse.com",
+     "ecommercebytes.com",
+     "adexchanger.com (commerce)",
+     "searchengineland.com (commerce)"
+    ],
+    "newsletters": [
+     "2PM",
+     "Modern Retail briefings",
+     "Lean Luxe",
+     "Marketplace Pulse"
+    ],
+    "platform_voices": [
+     "Shopify Changelog and Editions",
+     "Google Ads and Commerce blog",
+     "Meta for Business newsroom",
+     "Amazon Ads blog",
+     "TikTok Shop newsroom",
+     "OpenAI commerce announcements"
+    ],
+    "podcasts": [
+     "Ecommerce Playbook",
+     "Limited Supply",
+     "The Ecom Show"
+    ]
+   },
+   "moon": {
+    "subreddits": [
+     "r/ecommerce",
+     "r/shopify",
+     "r/FulfillmentByAmazon",
+     "r/AmazonSeller",
+     "r/PPC (shopping threads)",
+     "r/FacebookAds",
+     "r/dropship",
+     "r/Entrepreneur"
+    ],
+    "forums": [
+     "Shopify Community",
+     "Seller Central forums",
+     "eCommerceFuel (public pages)",
+     "Warrior Forum"
+    ],
+    "discord_discovery": [
+     "disboard tags: ecommerce, shopify, dropshipping, amazon-fba"
+    ],
+    "telegram_discovery": [
+     "TGStat 'Sales' and dropshipping channels"
+    ],
+    "practitioner_social": [
+     "DTC operators' public threads (curated only)"
+    ]
+   },
+   "nilometer": [
+    "Shopify, Amazon, Meta, Alphabet, Pinterest quarterly results",
+    "Digital Commerce 360 and Census e-commerce quarterly estimates",
+    "Adobe Digital Economy Index (holiday and price data)",
+    "Marketplace Pulse seller data",
+    "FTC negative option and review rule actions",
+    "CBP tariff and de minimis notices",
+    "Klaviyo and Attentive public results and benchmarks",
+    "Triple Whale and Northbeam benchmarks (vendor, C3)"
+   ],
+   "standing_questions": [
+    "Where is discovery for products moving (search, social, marketplaces, AI agents), and who is monetizing the interface?",
+    "What is the real cost of acquisition trend by channel, and what is being hidden by attribution changes?",
+    "What are operators asking for help with that the trade press is not covering?",
+    "Which selling rules are being enforced this quarter (reviews, subscriptions, fees, feeds)?",
+    "How are tariffs and input costs changing promotion and pricing behavior?"
+   ]
+  },
+  {
+   "id": "b2b-saas",
+   "name": "B2B and SaaS Marketing",
+   "nome": "Client vertical pack (OmegaWeapon)",
+   "flagship": false,
+   "scope": "Software and B2B services marketing: pipeline and demand gen, LinkedIn, review sites, AI answers about vendors, content and SEO decline, pricing pages, PLG, events, ABM and the RevOps stack.",
+   "clusters": {
+    "Demand": [
+     "V01",
+     "V02",
+     "V03"
+    ],
+    "Discovery": [
+     "V04",
+     "V05",
+     "V06"
+    ],
+    "Stack and ops": [
+     "V07",
+     "V08",
+     "V09"
+    ],
+    "Market": [
+     "V10",
+     "V11"
+    ],
+    "Other": [
+     "V00"
+    ]
+   },
+   "taxonomy": [
+    {
+     "id": "V01",
+     "label": "Demand gen, pipeline and attribution",
+     "short": "Pipeline",
+     "def": "MQL to pipeline debates, self reported attribution, dark funnel, marketing sourced revenue.",
+     "kw": [
+      "pipeline",
+      "mql",
+      "demand gen",
+      "attribution",
+      "self reported",
+      "dark funnel",
+      "sourced",
+      "revenue marketing"
+     ]
+    },
+    {
+     "id": "V02",
+     "label": "LinkedIn and paid social for B2B",
+     "short": "LinkedIn",
+     "def": "Campaign Manager, Thought Leader Ads, CPMs, targeting, LinkedIn organic reach.",
+     "kw": [
+      "linkedin ads",
+      "thought leader ads",
+      "campaign manager",
+      "linkedin organic",
+      "cpm",
+      "b2b social",
+      "linkedin algorithm"
+     ]
+    },
+    {
+     "id": "V03",
+     "label": "Paid search, intent data and ABM",
+     "short": "Search and ABM",
+     "def": "Google and Microsoft Ads for software, intent data vendors, account based programs.",
+     "kw": [
+      "google ads b2b",
+      "microsoft ads",
+      "intent data",
+      "abm",
+      "6sense",
+      "demandbase",
+      "account based",
+      "cpc software"
+     ]
+    },
+    {
+     "id": "V04",
+     "label": "Review sites and the corroboration layer",
+     "short": "Review sites",
+     "def": "G2, Capterra, TrustRadius, Gartner Peer Insights, reviews as AI sources.",
+     "kw": [
+      "g2",
+      "capterra",
+      "trustradius",
+      "gartner",
+      "peer insights",
+      "reviews",
+      "review site",
+      "badges"
+     ]
+    },
+    {
+     "id": "V05",
+     "label": "AI answers about vendors and GEO",
+     "short": "AI answers",
+     "def": "How ChatGPT, Gemini and Perplexity recommend software; citations; llms.txt; visibility tracking.",
+     "kw": [
+      "ai visibility",
+      "chatgpt recommends",
+      "geo",
+      "llms.txt",
+      "perplexity",
+      "ai search",
+      "citations",
+      "brand mentions"
+     ]
+    },
+    {
+     "id": "V06",
+     "label": "Content, SEO and the traffic decline",
+     "short": "Content and SEO",
+     "def": "Blog traffic collapse, programmatic SEO, content strategy, comparison pages, docs SEO.",
+     "kw": [
+      "seo",
+      "content marketing",
+      "traffic decline",
+      "programmatic seo",
+      "comparison pages",
+      "blog",
+      "organic",
+      "docs"
+     ]
+    },
+    {
+     "id": "V07",
+     "label": "Pricing, packaging and PLG",
+     "short": "Pricing and PLG",
+     "def": "Pricing pages, free trials, usage pricing, product led growth, self serve.",
+     "kw": [
+      "pricing page",
+      "free trial",
+      "plg",
+      "usage based",
+      "self serve",
+      "freemium",
+      "packaging",
+      "seat"
+     ]
+    },
+    {
+     "id": "V08",
+     "label": "RevOps, CRM and the martech stack",
+     "short": "Stack",
+     "def": "HubSpot, Salesforce, tooling consolidation, AI agents in the stack, data quality.",
+     "kw": [
+      "hubspot",
+      "salesforce",
+      "martech",
+      "revops",
+      "stack",
+      "consolidation",
+      "ai agents",
+      "data quality",
+      "cdp"
+     ]
+    },
+    {
+     "id": "V09",
+     "label": "Events, community and partnerships",
+     "short": "Events",
+     "def": "Field marketing, conferences, communities, partner and integration marketing.",
+     "kw": [
+      "events",
+      "conference",
+      "field marketing",
+      "community",
+      "partnerships",
+      "integration",
+      "webinar",
+      "user group"
+     ]
+    },
+    {
+     "id": "V10",
+     "label": "Budgets, headcount and the marketing labor market",
+     "short": "Budgets",
+     "def": "CMO tenure, layoffs, agency vs in house, budget cuts, AI replacing roles.",
+     "kw": [
+      "budget",
+      "layoffs",
+      "headcount",
+      "cmo",
+      "in house",
+      "agency",
+      "hiring",
+      "ai replacing"
+     ]
+    },
+    {
+     "id": "V11",
+     "label": "Brand, category creation and positioning",
+     "short": "Brand",
+     "def": "Brand vs demand debates, positioning, category creation, messaging.",
+     "kw": [
+      "brand",
+      "positioning",
+      "category",
+      "messaging",
+      "brand marketing",
+      "awareness",
+      "differentiation"
+     ]
+    },
+    {
+     "id": "V00",
+     "label": "Other",
+     "short": "Other",
+     "def": "Items outside the vertical that the frame included; the Other share measures frame noise.",
+     "kw": []
+    }
+   ],
+   "sun": {
+    "trade_press": [
+     "martech.org",
+     "marketingprofs.com",
+     "cmswire.com",
+     "demandgenreport.com",
+     "saastr.com",
+     "openviewpartners.com (blog)",
+     "thecmo.com",
+     "adexchanger.com (b2b)"
+    ],
+    "newsletters": [
+     "Exit Five newsletter",
+     "Marketing Brew B2B",
+     "Lenny's Newsletter (growth)",
+     "SaaStr weekly"
+    ],
+    "platform_voices": [
+     "LinkedIn Marketing Solutions blog",
+     "HubSpot blog and product updates",
+     "G2 Research and Learn Hub",
+     "Google Ads blog (B2B)"
+    ],
+    "podcasts": [
+     "Exit Five",
+     "B2B Growth",
+     "Marketing Against the Grain"
+    ]
+   },
+   "moon": {
+    "subreddits": [
+     "r/b2bmarketing",
+     "r/SaaS",
+     "r/marketing",
+     "r/ProductMarketing",
+     "r/sales",
+     "r/startups"
+    ],
+    "forums": [
+     "Exit Five community (public pages)",
+     "Indie Hackers",
+     "Growth Hackers",
+     "Pavilion (public pages)",
+     "Hacker News (marketing threads)"
+    ],
+    "discord_discovery": [
+     "disboard tags: saas, b2b, startup, growth-marketing"
+    ],
+    "telegram_discovery": [
+     "TGStat marketing channels filtered by b2b"
+    ],
+    "practitioner_social": [
+     "B2B marketers' public LinkedIn posts (curated only)"
+    ]
+   },
+   "nilometer": [
+    "Gartner CMO Spend Survey",
+    "Forrester B2B forecasts",
+    "LinkedIn and Microsoft quarterly results (Marketing Solutions)",
+    "HubSpot, Salesforce, ZoomInfo quarterly results",
+    "G2 Buyer Behavior Report",
+    "TrustRadius B2B Buying Disconnect",
+    "6sense Buyer Experience Report",
+    "SaaS Capital and OpenView benchmarks",
+    "BLS marketing occupations employment"
+   ],
+   "standing_questions": [
+    "Where are software buyers discovering and shortlisting vendors now, and how much of it is AI mediated?",
+    "What is happening to organic traffic for software sites, and what replaces it?",
+    "What are B2B marketers asking about that the conference stages are not?",
+    "Which demand gen metrics are being abandoned and which adopted?",
+    "Is the marketing labor market for B2B shrinking, shifting or restructuring?"
+   ]
+  },
+  {
+   "id": "marketplace-leadgen",
+   "name": "Marketplaces, Directories and Lead Generation",
+   "nome": "Client vertical pack (OmegaWeapon)",
+   "flagship": false,
+   "scope": "Quote marketplaces, directories, comparison and affiliate sites, lead networks and aggregators: lead quality and pricing, TCPA and consent, special ad categories, platform enforcement of lead gen, SEO at scale, payer transparency and the economics of intermediaries.",
+   "clusters": {
+    "Economics": [
+     "V01",
+     "V02",
+     "V03"
+    ],
+    "Rules": [
+     "V04",
+     "V05",
+     "V06"
+    ],
+    "Operations": [
+     "V07",
+     "V08",
+     "V09"
+    ],
+    "Other": [
+     "V00"
+    ]
+   },
+   "taxonomy": [
+    {
+     "id": "V01",
+     "label": "Lead pricing, quality and buyer churn",
+     "short": "Lead economics",
+     "def": "Cost per lead, lead quality disputes, shared vs exclusive leads, buyer churn.",
+     "kw": [
+      "cost per lead",
+      "lead quality",
+      "shared leads",
+      "exclusive leads",
+      "lead price",
+      "churn",
+      "refund leads",
+      "bad leads"
+     ]
+    },
+    {
+     "id": "V02",
+     "label": "Affiliate and comparison economics",
+     "short": "Affiliate",
+     "def": "Commission changes, affiliate program cuts, comparison site rankings, payouts.",
+     "kw": [
+      "affiliate",
+      "commission",
+      "payout",
+      "comparison site",
+      "program cut",
+      "cpa network",
+      "publisher"
+     ]
+    },
+    {
+     "id": "V03",
+     "label": "Programmatic SEO and content at scale",
+     "short": "Scale SEO",
+     "def": "Templated pages, city pages, AI content, site reputation abuse, scaled content policy.",
+     "kw": [
+      "programmatic seo",
+      "city pages",
+      "templated",
+      "ai content",
+      "site reputation abuse",
+      "scaled content",
+      "helpful content",
+      "parasite"
+     ]
+    },
+    {
+     "id": "V04",
+     "label": "TCPA, consent and call generation",
+     "short": "Consent",
+     "def": "Consent language, one to one consent history, lead forms, call transfers, litigation.",
+     "kw": [
+      "tcpa",
+      "consent",
+      "one to one",
+      "lead form",
+      "call transfer",
+      "litigation",
+      "ftsa",
+      "dnc"
+     ]
+    },
+    {
+     "id": "V05",
+     "label": "Platform enforcement of lead gen",
+     "short": "Enforcement",
+     "def": "Google Ads lead gen rules, Meta special ad categories, payer transparency, LSA rules for lead resale.",
+     "kw": [
+      "google ads policy",
+      "lead gen ads",
+      "special ad category",
+      "payer name",
+      "advertiser verification",
+      "meta housing",
+      "credit ads",
+      "disapproved"
+     ]
+    },
+    {
+     "id": "V06",
+     "label": "Sector rules for intermediaries",
+     "short": "Sector rules",
+     "def": "Medicare TPMO, mortgage lead rules, addiction treatment brokering, legal referral rules, insurance lead rules.",
+     "kw": [
+      "tpmo",
+      "medicare leads",
+      "mortgage leads",
+      "patient brokering",
+      "referral fee",
+      "insurance leads",
+      "cms",
+      "state rules"
+     ]
+    },
+    {
+     "id": "V07",
+     "label": "Marketplace platforms and their fee changes",
+     "short": "Platforms",
+     "def": "Angi, Thumbtack, Zillow, Yelp, Indeed, Zocdoc and other intermediaries changing fees or models.",
+     "kw": [
+      "angi",
+      "thumbtack",
+      "zillow",
+      "yelp",
+      "indeed",
+      "zocdoc",
+      "fees",
+      "model change",
+      "marketplace"
+     ]
+    },
+    {
+     "id": "V08",
+     "label": "Data, dedupe and lead tech",
+     "short": "Lead tech",
+     "def": "Lead distribution software, verification, fraud, ping post, CRMs.",
+     "kw": [
+      "ping post",
+      "lead distribution",
+      "verification",
+      "fraud",
+      "boberdoo",
+      "leadconduit",
+      "trustedform",
+      "jornaya"
+     ]
+    },
+    {
+     "id": "V09",
+     "label": "Trust, transparency and disclosure",
+     "short": "Disclosure",
+     "def": "Payer disclosure, 'we are not a...' footers, review provenance, INFORM Act, advertorial labels.",
+     "kw": [
+      "disclosure",
+      "we are not",
+      "sponsored",
+      "advertorial",
+      "inform act",
+      "transparency",
+      "who pays",
+      "review provenance"
+     ]
+    },
+    {
+     "id": "V00",
+     "label": "Other",
+     "short": "Other",
+     "def": "Items outside the vertical that the frame included; the Other share measures frame noise.",
+     "kw": []
+    }
+   ],
+   "sun": {
+    "trade_press": [
+     "leadscon (content)",
+     "performancein.com",
+     "adexchanger.com (lead gen)",
+     "insurancejournal.com (lead gen)",
+     "housingwire.com (lead gen)",
+     "searchengineland.com (affiliate)"
+    ],
+    "newsletters": [
+     "LeadsCon newsletter",
+     "Affiliate Summit briefings",
+     "PerformanceIN weekly"
+    ],
+    "platform_voices": [
+     "Google Ads policy change log",
+     "Meta business help (special ad categories)",
+     "TrustedForm and Jornaya blogs",
+     "FCC and FTC press releases"
+    ],
+    "podcasts": [
+     "Lead Generation World",
+     "Affiliate Marketing podcast (Affiliate Summit)"
+    ]
+   },
+   "moon": {
+    "subreddits": [
+     "r/Affiliatemarketing",
+     "r/PPC (lead gen threads)",
+     "r/juststart",
+     "r/leadgeneration",
+     "r/InsuranceAgent (lead threads)",
+     "r/realtors (lead threads)"
+    ],
+    "forums": [
+     "AffiliateFix",
+     "STM Forum (public pages)",
+     "BlackHatWorld (lead gen sections)",
+     "Warrior Forum"
+    ],
+    "discord_discovery": [
+     "disboard tags: affiliate-marketing, lead-generation, cpa-marketing"
+    ],
+    "telegram_discovery": [
+     "TGStat 'Sales' affiliate and lead channels"
+    ],
+    "practitioner_social": [
+     "Lead gen operators' public posts (curated only)"
+    ]
+   },
+   "nilometer": [
+    "Angi, Zillow, Yelp, LendingTree, EverQuote, MediaAlpha, QuinStreet, SelectQuote quarterly results",
+    "FCC TCPA orders and court rulings",
+    "FTC lead gen and impersonation actions",
+    "CMS TPMO rule status",
+    "Google Ads transparency and payer disclosure rollout notes",
+    "IAB and Performance Marketing Association affiliate surveys",
+    "Litigation trackers for TCPA class actions"
+   ],
+   "standing_questions": [
+    "Where is lead value migrating between platforms, marketplaces and direct?",
+    "Which consent and disclosure rules are being enforced now, and what did courts change?",
+    "What are lead gen operators asking about that the trade press ignores?",
+    "Which scaled SEO patterns are being punished this quarter?",
+    "How are the big intermediaries changing fees, and what does that do to buyers?"
+   ]
+  },
+  {
+   "id": "financial-services",
+   "name": "Financial Services and Fintech Marketing",
+   "nome": "Client vertical pack (OmegaWeapon)",
+   "flagship": false,
+   "scope": "Lenders, BNPL and lease to own, banks and credit unions, insurance, brokers, crypto and fintech apps: advertising under Reg Z and UDAAP, platform financial verification, app store loan rules, credit special categories, deposit claims, fintech partnerships and the compliance labor market.",
+   "clusters": {
+    "Acquisition": [
+     "V01",
+     "V02",
+     "V03"
+    ],
+    "Rules": [
+     "V04",
+     "V05",
+     "V06",
+     "V07"
+    ],
+    "Market": [
+     "V08",
+     "V09",
+     "V10"
+    ],
+    "Other": [
+     "V00"
+    ]
+   },
+   "taxonomy": [
+    {
+     "id": "V01",
+     "label": "Paid media under financial policies",
+     "short": "Financial paid",
+     "def": "Google financial products certification, Meta credit category and verification, TikTok financial entry rules, crypto ad rules.",
+     "kw": [
+      "financial products certification",
+      "meta credit",
+      "special ad category",
+      "verification",
+      "tiktok financial",
+      "crypto ads",
+      "disapproved",
+      "google ads finance"
+     ]
+    },
+    {
+     "id": "V02",
+     "label": "Search, content and AI answers for money queries",
+     "short": "Finance search",
+     "def": "YMYL content, comparison sites, AI Overviews for rates and products, affiliate money sites.",
+     "kw": [
+      "ymyl",
+      "personal finance seo",
+      "nerdwallet",
+      "comparison",
+      "ai overview",
+      "rates",
+      "content",
+      "affiliate"
+     ]
+    },
+    {
+     "id": "V03",
+     "label": "App acquisition and store rules for finance apps",
+     "short": "Finance apps",
+     "def": "App Store 3.2.2, Play personal loans policy, APR caps in listings, app campaigns.",
+     "kw": [
+      "app store",
+      "google play",
+      "personal loans policy",
+      "apr",
+      "36%",
+      "app campaign",
+      "aso",
+      "loan app"
+     ]
+    },
+    {
+     "id": "V04",
+     "label": "Reg Z, UDAAP and disclosure enforcement",
+     "short": "Disclosures",
+     "def": "Triggering terms, APR disclosure, deceptive fees, CFPB and state actions.",
+     "kw": [
+      "reg z",
+      "apr disclosure",
+      "udaap",
+      "cfpb",
+      "junk fees",
+      "triggering terms",
+      "enforcement",
+      "consent order"
+     ]
+    },
+    {
+     "id": "V05",
+     "label": "BNPL, lease to own and alternative credit",
+     "short": "BNPL and LTO",
+     "def": "Rules for BNPL and lease purchase advertising, credit reporting, state RTO law.",
+     "kw": [
+      "bnpl",
+      "buy now pay later",
+      "lease to own",
+      "rent to own",
+      "rto",
+      "alternative credit",
+      "no credit needed",
+      "credit reporting"
+     ]
+    },
+    {
+     "id": "V06",
+     "label": "Deposits, fintech partnerships and FDIC claims",
+     "short": "Deposits",
+     "def": "Bank partner models, FDIC misrepresentation rule, pass through insurance, fintech failures.",
+     "kw": [
+      "fdic",
+      "bank partner",
+      "baas",
+      "pass through",
+      "insured",
+      "synapse",
+      "fintech bank",
+      "deposit insurance"
+     ]
+    },
+    {
+     "id": "V07",
+     "label": "Privacy, data and open banking",
+     "short": "Data rules",
+     "def": "1033 open banking, data sharing, pixels on applications, GLBA, state privacy.",
+     "kw": [
+      "1033",
+      "open banking",
+      "glba",
+      "pixel",
+      "data sharing",
+      "privacy",
+      "application data",
+      "consent"
+     ]
+    },
+    {
+     "id": "V08",
+     "label": "Rates, demand and the credit cycle",
+     "short": "Credit cycle",
+     "def": "Interest rates, loan demand, delinquencies, tightening and what it does to marketing.",
+     "kw": [
+      "interest rates",
+      "fed",
+      "delinquencies",
+      "tightening",
+      "loan demand",
+      "credit cycle",
+      "origination volume"
+     ]
+    },
+    {
+     "id": "V09",
+     "label": "Crypto, trading and speculative products",
+     "short": "Crypto",
+     "def": "Crypto marketing rules, influencer promotion, trading app ads, gamification.",
+     "kw": [
+      "crypto",
+      "trading app",
+      "influencer",
+      "gamification",
+      "sec",
+      "promotion",
+      "token",
+      "exchange ads"
+     ]
+    },
+    {
+     "id": "V10",
+     "label": "Compliance operations and marketing review",
+     "short": "Compliance ops",
+     "def": "Marketing compliance review, AI in compliance, complaint management, vendor management.",
+     "kw": [
+      "compliance review",
+      "marketing compliance",
+      "complaints",
+      "vendor management",
+      "ai compliance",
+      "review process",
+      "approval"
+     ]
+    },
+    {
+     "id": "V00",
+     "label": "Other",
+     "short": "Other",
+     "def": "Items outside the vertical that the frame included; the Other share measures frame noise.",
+     "kw": []
+    }
+   ],
+   "sun": {
+    "trade_press": [
+     "americanbanker.com",
+     "paymentsdive.com",
+     "bankingdive.com",
+     "fintechfutures.com",
+     "thefinancialbrand.com",
+     "housingwire.com",
+     "insurancejournal.com",
+     "pymnts.com"
+    ],
+    "newsletters": [
+     "Fintech Business Weekly",
+     "This Week in Fintech",
+     "The Financial Brand newsletter"
+    ],
+    "platform_voices": [
+     "Google Ads financial products policy pages",
+     "Meta business help (credit ads)",
+     "Apple App Review updates",
+     "CFPB newsroom",
+     "FDIC and OCC press releases"
+    ],
+    "podcasts": [
+     "Fintech Takes",
+     "Breaking Banks",
+     "Bank On It"
+    ]
+   },
+   "moon": {
+    "subreddits": [
+     "r/fintech",
+     "r/personalfinance (consumer side, demand evidence)",
+     "r/CreditCards (consumer side)",
+     "r/Banking",
+     "r/loanofficers",
+     "r/InsuranceAgent",
+     "r/CryptoMarkets (promotion evidence)"
+    ],
+    "forums": [
+     "Bankers Online forums",
+     "Compliance forums (public pages)",
+     "Bogleheads (consumer side)"
+    ],
+    "discord_discovery": [
+     "disboard tags: fintech, finance, crypto, trading"
+    ],
+    "telegram_discovery": [
+     "TGStat finance and crypto promotion channels (set filter expected)"
+    ],
+    "practitioner_social": [
+     "Fintech marketers' public posts (curated only)"
+    ]
+   },
+   "nilometer": [
+    "CFPB enforcement actions, consent orders and complaint database",
+    "FDIC, OCC and Federal Reserve enforcement",
+    "Federal Reserve rate decisions and Senior Loan Officer Survey",
+    "NY Fed Household Debt and Credit report",
+    "Affirm, Klarna, SoFi, Upstart, LendingTree, Block quarterly results",
+    "State attorney general lending actions",
+    "App store policy change logs",
+    "Google and Meta financial policy change logs"
+   ],
+   "standing_questions": [
+    "What can a lender or fintech lawfully say and where, this quarter?",
+    "Where is acquisition for credit and deposit products moving between search, apps, partners and affiliates?",
+    "What are financial marketers asking about that the trade press is not covering?",
+    "Which disclosure and fee rules are actually enforced, and against whom?",
+    "How is the credit cycle changing budgets and offers?"
+   ]
+  },
+  {
+   "id": "real-estate-housing",
+   "name": "Real Estate, Housing and Mortgage Marketing",
+   "nome": "Client vertical pack (OmegaWeapon)",
+   "flagship": false,
+   "scope": "Brokerages, agents, teams, property managers, builders and mortgage originators: portals and lead fees, agent marketing, fair housing advertising rules, commission changes, IDX and listing feeds, mortgage lead rules and the housing cycle.",
+   "clusters": {
+    "Acquisition": [
+     "V01",
+     "V02",
+     "V03"
+    ],
+    "Rules": [
+     "V04",
+     "V05"
+    ],
+    "Market": [
+     "V06",
+     "V07",
+     "V08"
+    ],
+    "Operations": [
+     "V09"
+    ],
+    "Other": [
+     "V00"
+    ]
+   },
+   "taxonomy": [
+    {
+     "id": "V01",
+     "label": "Portals, Zillow and lead fees",
+     "short": "Portals",
+     "def": "Zillow Premier Agent, Flex, Realtor.com, Homes.com, referral fees and portal policy.",
+     "kw": [
+      "zillow",
+      "premier agent",
+      "flex",
+      "realtor.com",
+      "homes.com",
+      "portal",
+      "referral fee",
+      "lead fee"
+     ]
+    },
+    {
+     "id": "V02",
+     "label": "Agent and team marketing",
+     "short": "Agent marketing",
+     "def": "Personal brand, video, farming, SOI, CRMs, geographic pages, GBP for agents.",
+     "kw": [
+      "agent marketing",
+      "personal brand",
+      "video",
+      "farming",
+      "sphere",
+      "crm",
+      "gbp",
+      "neighborhood pages",
+      "open house"
+     ]
+    },
+    {
+     "id": "V03",
+     "label": "Paid media for housing",
+     "short": "Housing paid",
+     "def": "Google Ads for real estate, Meta housing special category, targeting limits.",
+     "kw": [
+      "google ads real estate",
+      "meta housing",
+      "special ad category",
+      "targeting",
+      "lead ads",
+      "cpl real estate",
+      "youtube ads"
+     ]
+    },
+    {
+     "id": "V04",
+     "label": "Fair housing advertising rules",
+     "short": "Fair housing",
+     "def": "HUD advertising guidance, protected class language, discriminatory targeting enforcement.",
+     "kw": [
+      "fair housing",
+      "hud",
+      "protected class",
+      "discriminatory",
+      "targeting",
+      "advertising rule",
+      "complaint"
+     ]
+    },
+    {
+     "id": "V05",
+     "label": "Mortgage advertising and lead rules",
+     "short": "Mortgage rules",
+     "def": "Reg Z mortgage rules, MAP Rule, NMLS display, trigger leads, RESPA marketing agreements.",
+     "kw": [
+      "reg z",
+      "map rule",
+      "nmls",
+      "trigger leads",
+      "respa",
+      "mortgage ads",
+      "loan officer marketing",
+      "co-marketing"
+     ]
+    },
+    {
+     "id": "V06",
+     "label": "Commissions, settlements and brokerage models",
+     "short": "Commissions",
+     "def": "NAR settlement effects, buyer agreements, flat fee and discount models.",
+     "kw": [
+      "commission",
+      "nar settlement",
+      "buyer agreement",
+      "flat fee",
+      "discount brokerage",
+      "compensation",
+      "mls rules"
+     ]
+    },
+    {
+     "id": "V07",
+     "label": "Housing cycle: rates, inventory and demand",
+     "short": "Housing cycle",
+     "def": "Mortgage rates, inventory, prices, affordability and what they do to marketing.",
+     "kw": [
+      "mortgage rates",
+      "inventory",
+      "home prices",
+      "affordability",
+      "housing market",
+      "demand",
+      "listings down"
+     ]
+    },
+    {
+     "id": "V08",
+     "label": "Proptech, AI and MLS data",
+     "short": "Proptech",
+     "def": "AI in listings and descriptions, IDX changes, MLS data rules, CRMs and automation.",
+     "kw": [
+      "proptech",
+      "ai listing",
+      "idx",
+      "mls",
+      "listing descriptions",
+      "automation",
+      "chatbot",
+      "data feed"
+     ]
+    },
+    {
+     "id": "V09",
+     "label": "Property management and rental marketing",
+     "short": "Rentals",
+     "def": "Rental listing syndication, screening rules, junk fee laws, property manager marketing.",
+     "kw": [
+      "property management",
+      "rental listings",
+      "syndication",
+      "screening",
+      "junk fees",
+      "tenant",
+      "apartments.com",
+      "zillow rentals"
+     ]
+    },
+    {
+     "id": "V00",
+     "label": "Other",
+     "short": "Other",
+     "def": "Items outside the vertical that the frame included; the Other share measures frame noise.",
+     "kw": []
+    }
+   ],
+   "sun": {
+    "trade_press": [
+     "inman.com",
+     "housingwire.com",
+     "realestatenews.com",
+     "therealdeal.com",
+     "nationalmortgagenews.com",
+     "multifamilydive.com",
+     "rismedia.com"
+    ],
+    "newsletters": [
+     "Inman Headlines",
+     "HousingWire Daily",
+     "Real Estate News briefings"
+    ],
+    "platform_voices": [
+     "Zillow Group newsroom and Premier Agent updates",
+     "NAR announcements",
+     "HUD press releases",
+     "Meta business help (housing ads)"
+    ],
+    "podcasts": [
+     "Real Estate Rockstars",
+     "HousingWire Daily",
+     "The Tom Ferry Podcast Experience"
+    ]
+   },
+   "moon": {
+    "subreddits": [
+     "r/realtors",
+     "r/RealEstate (consumer side)",
+     "r/loanofficers",
+     "r/PropertyManagement",
+     "r/CommercialRealEstate"
+    ],
+    "forums": [
+     "ActiveRain",
+     "BiggerPockets forums",
+     "Lab Coat Agents (public pages)"
+    ],
+    "discord_discovery": [
+     "disboard tags: real-estate, realtor, mortgage"
+    ],
+    "telegram_discovery": [
+     "TGStat real estate channels"
+    ],
+    "practitioner_social": [
+     "Agents' and loan officers' public posts (curated only)"
+    ]
+   },
+   "nilometer": [
+    "Zillow, Compass, eXp, Anywhere, Redfin, Rocket, UWM quarterly results",
+    "NAR existing home sales and member profile",
+    "Freddie Mac PMMS mortgage rates",
+    "MBA applications survey",
+    "HUD fair housing enforcement actions",
+    "CFPB mortgage enforcement",
+    "Census housing starts and permits",
+    "Realtor.com and Redfin market reports (B2)"
+   ],
+   "standing_questions": [
+    "Where are buyers and sellers finding agents and lenders now, and what do portals charge for it?",
+    "Which fair housing and mortgage advertising rules are being enforced?",
+    "What are agents and loan officers asking about that the trade press ignores?",
+    "What did commission changes do to marketing spend and messaging?",
+    "How is the housing cycle changing lead volume and cost?"
+   ]
+  },
+  {
+   "id": "automotive-retail",
+   "name": "Automotive Retail and Aftermarket Marketing",
+   "nome": "Client vertical pack (OmegaWeapon)",
+   "flagship": false,
+   "scope": "Dealers and dealer groups, repair and service shops, parts and accessories retailers: inventory advertising, dealer websites and vendors, pricing disclosure rules, EV transition, service marketing, reviews and consolidation.",
+   "clusters": {
+    "Acquisition": [
+     "V01",
+     "V02",
+     "V03"
+    ],
+    "Rules": [
+     "V04",
+     "V05"
+    ],
+    "Market": [
+     "V06",
+     "V07",
+     "V08"
+    ],
+    "Other": [
+     "V00"
+    ]
+   },
+   "taxonomy": [
+    {
+     "id": "V01",
+     "label": "Inventory advertising: VLA, Meta and marketplaces",
+     "short": "Inventory ads",
+     "def": "Vehicle listing ads, Meta automotive inventory ads, Cars.com, Autotrader, CarGurus fees.",
+     "kw": [
+      "vehicle listing ads",
+      "vla",
+      "inventory ads",
+      "cars.com",
+      "autotrader",
+      "cargurus",
+      "marketplace fees",
+      "feed"
+     ]
+    },
+    {
+     "id": "V02",
+     "label": "Dealer websites, vendors and the digital retailing stack",
+     "short": "Dealer web",
+     "def": "Website vendors, digital retailing tools, chat, trade tools, CDK and DMS outages.",
+     "kw": [
+      "dealer website",
+      "dealer.com",
+      "digital retailing",
+      "chat",
+      "trade in tool",
+      "cdk",
+      "dms",
+      "vendor"
+     ]
+    },
+    {
+     "id": "V03",
+     "label": "Local search, reviews and service marketing",
+     "short": "Local and service",
+     "def": "GBP for dealers and shops, reviews, service department marketing, fixed ops.",
+     "kw": [
+      "gbp",
+      "reviews",
+      "service marketing",
+      "fixed ops",
+      "map pack",
+      "shop marketing",
+      "recall marketing"
+     ]
+    },
+    {
+     "id": "V04",
+     "label": "Pricing disclosure and dealer advertising rules",
+     "short": "Pricing rules",
+     "def": "FTC CARS rule history, state dealer advertising rules, doc fees, add ons, junk fees.",
+     "kw": [
+      "cars rule",
+      "ftc",
+      "dealer advertising",
+      "doc fee",
+      "add ons",
+      "junk fees",
+      "attorney general",
+      "advertised price"
+     ]
+    },
+    {
+     "id": "V05",
+     "label": "Consumer protection: financing, warranties and repair",
+     "short": "Consumer rules",
+     "def": "Reg Z auto, spot delivery, warranty claims, repair shop rules, right to repair.",
+     "kw": [
+      "reg z",
+      "auto financing",
+      "spot delivery",
+      "warranty",
+      "repair rules",
+      "right to repair",
+      "consumer complaint"
+     ]
+    },
+    {
+     "id": "V06",
+     "label": "EV transition and OEM programs",
+     "short": "EV and OEM",
+     "def": "EV demand swings, incentives, OEM co-op and compliance programs, direct sales.",
+     "kw": [
+      "ev",
+      "electric vehicle",
+      "incentive",
+      "oem program",
+      "co-op",
+      "direct sales",
+      "tesla",
+      "dealer model"
+     ]
+    },
+    {
+     "id": "V07",
+     "label": "Consolidation and dealer groups",
+     "short": "Consolidation",
+     "def": "Group acquisitions, valuations, public groups, marketing centralization.",
+     "kw": [
+      "acquisition",
+      "dealer group",
+      "buy sell",
+      "valuation",
+      "lithia",
+      "autonation",
+      "consolidation",
+      "centralized marketing"
+     ]
+    },
+    {
+     "id": "V08",
+     "label": "Parts, accessories and aftermarket e-commerce",
+     "short": "Aftermarket",
+     "def": "Parts e-commerce, fitment data, marketplaces, tariffs on parts.",
+     "kw": [
+      "parts",
+      "aftermarket",
+      "fitment",
+      "ebay motors",
+      "amazon parts",
+      "tariff",
+      "accessories",
+      "catalog"
+     ]
+    },
+    {
+     "id": "V00",
+     "label": "Other",
+     "short": "Other",
+     "def": "Items outside the vertical that the frame included; the Other share measures frame noise.",
+     "kw": []
+    }
+   ],
+   "sun": {
+    "trade_press": [
+     "autonews.com",
+     "cbtnews.com",
+     "dealermarketing.com",
+     "autoremarketing.com",
+     "ratchetandwrench.com",
+     "aftermarketnews.com",
+     "wardsauto.com"
+    ],
+    "newsletters": [
+     "Automotive News Daily",
+     "CBT News Daily",
+     "Kerrigan Advisors Blue Sky Report"
+    ],
+    "platform_voices": [
+     "Google Ads blog (vehicle listing ads)",
+     "Meta automotive inventory ads help",
+     "Cars Commerce newsroom",
+     "NADA announcements"
+    ],
+    "podcasts": [
+     "CBT News",
+     "Car Dealership Guy",
+     "Ratchet and Wrench Radio"
+    ]
+   },
+   "moon": {
+    "subreddits": [
+     "r/askcarsales",
+     "r/CarSalesTraining",
+     "r/MechanicAdvice (consumer side)",
+     "r/AutoDetailing",
+     "r/Autobody",
+     "r/smallbusiness (shop threads)"
+    ],
+    "forums": [
+     "DealerRefresh",
+     "iATN (public pages)",
+     "Garage Journal",
+     "Auto Body forums"
+    ],
+    "discord_discovery": [
+     "disboard tags: automotive, cars, car-sales, mechanics"
+    ],
+    "telegram_discovery": [
+     "TGStat automotive channels"
+    ],
+    "practitioner_social": [
+     "Dealer marketers' and shop owners' public posts (curated only)"
+    ]
+   },
+   "nilometer": [
+    "Lithia, AutoNation, Penske, Group 1, Sonic, Carvana, CarMax quarterly results",
+    "Cars Commerce and CarGurus quarterly results",
+    "NADA Data (annual) and dealership financial profiles",
+    "Cox Automotive forecasts and Kelley Blue Book pricing",
+    "FTC and state attorney general dealer actions",
+    "BLS auto retail and repair employment",
+    "Tariff and EV incentive notices"
+   ],
+   "standing_questions": [
+    "Where are car buyers and service customers finding dealers and shops now, and what do marketplaces charge?",
+    "Which pricing and financing advertising rules are being enforced?",
+    "What are dealer marketers and shop owners asking about that the trade press ignores?",
+    "What is the EV swing doing to inventory advertising and messaging?",
+    "How is consolidation changing dealer marketing budgets and vendors?"
+   ]
+  },
+  {
+   "id": "education",
+   "name": "Education Marketing",
+   "nome": "Client vertical pack (OmegaWeapon)",
+   "flagship": false,
+   "scope": "Colleges, K12 and private schools, bootcamps, tutoring and course sellers: enrollment marketing, claims and Title IV rules, minors and privacy, AI in education, the enrollment cliff and program viability.",
+   "clusters": {
+    "Enrollment": [
+     "V01",
+     "V02",
+     "V03"
+    ],
+    "Rules": [
+     "V04",
+     "V05"
+    ],
+    "Market": [
+     "V06",
+     "V07",
+     "V08"
+    ],
+    "Other": [
+     "V00"
+    ]
+   },
+   "taxonomy": [
+    {
+     "id": "V01",
+     "label": "Enrollment marketing and lead funnels",
+     "short": "Enrollment",
+     "def": "Inquiry to enrollment funnels, CRMs, agencies and OPMs, cost per enrollment.",
+     "kw": [
+      "enrollment marketing",
+      "inquiry",
+      "funnel",
+      "cost per enrollment",
+      "opm",
+      "slate",
+      "crm",
+      "lead"
+     ]
+    },
+    {
+     "id": "V02",
+     "label": "Paid media for education",
+     "short": "Education paid",
+     "def": "Google Ads education rules, Meta age targeting, YouTube, TikTok for students.",
+     "kw": [
+      "google ads education",
+      "meta ads school",
+      "age targeting",
+      "youtube",
+      "tiktok students",
+      "cpl education",
+      "lead ads"
+     ]
+    },
+    {
+     "id": "V03",
+     "label": "Search, rankings and content for programs",
+     "short": "Program search",
+     "def": "Program pages, rankings sites, AI Overviews for programs, review sites.",
+     "kw": [
+      "program pages",
+      "rankings",
+      "us news",
+      "niche",
+      "ai overview",
+      "seo higher ed",
+      "content",
+      "reviews"
+     ]
+    },
+    {
+     "id": "V04",
+     "label": "Claims, misrepresentation and Title IV rules",
+     "short": "Claims rules",
+     "def": "Misrepresentation rules, job placement claims, borrower defense, FTC bootcamp actions, incentive compensation.",
+     "kw": [
+      "misrepresentation",
+      "title iv",
+      "job placement",
+      "borrower defense",
+      "ftc",
+      "bootcamp",
+      "incentive compensation",
+      "gainful employment"
+     ]
+    },
+    {
+     "id": "V05",
+     "label": "Minors, privacy and student data",
+     "short": "Student privacy",
+     "def": "COPPA, FERPA, state student privacy laws, age gates, ad tags on school sites.",
+     "kw": [
+      "coppa",
+      "ferpa",
+      "student privacy",
+      "age gate",
+      "pixel",
+      "minors",
+      "consent",
+      "edtech privacy"
+     ]
+    },
+    {
+     "id": "V06",
+     "label": "Enrollment cliff, closures and program cuts",
+     "short": "Enrollment cliff",
+     "def": "Demographic decline, closures, program viability, mergers.",
+     "kw": [
+      "enrollment cliff",
+      "closure",
+      "program cuts",
+      "merger",
+      "demographic",
+      "decline",
+      "budget"
+     ]
+    },
+    {
+     "id": "V07",
+     "label": "AI in teaching, admissions and marketing",
+     "short": "AI in education",
+     "def": "AI tutors, AI in admissions, chatbots for students, AI content rules.",
+     "kw": [
+      "ai tutor",
+      "chatbot",
+      "admissions ai",
+      "ai policy",
+      "generative ai",
+      "ai content",
+      "student ai"
+     ]
+    },
+    {
+     "id": "V08",
+     "label": "Online learning, course sellers and creators",
+     "short": "Online learning",
+     "def": "Course platforms, creator courses, bootcamps, certificates, MOOCs.",
+     "kw": [
+      "course",
+      "udemy",
+      "coursera",
+      "bootcamp",
+      "certificate",
+      "online learning",
+      "creator course",
+      "cohort"
+     ]
+    },
+    {
+     "id": "V00",
+     "label": "Other",
+     "short": "Other",
+     "def": "Items outside the vertical that the frame included; the Other share measures frame noise.",
+     "kw": []
+    }
+   ],
+   "sun": {
+    "trade_press": [
+     "insidehighered.com",
+     "highereddive.com",
+     "chronicle.com",
+     "edsurge.com",
+     "k12dive.com",
+     "universitybusiness.com",
+     "classcentral.com (report)"
+    ],
+    "newsletters": [
+     "Higher Ed Dive Daily",
+     "Inside Higher Ed briefings",
+     "EdSurge Weekly"
+    ],
+    "platform_voices": [
+     "Google Ads education policy",
+     "Meta business help (education ads)",
+     "Department of Education press releases",
+     "Coursera and Udemy newsrooms"
+    ],
+    "podcasts": [
+     "Higher Ed Marketing Lab",
+     "Enrollify",
+     "The EdUp Experience"
+    ]
+   },
+   "moon": {
+    "subreddits": [
+     "r/highereducation",
+     "r/Professors (workplace voice)",
+     "r/Teachers",
+     "r/learnprogramming (bootcamp evidence)",
+     "r/ApplyingToCollege (consumer side)"
+    ],
+    "forums": [
+     "Enrollify community (public pages)",
+     "Higher ed marketing groups (public pages)",
+     "College Confidential (consumer side)"
+    ],
+    "discord_discovery": [
+     "disboard tags: education, students, tutoring, edtech"
+    ],
+    "telegram_discovery": [
+     "TGStat education channels"
+    ],
+    "practitioner_social": [
+     "Enrollment marketers' public posts (curated only)"
+    ]
+   },
+   "nilometer": [
+    "National Student Clearinghouse enrollment reports",
+    "IPEDS and Department of Education data",
+    "Department of Education enforcement and borrower defense findings",
+    "FTC bootcamp and for profit actions",
+    "Coursera, Chegg, Stride, Grand Canyon Education quarterly results",
+    "RNL and EAB enrollment surveys",
+    "Common App and application volume reports",
+    "BLS education employment"
+   ],
+   "standing_questions": [
+    "Where are prospective students discovering programs now, and what does an enrollment cost by channel?",
+    "Which claims and marketing rules are being enforced against schools and bootcamps?",
+    "What are enrollment marketers asking about that the trade press ignores?",
+    "What is the enrollment cliff doing to budgets and program marketing?",
+    "Is AI changing how students choose, or only how schools talk?"
+   ]
+  },
+  {
+   "id": "nonprofit-political",
+   "name": "Nonprofit, Advocacy and Political Marketing",
+   "nome": "Client vertical pack (OmegaWeapon)",
+   "flagship": false,
+   "scope": "Charities, advocacy organizations, campaigns, faith organizations and associations: donor acquisition, Ad Grants, issue and political ad rules, charity disclosure law, platform political ad policy, email and SMS deliverability and donor data.",
+   "clusters": {
+    "Acquisition": [
+     "V01",
+     "V02",
+     "V03"
+    ],
+    "Rules": [
+     "V04",
+     "V05"
+    ],
+    "Market": [
+     "V06",
+     "V07",
+     "V08"
+    ],
+    "Other": [
+     "V00"
+    ]
+   },
+   "taxonomy": [
+    {
+     "id": "V01",
+     "label": "Donor acquisition and fundraising channels",
+     "short": "Fundraising",
+     "def": "Digital fundraising, Giving Tuesday, recurring giving, peer to peer, donor retention.",
+     "kw": [
+      "fundraising",
+      "donor acquisition",
+      "giving tuesday",
+      "recurring",
+      "peer to peer",
+      "donor retention",
+      "year end"
+     ]
+    },
+    {
+     "id": "V02",
+     "label": "Google Ad Grants and paid media for causes",
+     "short": "Cause paid",
+     "def": "Ad Grants rules, Meta nonprofit tools, YouTube for nonprofits, cost per donation.",
+     "kw": [
+      "ad grants",
+      "google grants",
+      "meta nonprofit",
+      "cost per donation",
+      "youtube nonprofit",
+      "paid social",
+      "donation ads"
+     ]
+    },
+    {
+     "id": "V03",
+     "label": "Email, SMS and deliverability",
+     "short": "Email and SMS",
+     "def": "Deliverability, list health, SMS consent for causes, ActionKit, EveryAction and CRMs.",
+     "kw": [
+      "deliverability",
+      "email",
+      "sms",
+      "consent",
+      "list",
+      "everyaction",
+      "actionkit",
+      "crm",
+      "spam"
+     ]
+    },
+    {
+     "id": "V04",
+     "label": "Political and issue ad rules",
+     "short": "Political ads",
+     "def": "Platform political ad policies, disclaimers, FEC rules, state deepfake laws, EU TTPA.",
+     "kw": [
+      "political ads",
+      "issue ads",
+      "disclaimer",
+      "fec",
+      "paid for by",
+      "deepfake",
+      "ttpa",
+      "authorization",
+      "ad policy"
+     ]
+    },
+    {
+     "id": "V05",
+     "label": "Charity disclosure, registration and solicitation law",
+     "short": "Charity rules",
+     "def": "State registration, disclosure statements, cause marketing rules, FTC charity actions.",
+     "kw": [
+      "charity registration",
+      "disclosure statement",
+      "solicitation",
+      "cause marketing",
+      "commercial co-venturer",
+      "ftc charity",
+      "attorney general"
+     ]
+    },
+    {
+     "id": "V06",
+     "label": "Donor data, privacy and tracking",
+     "short": "Donor data",
+     "def": "Pixels on donation pages, donor privacy, data brokers, platform data changes.",
+     "kw": [
+      "pixel",
+      "donor data",
+      "privacy",
+      "tracking",
+      "data broker",
+      "consent",
+      "donation page"
+     ]
+    },
+    {
+     "id": "V07",
+     "label": "Platforms, algorithms and organic reach for causes",
+     "short": "Organic reach",
+     "def": "Reach changes, Meta political content limits, TikTok and YouTube for causes, communities.",
+     "kw": [
+      "organic reach",
+      "political content",
+      "algorithm",
+      "tiktok nonprofit",
+      "youtube",
+      "community",
+      "reach decline"
+     ]
+    },
+    {
+     "id": "V08",
+     "label": "Funding climate and sector economics",
+     "short": "Funding climate",
+     "def": "Giving trends, grants cuts, membership decline, sector layoffs.",
+     "kw": [
+      "giving usa",
+      "grants",
+      "funding cuts",
+      "membership",
+      "layoffs",
+      "donations down",
+      "philanthropy"
+     ]
+    },
+    {
+     "id": "V00",
+     "label": "Other",
+     "short": "Other",
+     "def": "Items outside the vertical that the frame included; the Other share measures frame noise.",
+     "kw": []
+    }
+   ],
+   "sun": {
+    "trade_press": [
+     "chronicle of philanthropy",
+     "nonprofitpro.com",
+     "thenonprofittimes.com",
+     "campaignsandelections.com",
+     "nonprofitquarterly.org",
+     "techsoup blog"
+    ],
+    "newsletters": [
+     "Chronicle of Philanthropy briefings",
+     "Nonprofit Tech for Good",
+     "Campaigns and Elections newsletter"
+    ],
+    "platform_voices": [
+     "Google for Nonprofits blog",
+     "Meta business help (issue, electoral or political ads)",
+     "FEC press releases",
+     "Candid blog"
+    ],
+    "podcasts": [
+     "The Nonprofit Hive",
+     "Nonprofits Are Messy",
+     "Campaign HQ"
+    ]
+   },
+   "moon": {
+    "subreddits": [
+     "r/nonprofit",
+     "r/fundraising",
+     "r/PoliticalCampaigns",
+     "r/Sysadmin (nonprofit threads, rare)"
+    ],
+    "forums": [
+     "TechSoup forums",
+     "Nonprofit Happy Hour (public pages)",
+     "Progressive Exchange (public pages)"
+    ],
+    "discord_discovery": [
+     "disboard tags: nonprofit, charity, activism, politics"
+    ],
+    "telegram_discovery": [
+     "TGStat politics and activism channels (set filter expected)"
+    ],
+    "practitioner_social": [
+     "Nonprofit marketers' public posts (curated only)"
+    ]
+   },
+   "nilometer": [
+    "Giving USA annual report",
+    "M+R Benchmarks (digital fundraising)",
+    "Blackbaud Institute charitable giving reports",
+    "FEC filings and platform political ad libraries (EU TTPA status)",
+    "State attorney general charity actions",
+    "IRS exempt organization data",
+    "Meta and Google political ad policy change logs",
+    "BLS nonprofit employment"
+   ],
+   "standing_questions": [
+    "Where are donors and supporters being acquired now, and at what cost?",
+    "Which political and charity advertising rules are being enforced, and by whom?",
+    "What are nonprofit marketers asking about that the sector press ignores?",
+    "What did platform political content limits do to organic reach for causes?",
+    "How is the funding climate changing budgets and channel mix?"
+   ]
+  },
+  {
+   "id": "hospitality-travel",
+   "name": "Hospitality, Travel and Events Marketing",
+   "nome": "Client vertical pack (OmegaWeapon)",
+   "flagship": false,
+   "scope": "Hotels, restaurants, attractions, tour operators, ticket sellers and event venues: OTAs and direct booking, Google travel surfaces, reviews, junk fee rules, ticketing law, AI trip planning and demand swings.",
+   "clusters": {
+    "Acquisition": [
+     "V01",
+     "V02",
+     "V03"
+    ],
+    "Rules": [
+     "V04",
+     "V05"
+    ],
+    "Market": [
+     "V06",
+     "V07",
+     "V08"
+    ],
+    "Other": [
+     "V00"
+    ]
+   },
+   "taxonomy": [
+    {
+     "id": "V01",
+     "label": "OTAs, metasearch and direct booking",
+     "short": "OTAs and direct",
+     "def": "Booking, Expedia, Airbnb fees, Google Hotel Ads, direct booking strategy, parity.",
+     "kw": [
+      "ota",
+      "booking.com",
+      "expedia",
+      "airbnb",
+      "hotel ads",
+      "metasearch",
+      "direct booking",
+      "parity",
+      "commission"
+     ]
+    },
+    {
+     "id": "V02",
+     "label": "Google travel surfaces and local",
+     "short": "Google travel",
+     "def": "Hotel and things to do surfaces, GBP for restaurants and venues, reservations integrations, Maps.",
+     "kw": [
+      "google hotels",
+      "things to do",
+      "gbp",
+      "reserve with google",
+      "maps",
+      "local",
+      "restaurant profile",
+      "menu"
+     ]
+    },
+    {
+     "id": "V03",
+     "label": "Reviews and reputation in travel",
+     "short": "Reviews",
+     "def": "TripAdvisor, Google, Yelp reviews, fake review enforcement, responses.",
+     "kw": [
+      "tripadvisor",
+      "reviews",
+      "yelp",
+      "fake reviews",
+      "reputation",
+      "review response",
+      "ratings"
+     ]
+    },
+    {
+     "id": "V04",
+     "label": "Junk fees, drip pricing and ticketing law",
+     "short": "Fees and tickets",
+     "def": "FTC fee rule for lodging and tickets, BOTS Act, resale rules, resort fees, state ticket laws.",
+     "kw": [
+      "junk fees",
+      "drip pricing",
+      "resort fee",
+      "ftc fee rule",
+      "bots act",
+      "ticket resale",
+      "all in pricing",
+      "ticketing law"
+     ]
+    },
+    {
+     "id": "V05",
+     "label": "Platform and consumer rules for travel",
+     "short": "Travel rules",
+     "def": "Cancellation and refund rules, ADA and EAA for booking sites, alcohol advertising, minors.",
+     "kw": [
+      "refund",
+      "cancellation",
+      "ada",
+      "eaa",
+      "accessibility",
+      "alcohol ads",
+      "consumer protection",
+      "dot rules"
+     ]
+    },
+    {
+     "id": "V06",
+     "label": "AI trip planning and agentic booking",
+     "short": "AI travel",
+     "def": "AI planners, ChatGPT and Gemini trip planning, agents booking, content for AI answers.",
+     "kw": [
+      "ai trip planning",
+      "agentic booking",
+      "chatgpt travel",
+      "gemini",
+      "ai itinerary",
+      "ai answers",
+      "agent booking"
+     ]
+    },
+    {
+     "id": "V07",
+     "label": "Demand swings, events and seasonality",
+     "short": "Demand",
+     "def": "Travel demand, events calendars, weather, economic mood, group business.",
+     "kw": [
+      "demand",
+      "occupancy",
+      "seasonality",
+      "events",
+      "conference",
+      "group business",
+      "travel slowdown",
+      "bookings down"
+     ]
+    },
+    {
+     "id": "V08",
+     "label": "Restaurant marketing and delivery platforms",
+     "short": "Restaurants",
+     "def": "Delivery apps and fees, loyalty, menu and pricing, restaurant paid and social.",
+     "kw": [
+      "doordash",
+      "uber eats",
+      "delivery fees",
+      "loyalty",
+      "menu pricing",
+      "restaurant marketing",
+      "reservations",
+      "tiktok restaurant"
+     ]
+    },
+    {
+     "id": "V00",
+     "label": "Other",
+     "short": "Other",
+     "def": "Items outside the vertical that the frame included; the Other share measures frame noise.",
+     "kw": []
+    }
+   ],
+   "sun": {
+    "trade_press": [
+     "skift.com",
+     "phocuswire.com",
+     "hotelnewsnow.com (CoStar)",
+     "restaurantbusinessonline.com",
+     "nrn.com",
+     "pollstar.com",
+     "travelweekly.com",
+     "hospitalitynet.org"
+    ],
+    "newsletters": [
+     "Skift Daily",
+     "PhocusWire Daily",
+     "Restaurant Business Daily"
+    ],
+    "platform_voices": [
+     "Google travel and Hotel Ads updates",
+     "Booking.com Partner Hub",
+     "Expedia Partner Central",
+     "TripAdvisor for Business",
+     "OpenTable and Toast blogs"
+    ],
+    "podcasts": [
+     "Skift Podcast",
+     "No Vacancy",
+     "Restaurant Unstoppable"
+    ]
+   },
+   "moon": {
+    "subreddits": [
+     "r/hotels (operator threads)",
+     "r/restaurantowners",
+     "r/BarOwners",
+     "r/Airbnb (host side)",
+     "r/travelagents",
+     "r/eventplanning"
+    ],
+    "forums": [
+     "Hotel management forums (public pages)",
+     "Airbnb Community Center",
+     "Restaurant owner groups (public pages)"
+    ],
+    "discord_discovery": [
+     "disboard tags: travel, hospitality, restaurant, events"
+    ],
+    "telegram_discovery": [
+     "TGStat travel channels (set filter expected)"
+    ],
+    "practitioner_social": [
+     "Hospitality marketers' public posts (curated only)"
+    ]
+   },
+   "nilometer": [
+    "STR and CoStar occupancy and ADR data",
+    "Booking Holdings, Expedia, Airbnb, Marriott, Hilton quarterly results",
+    "DoorDash and Uber quarterly results",
+    "National Restaurant Association reports",
+    "FTC fee rule enforcement and BOTS Act actions",
+    "TSA throughput and DOT air travel data",
+    "Live Nation and event industry filings",
+    "BLS leisure and hospitality employment"
+   ],
+   "standing_questions": [
+    "Where are travelers and diners booking now, and what do intermediaries charge?",
+    "Which fee and ticketing rules are being enforced this quarter?",
+    "What are operators asking about that the travel trade press ignores?",
+    "Is AI trip planning moving bookings, or only talk?",
+    "How is demand shifting by segment, and what does it do to spend?"
+   ]
+  }
+ ],
+ "_omega": "Horus's ten media nomes plus OmegaWeapon's twelve client vertical packs. A run picks the nome that matches the target's archetype (assets/archetypes.json); the digital-marketing nome is also the Agency lens's industry read for any target."
+}

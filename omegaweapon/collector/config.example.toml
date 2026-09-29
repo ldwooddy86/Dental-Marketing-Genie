@@ -1,0 +1,95 @@
+# HORUS collector config. Settings live here; every secret lives in an environment variable that this
+# file only NAMES (keys ending in _env). The loader refuses to start if a secret is typed into this file.
+# Every lane is read-only. Turn a lane on with enabled = true once `check` shows it READY.
+
+[general]
+nome = "digital-marketing"          # which nome (industry pack) this collector feeds; see assets/nomes.json
+data_dir = "./horus-data"           # SQLite store and the Telegram session file live here
+contact = ""                        # optional email or URL added to the User-Agent
+author_salt_env = "HORUS_AUTHOR_SALT"   # long random string, kept stable: floor authors become pseudonyms
+min_interval_seconds = 1.0          # politeness gap between calls to the same host
+
+# ---------------------------------------------------------------- Sun eye (broadcast)
+[rss]
+enabled = true
+max_items_per_feed = 100
+# Seeds to verify; add the rest with: python -m horus_collector discover --nome digital-marketing
+feeds = [
+  { url = "https://searchengineland.com/feed", platform = "Search Engine Land", lane = "trade-press", eye = "sun" },
+  { url = "https://www.searchenginejournal.com/feed/", platform = "Search Engine Journal", lane = "trade-press", eye = "sun" },
+  { url = "https://digiday.com/feed/", platform = "Digiday", lane = "trade-press", eye = "sun" },
+  { url = "https://www.adexchanger.com/feed/", platform = "AdExchanger", lane = "trade-press", eye = "sun" },
+  { url = "https://martech.org/feed/", platform = "MarTech", lane = "trade-press", eye = "sun" },
+  # Forum listing feeds count as the floor, for example a forum's "new threads" RSS:
+  # { url = "https://example-forum.com/forums/seo/index.rss", platform = "Example Forum", lane = "forum", eye = "moon", community = "SEO board" },
+]
+
+[podcast]
+enabled = false
+feeds = [
+  # { url = "https://example.com/podcast.rss", platform = "Show name", eye = "sun" },
+]
+
+[youtube]
+enabled = false
+api_key_env = "HORUS_YT_KEY"        # Google Cloud API key with YouTube Data API v3 enabled
+channel_ids = []                    # broadcast: recent uploads (1 quota unit per page)
+queries = []                        # broadcast: search.list costs 100 units per call; daily quota is 10,000
+comment_video_ids = []              # floor: top-level comments on these videos (1 unit per page)
+max_results = 25
+
+# ---------------------------------------------------------------- Moon eye (the floor)
+[reddit]
+enabled = false
+client_id_env = "HORUS_REDDIT_ID"            # script app from https://www.reddit.com/prefs/apps
+client_secret_env = "HORUS_REDDIT_SECRET"
+user_agent = "script:horus-collector:1.0 (by /u/YOUR_USERNAME)"   # Reddit requires your username here
+subreddits = ["SEO", "bigseo", "TechSEO", "PPC", "googleads", "FacebookAds", "marketing", "digital_marketing", "socialmedia", "agency"]
+listing = "new"
+limit = 100
+include_stickied = false
+# Run `python -m horus_collector recheck reddit` at least weekly: posts deleted at the source are purged.
+
+[telegram]
+enabled = false
+api_id = 0                          # from https://my.telegram.org (not secret on its own)
+api_hash_env = "HORUS_TG_API_HASH"
+session = "horus_user"
+channels = ["YTrank"]               # public channels or chats your account can already read; never joins
+max_messages_per_channel = 200
+
+[telegram_bot]
+enabled = false
+token_env = "HORUS_TG_BOT_TOKEN"    # a bot sees only chats it was added to, from the moment it joined
+
+[discord]
+enabled = false
+token_env = "HORUS_DISCORD_TOKEN"   # a bot invited by server admins; self-bots are not supported
+channel_ids = []                    # numeric channel ids (Developer Mode > Copy Channel ID)
+max_messages_per_channel = 200
+
+[bluesky]
+enabled = false
+handles = []                        # author feeds, no login needed
+queries = []                        # keyword search needs an app password:
+identifier_env = "HORUS_BSKY_HANDLE"
+app_password_env = "HORUS_BSKY_APP_PASSWORD"
+limit = 50
+
+[mastodon]
+enabled = false
+instances = ["mastodon.social"]
+tags = ["seo", "marketing", "digitalmarketing"]
+
+[hackernews]
+enabled = false
+queries = ["seo", "google ads", "ai search", "marketing"]
+lookback_days = 14
+
+[csv_import]
+enabled = false
+# Exports you are entitled to (your LinkedIn or X archive, a listening tool, a room's own export).
+files = [
+  # { path = "exports/linkedin.csv", platform = "LinkedIn", lane = "practitioner-social", eye = "moon",
+  #   map = { title = "Title", text = "Post", url = "URL", date = "Date", author = "Author", replies = "Comments" } },
+]

@@ -1,0 +1,18 @@
+/* popup layout (tokens come from app.css) */
+body.popup{width:380px;min-height:260px;padding:12px 14px 12px;display:grid;gap:10px;background:var(--ground)}
+.p-head{display:flex;align-items:center;gap:10px}
+.p-head .wm{font:700 17px/1.1 var(--f-display)}
+.p-search{position:relative}
+.p-search input{width:100%;height:34px}
+.p-results{position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:5;background:var(--surface);border:1px solid var(--rule);border-radius:6px;box-shadow:var(--shadow);padding:4px;display:grid;gap:2px;max-height:280px;overflow:auto}
+.p-results .res{display:flex;justify-content:space-between;gap:10px;align-items:baseline;width:100%;padding:7px 8px;border:0;background:none;border-radius:4px;cursor:pointer;text-align:left;font-size:13px}
+.p-results .res:hover,.p-results .res:focus-visible{background:var(--surface-2)}
+.p-site h2{font-size:19px;margin-top:2px}
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.kpis div{background:var(--surface-2);border:1px solid var(--rule-2);border-radius:5px;padding:6px 7px;display:grid;gap:2px;min-width:0}
+.kpis b{font:600 14px/1.1 var(--f-body)}
+.kpis span{font-size:10.5px;color:var(--ink-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.p-actions{justify-content:flex-start}
+.p-foot{display:grid;gap:4px;border-top:1px solid var(--rule);padding-top:8px}
+.popup .p-site select,.popup .p-site input[type="text"]{width:100%;padding:8px 10px;border:1px solid var(--rule);border-radius:6px;background:var(--surface);color:var(--ink);font:inherit;font-size:13px}
+.popup .grade{font-size:13px;padding:6px 8px}
