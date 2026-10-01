@@ -143,7 +143,7 @@ function metroHTML(root, codes, title, num, opt) {
         mtRow('Law offices in the ZIP', z.lawoffices ? N(z.lawoffices) : 'none', 'A', 'ZIP Business Patterns 2023') + mtRow('Efficiency / opportunity / ZIP index', `${N(z.paid.eff_pct, 0)} / ${N(z.paid.opp_pct, 0)} / ${N(z.di, 0)}`, 'C', 'percentiles across metro ZIPs') +
         (ac ? mtRow('Your spend / leads / intakes, 90 days', `${$$$(ac.spend)} / ${N(ac.leads)} / ${N(ac.intake)}`, 'A', 'Accounts (module 23)') : '') + zipGapNote(z) +
         btns([['desk', 'Campaign Desk ↗'], ['forge', 'Site Forge ↗'], ['paid', 'Paid Acquisition ↗'], ['ground', 'Ground Truth ↗'], ['index', 'Dissolution Index ↗'], ['clear', 'Back to the metro']]);
-      wire({ desk: () => goModule('desk', { geo: 'msa:' + z.msa, zips: [z.zip] }), forge: () => goModule('forge', { zips: [z.zip], counties: [z.county] }), paid: () => goModule('paid', { metro: z.msa, zip: z.zip }), ground: () => goModule('ground', { zip: z.zip }), index: () => goModule('index', { county: z.county }), clear: () => clearSel() });
+      wire({ desk: () => goModule('desk', { geo: 'msa:' + z.msa, zips: [z.zip] }), forge: () => goModule('forge', { msa: z.msa, zips: [z.zip] }), paid: () => goModule('paid', { metro: z.msa, zip: z.zip }), ground: () => goModule('ground', { zip: z.zip }), index: () => goModule('index', { county: z.county }), clear: () => clearSel() });
       return;
     }
     const f = /^c:/.test(st.sel || '') ? st.sel.slice(2) : st.cty; const c = CI[f];
@@ -155,7 +155,7 @@ function metroHTML(root, codes, title, num, opt) {
         mtRow('Unemployment, ' + fmtDate((c.laus || {}).last), `${P1(c.laus ? c.laus.ur : null)} (${sgn(c.econ.ur_chg_yoy, 1, ' pts')})`, 'A') + mtRow('Claims vs same weeks of 2019', isN(c.econ.claims_vs_2019) ? N(c.econ.claims_vs_2019, 2) + '×' : NA, 'A') + mtRow('WARN workers, last 12 months', N(c.warn.last12.workers), 'A') + mtRow('Law offices / private filings per office', `${c.rates.lawoffices ? N(c.rates.lawoffices) : 'none'} / ${c.rates.lawoffices ? N(c.rates.filings_per_lawoffice, 1) : 'no office'}`, 'C', 'CBP 2023, every kind of law office') +
         (c.dfps && isN(c.dfps.inv_fv['2025']) ? mtRow('Abuse investigations with family violence, FY2025', N(c.dfps.inv_fv['2025']), 'A', 'DFPS') : '') + (ac ? mtRow('Your spend / leads / intakes, 90 days', `${$$$(ac.spend)} / ${N(ac.leads)} / ${N(ac.intake)}`, 'A', 'Accounts (module 23)') : '') + (w.length ? `<div class="ix-own"><b>Firms watched here:</b> ${w.slice(0, 6).map(x => esc(x.name)).join(', ')}${w.length > 6 ? ` and ${w.length - 6} more` : ''}.</div>` : '') +
         btns([['desk', 'Campaign Desk ↗'], ['forge', 'Site Forge ↗'], ['index', 'Dissolution Index ↗'], ['watch', 'Competitor Watch ↗'], ['ground', 'Ground Truth ↗']].concat(st.sel ? [['clear', 'Back to the metro']] : []));
-      wire({ desk: () => goModule('desk', { geo: 'msa:' + st.code, counties: [f], zips: zipsOfC(f).filter(id => ZI[id]) }), forge: () => goModule('forge', { counties: [f], zips: zipsOfC(f).filter(id => ZI[id]) }), index: () => goModule('index', { county: f }), watch: () => goModule('watch', { county: f, from: modKey }), ground: () => goModule('ground', { county: f }), clear: () => clearSel() });
+      wire({ desk: () => goModule('desk', { geo: 'msa:' + st.code, counties: [f], zips: zipsOfC(f).filter(id => ZI[id]) }), forge: () => goModule('forge', { counties: [f] }), index: () => goModule('index', { county: f }), watch: () => goModule('watch', { county: f, from: modKey }), ground: () => goModule('ground', { county: f }), clear: () => clearSel() });
       return;
     }
     const w = new Set(); S.cs.forEach(x => ixWatchIn(x.fips).forEach(c2 => w.add(c2.name)));
@@ -211,7 +211,7 @@ function metroHTML(root, codes, title, num, opt) {
   const scopeZips = () => ZI[st.sel] ? [st.sel] : /^c:/.test(st.sel || '') ? zipsOfC(st.sel.slice(2)).filter(id => ZI[id]) : st.cty ? scoped().map(z => z.zip) : [];
   const scopeCty = () => ZI[st.sel] ? [ZI[st.sel].county] : /^c:/.test(st.sel || '') ? [st.sel.slice(2)] : st.cty ? [st.cty] : MSA[st.code].counties.slice();
   R(`#mtDesk_${num}`).onclick = () => { const zs = scopeZips(); goModule('desk', Object.assign({ geo: 'msa:' + st.code }, zs.length ? { zips: zs } : {}, st.cty || /^c:/.test(st.sel || '') ? { counties: scopeCty() } : {})); };
-  R(`#mtForge_${num}`).onclick = () => { const zs = scopeZips(); goModule('forge', Object.assign({ counties: scopeCty() }, zs.length ? { zips: zs } : {})); };
+  R(`#mtForge_${num}`).onclick = () => { const zs = scopeZips(); goModule('forge', Object.assign({ msa: st.code }, zs.length ? { zips: zs } : {})); };
   R(`#mtWatch_${num}`).onclick = () => goModule('watch', st.cty ? { county: st.cty, from: modKey } : { metro: st.code, from: modKey });
   R(`#mtGround_${num}`).onclick = () => goModule('ground', ZI[st.sel] ? { zip: st.sel } : { metro: st.code });
   R(`#mtPaid_${num}`).onclick = () => goModule('paid', Object.assign({ metro: st.code }, ZI[st.sel] ? { zip: st.sel } : {}));

@@ -512,6 +512,8 @@ main{padding-inline:max(16px,env(safe-area-inset-left,0px)) max(16px,env(safe-ar
 .mapwrap.mz>svg:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .mapwrap .zoomctl{top:8px;right:8px}
 .mapwrap .zoomctl button{width:30px;height:30px}
+/* module rules that size every svg inside a map (#mod-forge .fg-map svg, #mod-desk .mapwrap svg) must not reach the zoom icons */
+.mapwrap .zoomctl button svg{width:16px!important;height:16px!important;max-height:none!important;display:block;background:none!important;border:0!important}
 .mapwrap .zoomctl button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
 .mapwrap .maphint{max-width:calc(100% - 24px);text-align:center;z-index:4}
 .mapwrap .mzx{position:absolute;width:18px;height:18px;margin:-9px 0 0 -9px;pointer-events:none;display:none;z-index:2;background:linear-gradient(var(--ink),var(--ink)) center/2px 100% no-repeat,linear-gradient(var(--ink),var(--ink)) center/100% 2px no-repeat;filter:drop-shadow(0 0 1.5px var(--card)) drop-shadow(0 0 1px var(--card))}
