@@ -31,7 +31,11 @@ function drawZipMap(el, codes, L, st, onSel) {
 registerModule({
   key: 'paid', num: '07', title: 'Paid Acquisition', desc: 'Where an ad dollar reaches the most filings per competing firm, resolved to the ZIP code, with a budget model and export lists',
   mount(root) {
-    const st = { metro: store.get('sev.metro', '19100'), layer: 'eff', sel: null, line: 'div_k', n: 25, cpc: 9.87, cvr: 6.0, retain: 22, budget: 10000 };
+    // the budget model's inputs, line, layer and shortlist size persist in sev.paid
+    const SV = store.get('sev.paid', null) || {};
+    const st = { metro: store.get('sev.metro', '19100'), layer: ZIP_LAYERS[SV.layer] ? SV.layer : 'eff', sel: null, line: LINE_META[SV.line] ? SV.line : 'div_k', n: clamp(Math.round(+SV.n) || 25, 5, 200), cpc: 9.87, cvr: 6.0, retain: 22, budget: 10000 };
+    if (!MSA[st.metro]) st.metro = '19100';
+    const savePaid = () => store.set('sev.paid', { line: st.line, layer: st.layer, n: st.n, budget: st.budget, cpc: st.cpc, cvr: st.cvr, retain: st.retain, fee: st.fee });
     const metroOpts = Object.keys(MSA).sort((a, b) => MSA[b].pop2025 - MSA[a].pop2025).map(k => [k, MNAME(MSA[k].title)]);
     root.innerHTML = mastHTML({ eyebrow: 'Module 07 · Paid Acquisition · 1,127 metropolitan ZIP codes', title: 'Paid Acquisition', dek: `County filings allocated to ZIP codes by each ZIP's married population and its composition hazard, then set against the law offices already in the ZIP. Efficiency is filings per competing office; opportunity is raw filings. Both are percentiles across all metro ZIPs, so a ZIP scoring 90 on efficiency is in the top tenth statewide. The budget model below uses the 2026 legal search benchmarks and the fee defaults from module 06; change any assumption and the math follows.`, facts: [[N(ZC.length), 'ZIP codes across 26 metros'], ['$9.87', 'median legal services CPC, Google search, Apr 2025 to Mar 2026 (WordStream)'], ['5.55%', 'median legal conversion rate; family law 8.52% in the 2023 LocaliQ cut'], ['$131.63', 'median legal cost per lead']] }) + `
     <div class="toolbar"><span class="ttl">Paid Acquisition</span><span class="sub">ZIP maps, ranked lists, budget model, exports</span><span class="sp"></span><button class="btn" id="pdGoogle">↓ Google Ads location CSV</button><button class="btn" id="pdMeta">↓ Meta ZIP list</button><button class="btn" id="pdAll">↓ All ZIPs CSV</button></div>
@@ -56,20 +60,23 @@ registerModule({
     const rows = () => zs().map(z => ({ _id: z.zip, zip: z.zip, city: z.city, county: z.county_name, eff: z.paid.eff_pct, opp: z.paid.opp_pct, di: z.di, div: z.alloc.div, priv: z.alloc.priv, rate: z.exp_div_per_1k_married, haz: z.risk.haz_pred, sep: z.acs.sep_per_1k_married, married: z.acs.married, inc: z.acs.med_hh_inc, inc150: z.acs.inc_150k_sh, kids: z.acs.mc_kids_sh, offices: z.lawoffices, gt: z.gt }));
     const tbl = table($('#pdTable'), { caption: 'All ZIP codes in the metro', cols, rows: rows(), sort: { k: 'eff', dir: -1 }, onRow: id => { st.sel = id; markSel(mapEl, id); zipBox(); } });
     $('#pdMetro').onchange = e => { st.metro = e.target.value; store.set('sev.metro', st.metro); st.sel = null; draw(); zipBox(); };
-    $('#pdLayer').onchange = e => { st.layer = e.target.value; draw(); };
-    $('#pdN').onchange = e => { st.n = clamp(Math.round(+e.target.value) || 25, 5, 200); e.target.value = st.n; shortlist(); };
+    $('#pdLayer').onchange = e => { st.layer = e.target.value; savePaid(); draw(); };
+    $('#pdN').onchange = e => { st.n = clamp(Math.round(+e.target.value) || 25, 5, 200); e.target.value = st.n; savePaid(); shortlist(); };
     $('#pdLine').onchange = e => { st.line = e.target.value; st.fee = LINE_META[st.line].fee; $('#pdFee').value = st.fee; readInputs(); calc(); };
     // inputs: blank or out of range is flagged and clamped (0 and up; percents 0 to 100); the tiles say n/a where a figure has no meaning
     const PD_IN = { pdBudget: ['budget', 0, 1e8, 'The monthly budget'], pdCpc: ['cpc', 0, 1e4, 'The CPC'], pdCvr: ['cvr', 0, 100, 'The conversion rate'], pdRet: ['retain', 0, 100, 'Lead to retained'], pdFee: ['fee', 0, 1e8, 'The value per matter'] };
     function readInputs() {
       const msgs = [];
       Object.keys(PD_IN).forEach(id => { const [k, lo, hi, nm] = PD_IN[id]; const el = $('#' + id); const raw = String(el.value).trim(); const v = raw === '' ? NaN : +raw; const bad = !isFinite(v) || v < lo || v > hi; st[k] = isFinite(v) ? clamp(v, lo, hi) : 0; el.setAttribute('aria-invalid', String(bad)); if (bad) msgs.push(!isFinite(v) ? `${nm} is empty, so it counts as 0.` : v < lo ? `${nm} cannot be below ${lo}; it counts as ${lo}.` : `${nm} cannot be above ${N(hi)}; it counts as ${N(hi)}.`); });
-      if (!(st.cpc > 0) && !msgs.some(m => /CPC/.test(m))) msgs.push('A CPC of $0 gives no click count; enter the cost per click you expect.');
+      if (!(st.cpc > 0)) { $('#pdCpc').setAttribute('aria-invalid', 'true'); if (!msgs.some(m => /CPC/.test(m))) msgs.push('A CPC of $0 gives no click count; enter the cost per click you expect.'); }
       if (st.cpc > 0 && !(st.cvr > 0)) msgs.push('A conversion rate of 0% gives no leads, so cost per lead reads n/a.');
       $('#pdHint').textContent = msgs.join(' ');
+      savePaid();
     }
     ['pdBudget', 'pdCpc', 'pdCvr', 'pdRet', 'pdFee'].forEach(id => $('#' + id).oninput = () => { readInputs(); calc(); });
-    st.fee = LINE_META[st.line].fee;
+    // restore the saved inputs (the fee follows the line unless one was saved)
+    $('#pdN').value = st.n; ['budget', 'cpc', 'cvr', 'retain'].forEach(k => { if (isN(SV[k])) $('#' + { budget: 'pdBudget', cpc: 'pdCpc', cvr: 'pdCvr', retain: 'pdRet' }[k]).value = SV[k]; });
+    $('#pdFee').value = isN(SV.fee) && SV.line === st.line ? SV.fee : LINE_META[st.line].fee;
     const geo = () => MNAME(MSA[st.metro].title);
     $('#pdGoogle').onclick = () => { const s = short(); exportText(expName('paid_google_locations', geo()), csv(s.map(z => ({ Location: z.zip + ', Texas, United States', ID: z.gt || '', Type: 'Postal Code', 'Bid adjustment': (z.paid.eff_pct >= 80 ? '+20%' : z.paid.eff_pct >= 60 ? '+10%' : '0%'), County: z.county_name, City: z.city, 'Expected divorce filings': Math.round(z.alloc.div || 0) })), ['Location', 'ID', 'Type', 'Bid adjustment', 'County', 'City', 'Expected divorce filings'].map(k => ({ l: k, k })))); };
     $('#pdMeta').onclick = () => { const s = short(); exportText(expName('paid_meta_zips', geo(), 'txt'), s.map(z => z.zip).join('\n'), 'text/plain'); };

@@ -322,7 +322,7 @@ function mountAtlas(root, mk) {
       ${extra || ''}`;
   }
   function sideMetro() {
-    const parts = byX.map(c => `<div class="part" data-f="${c.f}" role="button" tabindex="0" data-kbd aria-label="${esc(c.n)} County: zoom to it"><b>${esc(c.n)}</b><span>${N(c.xd, 0)} divorce filings in 12 months · ${N(c.married)} married · ${$$$(c.inc)} median income</span><span class="small">Files in ${venueLine(c.f)}</span></div>`).join('');
+    const parts = byX.map(c => `<div class="part" data-f="${c.f}" role="button" tabindex="0" data-kbd><span class="vh">Zoom the map to </span><b>${esc(c.n)}</b><span>${N(c.xd, 0)} divorce filings in 12 months · ${N(c.married)} married · ${$$$(c.inc)} median income</span><span class="small">Files in ${venueLine(c.f)}</span></div>`).join('');
     sideArea(A.agg.metro, MN, mk === 'rgv' ? 'McAllen and Brownsville metros' : 'Metro', `<p class="small" style="margin-top:6px">Residents and married adults here add up ACS 2020 to 2024 block groups. The ${esc(MN)} tab counts Census Vintage 2025 residents and ACS county married adults, so its totals differ.</p><div class="parts">${parts}</div>`);
     $$('#atSide .part[data-f]').forEach(d => d.onclick = () => goCounty(d.dataset.f));
   }
@@ -339,7 +339,7 @@ function mountAtlas(root, mk) {
       <div class="part" style="margin-top:8px"><b>Venue</b><span>${venueLine(f)}${isN(V.mic[i]) ? ` · ${N(V.mic[i], 1)} miles` : ''}</span></div>
       <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap"><button type="button" class="btn" id="atBack">Back to ${esc(MN)}</button><button type="button" class="btn" id="atCopyPin">Copy pin (${N(V.lat[i], 4)}, ${N(V.lon[i], 4)})</button></div>`;
     $('#atBack').onclick = () => { select(-1); highlight(''); sideMetro(); };
-    $('#atCopyPin').onclick = () => { const t = `${V.lat[i]}, ${V.lon[i]}`; try { navigator.clipboard.writeText(t).then(() => { $('#atCopyPin').textContent = 'Copied'; }); } catch (e) { } };
+    $('#atCopyPin').onclick = () => { const t = `${V.lat[i]}, ${V.lon[i]}`; const fail = () => { $('#atCopyPin').textContent = 'Copy blocked: ' + t; }; if (!(navigator.clipboard && navigator.clipboard.writeText)) { fail(); return; } try { navigator.clipboard.writeText(t).then(() => { $('#atCopyPin').textContent = 'Copied'; }, fail); } catch (e) { } };
   }
   // ---------- areas: counties, cities, ZIP codes
   function bgAgg(ix) {
@@ -416,7 +416,9 @@ function mountAtlas(root, mk) {
     else if (plIdx[p.t] !== undefined) { const i = plIdx[p.t]; highlight(PL[i].d); select(-1); const o = cityAgg(p.t); sideArea(o || bgAgg(PLBG[i]), p.t, 'City'); }
     else { const bb = p.bb; const ix = []; for (let i = 0; i < nB; i++) if (B.cx[i] >= bb[0] && B.cx[i] <= bb[2] && B.cy[i] >= bb[1] && B.cy[i] <= bb[3]) ix.push(i); highlight(''); select(-1); sideArea(bgAgg(ix), p.t, 'Area (block groups centered in this view)'); }
   });
-  $$('#atMetros button').forEach(b => b.onclick = () => { if (b.dataset.mk !== mk) mountAtlas(root, b.dataset.mk); });
+  $$('#atMetros button').forEach(b => b.onclick = () => { if (b.dataset.mk === mk) return; const kf = document.activeElement === b; mountAtlas(root, b.dataset.mk); const nb = kf && $(`#atMetros button[data-mk="${b.dataset.mk}"]`); if (nb) nb.focus(); });
+  // the metro tabs are one tab stop; the arrow keys, Home and End move between them and Enter or Space opens one
+  { const tabs = $$('#atMetros button'); tabs.forEach(b => { b.tabIndex = b.dataset.mk === mk ? 0 : -1; }); $('#atMetros').onkeydown = e => { const i = tabs.indexOf(e.target); if (i < 0) return; const j = e.key === 'ArrowRight' ? (i + 1) % tabs.length : e.key === 'ArrowLeft' ? (i - 1 + tabs.length) % tabs.length : e.key === 'Home' ? 0 : e.key === 'End' ? tabs.length - 1 : -1; if (j < 0) return; e.preventDefault(); tabs.forEach(x => { x.tabIndex = -1; }); tabs[j].tabIndex = 0; tabs[j].focus(); }; }
   $('#atLayer').onchange = e => { st.layer = e.target.value; store.set('sev.atlas.layer', st.layer); colorize(); fitWeights(); };
   $$('#atOv input').forEach(inp => inp.onchange = () => { st.ov[inp.dataset.k] = inp.checked; inp.parentElement.classList.toggle('on', inp.checked); store.set('sev.atlas.ov', st.ov); overlays(); renderOverlay(); });
   function overlays() { const t = (id, on) => { const g = $(id); if (g) g.style.display = on ? '' : 'none'; }; t('#atPlaces', st.ov.places); t('#atIsds', st.ov.isd); t('#atZips', st.ov.zip); t('#atRoads', st.ov.roads); t('#atWater', st.ov.water); }
@@ -439,7 +441,7 @@ function mountAtlas(root, mk) {
   $('#atFind').addEventListener('change', doFind); $('#atFind').addEventListener('keydown', e => { if (e.key === 'Enter') doFind(); });
   // ---------- tables below the map
   function focusBlock() {
-    const card = c => `<div class="tile" data-f="${c.f}" role="button" tabindex="0" data-kbd aria-label="${esc(c.n)} County: zoom to it"><div class="l"><span>${esc(c.n)}</span></div><div class="v">${N(c.xd, 0)}</div><div class="s">divorce filings in the last 12 months · ${N(c.xk, 0)} with children<br>${N(c.married)} married adults · ${$$$(c.inc)} median income<br>Files in ${venueLine(c.f)}</div></div>`;
+    const card = c => `<div class="tile" data-f="${c.f}" role="button" tabindex="0" data-kbd><span class="vh">Zoom the map to this county: </span><div class="l"><span>${esc(c.n)}</span></div><div class="v">${N(c.xd, 0)}</div><div class="s">divorce filings in the last 12 months · ${N(c.xk, 0)} with children<br>${N(c.married)} married adults · ${$$$(c.inc)} median income<br>Files in ${venueLine(c.f)}</div></div>`;
     $('#atFocus').innerHTML = `<div class="tiles" style="grid-template-columns:repeat(2,minmax(0,1fr));margin:8px 0 12px">${byX.slice(0, 4).map(card).join('')}</div><h4 class="minihd">By ZIP code</h4><div id="atFocZip"></div>`;
     $$('#atFocus .tile[data-f]').forEach(d => d.onclick = () => goCounty(d.dataset.f, true));
     const cols = [{ k: 'n', l: 'ZIP' }, { k: 'city', l: 'City', cls: 'l' }, { k: 'xd', l: 'Divorces a yr', fmt: v => N(v, 0) }, { k: 'xk', l: 'With kids', fmt: v => N(v, 0) }, { k: 'married', l: 'Married', fmt: v => N(v) }, { k: 'inc', l: 'Median income', fmt: v => $$$(v) }, { k: 'i150', l: '$150k+', fmt: v => P(v, 0) }];

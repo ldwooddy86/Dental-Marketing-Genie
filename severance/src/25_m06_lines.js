@@ -32,7 +32,7 @@ registerModule({
     function cards() {
       const card = id => { const L = LINE_META[id]; const tot = stateTot(id); return `<div class="line ${st.line === id ? 'on' : ''}" data-id="${id}" role="button" tabindex="0" data-kbd aria-pressed="${st.line === id}"><div class="t">${esc(L.name)}</div><div class="v">${N(tot)}</div><div class="s">${id === 'prenup' ? 'estimated retained matters a year' : ['high', 'mil', 'gray'].includes(id) ? 'estimated filings, last 12 months' : 'filings, last 12 months'} · pool: ${esc(L.poolName)}</div></div>`; };
       const court = ids.filter(id => !EST_LINES.includes(id)), est = ids.filter(id => EST_LINES.includes(id));
-      $('#lnCards').innerHTML = `<h2 class="minihd" id="lnCourtH">Court counts</h2><div class="linebox ln-court" role="group" aria-labelledby="lnCourtH">${court.map(card).join('')}</div>${est.length ? `<h2 class="minihd" id="lnEstH">Estimated from the married population and the hazard model</h2><div class="linebox ln-est" role="group" aria-labelledby="lnEstH">${est.map(card).join('')}</div>` : ''}`;
+      $('#lnCards').innerHTML = `<p class="small" style="margin:0 0 4px">Statewide totals add each county's latest twelve months: ${esc(ttmSpan())} for the ${CTY.filter(c => c.filings.series).length} counties with monthly clerk reports, calendar 2025 for the rest.</p><h2 class="minihd" id="lnCourtH">Court counts</h2><div class="linebox ln-court" role="group" aria-labelledby="lnCourtH">${court.map(card).join('')}</div>${est.length ? `<h2 class="minihd" id="lnEstH">Estimated from the married population and the hazard model</h2><div class="linebox ln-est" role="group" aria-labelledby="lnEstH">${est.map(card).join('')}</div>` : ''}`;
       $$('#lnCards .line').forEach(d => d.onclick = () => { const keep = document.activeElement === d; st.line = d.dataset.id; cards(); draw(); if (keep) { const n = $(`#lnCards .line[data-id="${st.line}"]`); if (n) n.focus({ preventScroll: true }); } });
     }
     const mapEl = $('#lnMap');
@@ -52,5 +52,7 @@ registerModule({
     const tbl = table($('#lnTable'), { caption: 'Counties for the selected service line', cols, rows: rows(), sort: { k: 'n', dir: -1 }, onRow: id => { st.sel = id; store.set('sev.county', id); markSel(mapEl, id); play(); tbl.setSel(id); }, selected: st.sel });
     $('#lnCsv').onclick = () => exportText(expName('lines', 'texas'), csv(CTY.slice().sort((a, b) => a.name.localeCompare(b.name)).map(c => { const o = { fips: c.fips, county: c.name, pop: c.pop2025 }; ids.forEach(id => o[id] = LINE_META[id].cnt(c)); return o; }), [{ l: 'County', k: 'county' }, { l: 'FIPS', k: 'fips' }, { l: 'Population 2025 (Census Vintage 2025)', k: 'pop', d: 0 }].concat(ids.map(id => ({ l: LINE_META[id].name + (id === 'prenup' ? ' (estimated retained matters a year)' : EST_LINES.includes(id) ? ' (estimated filings, last 12 months)' : ' (filings, last 12 months)'), k: id, d: 0 })))));
     cards(); draw();
-  }
+    this.sync = () => { const f = store.get('sev.county', st.sel); if (CI[f] && f !== st.sel) { st.sel = f; markSel(mapEl, f); play(); tbl.setSel(f); } };
+  },
+  onShow() { if (this.sync) this.sync(); }
 });

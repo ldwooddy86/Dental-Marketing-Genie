@@ -1,5 +1,7 @@
 /* SEVERANCE core: data, helpers, map, charts, tables */
 'use strict';
+// the stored theme goes on before the data is parsed, so the page does not flash in the other theme first
+(function () { try { const t = JSON.parse(localStorage.getItem('sv.sev.theme')); if (t === 'dark' || t === 'light') document.documentElement.setAttribute('data-theme', t); } catch (e) { } })();
 const D = window.__SEV_SUITE__ || JSON.parse(document.getElementById('suite-data').textContent);   // the extension loads data/suite.js; the single file carries a JSON script tag
 const $ = (s, r) => (r || document).querySelector(s);
 const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
@@ -58,6 +60,15 @@ const METRO_TABS = [
 ];
 const OTHER_MSAS = Object.keys(MSA).filter(k => !['19100', '26420', '41700', '12420', '21340', '32580', '15180'].includes(k)).sort((a, b) => MSA[b].pop2025 - MSA[a].pop2025);
 const cname = f => (CI[f] ? CI[f].name : f);
+// statewide trailing twelve months from the monthly series, and its label ('Sep 2025 to Aug 2026'), both from the data
+const stTTM = k => sum((ST.monthly[k] || []).slice(-12));
+const ttmSpan = () => { const m = String(META.oca_through || '').match(/^(\d{4})-(\d{2})/); if (!m) return 'the last 12 months'; const t = +m[1] * 12 + (+m[2] - 1); return `${MO[(t - 11) % 12]} ${Math.floor((t - 11) / 12)} to ${MO[t % 12]} ${Math.floor(t / 12)}`; };
+// the span of the monthly court series, 'January 2019 to August 2026'
+const seriesSpan = () => { const t0 = ST.monthly.t0; return `${MOL[t0 % 12]} ${Math.floor(t0 / 12)} to ${fmtDateL(META.oca_through)}`; };
+const qcewQ = q => fmtQ(q || META.qcew_through);   // 'Q1 2026'
+const qcewPrev = () => { const m = String(META.qcew_through || '').match(/^(\d{4})Q(\d)$/); return m ? `Q${m[2]} ${+m[1] - 1}` : 'a year earlier'; };
+// a clerk reporting gap: three or more trailing months of zero divorce filings after a year averaging three or more a month
+function repGap(c) { const s = c && c.filings && c.filings.series; if (!s || !s.div) return null; const a = s.div; let n = 0; for (let i = a.length - 1; i >= 0 && a[i] === 0; i--) n++; if (n < 3) return null; const pr = a.slice(Math.max(0, a.length - n - 12), a.length - n).filter(isN); const avg = pr.length ? sum(pr) / pr.length : 0; return avg >= 3 ? { months: n, avg } : null; }
 // ---- color ramps: single hue, light to dark in the light theme and dark to light in the dark theme, built in OKLCH on the green palette. forest = dissolution (ends on the dark green), leaf = economic shock, sage = family structure and strain, teal = supply, slate = population. Diverging layers run slate (down) to leaf (up) through a neutral gray. Old ramp names stay as aliases so module code reads the same.
 const RAMP_NAMES = ['forest', 'leaf', 'sage', 'teal', 'slate']; const RALIAS = { ember: 'forest', steel: 'leaf', amber: 'sage', moss: 'teal' };
 const RAMPS = {}; RAMP_NAMES.forEach(n => { RAMPS[n] = [0, 1, 2, 3, 4, 5, 6, 7].map(i => `var(--rp-${n}-${i})`); }); Object.keys(RALIAS).forEach(a => { RAMPS[a] = RAMPS[RALIAS[a]]; });
@@ -102,13 +113,18 @@ function sizeForget(el) { if (SIZE_RO) SIZE_RO.unobserve(el); SIZE_EL.delete(el)
 function sizeWatch(el, d) { el.__sev = d; if (!SIZE_RO) return; SIZE_EL.forEach(x => { if (!x.isConnected) sizeForget(x); }); if (!SIZE_EL.has(el)) { SIZE_EL.add(el); SIZE_RO.observe(el); } }
 if (!SIZE_RO) window.addEventListener('resize', debounceCore(() => { SIZE_EL.forEach(el => SIZE_Q.add(el)); sizeFlush(); }, 150));
 function debounceCore(fn, ms) { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; }
+// text width in px for chart layout, measured in the chart font (an estimate where canvas text is not available)
+const TXW = {}; let TXC = null;
+function textW(t, px) { t = String(t == null ? '' : t); const k = px + '|' + t; if (TXW[k] != null) return TXW[k]; let w = null; try { if (TXC === null) { const c = document.createElement('canvas'); TXC = (c && c.getContext && c.getContext('2d')) || false; } if (TXC) { TXC.font = `${px}px Roboto, system-ui, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif`; w = TXC.measureText(t).width; } } catch (e) { w = null; } if (!isN(w) || w <= 0) w = t.length * px * 0.55; return (TXW[k] = w); }
 // the width a chart draws at: the container's own width when it is on screen, the caller's W otherwise (a hidden module)
 function chartBox(el, o, W0, H0) { const cw = o.fixed ? 0 : Math.round(el.clientWidth || 0); const W = cw >= 120 ? cw : W0; return { W, H: cw >= 120 && H0 ? Math.round(H0 * clamp(cw / W0, 0.85, 1.35)) : H0, live: cw >= 120 }; }
 // ---- choropleth
 function drawMap(el, o) {
   // o: {W,H, paths:{id:d}, value:id=>num, color:num=>css, label:id=>html, onSelect, selected, counties:{id:d}, outline, cent:{id:[x,y]}, labels:[ids], ramp, legend:{min,max,fmt,title}, noDataLabel,
-  //     alt:{test:id=>bool, color, label}: a second empty class with its own swatch, for areas whose value is a true zero rather than missing}
-  const svg = [`<svg viewBox="0 0 ${o.W} ${o.H}" role="img" aria-label="${esc(o.title || 'map')}"><g class="areas">`];
+  //     alt:{test:id=>bool, color, label}: a second empty class with its own swatch, for areas whose value is a true zero rather than missing,
+  //     view:[x,y,w,h]: draw only that part of the map (a metro), in map units}
+  const vb = o.view ? o.view.map(v => +(+v).toFixed(1)) : [0, 0, o.W, o.H];
+  const svg = [`<svg viewBox="${vb.join(' ')}" role="img" aria-label="${esc(o.title || 'map')}"><g class="areas">`];
   for (const id in o.paths) {
     const v = o.value(id); const c = isN(v) ? o.color(v) : (o.alt && o.alt.test(id) ? o.alt.color : null);
     svg.push(`<path class="area${o.selected === id ? ' sel' : ''}" data-id="${id}" d="${o.paths[id]}" fill="${c || 'var(--nodata)'}"></path>`);
@@ -126,7 +142,7 @@ function drawMap(el, o) {
   s.addEventListener('mousemove', e => { const p = e.target.closest('path.area'); if (!p) { hideTip(); return; } showTip(o.label(p.dataset.id), e.clientX, e.clientY); });
   s.addEventListener('mouseleave', hideTip);
   s.addEventListener('click', e => { const p = e.target.closest('path.area'); if (!p) return; if (o.onSelect) o.onSelect(p.dataset.id); if (tipFromTouch()) hideTip(); });
-  el.__mapW = o.W; mapScale(el); sizeWatch(el, { map: true });
+  el.__mapW = vb[2]; mapScale(el); sizeWatch(el, { map: true });
   return s;
 }
 // map labels are in map units; scale them so they read at about 11 px whatever the map's width, and hide them below 600 px
@@ -142,15 +158,15 @@ function lineChart(el, o) {
   if (!xs.length) { el.innerHTML = '<div class="small">no data</div>'; return; }
   const x0 = Math.min(...xs), x1 = Math.max(...xs); let y0 = isN(o.ymin) ? o.ymin : Math.min(0, Math.min(...ys)), y1 = Math.max(...ys); if (y1 === y0) y1 = y0 + 1; if (o.ypad !== false) y1 = y1 + (y1 - y0) * 0.08;
   const yt = o.yTicks || niceTicks(y0, y1, 4); const ylab = yt.map(v => String(o.yfmt ? o.yfmt(v) : K(v)));
-  const CW = 6.6;   // about one character of the 11.5 px axis text
-  const m = { l: Math.max(46, Math.round(Math.max(...ylab.map(s => s.length)) * CW + 12)), r: 12, t: 14, b: 26 };
+  const AX = 11.5;   // the axis text size in px (app.css .chart .ax)
+  const m = { l: Math.max(40, Math.round(Math.max(...ylab.map(s => textW(s, AX))) + 12)), r: 12, t: 14, b: 26 };
   const X = x => m.l + (x - x0) / (x1 - x0 || 1) * (W - m.l - m.r), Y = y => m.t + (1 - (y - y0) / (y1 - y0)) * (H - m.t - m.b);
   const svg = [`<svg viewBox="0 0 ${W} ${H}"${o.title ? ` role="img" aria-label="${esc(o.title)}"` : ''}>`];
   yt.forEach((v, i) => { svg.push(`<line class="gridl" x1="${m.l}" x2="${W - m.r}" y1="${Y(v)}" y2="${Y(v)}"></line><text class="ax" x="${m.l - 6}" y="${Y(v) + 4}" text-anchor="end">${esc(ylab[i])}</text>`); });
-  if (o.bands) o.bands.forEach(b => { const bw = Math.max(1, X(b.x1) - X(b.x0)); const fits = String(b.label || '').length * CW < Math.max(bw, 90); svg.push(`<rect x="${X(b.x0)}" y="${m.t}" width="${bw}" height="${H - m.t - m.b}" fill="var(--sunk-2)" opacity=".5"></rect>${fits ? `<text class="ax" x="${X(b.x0) + 3}" y="${m.t + 11}">${esc(b.label || '')}</text>` : ''}`); });
+  if (o.bands) o.bands.forEach(b => { const bw = Math.max(1, X(b.x1) - X(b.x0)); const fits = textW(b.label || '', AX) < Math.max(bw, 90); svg.push(`<rect x="${X(b.x0)}" y="${m.t}" width="${bw}" height="${H - m.t - m.b}" fill="var(--sunk-2)" opacity=".5"></rect>${fits ? `<text class="ax" x="${X(b.x0) + 3}" y="${m.t + 11}">${esc(b.label || '')}</text>` : ''}`); });
   // x ticks: drop every other one (then more) until the labels no longer collide at this width
   let xt = (o.xTicks || niceTicks(x0, x1, 6)).filter(v => v >= x0 && v <= x1); const xlab = v => String(o.xTickFmt ? o.xTickFmt(v) : v);
-  const room = (W - m.l - m.r) / Math.max(1, xt.length - 1); const need = Math.max(...xt.map(v => xlab(v).length), 1) * CW + 8;
+  const room = (W - m.l - m.r) / Math.max(1, xt.length - 1); const need = Math.max(...xt.map(v => textW(xlab(v), AX)), 6) + 10;
   if (xt.length > 2 && room < need) { const k = Math.ceil(need / room); xt = xt.filter((v, i) => i % k === 0); }
   xt.forEach(v => { svg.push(`<text class="ax" x="${X(v)}" y="${H - 8}" text-anchor="middle">${esc(xlab(v))}</text>`); });
   svg.push(`<line class="gridl" x1="${m.l}" x2="${W - m.r}" y1="${Y(y0)}" y2="${Y(y0)}" style="stroke:var(--line-strong)"></line>`);
@@ -180,15 +196,57 @@ function barChart(el, o) {
   // horizontal bars: o:{rows:[{label,value,color,sub}], fmt, W, lw, max, fixed}. Draws at the container's width; the label column
   // narrows on a phone and long labels are shortened (the full label stays in the bar's tooltip).
   const rows = o.rows; const bx = chartBox(el, o, o.W || 600, 0); const W = bx.W; sizeWatch(el, { fn: barChart, o, w: bx.live ? W : 0 });
-  const bh = 22, gap = 6, CW = 6.4; const H = rows.length * (bh + gap) + 8;
-  const fv = v => String(o.fmt ? o.fmt(v) : N(v)); const vw = Math.max(44, Math.max(0, ...rows.map(r => fv(r.value).length)) * CW + 10);
-  const lw = Math.round(Math.min(o.lw || 170, Math.max(96, W * 0.42)));
-  const maxc = Math.max(6, Math.floor((lw - 10) / CW)); const cut = s => { s = String(s == null ? '' : s); return s.length > maxc ? s.slice(0, maxc - 1).replace(/[\s,·(]+$/, '') + '…' : s; };
+  const bh = 22, gap = 6, LB = 12; const H = rows.length * (bh + gap) + 8;   // LB: the bar label size in px (app.css .chart .lbl)
+  const fv = v => String(o.fmt ? o.fmt(v) : N(v)); const vw = Math.max(40, Math.max(0, ...rows.map(r => textW(fv(r.value), LB))) + 12);
+  const lw = Math.round(Math.max(Math.min(96, W * 0.4), Math.min(o.lw || 170, W - vw - Math.max(60, W * 0.3))));   // bars keep at least 30% of the width
+  const cut = s => { s = String(s == null ? '' : s); if (textW(s, LB) <= lw - 10) return s; let n = s.length; while (n > 4 && textW(s.slice(0, n) + '…', LB) > lw - 10) n--; return s.slice(0, n).replace(/[\s,·(]+$/, '') + '…'; };
   const mx = o.max || Math.max(...rows.map(r => Math.abs(r.value) || 0), 1e-9); const neg = rows.some(r => r.value < 0);
   const span = Math.max(20, W - lw - vw); const zero = neg ? lw + span / 2 : lw; const scale = span / (neg ? 2 * mx : mx);
   const svg = [`<svg viewBox="0 0 ${W} ${H}"${o.title ? ` role="img" aria-label="${esc(o.title)}"` : ''}>`];
   rows.forEach((r, i) => { const y = 4 + i * (bh + gap); const w = Math.abs(r.value) * scale; const x = r.value < 0 ? zero - w : zero; const lab = cut(r.label); svg.push(`<text class="lbl" x="${lw - 8}" y="${y + bh / 2 + 4}" text-anchor="end">${lab !== String(r.label) ? `<title>${esc(r.label)}</title>` : ''}${esc(lab)}</text><rect x="${x}" y="${y}" width="${Math.max(w, 1)}" height="${bh}" fill="${r.color || 'var(--s1)'}"><title>${esc(r.label)}: ${esc(fv(r.value))}</title></rect><text class="lbl" x="${r.value < 0 ? zero + 5 : x + w + 4}" y="${y + bh / 2 + 4}" text-anchor="start" style="font-variant-numeric:tabular-nums">${esc(fv(r.value))}</text>`); });
   if (neg) svg.push(`<line x1="${zero}" x2="${zero}" y1="0" y2="${H}" class="gridl" style="stroke:var(--line-strong)"></line>`);
+  svg.push('</svg>'); el.innerHTML = svg.join('');
+}
+// scatter: o:{points:[{x, y, r, id, label, color}], xfmt, yfmt, xlab, ylab, ylog, W, H, title, onPoint, selected, tip(p)}. Draws at the
+// container's width like lineChart; ylog plots y on a log axis (y must be above 0); a click on a point calls onPoint(id).
+function scatter(el, o) {
+  const bx = chartBox(el, o, o.W || 640, o.H || 300); const W = bx.W, H = bx.H; sizeWatch(el, { fn: scatter, o, w: bx.live ? W : 0 });
+  const pts = (o.points || []).filter(p => isN(p.x) && isN(p.y) && (!o.ylog || p.y > 0)); if (pts.length < 2) { el.innerHTML = '<div class="small">Too few counties with data to plot.</div>'; return; }
+  const fy = v => o.ylog ? Math.log(v) : v; const AX = 11.5;
+  const xs = pts.map(p => p.x), ys = pts.map(p => fy(p.y)); let x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys); const px = (x1 - x0) * 0.04 || 1, py = (y1 - y0) * 0.06 || 1; x0 -= px; x1 += px; y0 -= py; y1 += py;
+  let yt = o.ylog ? [0.5, 1, 1.5, 2, 3, 4, 5, 6, 8, 10, 12, 15, 20, 25, 30, 40, 50, 60, 80, 100, 150, 200, 300, 500].filter(v => Math.log(v) >= y0 && Math.log(v) <= y1) : niceTicks(y0, y1, 4); if (o.ylog) while (yt.length > 6) yt = yt.filter((v, i) => i % 2 === 0); const yl = yt.map(v => String(o.yfmt ? o.yfmt(v) : N(v)));
+  const m = { l: Math.max(40, Math.round(Math.max(0, ...yl.map(s => textW(s, AX))) + 14)), r: 14, t: 12, b: o.xlab ? 40 : 26 };
+  const X = x => m.l + (x - x0) / (x1 - x0) * (W - m.l - m.r), Y = y => m.t + (1 - (fy(y) - y0) / (y1 - y0)) * (H - m.t - m.b), Yr = v => m.t + (1 - (v - y0) / (y1 - y0)) * (H - m.t - m.b);
+  let xt = niceTicks(x0, x1, 5).filter(v => v >= x0 && v <= x1); const xl = v => String(o.xfmt ? o.xfmt(v) : N(v)); const room = (W - m.l - m.r) / Math.max(1, xt.length - 1); const need = Math.max(...xt.map(v => textW(xl(v), AX)), 6) + 10; if (xt.length > 2 && room < need) { const k = Math.ceil(need / room); xt = xt.filter((v, i) => i % k === 0); }
+  const rmax = Math.max(...pts.map(p => p.r || 1)); const R = p => 2.5 + 7.5 * Math.sqrt((p.r || 1) / rmax);
+  const svg = [`<svg viewBox="0 0 ${W} ${H}"${o.title ? ` role="img" aria-label="${esc(o.title)}"` : ''}>`];
+  yt.forEach((v, i) => { const yy = o.ylog ? Yr(Math.log(v)) : Yr(v); svg.push(`<line class="gridl" x1="${m.l}" x2="${W - m.r}" y1="${yy}" y2="${yy}"></line><text class="ax" x="${m.l - 6}" y="${yy + 4}" text-anchor="end">${esc(yl[i])}</text>`); });
+  xt.forEach(v => svg.push(`<text class="ax" x="${X(v)}" y="${H - (o.xlab ? 22 : 8)}" text-anchor="middle">${esc(xl(v))}</text>`));
+  if (o.xlab) svg.push(`<text class="ax" x="${m.l + (W - m.l - m.r) / 2}" y="${H - 4}" text-anchor="middle">${esc(o.xlab)}</text>`);
+  if (o.ylab) svg.push(`<text class="ax" x="${m.l + 4}" y="${m.t + 10}">${esc(o.ylab)}</text>`);
+  pts.slice().sort((a, b) => (b.r || 1) - (a.r || 1)).forEach(p => svg.push(`<circle class="pt${o.selected === p.id ? ' sel' : ''}" data-id="${esc(p.id)}" cx="${X(p.x).toFixed(1)}" cy="${Y(p.y).toFixed(1)}" r="${R(p).toFixed(1)}" fill="${p.color || 'var(--s1)'}"></circle>`));
+  const sp = pts.find(p => p.id === o.selected); if (sp) svg.push(`<circle class="ptsel" cx="${X(sp.x).toFixed(1)}" cy="${Y(sp.y).toFixed(1)}" r="${(R(sp) + 3).toFixed(1)}"></circle>`);
+  svg.push('</svg>'); el.innerHTML = svg.join('');
+  const s = el.querySelector('svg'); const byId = {}; pts.forEach(p => { byId[p.id] = p; });
+  s.addEventListener('mousemove', e => { const c = e.target.closest('circle.pt'); if (!c) { hideTip(); return; } const p = byId[c.dataset.id]; showTip(o.tip ? o.tip(p) : `<b>${esc(p.label || p.id)}</b><div class="row"><span>x</span><span>${esc(xl(p.x))}</span></div><div class="row"><span>y</span><span>${esc(o.yfmt ? o.yfmt(p.y) : N(p.y))}</span></div>`, e.clientX, e.clientY); });
+  s.addEventListener('mouseleave', hideTip);
+  s.addEventListener('click', e => { const c = e.target.closest('circle.pt'); if (c && o.onPoint) o.onPoint(c.dataset.id); if (tipFromTouch()) hideTip(); });
+}
+// coefPlot: estimates with intervals on one axis, o:{rows:[{label, est, lo, hi, color}], ref, log, fmt, W, title}. With log the axis is
+// logarithmic (odds ratios); ref draws the no effect line (1 for odds ratios).
+function coefPlot(el, o) {
+  const rows = (o.rows || []).filter(r => isN(r.est)); const bx = chartBox(el, o, o.W || 560, 0); const W = bx.W; sizeWatch(el, { fn: coefPlot, o, w: bx.live ? W : 0 });
+  if (!rows.length) { el.innerHTML = '<div class="small">no data</div>'; return; }
+  const LB = 12, AX = 11.5, rh = 24; const f = v => o.log ? Math.log(v) : v; const fmt = v => String(o.fmt ? o.fmt(v) : N(v, 2));
+  const lw = Math.round(Math.min(o.lw || 190, Math.max(96, Math.max(...rows.map(r => textW(r.label, LB))) + 14), W * 0.45));
+  const all = rows.flatMap(r => [r.lo, r.hi, r.est]).filter(v => isN(v) && (!o.log || v > 0)).map(f).concat(isN(o.ref) ? [f(o.ref)] : []);
+  let a = Math.min(...all), b = Math.max(...all); const pad = (b - a) * 0.06 || 0.1; a -= pad; b += pad;
+  const H = rows.length * rh + 34, m = { l: lw, r: 16, t: 6 }; const X = v => m.l + (f(v) - a) / (b - a) * (W - m.l - m.r);
+  const ticks = o.log ? [0.25, 0.33, 0.5, 0.67, 0.8, 1, 1.25, 1.5, 2, 3, 4].filter(v => Math.log(v) >= a && Math.log(v) <= b) : niceTicks(a, b, 5);
+  const svg = [`<svg viewBox="0 0 ${W} ${H}"${o.title ? ` role="img" aria-label="${esc(o.title)}"` : ''}>`];
+  ticks.forEach(v => svg.push(`<line class="gridl" x1="${X(v)}" x2="${X(v)}" y1="${m.t}" y2="${H - 24}"></line><text class="ax" x="${X(v)}" y="${H - 8}" text-anchor="middle">${esc(fmt(v))}</text>`));
+  if (isN(o.ref)) svg.push(`<line x1="${X(o.ref)}" x2="${X(o.ref)}" y1="${m.t}" y2="${H - 24}" style="stroke:var(--line-strong);stroke-width:1.5"></line>`);
+  rows.forEach((r, i) => { const y = m.t + i * rh + rh / 2; const lab = textW(r.label, LB) > lw - 10 ? r.label.slice(0, Math.max(4, Math.floor(r.label.length * (lw - 14) / textW(r.label, LB)))) + '…' : r.label; svg.push(`<text class="lbl" x="${lw - 10}" y="${y + 4}" text-anchor="end">${esc(lab)}</text>${isN(r.lo) && isN(r.hi) ? `<line x1="${X(r.lo)}" x2="${X(r.hi)}" y1="${y}" y2="${y}" style="stroke:${r.color || 'var(--s1)'};stroke-width:2"></line>` : ''}<circle cx="${X(r.est)}" cy="${y}" r="4.5" fill="${r.color || 'var(--s1)'}"><title>${esc(r.label)}: ${esc(fmt(r.est))}${isN(r.lo) ? ` (${esc(fmt(r.lo))} to ${esc(fmt(r.hi))})` : ''}</title></circle>`); });
   svg.push('</svg>'); el.innerHTML = svg.join('');
 }
 function spark(vals, w = 120, h = 28, color = 'var(--s1)') { const v = vals.filter(isN); if (v.length < 2) return ''; const mn = Math.min(...v), mx = Math.max(...v); const d = vals.map((y, i) => isN(y) ? (i ? 'L' : 'M') + (i / (vals.length - 1) * w).toFixed(1) + ',' + (h - 2 - (y - mn) / (mx - mn || 1) * (h - 4)).toFixed(1) : '').join(''); return `<svg viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" style="vertical-align:middle"><path d="${d}" fill="none" stroke="${color}" stroke-width="1.6"></path></svg>`; }
@@ -205,14 +263,19 @@ function table(el, o) {
     const rows = sorted();
     const lim = o.limit ? rows.slice(0, o.limit) : rows;
     const tab = o.onRow ? ' tabindex="0"' : '';
+    const ow = el.querySelector('.tblwrap'); const keep = ow ? [ow.scrollTop, ow.scrollLeft] : null;
     el.innerHTML = `<div class="tblbox"><div class="tblwrap"><table class="t">${o.caption ? `<caption class="vh">${esc(o.caption)}</caption>` : ''}<thead><tr>${o.cols.map(c => `<th data-k="${esc(c.k)}" class="${st.k === c.k ? (st.dir < 0 ? 's' : 'sa') : ''} ${c.cls || ''}"${st.k === c.k ? ` aria-sort="${st.dir < 0 ? 'descending' : 'ascending'}"` : ''}><button type="button" class="thb"${c.tip ? ` title="${esc(c.tip)}"` : ''}>${esc(c.l)}</button></th>`).join('')}</tr></thead><tbody>${lim.map(r => { const sel = o.selected && r._id === o.selected; return `<tr data-id="${esc(r._id)}"${tab} class="${sel ? 'sel' : ''}"${sel ? ' aria-current="true"' : ''}>${o.cols.map((c, i) => `<td class="${i === 0 ? 'name' : ''} ${c.cls || ''}">${c.fmt ? c.fmt(r[c.k], r) : esc(r[c.k])}</td>`).join('')}</tr>`; }).join('')}</tbody></table></div></div>${o.limit && rows.length > o.limit ? `<div class="small">Showing ${o.limit} of ${rows.length}. Sort or filter to see others.</div>` : ''}`;
     $$('th', el).forEach(th => th.onclick = () => { const k = th.dataset.k; if (st.k === k) st.dir = -st.dir; else { st.k = k; st.dir = -1; } render(); const b = el.querySelector(`th[data-k="${CSS.escape(k)}"] .thb`); if (b) b.focus(); });
     if (o.onRow) { $$('tbody tr', el).forEach(tr => tr.onclick = () => o.onRow(tr.dataset.id)); const tb = el.querySelector('tbody'); if (tb) tb.onkeydown = e => { if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('tr[data-id]')) { e.preventDefault(); o.onRow(e.target.dataset.id); } }; }
+    const nw = el.querySelector('.tblwrap'); if (keep && nw) { nw.scrollTop = keep[0]; nw.scrollLeft = keep[1]; }
     if (back) { const f = back.k ? el.querySelector(`th[data-k="${CSS.escape(back.k)}"] .thb`) : back.id != null ? el.querySelector(`tr[data-id="${CSS.escape(back.id)}"]`) : null; if (f) f.focus({ preventScroll: true }); }
-    fadeCheck(el.querySelector('.tblwrap'));
+    fadeCheck(nw);
   }
+  // scroll the wrapper (never the page) so a row sits below the sticky header
+  function reveal(id) { const w = el.querySelector('.tblwrap'); const tr = id != null && w ? w.querySelector(`tr[data-id="${CSS.escape(String(id))}"]`) : null; if (!tr || !w.clientHeight) return; const hh = (w.querySelector('thead') || {}).offsetHeight || 0; const top = tr.offsetTop - hh, bot = tr.offsetTop + tr.offsetHeight - w.clientHeight; if (w.scrollTop > top) w.scrollTop = Math.max(0, top - 4); else if (w.scrollTop < bot) w.scrollTop = bot + 4; }
+  function setSel(id, quiet) { o.selected = id; const rows = $$('tbody tr', el); if (!rows.length) { render(); return; } let found = false; rows.forEach(tr => { const on = id != null && tr.dataset.id === String(id); if (on) found = true; tr.classList.toggle('sel', on); if (on) tr.setAttribute('aria-current', 'true'); else tr.removeAttribute('aria-current'); }); if (found && !quiet && !el.contains(document.activeElement)) reveal(id); }
   render();
-  return { render, setRows(r) { o.rows = r; render(); }, setSel(id) { o.selected = id; render(); }, sorted, sort: () => Object.assign({}, st) };
+  return { render, setRows(r) { o.rows = r; render(); }, setSel, reveal, sorted, sort: () => Object.assign({}, st) };
 }
 // ---- csv / export
 // cols:[{l, k (key or row=>value), d (round to d decimals), pct (a fraction written as a percent)}]; numbers are written without
@@ -246,12 +309,12 @@ function exportText(name, text, mime = 'text/csv') {
 }
 function exportModal(name, text, downloaded) {
   openModal(`<h3 style="font-family:var(--display);font-size:22px">${esc(name)}</h3><p class="small">${downloaded ? 'A download was started where the viewer allows it. ' : ''}If no file appeared, copy the text below and paste it into a file.</p><textarea class="copy" id="exportText" aria-label="${esc(name)}">${esc(text)}</textarea><div style="display:flex;gap:8px;margin-top:8px"><button class="btn primary" id="copyBtn">Copy to clipboard</button><button class="btn" id="closeBtn">Close</button></div>`);
-  $('#copyBtn').onclick = () => { const ta = $('#exportText'); navigator.clipboard.writeText(ta.value).then(() => { $('#copyBtn').textContent = 'Copied'; }).catch(() => { ta.select(); document.execCommand && document.execCommand('copy'); $('#copyBtn').textContent = 'Selected, press Ctrl or Cmd C'; }); };
+  $('#copyBtn').onclick = () => { const ta = $('#exportText'); const fall = () => { ta.focus(); ta.select(); let ok = false; try { ok = !!(document.execCommand && document.execCommand('copy')); } catch (e) { ok = false; } $('#copyBtn').textContent = ok ? 'Copied' : 'Selected, press Ctrl or Cmd C'; }; if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(ta.value).then(() => { $('#copyBtn').textContent = 'Copied'; }).catch(fall); else fall(); };
   $('#closeBtn').onclick = closeModal;
 }
 let MODAL_RET = null;
-function openModal(html) { let m = $('#modal'); if (!m) { m = document.createElement('div'); m.id = 'modal'; m.className = 'modal'; m.innerHTML = '<div class="box" role="dialog" aria-modal="true" tabindex="-1"></div>'; document.body.appendChild(m); m.addEventListener('click', e => { if (e.target === m) closeModal(); }); m.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); }); } if (!m.classList.contains('on')) MODAL_RET = document.activeElement; const box = m.querySelector('.box'); box.innerHTML = html; const h = box.querySelector('h3'); if (h) { h.id = 'modalTitle'; box.setAttribute('aria-labelledby', 'modalTitle'); } m.classList.add('on'); box.focus(); }
-function closeModal() { const m = $('#modal'); if (m && m.classList.contains('on')) { m.classList.remove('on'); if (MODAL_RET && MODAL_RET.focus) try { MODAL_RET.focus(); } catch (e) { } MODAL_RET = null; } }
+function openModal(html) { let m = $('#modal'); if (!m) { m = document.createElement('div'); m.id = 'modal'; m.className = 'modal'; m.innerHTML = '<div class="box" role="dialog" aria-modal="true" tabindex="-1"></div>'; document.body.appendChild(m); m.addEventListener('click', e => { if (e.target === m) closeModal(); }); m.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); else if (e.key === 'Tab') { const f = $$('button,[href],input,select,textarea,[tabindex]:not([tabindex="-1"])', m.querySelector('.box')).filter(x => !x.disabled && x.offsetParent !== null); if (!f.length) { e.preventDefault(); return; } const a = f[0], z = f[f.length - 1]; if (e.shiftKey && (document.activeElement === a || document.activeElement === m.querySelector('.box'))) { e.preventDefault(); z.focus(); } else if (!e.shiftKey && document.activeElement === z) { e.preventDefault(); a.focus(); } } }); } if (!m.classList.contains('on')) MODAL_RET = document.activeElement; const box = m.querySelector('.box'); box.innerHTML = html; const h = box.querySelector('h3'); if (h) { h.id = 'modalTitle'; box.setAttribute('aria-labelledby', 'modalTitle'); } m.classList.add('on'); document.documentElement.classList.add('modal-open'); box.focus(); }
+function closeModal() { const m = $('#modal'); if (m && m.classList.contains('on')) { m.classList.remove('on'); document.documentElement.classList.remove('modal-open'); if (MODAL_RET && MODAL_RET.focus) try { MODAL_RET.focus(); } catch (e) { } MODAL_RET = null; } }
 // ---- shell bits
 // the module title is the page's level one heading (one module shows at a time; hidden ones leave the accessibility tree)
 function mastHTML(o) { return `<div class="mast"><div class="eyebrow">${esc(o.eyebrow)}</div><h1 class="mh">${esc(o.title)}</h1><div class="dek">${o.dek}</div>${o.ribbon ? `<button type="button" class="ribbon" data-go="${esc(o.ribbon.go)}">${esc(o.ribbon.text)}</button><div style="height:14px"></div>` : '<div class="rule"></div>'}<div class="facts">${(o.facts || []).map(f => `<span><b>${f[0]}</b> ${f[1]}</span>`).join('')}</div></div>`; }
