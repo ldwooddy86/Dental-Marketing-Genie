@@ -626,7 +626,8 @@ for f in pack/blueprints/*.blueprint.json; do s=$(basename $f .blueprint.json); 
     $('#fgSave', root).onclick = () => { readSite(); readFocus(); saveFile(`site-forge-plan_${slug(FIRM.get().name || 'site')}.json`, JSON.stringify({ v: 1, saved: new Date().toISOString(), cfg: CFG, deployed: [...DEPLOYED.entries()] }, null, 1)); };
     $('#fgLoad', root).onclick = () => $('#fgLoadF', root).click();
     $('#fgLoadF', root).onchange = async e => { const f = e.target.files[0]; if (!f) return; try { const o = JSON.parse(await readText(f)); const c = o.cfg || o; if (!c || typeof c !== 'object' || !(c.site || c.focus || c.build)) throw new Error('no site, focus or build section'); CFG = merge(E.defaultCfg(), c); CFG.media.assets = []; if (o.deployed) { DEPLOYED = new Map(o.deployed); saveDeployed(); } LIVE = E.parseLive(CFG.site.live, E.site(CFG).url); BUILT = new Map(); writeSite(); syncFocus(); syncBuild(); $('#fgLive', root).value = CFG.site.live || ''; renderLive(); save(); replan(); renderMedia(); toast('Plan loaded'); } catch (err) { toast('Not a Site Forge plan: ' + err.message); } e.target.value = ''; };
-    $('#fgSend', root).onclick = () => { ensureBuilt(); renderKpis(); renderLedger(); goModule('publish', { from: 'forge' }); };
+    /* Send to Publish: module 22 receives the built pages now (it can also pull them itself with Load from the Site Forge) */
+    $('#fgSend', root).onclick = () => { ensureBuilt(); renderKpis(); renderLedger(); let pages = []; try { pages = self.publishPages(); } catch (e) { console.error(e); toast('Site Forge: ' + e.message); } goModule('publish', { from: 'forge', source: 'forge', pages }); };
 
     /* ---------- method ---------- */
     function renderMethod() {
@@ -683,6 +684,6 @@ for f in pack/blueprints/*.blueprint.json; do s=$(basename $f .blueprint.json); 
     ASSETS = []; replan(); renderMedia(); renderMethod();
     PLAN.pages.forEach(p => buildPage(p)); renderKpis(); renderLedger();
     if (PLAN.pages.length) { const first = PLAN.pages.find(p => p.kind === 'county') || PLAN.pages.find(p => p.kind === 'practice') || PLAN.pages[0]; openPage(first.id, true); }
-    restoreMedia(); void BUILT_ONCE; void self;
+    restoreMedia(); void BUILT_ONCE;
   }
 });

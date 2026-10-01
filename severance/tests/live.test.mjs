@@ -14,7 +14,8 @@ function pageContext() {
   const node = () => ({ style: {}, dataset: {}, classList: { add() { }, remove() { }, toggle() { } }, setAttribute() { }, appendChild() { }, addEventListener() { }, querySelector: () => null, querySelectorAll: () => [] });
   const ls = new Map();
   const ctx = { console, URL, URLSearchParams, TextEncoder, TextDecoder, setTimeout, clearTimeout, Intl, Blob, AbortSignal,
-    document: { createElement: node, body: node(), documentElement: node(), getElementById: () => null, querySelector: () => null, querySelectorAll: () => [] },
+    document: { createElement: node, body: node(), documentElement: node(), getElementById: () => null, querySelector: () => null, querySelectorAll: () => [], addEventListener() { }, removeEventListener() { }, activeElement: null },
+    addEventListener() { }, removeEventListener() { }, dispatchEvent() { return true; }, matchMedia: () => ({ matches: false, addEventListener() { }, removeEventListener() { }, addListener() { } }), performance: globalThis.performance, ResizeObserver: class { observe() { } unobserve() { } disconnect() { } }, requestAnimationFrame: f => setTimeout(f, 0), cancelAnimationFrame: clearTimeout, innerWidth: 1400, innerHeight: 900, scrollX: 0, scrollY: 0, getComputedStyle: () => ({ getPropertyValue: () => '' }), 
     localStorage: { getItem: k => (ls.has(k) ? ls.get(k) : null), setItem: (k, v) => ls.set(k, String(v)), removeItem: k => ls.delete(k) },
     navigator: { userAgent: 'node' }, location: { hash: '' }, history: { replaceState() { } } };
   ctx.window = ctx; vm.createContext(ctx);

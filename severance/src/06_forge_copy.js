@@ -8,8 +8,13 @@
      no review, rating, result, award or comparative claim is written; the firm supplies real reviews or none appear
      Texas terms first (conservatorship, possession and access, SAPCR), lay terms beside them; Spanish follows TexasLawHelp.org usage
        (divorcio, custodia, manutención de menores, orden de protección, posesión y acceso)
-   API: FCOPY.LAW, LINES, LINE_KEYS, STEPS, GUIDES, ES, HOME_FAQ, CITY_FAQ, COUNTY_FAQ, ATTY_FAQ, KL, SRC(V), fill, fillDeep, house,
-        factItem(k, V), describe(p, V, o), blueprint(p, ctx), visibleText(bp), wordCount(bp) */
+   API: FCOPY.LAW (statutes and rules with cites), SRC(V) (source lines), LINES (copy per LINE_META key), LINE_KEYS, ESN, STEPS, GUIDES,
+        ES, HOME_FAQ, CITY_FAQ, COUNTY_FAQ, ATTY_FAQ, KL, TOGGLE, fill(t, V, missing), fillDeep, house, factItem(k, V, lang),
+        describe(p, V) → {label, slug, h1, title, meta}, blueprint(p, ctx) → a FORGE blueprint with _facts and _missing,
+        visibleText(bp) → [[where, text]], wordCount(bp), publicFirm(F) (the site.firm the compiler reads)
+   The blueprint uses the compiler's law firm sections: attorneys (cards with the TBLS line in its exact form), court_facts, process
+   (steps with when), lang_toggle (only to a live twin page) and disclaimer (responsible attorney, primary practice location). The
+   intake form fields and consent come from the compiler's default form; the forge gives it the plan's counties and the firm's lines. */
 'use strict';
 const FCOPY = (() => {
   /* ---------- house style (LINT.house when it is loaded, the same rules otherwise) ---------- */

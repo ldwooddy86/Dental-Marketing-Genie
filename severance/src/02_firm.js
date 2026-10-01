@@ -16,9 +16,9 @@
 const FIRM_DEFAULT = {
   name: '', legal_name: '', tagline: '', url: '', phone: '', intake_email: '', founded: '',
   attorneys: [{ name: '', bar_no: '', tbls: '', since: '', bio: '' }], responsible: 0,
-  offices: [{ label: 'Main office', street: '', city: '', zip: '', county: '', phone: '', hours: 'Monday to Friday, 8 am to 6 pm', primary: true }],
+  offices: [{ label: 'Main office', street: '', city: '', zip: '', county: '', phone: '', hours: '', primary: true }],
   counties: [], lines: ['div_k', 'div_nk', 'sapcr', 'mod', 'enf', 'po'], languages: ['en'],
-  consult: { free: false, fee: 150, virtual: true }, fees: {}, payment: 'Credit cards and payment plans',
+  consult: { free: false, fee: null, virtual: false }, fees: {}, payment: '',   // facts a page or ad would print stay empty until the firm enters them
   colors: { primary: '#1b4332', accent: '#307a4f', dark: '#0a291a' }, logo: '',
   social: { facebook: '', instagram: '', youtube: '', linkedin: '', tiktok: '', x: '', gbp: '' },
   reviews: { rating: '', count: '', source: 'Google' },
@@ -78,7 +78,7 @@ const FIRM = (() => {
       top.counties = Array.from(csel.selectedOptions).map(o => o.value);
       top.lines = $$('#fLines input').filter(i => i.checked).map(i => i.dataset.line);
       top.languages = ['en'].concat(g('fLangEs').checked ? ['es'] : []);
-      top.consult = { fee: +val('#fConsultFee') || 0, free: !!val('#fConsultFree'), virtual: !!val('#fConsultVirt') };
+      top.consult = { fee: val('#fConsultFee') === '' ? null : (+val('#fConsultFee') || 0), free: !!val('#fConsultFree'), virtual: !!val('#fConsultVirt') };
       top.fees = Object.assign({}, f.fees); $$('#fFees [data-k]').forEach(i => { const k = i.dataset.k.slice(4); top.fees[k] = i.value === '' ? null : +i.value; });
       top.colors = { primary: val('#fcP'), accent: val('#fcA'), dark: val('#fcD') };
       top.social = {}; ['facebook', 'instagram', 'youtube', 'linkedin', 'tiktok', 'x', 'gbp'].forEach(k => top.social[k] = val('#fs_' + k).trim());
