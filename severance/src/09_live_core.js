@@ -38,7 +38,7 @@ const LIVE = (() => {
   const lausId = f => 'LAUCN' + f + '0000000003';   /* LAU + CN + the five digit county FIPS + eight zeros + measure 03, the unemployment rate */
   /* the warnings that close courts: hurricane, flood and winter storm (ice storm and blizzard are winter storm warnings in NWS terms) */
   const HOLD_EVENTS = /^(hurricane warning|flood warning|flash flood warning|winter storm warning|ice storm warning|blizzard warning)$/i;
-  const SET_KEY = 'sev.live.settings', CACHE_KEY = 'sev.live.cache', EXT_OPT = 'sev.ext.options', EXT_ST = 'sev.ext.state';
+  const SET_KEY = 'sev.live.settings', CACHE_KEY = 'sev.live.cache', EXT_OPT = 'sev.ext.options', EXT_ST = 'sev.ext.state', EXT_PLAN = 'sev.ext.plan';
   const DEF = { counties: [], warnMin: 25, lagFrom: 90, lagTo: 365, wow: 20, yoy: 15, ctyYoy: 25, ctyMin: 50, urPts: 0.5, campaign: 'SEV_{KEY}_SEARCH', geo: 'county', ttl: 6, fredInPage: false, interval: 360, notifyKinds: ['warn', 'claims'], autoRefresh: true, nws: true, nwsHold: true, bls: true, blsInPage: false, blsKey: '' };
   const DIV_LINES = ['div_k', 'div_nk', 'high', 'gray'], ORDER_LINES = ['mod', 'enf'];
   const MIL = ['48027', '48099', '48141', '48029'];   // Bell, Coryell (Fort Hood), El Paso (Fort Bliss), Bexar (Joint Base San Antonio)
@@ -288,7 +288,7 @@ const LIVE = (() => {
   function snapshot() {
     const m = typeof META !== 'undefined' ? META : {};
     return { compiled: m.compiled, warn_through: m.warn_through, ui_through: m.ui_through, laus_through: m.laus_through, notices: snapNotices(), claims: typeof ST !== 'undefined' ? weekly(ST.claims.week0, ST.claims.weekly) : [], seas: typeof ST !== 'undefined' ? ST.seas : {},
-      counties: scope().map(f => { const c = CI[f]; const la = c.laus || {}, ui = c.ui || {}; return { fips: f, name: c.name, lf: lfOf(c), ur: la.ur, ur_yago: la.ur_yago, laus_last: la.last, warn12: (c.warn || {}).last12, w4: ui.w4, w13: ui.w13, w13_yago: ui.w13_yago, ui_last: ui.last_week, esi: c.esi }; }) };
+      counties: scope().map(f => { const c = CI[f]; const la = lausOf(f), ui = c.ui || {}; return { fips: f, name: c.name, lf: lfOf(c), ur: la.ur, ur_yago: la.ur_yago, laus_last: la.last, warn12: (c.warn || {}).last12, w4: ui.w4, w13: ui.w13, w13_yago: ui.w13_yago, ui_last: ui.last_week, esi: c.esi }; }) };
   }
   /* notices: the snapshot and the live rows, one per notice (live wins), newest first */
   function notices(o) {
@@ -384,23 +384,108 @@ const LIVE = (() => {
         out.push({ id: 'claims:' + f + ':' + wk, kind: 'claims', level: 'county', fips: f, county: c.name, date: wk, start: wk, end: ef[0].end, status: statusOf(wk, ef[0].end, d), live: false, effects: ef, step: 15,
           title: `${c.name} County claims up ${Math.round(k.yoyPct)}% on a year earlier`, detail: `${Math.round(k.w4).toLocaleString('en-US')} initial claims in the four weeks to ${fmtD(wk)} against ${Math.round(k.w4yago).toLocaleString('en-US')} a year earlier (TWC county claims, snapshot).`,
           action: `Lift modification and enforcement in ${c.name} County from ${fmtD(ef[0].start)} to ${fmtD(ef[0].end)} (+15%); trim divorce lines 10% for 30 days, lift them 10% at the twelve month mark. Protective orders unaffected.`, source: 'Texas Workforce Commission weekly claims by county (snapshot through ' + fmtD(ui.last_week) + ')', grade: 'C' }); } }
-      const la = c.laus; if (la && la.ur != null && la.ur_yago != null && la.ur - la.ur_yago >= SET.urPts && la.last) { const m = la.last.match(/^(\d{4})-(\d{2})/); const md = m ? addD(+m[2] === 12 ? ymd(+m[1] + 1, 1, 1) : ymd(+m[1], +m[2] + 1, 1), -1) : d; const start = addD(md, 30), end = addD(md, 210);
+      const la = lausOf(f); if (la && la.ur != null && la.ur_yago != null && la.ur - la.ur_yago >= SET.urPts && la.last) { const m = la.last.match(/^(\d{4})-(\d{2})/); const md = m ? addD(+m[2] === 12 ? ymd(+m[1] + 1, 1, 1) : ymd(+m[1], +m[2] + 1, 1), -1) : d; const start = addD(md, 30), end = addD(md, 210);
         out.push({ id: 'unemp:' + f + ':' + la.last, kind: 'unemp', level: 'county', fips: f, county: c.name, date: md, start, end, status: statusOf(start, end, d), live: false, effects: [{ lines: ['mod'], start, end, pct: 5 }], step: 5,
           title: `${c.name} County unemployment ${la.ur}%, up ${(Math.round((la.ur - la.ur_yago) * 10) / 10)} points on a year earlier`, detail: `BLS LAUS, ${MONL[+la.last.slice(5, 7) - 1]} ${la.last.slice(0, 4)}: ${la.ur}% against ${la.ur_yago}% a year earlier.`,
-          action: `Lift modification in ${c.name} County 5% from ${fmtD(start)} to ${fmtD(end)}: a drop in income is the usual ground for a support modification (material and substantial change, § 156.401). Lead with job loss language.`, source: 'BLS Local Area Unemployment Statistics (snapshot)', grade: 'C' }); }
+          action: `Lift modification in ${c.name} County 5% from ${fmtD(start)} to ${fmtD(end)}: a drop in income is the usual ground for a support modification (material and substantial change, § 156.401). Lead with job loss language.`, source: la.live ? `BLS Local Area Unemployment Statistics, api.bls.gov (live${la.prelim ? ', the latest month preliminary' : ''})` : 'BLS Local Area Unemployment Statistics (snapshot)', grade: 'C' }); }
     });
+    /* weather warnings over the scope counties (the hold rule) */
+    holds({ counties: sc, from: d }).forEach(a => { const status = statusOf(a.startDay, a.endDay, d); if (status === 'past' || (status === 'upcoming' && diffD(d, a.startDay) > 14)) return; const nm = a.inScope.map(f => CI[f].name); const where = nm.length === 1 ? nm[0] + ' County' : nm.slice(0, -1).join(', ') + ' and ' + nm[nm.length - 1] + ' counties';
+      out.push({ id: 'hold:' + a.id, kind: 'hold', level: 'county', fips: a.inScope.length === 1 ? a.inScope[0] : null, counties: a.inScope, county: nm.join(', '), date: a.startDay, start: a.startDay, end: a.endDay, status, live: true, effects: [], step: -50, hold: a,
+        title: `${a.event}: hold new spend in ${where}`, detail: `${a.headline}${a.area ? '. Area: ' + a.area : ''}.`,
+        action: `While the warning is in force courts close or reset their dockets and families are not looking for a lawyer. Hold new spend in ${where} on every line except protective orders until ${fmtD(a.endDay)}: pause new campaigns and launches; the day plan floors those days at minus 50%. Protective order campaigns stay on, because that need is urgent whatever the weather. Read the alert before acting: warnings are extended, upgraded and cancelled.`,
+        source: `National Weather Service active alerts, api.weather.gov (${state.sources.nws && state.sources.nws.at ? 'fetched ' + fmtD(ctDay(state.sources.nws.at)) : 'cached'})`, grade: 'C' }); });
     /* calendar windows that are on now or start within 45 days */
     calendar(addD(d, -60), 120, { counties: sc }).forEach(it => { const st = statusOf(it.start, it.end, d); if (st === 'past' || (st === 'upcoming' && diffD(d, it.start) > 45)) return;
       const lifts = Object.keys(it.lift || {}); out.push({ id: 'cal:' + it.id, kind: 'calendar', level: it.counties ? 'county' : 'state', fips: it.counties ? it.counties.filter(f => sc.includes(f)) : null, county: it.counties ? it.counties.filter(f => sc.includes(f)).map(f => CI[f].name).join(', ') : 'Statewide', date: it.date, start: it.start, end: it.end, status: st, live: false, item: it,
         effects: lifts.length ? [{ lines: lifts, start: it.start, end: it.end, pct: null, lift: it.lift }] : [], step: lifts.length ? Math.max(...lifts.map(k => it.lift[k])) : 0, title: it.title, detail: `${fmtD(it.start)}${it.end !== it.start ? ' to ' + fmtD(it.end) : ''}.`, action: it.action, source: it.source, grade: it.kind === 'season' ? 'A' : 'B' }); });
     /* active first (statewide claims, then layoffs newest first, unemployment, the calendar), then upcoming soonest first */
-    const KO = { claims: 0, warn: 1, unemp: 2, calendar: 3 }, SO = { active: 0, upcoming: 1, past: 2 };
+    const KO = { hold: -1, claims: 0, warn: 1, unemp: 2, calendar: 3 }, SO = { active: 0, upcoming: 1, past: 2 };
     return out.sort((a, b) => SO[a.status] - SO[b.status] || (a.status === 'upcoming' ? a.start.localeCompare(b.start) || KO[a.kind] - KO[b.kind] : KO[a.kind] - KO[b.kind] || (a.level === 'state' ? -1 : 0) - (b.level === 'state' ? -1 : 0) || String(b.date).localeCompare(String(a.date))));
   }
   let TMEMO = { k: null, v: null };
   function trig(d, sc) { sc = sc || scope(); const k = [d, VER, sc.join(',')].join('|'); if (TMEMO.k !== k) TMEMO = { k, v: buildTriggers(d, sc) }; return TMEMO.v; }
   /* triggers({date, counties, past}) → active and upcoming (past ones only when asked) */
   function triggers(o) { o = o || {}; const d = o.date || today(); const sc = o.counties || scope(); const t = o.counties ? buildTriggers(d, sc) : trig(d, sc); return o.past ? t : t.filter(x => x.status !== 'past'); }
+
+  /* ---------- the weather hold (National Weather Service warnings over the scope counties) ---------- */
+  let HMEMO = { k: null, v: [] };
+  function holds(o) {
+    o = o || {}; if (SET.nwsHold === false) return []; const NW = state.live.nws; if (!NW || !Array.isArray(NW.alerts) || !NW.alerts.length) return [];
+    const sc = o.counties || scope(); const from = o.from || today(); const k = [VER, sc.join(','), from].join('|');
+    if (HMEMO.k !== k) { const keep = new Set(sc); HMEMO = { k, v: NW.alerts.filter(a => a.endDay >= from).map(a => Object.assign({}, a, { inScope: a.counties.filter(f => keep.has(f)) })).filter(a => a.inScope.length).sort((a, b) => a.startDay.localeCompare(b.startDay)) }; }
+    return HMEMO.v;
+  }
+  const holdOn = (date, fips, sc) => holds({ counties: sc }).filter(a => date >= a.startDay && date <= a.endDay && (fips ? a.inScope.includes(fips) : sc.every(f => a.counties.includes(f))));
+
+  /* ---------- the shock outlook by county ----------
+     Divorce filings now, at 3 and at 12 months: the county's econ.expected fields (the D.panel ldiv lag coefficients times the log change
+     in 13 week claims on a year earlier). Modification and enforcement: the same change through the lmod and lenf panels. Landing now: last
+     year's claims change through the 12 month coefficients, the rebound arriving today. Categories, in this order: Dip now (filings 1% or
+     more below what they would otherwise be this month), Rebound watch (last year's surge lifts filings 1% or more now), Enforcement lift
+     (a WARN window open, or modification or enforcement 1% or more higher at 3 or 12 months), else Quiet. The thresholds are judgment. */
+  const PANEL = () => (typeof D !== 'undefined' && D && D.panel) ? D.panel : null;
+  const coefOf = (k, lag) => { const P = PANEL(); const c = P && P[k] && P[k].coefs ? P[k].coefs[lag] : null; return c && isFinite(c.coef) ? c : null; };
+  const effOf = (c, dl) => c && dl != null && isFinite(dl) ? (Math.exp(c.coef * dl) - 1) * 100 : null;
+  function pastDlog(c, lagW) {
+    const ui = c && c.ui; if (!ui || !Array.isArray(ui.weekly)) return null; const w = ui.weekly; const ok = v => v != null && isFinite(v);
+    let L = w.length - 1; while (L >= 0 && !ok(w[L])) L--; const a = L - (lagW || 0); if (a - 12 - 52 < 0) return null;
+    const sumR = (i0, i1) => { let t = 0; for (let i = i0; i <= i1; i++) { if (!ok(w[i])) return null; t += w[i]; } return t; };
+    const x = sumR(a - 12, a), y = sumR(a - 64, a - 52); return x > 0 && y > 0 ? Math.log(x / y) : null;
+  }
+  const OUT_CAT = { dip: 'Dip now', rebound: 'Rebound watch', enf: 'Enforcement lift', quiet: 'Quiet' };
+  const p1 = v => (Math.round(Math.abs(v) * 10) / 10).toFixed(1) + '%';
+  const r1 = v => v == null || !isFinite(v) ? null : Math.round(v * 10) / 10;
+  function outlook(o) {
+    o = o || {}; const sc = o.counties || scope(); const d = o.date || today(); const T = trig(d, sc); const T1 = 1;
+    return sc.filter(hasCty).map(f => {
+      const c = CI[f]; const e = c.econ || {}; const ex = e.expected || {};
+      const dl = isFinite(ex.dlog_claims) && ex.dlog_claims != null ? ex.dlog_claims : (e.claims_vs_yago > 0 ? Math.log(e.claims_vs_yago) : null); const dl12 = pastDlog(c, 52);
+      const div = { now: r1(ex.now_pct), m3: r1(ex.m3_pct), m12: r1(ex.m12_pct) };
+      const mk = k => ({ now: r1(effOf(coefOf(k, 'lclaims'), dl)), m3: r1(effOf(coefOf(k, 'lclaims_l3'), dl)), m12: r1(effOf(coefOf(k, 'lclaims_l12'), dl)) });
+      const mod = mk('lmod|claims_0_12'), enf = mk('lenf|claims_0_12');
+      const landing = { div: r1(effOf(coefOf('ldiv|claims_0_12', 'lclaims_l12'), dl12)), mod: r1(effOf(coefOf('lmod|claims_0_12', 'lclaims_l12'), dl12)), enf: r1(effOf(coefOf('lenf|claims_0_12', 'lclaims_l12'), dl12)) };
+      const warnOpen = T.filter(t => t.kind === 'warn' && t.fips === f && t.status === 'active').length; const held = holds({ counties: [f] }).filter(a => d >= a.startDay && d <= a.endDay);
+      const big = v => v != null && v >= T1;
+      const cat = div.now != null && div.now <= -T1 ? 'dip' : big(landing.div) ? 'rebound' : (warnOpen || [mod.m3, mod.m12, enf.m3, enf.m12, landing.mod, landing.enf].some(big)) ? 'enf' : 'quiet';
+      const ratio = e.claims_vs_yago; const rTxt = isFinite(ratio) && ratio > 0 ? (ratio >= 1 ? `${p1((ratio - 1) * 100)} above` : `${p1((1 - ratio) * 100)} below`) + ' a year earlier' : 'not comparable with a year earlier';
+      const ago = dl12 != null ? `${p1((Math.exp(dl12) - 1) * 100)} ${dl12 >= 0 ? 'above' : 'below'} the year before` : '';
+      let sentence;
+      if (cat === 'dip') sentence = `${c.name}: weekly claims are ${rTxt}, so divorce filings run about ${p1(div.now)} below what they otherwise would this month and about ${p1(div.m12 || 0)} ${div.m12 >= 0 ? 'above' : 'below'} in twelve months, when the rebound lands. Hold divorce bids level now and let modification and enforcement lead.`;
+      else if (cat === 'rebound') sentence = `${c.name}: a year ago weekly claims ran ${ago}, and the twelve month rebound in divorce filings is landing now (about ${p1(landing.div)} above what they otherwise would be). Lift divorce bids where the account confirms the volume.`;
+      else if (cat === 'enf') sentence = `${c.name}: ${warnOpen ? `${warnOpen} WARN notice window${warnOpen === 1 ? ' is' : 's are'} open, ` : ''}support and possession disputes follow job losses: modification about ${p1(Math.max(mod.m12 || 0, landing.mod || 0))} and enforcement about ${p1(Math.max(enf.m12 || 0, landing.enf || 0))} above what they otherwise would be within the year. Weight modification and enforcement over new divorce copy.`;
+      else sentence = `${c.name}: weekly claims are ${rTxt} and no WARN window is open, so the economy moves no line by 1% or more; the season and the calendar set the plan.`;
+      if (held.length) sentence += ` A ${held[0].event.toLowerCase()} holds new spend until ${fmtD(held[0].endDay)}.`;
+      return { fips: f, name: c.name, ratio: isFinite(ratio) ? ratio : null, dl: dl != null ? Math.round(dl * 1000) / 1000 : null, dl12: dl12 != null ? Math.round(dl12 * 1000) / 1000 : null, div, mod, enf, landing, warnOpen, hold: held.length ? held[0].event : '', cat, label: OUT_CAT[cat], sentence,
+        source: `County weekly claims (TWC, through ${fmtD(typeof META !== 'undefined' ? META.ui_through : '')}), the county econ fields and the D.panel lag model (43 large Texas counties, 2019 to 2026, module 05)`, grade: 'B' };
+    });
+  }
+  function outlookCSV(o) {
+    const H = ['county', 'fips', 'claims_vs_year_earlier', 'divorce_now_pct', 'divorce_3m_pct', 'divorce_12m_pct', 'modification_3m_pct', 'modification_12m_pct', 'enforcement_3m_pct', 'enforcement_12m_pct', 'landing_now_divorce_pct', 'warn_windows_open', 'weather_hold', 'outlook', 'in_plain_words'];
+    return tocsv(H, outlook(o).map(r => [r.name, r.fips, r.ratio != null ? +r.ratio.toFixed(3) : '', r.div.now, r.div.m3, r.div.m12, r.mod.m3, r.mod.m12, r.enf.m3, r.enf.m12, r.landing.div, r.warnOpen, r.hold, r.label, r.sentence]),
+      'Shock outlook by county, Severance Live Desk. Percent changes are relative to what filings would be with no change in claims: the county lag model (module 05), fixed effects by county, month and year. Categories use a 1% threshold (judgment, grade C); the model is grade B.');
+  }
+  /* ---------- the next fourteen days in plain words ---------- */
+  const KWORD = { season: 'the season', calendar: 'the calendar', warn: 'layoff notices', claims: 'unemployment claims', unemp: 'county unemployment', observed: 'the account\'s weekday pattern', hold: 'the weather hold' };
+  const shortD = x => fmtD(x).replace(/, \d{4}$/, '');
+  function narrative(o) {
+    o = o || {}; const d0 = o.date || today(); const sc = o.counties || scope(); const fips = o.fips || null; const fl = (o.lines || firmLines()).slice(); const out = [];
+    holds({ counties: sc, from: d0 }).filter(a => a.startDay <= addD(d0, 13)).forEach(a => { const nm = a.inScope.map(f => CI[f].name); out.push({ kind: 'hold', from: a.startDay < d0 ? d0 : a.startDay, to: a.endDay, line: null, text: `${a.event} over ${nm.join(', ')} ${nm.length === 1 ? 'County' : 'counties'} until ${shortD(a.endDay)}: hold new spend there on every line except protective orders while the courts are closed.`, reason: a.headline, source: 'National Weather Service active alerts, api.weather.gov', grade: 'C' }); });
+    for (let w = 0; w < 2; w++) {
+      const a = addD(d0, 7 * w), b = addD(a, 6);
+      const rows = fl.map(k => { const sr = series(k, fips, a, 7, { counties: sc }); const avg = sr.reduce((x, t) => x + t.adj, 0) / sr.length; const drv = {};
+        sr.forEach(t => t.parts.forEach(p => { if (Math.abs(p.f - 1) < 0.005) return; const key = p.kind + '|' + (p.id || p.label.replace(/\s*\([^()]*\)\s*$/, '')); const x = drv[key] = drv[key] || { p, sum: 0 }; x.sum += Math.log(p.f); }));
+        const top = Object.values(drv).sort((x, y) => Math.abs(y.sum) - Math.abs(x.sum))[0] || null; return { k, avg: round5(avg), top }; });
+      const movers = rows.filter(r => Math.abs(r.avg) >= 10).sort((x, y) => Math.abs(y.avg) - Math.abs(x.avg)); const lead = movers[0] || rows.slice().sort((x, y) => Math.abs(y.avg) - Math.abs(x.avg))[0] || null;
+      const starts = calendar(a, 7, { counties: sc }).filter(it => it.start >= a && it.start <= b);
+      const why = lead && lead.top ? lead.top.p : null; const head = `${w === 0 ? 'This week' : 'Next week'} (${shortD(a)} to ${shortD(b)})`;
+      const st = starts.length ? `; ${starts.map(it => it.short || it.title).join(' and ')} ${starts.length === 1 ? 'starts' : 'start'} ${shortD(starts[0].start)}` : '';
+      const text = movers.length ? `${head}: bid ${movers.slice(0, 3).map(r => `${lineShort(r.k)} ${r.avg > 0 ? 'up' : 'down'} ${Math.abs(r.avg)}%`).join(', ')}${movers.length > 3 ? ` and ${movers.length - 3} more line${movers.length - 3 === 1 ? '' : 's'}` : ''}, driven mainly by ${KWORD[why ? why.kind : 'season'] || 'the season'}${st}.`
+        : `${head}: every line stays within 10% of its base${lead && lead.avg ? ` (the largest move is ${lineShort(lead.k)} ${lead.avg > 0 ? 'up' : 'down'} ${Math.abs(lead.avg)}%)` : ''}${st}.`;
+      out.push({ kind: 'week', from: a, to: b, line: lead ? lead.k : null, moves: movers.map(r => ({ line: r.k, adj: r.avg })), text, reason: why ? why.label.replace(/\s*\([+−]?\d+%\)\s*$/, '') : 'No factor moves any line: the season index sits near its average', source: why ? why.src : 'Statewide season index, OCA monthly filings 2022 to 2025', grade: why && why.kind === 'season' ? 'A' : why && why.kind === 'calendar' ? 'B' : 'C' });
+    }
+    return out;
+  }
 
   /* ---------- day by day timing ---------- */
   function seasonFactor(line, date) {
@@ -448,10 +533,13 @@ const LIVE = (() => {
       T.filter(t => t.level === 'county' && t.kind !== 'warn' && t.kind !== 'calendar' && t.fips === fips).forEach(take);
       if (ORDER_LINES.includes(line)) { const act = T.filter(t => t.kind === 'warn' && t.fips === fips && date >= t.start && date <= t.end); if (act.length) { const w = act.reduce((a, t) => a + (t.notice.workers || 0), 0); const lf = lfOf(CI[fips]); const per1k = lf ? w / lf * 1000 : 0; const step = warnStep(per1k || (w ? 0.01 : 0)); if (step) parts.push({ kind: 'warn', level: 'county', f: 1 + step / 100, label: `WARN: ${w.toLocaleString('en-US')} workers on ${act.length} notice${act.length > 1 ? 's' : ''} inside the 3 to 12 month window in ${CI[fips].name} County, ${Math.round(per1k * 100) / 100} per 1,000 in the labor force (+${step}%)`, src: 'Texas Workforce Commission WARN notices', ids: act.map(t => t.id) }); } }
     }
+    /* the weather hold: every line but protective orders, in a warned county (or at campaign level when every scope county is warned) */
+    const hd = line === 'po' ? [] : holdOn(date, fips, sc);
+    if (hd.length) { const a = hd[0]; const nm = fips ? CI[fips].name + ' County' : 'every scope county'; parts.push({ kind: 'hold', level: fips ? 'county' : 'state', f: 0.5, label: `Hold: ${a.event} over ${nm} until ${fmtD(a.endDay)}, courts closed (new spend held on every line except protective orders)`, src: 'National Weather Service active alerts, api.weather.gov', id: 'hold:' + a.id }); }
     let m = 1; parts.forEach(p => { m *= p.f; });
-    const adj = clampN(round5((m - 1) * 100), -50, 90);
+    const adj = hd.length ? -50 : clampN(round5((m - 1) * 100), -50, 90);
     const camp = parts.filter(p => p.level === 'state').reduce((a, p) => a * p.f, 1), cty = parts.filter(p => p.level === 'county').reduce((a, p) => a * p.f, 1);
-    return { line, date, dow: DOWN[dowOf(date)], fips: fips || null, mult: m, adj, campaign: camp, county: cty, countyAdj: clampN(round5((cty - 1) * 100), -50, 90), parts, reasons: parts.filter(p => Math.abs(p.f - 1) >= 0.005).map(p => p.label) };
+    return { line, date, dow: DOWN[dowOf(date)], fips: fips || null, mult: m, adj, campaign: camp, county: cty, countyAdj: hd.length && fips ? -50 : clampN(round5((cty - 1) * 100), -50, 90), hold: hd.length ? { event: hd[0].event, until: hd[0].endDay } : null, parts, reasons: parts.filter(p => Math.abs(p.f - 1) >= 0.005).map(p => p.label) };
   }
   function series(line, fips, from, days, o) { from = from || today(); const out = []; for (let i = 0; i < (days || 90); i++) out.push(timing(line, addD(from, i), fips, o)); return out; }
   /* contiguous days at +15% or more, or −15% or less: the windows worth a bid adjustment */
@@ -492,7 +580,7 @@ const LIVE = (() => {
     o = o || {}; const from = o.from || today(), days = o.days || 90; const s = series(line, fips, from, days, o);
     const H = ['date', 'day', 'campaign', 'county', 'season_factor', 'calendar_factor', 'trigger_factor', 'observed_day_factor', 'combined', 'bid_adjustment_pct', 'location_bid_modifier_pct', 'reasons'];
     const fx = (t, ks) => +t.parts.filter(p => ks.includes(p.kind)).reduce((a, p) => a * p.f, 1).toFixed(3);
-    return tocsv(H, s.map(t => [t.date, t.dow, campName(line, geoTitle(o.counties || scope())), fips ? CI[fips].name : 'campaign level', fx(t, ['season']), fx(t, ['calendar']), fx(t, ['warn', 'claims', 'unemp']), fx(t, ['observed']), +t.mult.toFixed(3), t.adj, fips ? t.countyAdj : '', t.reasons.join(' | ')]),
+    return tocsv(H, s.map(t => [t.date, t.dow, campName(line, geoTitle(o.counties || scope())), fips ? CI[fips].name : 'campaign level', fx(t, ['season']), fx(t, ['calendar']), fx(t, ['warn', 'claims', 'unemp', 'hold']), fx(t, ['observed']), +t.mult.toFixed(3), t.adj, fips ? t.countyAdj : '', t.reasons.join(' | ')]),
       `Day by day plan for ${lineName(line)}${fips ? ', ' + CI[fips].name + ' County' : ', campaign level'}, ${fmtD(from)} to ${fmtD(addD(from, days - 1))}. Built ${new Date().toISOString().slice(0, 16)} from ${sourceLine()}.\nCombined = season x calendar x triggers x observed day of week; the bid adjustment is rounded to 5% and held between minus 50 and plus 90.`);
   }
   function windowsCSV(line, fips, o) {
@@ -521,7 +609,7 @@ const LIVE = (() => {
     return tocsv(H, rows.map(r => [r.county, r.date, r.company, r.city, r.workers, r.layoff, r.date ? addD(r.date, SET.lagFrom) : '', r.date ? addD(r.date, SET.lagTo) : '', r.src].concat(extra.map(k => r.raw ? r.raw[k] : ''))), `WARN notices for ${geoTitle(o.counties || scope())}. ${sourceLine()}.`);
   }
   function sourceLine() { const s = state.sources; return ['warn', 'icl'].map(k => `${SRC[k]}: ${s[k].mode === 'live' ? 'live ' + fmtD(s[k].at) : s[k].mode === 'cached' ? 'cached ' + fmtD((state.live[k] || {}).at) : 'snapshot'}`).join('; '); }
-  function snapshotJSON() { return JSON.stringify({ severance_live: 1, built: new Date().toISOString(), scope: scope(), settings: SET, sources: state.sources, live: { warn: state.live.warn ? { at: state.live.warn.at, url: state.live.warn.url, mapped: state.live.warn.mapped, columns: state.live.warn.columns, rows: state.live.warn.rows.map(r => Object.assign({}, r, { raw: undefined })) } : null, icl: state.live.icl, ccl: state.live.ccl }, triggers: triggers().map(t => Object.assign({}, t, { notice: undefined, item: undefined })), calendar: calendar(today(), 365) }, null, 2); }
+  function snapshotJSON() { return JSON.stringify({ severance_live: 1, built: new Date().toISOString(), scope: scope(), settings: SET, sources: state.sources, live: { warn: state.live.warn ? { at: state.live.warn.at, url: state.live.warn.url, mapped: state.live.warn.mapped, columns: state.live.warn.columns, rows: state.live.warn.rows.map(r => Object.assign({}, r, { raw: undefined })) } : null, icl: state.live.icl, ccl: state.live.ccl, laus: state.live.laus, nws: state.live.nws }, triggers: triggers().map(t => Object.assign({}, t, { notice: undefined, item: undefined, hold: undefined })), outlook: outlook(), narrative: narrative(), calendar: calendar(today(), 365) }, null, 2); }
 
   /* ---------- the browser extension: watch settings out, background state in ---------- */
   const rt = () => (typeof RT !== 'undefined' && RT && RT.storage && RT.storage.local ? RT : null);
@@ -541,13 +629,29 @@ const LIVE = (() => {
   /* the Options page owns the interval once set there */
   function adoptExt(opt) { if (opt && opt.interval && +opt.interval !== +SET.interval) { SET = Object.assign({}, SET, { interval: +opt.interval }); sset(SET_KEY, SET); } }
   async function extState() { const R = rt(); if (!R) return null; try { const r = await R.storage.local.get([EXT_OPT, EXT_ST]); return { options: r[EXT_OPT] || null, state: r[EXT_ST] || null }; } catch (e) { return null; } }
+  /* the toolbar popup's plan: the lead line's daily multiplier for the next 42 days at campaign level, the next deadline and any hold,
+     written to extension storage ('sev.ext.plan') whenever the desk recomputes inside the extension */
+  let PPLAN = '';
+  async function pushPlan(o) {
+    o = o || {}; const R = rt(); if (!R) return false;
+    try {
+      const d0 = today(); const fl = firmLines(); const line = o.line && lineKeys().includes(o.line) ? o.line : fl[0] || 'div_k';
+      const days = series(line, null, d0, 42).map(t => ({ date: t.date, adj: t.adj, mult: Math.round(t.mult * 1000) / 1000, why: String(t.reasons[0] || '').slice(0, 140), hold: !!t.hold }));
+      const cal = calendar(d0, 400); const dl = cal.find(it => it.kind === 'deadline' && it.date >= d0) || null; const nx = cal.find(it => it.date >= d0 && Object.keys(it.lift || {}).length) || null;
+      const plan = { at: new Date().toISOString(), today: d0, line, lineName: lineName(line), lineShort: lineShort(line), scope: scope().map(f => CI[f].name), days,
+        deadline: dl ? { date: dl.date, title: dl.title, short: dl.short || '', source: dl.source } : null, next: nx ? { date: nx.date, title: nx.title, short: nx.short || '' } : null,
+        holds: holds().map(a => ({ event: a.event, until: a.endDay, counties: a.inScope.map(f => CI[f].name) })), outlook: outlook().map(r => ({ county: r.name, cat: r.cat, label: r.label })) };
+      const sig = JSON.stringify([plan.today, line, plan.scope, days.map(x => x.adj), plan.deadline && plan.deadline.date, plan.holds, plan.outlook]); if (!o.force && sig === PPLAN) return true;
+      await R.storage.local.set({ [EXT_PLAN]: plan }); PPLAN = sig; return true;
+    } catch (e) { return false; }
+  }
   async function extCheck() { const R = rt(); if (!R || !R.runtime || !R.runtime.sendMessage) return false; try { await R.runtime.sendMessage({ type: 'sev:refresh' }); return true; } catch (e) { return false; } }
 
   return {
     get state() { return state; }, get version() { return VER; }, settings, setSettings, resetSettings, scope, scopeInfo, canFetch, inPage, fresh, refresh, loadFile, clearLive, snapshot, notices, claimsSeries,
-    calendar, calendarYear, triggers, timing, series, windows, seasonFactor, observedDow, hourGrid, useObserved, setUseObserved, hasAcct, editorRows, editorCSV, dailyCSV, windowsCSV, calendarCSV, ics, noticesCSV, snapshotJSON, pushExt, adoptExt, extState, extCheck,
+    calendar, calendarYear, triggers, timing, holds, outlook, outlookCSV, narrative, pushPlan, lausOf, parseNws, parseBls, pastDlog, lausId, ctDay, series, windows, seasonFactor, observedDow, hourGrid, useObserved, setUseObserved, hasAcct, editorRows, editorCSV, dailyCSV, windowsCSV, calendarCSV, ics, noticesCSV, snapshotJSON, pushExt, adoptExt, extState, extCheck,
     invalidate() { VER++; emit(); }, coName,
     parseWarn, parseFred, csvRows, claimsCheck, normDate, warnKey, warnURL, warnStep, thanksgiving, campName, lineName, lineShort, firmLines, addD, diffD, fmtD, today,
-    setToday(d) { NOW = d || null; VER++; }, SOCRATA, WARN_PAGE, FRED_CSV, FRED_PAGE, DEF, MIL, SRC, EXT_OPT, EXT_ST, DOWN
+    setToday(d) { NOW = d || null; VER++; }, SOCRATA, WARN_PAGE, FRED_CSV, FRED_PAGE, NWS_ALERTS, NWS_PAGE, BLS_API, BLS_PAGE, HOLD_EVENTS, OUT_CAT, DEF, MIL, SRC, EXT_OPT, EXT_ST, EXT_PLAN, DOWN
   };
 })();
