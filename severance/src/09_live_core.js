@@ -21,7 +21,7 @@ const LIVE = (() => {
   const FRED_CSV = id => 'https://fred.stlouisfed.org/graph/fredgraph.csv?id=' + id;
   const FRED_PAGE = id => 'https://fred.stlouisfed.org/series/' + id;
   const SET_KEY = 'sev.live.settings', CACHE_KEY = 'sev.live.cache', EXT_OPT = 'sev.ext.options', EXT_ST = 'sev.ext.state';
-  const DEF = { counties: [], warnMin: 25, lagFrom: 90, lagTo: 365, wow: 20, yoy: 15, ctyYoy: 25, ctyMin: 50, urPts: 0.5, campaign: 'SEV_{KEY}_SEARCH', geo: 'county', ttl: 6, useObserved: true, fredInPage: false, interval: 360, notifyKinds: ['warn', 'claims'] };
+  const DEF = { counties: [], warnMin: 25, lagFrom: 90, lagTo: 365, wow: 20, yoy: 15, ctyYoy: 25, ctyMin: 50, urPts: 0.5, campaign: 'SEV_{KEY}_SEARCH', geo: 'county', ttl: 6, fredInPage: false, interval: 360, notifyKinds: ['warn', 'claims'] };
   const DIV_LINES = ['div_k', 'div_nk', 'high', 'gray'], ORDER_LINES = ['mod', 'enf'];
   const MIL = ['48027', '48099', '48141', '48029'];   // Bell, Coryell (Fort Hood), El Paso (Fort Bliss), Bexar (Joint Base San Antonio)
   const SEAS_KEY = { div_k: 'div_k', div_nk: 'div', sapcr: 'sapcr', mod: 'mod', enf: 'enf', po: 'po', ivd: 'ivd', high: 'div', mil: 'div', gray: 'div' };
@@ -352,16 +352,28 @@ const LIVE = (() => {
     const pos = m + (day - 0.5) / dim - 0.5; const i0 = Math.floor(pos), fr = pos - i0; const a = ST.seas[k][(i0 + 12) % 12], b = ST.seas[k][(i0 + 13) % 12];
     return { idx: a + (b - a) * fr, m, lead, key: k };
   }
+  /* the account's own pattern (module 23): one switch, ACCT.settings().useObserved, as the Thermal Atlas weather desk read it */
+  const hasAcct = () => typeof ACCT !== 'undefined' && !!ACCT && typeof ACCT.settings === 'function';
+  const useObserved = () => { try { return hasAcct() && !!ACCT.settings().useObserved; } catch (e) { return false; } };
+  async function setUseObserved(v) { if (!hasAcct() || typeof ACCT.setSettings !== 'function') return false; try { await ACCT.setSettings({ useObserved: !!v }); } catch (e) { return false; } VER++; emit(); return true; }
   let OBS = { k: null, v: null };
   function observedDow(line) {
-    if (!SET.useObserved || typeof ACCT === 'undefined' || !ACCT || typeof ACCT.rowsAll !== 'function') return null;
+    if (!useObserved() || typeof ACCT.rowsAll !== 'function') return null;
     const k = VER + '|' + line + '|' + today(); if (OBS.k === k) return OBS.v;
-    let rows = []; try { rows = ACCT.rowsAll() || []; } catch (e) { rows = []; }
-    const from = addD(today(), -90); const cnt = (rs) => { const acc = [0, 0, 0, 0, 0, 0, 0]; let n = 0; rs.forEach(r => { if (!r || !r.date || String(r.date) < from) return; const v = (+r.leads || 0) || (+r.conv || 0) || (+r.calls || 0); if (!v) return; const dd = normDate(r.date); if (!dd) return; acc[dowOf(dd)] += v; n += v; }); return { acc, n }; };
-    let c = cnt(rows.filter(r => r && r.line === line)); let scopeTxt = 'this line'; if (c.n < 30) { c = cnt(rows); scopeTxt = 'all lines'; }
-    let v = null; if (c.n >= 30) { const w = c.n / (c.n + 60); v = { n: c.n, scope: scopeTxt, f: c.acc.map(x => 1 + w * (x / c.n * 7 - 1)) }; }
+    let leads = [], ads = []; try { leads = ACCT.rowsAll('lead') || []; ads = (ACCT.rowsAll('ads') || []).filter(r => r && r.hour == null); } catch (e) { leads = []; ads = []; }
+    const from = addD(today(), -90);
+    const cnt = (rs, val) => { const acc = [0, 0, 0, 0, 0, 0, 0]; let n = 0; rs.forEach(r => { const dd = r && normDate(r.date); if (!dd || dd < from) return; const v = val(r); if (!v) return; acc[dowOf(dd)] += v; n += v; }); return { acc, n }; };
+    const adsVal = r => ((+r.leads || 0) + (+r.calls || 0)) || (+r.conv || 0);
+    let v = null;
+    for (const [L, A, txt] of [[leads.filter(r => r.line === line), ads.filter(r => r.line === line), 'this line'], [leads, ads, 'all lines']]) {
+      let c = cnt(L, () => 1); if (c.n < 30) c = cnt(A, adsVal);
+      if (c.n >= 30) { const w = c.n / (c.n + 60); v = { n: c.n, scope: txt, f: c.acc.map(x => 1 + w * (x / c.n * 7 - 1)) }; break; }
+    }
     OBS = { k, v }; return v;
   }
+  /* the observed hour blocks (ACCT.observedGrid: 7 days, Monday first, by 6 blocks, % adjustments) for the Editor ad schedule */
+  const BLOCKS = [[0, 6], [6, 9], [9, 12], [12, 17], [17, 21], [21, 24]];
+  function hourGrid() { if (!useObserved() || typeof ACCT.observedGrid !== 'function') return null; try { const g = ACCT.observedGrid(); return Array.isArray(g) && g.length === 7 && g.every(r => Array.isArray(r) && r.length === 6) ? g : null; } catch (e) { return null; } }
   let CALM = { k: null, v: null };
   function calIndex(asOf, sc) { const k = asOf + '|' + sc.join(','); if (CALM.k !== k) CALM = { k, v: calendar(addD(asOf, -60), 800, { counties: sc }).filter(it => Object.keys(it.lift || {}).length) }; return CALM.v; }
   const effectPct = (e, line) => e.lift ? (e.lift[line] || 0) : (e.lines.includes(line) ? e.pct : 0);
@@ -407,7 +419,10 @@ const LIVE = (() => {
     o = o || {}; const from = o.from || today(); const sc = o.counties || scope(); const lines = o.lines || firmLines(); const geo = o.geo || SET.geo || 'county'; const rows = [];
     lines.forEach(line => {
       const camp = campName(line, geoTitle(sc));
-      for (let i = 0; i < 7; i++) { const d = addD(from, i); const t = timing(line, d, null, { counties: sc }); rows.push({ Campaign: camp, 'Ad Schedule': `(${DOWN[dowOf(d)]})[00:00-24:00]`, Location: '', ID: '', 'Bid Modifier': bidTxt(clampN(round5((t.campaign - 1) * 100), -50, 90)), 'Criterion Type': '', Status: 'Enabled', _date: d, _reasons: t.parts.filter(p => p.level === 'state' && Math.abs(p.f - 1) >= 0.005).map(p => p.label) }); }
+      const grid = o.hours === false ? null : hourGrid(); const hh = h => String(h).padStart(2, '0') + ':00';
+      for (let i = 0; i < 7; i++) { const d = addD(from, i); const t = timing(line, d, null, { counties: sc }); const dw = dowOf(d); const why = t.parts.filter(p => p.level === 'state' && Math.abs(p.f - 1) >= 0.005).map(p => p.label);
+        if (grid) BLOCKS.forEach(([a, b], j) => { const g = +grid[dw === 0 ? 6 : dw - 1][j] || 0; rows.push({ Campaign: camp, 'Ad Schedule': `(${DOWN[dw]})[${hh(a)}-${hh(b)}]`, Location: '', ID: '', 'Bid Modifier': bidTxt(clampN(round5((t.campaign * (1 + g / 100) - 1) * 100), -50, 90)), 'Criterion Type': '', Status: 'Enabled', _date: d, _reasons: why.concat(g ? [`Observed hours ${hh(a)} to ${hh(b)} (${pctTxt(g)})`] : []) }); });
+        else rows.push({ Campaign: camp, 'Ad Schedule': `(${DOWN[dw]})[00:00-24:00]`, Location: '', ID: '', 'Bid Modifier': bidTxt(clampN(round5((t.campaign - 1) * 100), -50, 90)), 'Criterion Type': '', Status: 'Enabled', _date: d, _reasons: why }); }
       sc.forEach(f => { let acc = 0; for (let i = 0; i < 7; i++) acc += timing(line, addD(from, i), f, { counties: sc }).county; const adj = clampN(round5((acc / 7 - 1) * 100), -50, 90);
         const locs = geo === 'zip' && typeof ZC !== 'undefined' ? ZC.filter(z => z.county === f).map(z => `${z.zip}, Texas, United States`) : [`${CI[f].name} County, Texas, United States`];
         locs.forEach(loc => rows.push({ Campaign: camp, 'Ad Schedule': '', Location: loc, ID: '', 'Bid Modifier': bidTxt(adj), 'Criterion Type': 'Location', Status: 'Enabled', _county: CI[f].name })); });
@@ -473,7 +488,7 @@ const LIVE = (() => {
 
   return {
     get state() { return state; }, get version() { return VER; }, settings, setSettings, resetSettings, scope, scopeInfo, canFetch, inPage, fresh, refresh, loadFile, clearLive, snapshot, notices, claimsSeries,
-    calendar, calendarYear, triggers, timing, series, windows, seasonFactor, observedDow, editorRows, editorCSV, dailyCSV, windowsCSV, calendarCSV, ics, noticesCSV, snapshotJSON, pushExt, adoptExt, extState, extCheck,
+    calendar, calendarYear, triggers, timing, series, windows, seasonFactor, observedDow, hourGrid, useObserved, setUseObserved, hasAcct, editorRows, editorCSV, dailyCSV, windowsCSV, calendarCSV, ics, noticesCSV, snapshotJSON, pushExt, adoptExt, extState, extCheck,
     invalidate() { VER++; emit(); }, coName,
     parseWarn, parseFred, csvRows, claimsCheck, normDate, warnKey, warnURL, warnStep, thanksgiving, campName, lineName, lineShort, firmLines, addD, diffD, fmtD, today,
     setToday(d) { NOW = d || null; VER++; }, SOCRATA, WARN_PAGE, FRED_CSV, FRED_PAGE, DEF, MIL, SRC, EXT_OPT, EXT_ST, DOWN

@@ -126,6 +126,20 @@ const big = LIVE.timing('mod', '2027-01-15', '48201', {}); assert(big.reasons.le
 const ser = LIVE.series('enf', '48201', TODAY, 90); eq(ser.length, 90, '90 days'); eq(ser[89].date, LIVE.addD(TODAY, 89), 'last day');
 const win = LIVE.windows('div_k', null, TODAY, 90); assert(win.every(w => (w.kind === 'up' ? w.avg >= 15 : w.avg <= -15) && w.start <= w.end && w.why.length), 'windows');
 
+/* the account's own pattern (module 23): weekday share of leads and the observed hour blocks */
+eq(LIVE.observedDow('mod'), null, 'no ACCT, no observed factor'); eq(LIVE.hourGrid(), null, 'no ACCT, no hour grid');
+P.run(`globalThis.ACCT = { _s: { useObserved: false }, settings() { return this._s; }, async setSettings(p) { Object.assign(this._s, p); },
+  rowsAll(kind) { if (kind !== 'lead') return [{ kind: 'ads', date: LIVE.addD('${TODAY}', -3), leads: 5, hour: 9 }]; const out = []; for (let i = 1; i <= 84; i++) { const d = LIVE.addD('${TODAY}', -i); const dw = new Date(d + 'T00:00:00Z').getUTCDay(); const n = dw === 1 ? 6 : dw === 0 || dw === 6 ? 0 : 1; for (let j = 0; j < n; j++) out.push({ kind: 'lead', date: d, line: 'mod' }); } return out; },
+  observedGrid() { return [0, 1, 2, 3, 4, 5, 6].map(() => [-40, -10, 20, 15, 5, -30]); } };`);
+eq(LIVE.observedDow('mod'), null, 'switch off');
+await LIVE.setUseObserved(true); const ob = LIVE.observedDow('mod');
+assert(ob && ob.scope === 'this line' && ob.n === 12 * 6 + 12 * 4 && ob.f[1] > 1.5 && ob.f[0] < 1 && ob.f[6] < 1, 'Mondays carry the leads: ' + JSON.stringify(ob));
+const tObs = LIVE.timing('mod', '2026-10-05'); assert(tObs.parts.some(x => x.kind === 'observed' && x.f > 1.5 && /Mondays/.test(x.label)), 'observed weekday factor in timing');
+const edObs = LIVE.editorCSV({ lines: ['mod'] }).trim().split('\n'); const blocks = edObs.filter(l => /\)\[\d\d:00-\d\d:00\]/.test(l));
+eq(blocks.length, 42, 'six hour blocks a day for seven days'); assert(blocks.some(l => l.includes('(Monday)[00:00-06:00]')) && blocks.some(l => l.includes('[21:00-24:00]')), 'blocks cover the day');
+await LIVE.setUseObserved(false); eq(LIVE.editorCSV({ lines: ['mod'] }).split('\n').filter(l => /\[00:00-24:00\]/.test(l)).length, 7, 'whole days again with the switch off');
+P.run('delete globalThis.ACCT'); LIVE.invalidate();
+
 /* ---------------- calendar dates ---------------- */
 eq(LIVE.thanksgiving(2026), '2026-11-26', 'Thanksgiving 2026'); eq(LIVE.thanksgiving(2027), '2027-11-25', 'Thanksgiving 2027'); eq(LIVE.thanksgiving(2030), '2030-11-28', 'Thanksgiving 2030');
 const y27 = LIVE.calendarYear(2027), y26 = LIVE.calendarYear(2026), y28 = LIVE.calendarYear(2028);

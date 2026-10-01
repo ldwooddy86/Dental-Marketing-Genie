@@ -1,0 +1,69 @@
+/* Module 11, Compliance Screen (src/30_m11_compliance.js). Scoped to the module; CSS variables only, so both themes work. */
+#mod-compliance textarea.copy{min-height:210px;line-height:1.5;resize:vertical}
+#mod-compliance #cpFixed{min-height:150px}
+#mod-compliance .ctl.wide{width:100%}
+#mod-compliance .ctl.wide textarea{width:100%}
+#mod-compliance .srcs{padding-left:20px;margin:6px 0 0}
+
+/* findings */
+#mod-compliance .cp-grp + .cp-grp{margin-top:12px}
+#mod-compliance .cp-grp > .minihd{margin-top:6px}
+#mod-compliance .cp-f{border:1px solid var(--line);border-left:4px solid var(--warning);background:var(--card);padding:10px 13px;margin:8px 0;font-size:13.5px;min-width:0}
+#mod-compliance .cp-f.s-block{border-left-color:var(--critical)}
+#mod-compliance .cp-f.s-fix{border-left-color:var(--serious)}
+#mod-compliance .cp-f.s-warn{border-left-color:var(--warning)}
+#mod-compliance .cp-f.s-info{border-left-color:var(--note)}
+#mod-compliance .cp-fh{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:center}
+#mod-compliance .cp-fh b{font-family:var(--display);font-weight:700;color:var(--title)}
+#mod-compliance .cp-fh code{white-space:normal;overflow-wrap:anywhere}
+#mod-compliance .cp-rule{font-family:var(--display);font-weight:600;font-size:11.5px;color:var(--judg);margin:5px 0 7px;overflow-wrap:anywhere}
+#mod-compliance .cp-rule a{color:var(--link)}
+#mod-compliance .cp-ctx{background:var(--sunk);border:1px solid var(--line);padding:6px 9px;font-size:13px;line-height:1.55;overflow-wrap:anywhere;white-space:pre-wrap;color:var(--ink)}
+#mod-compliance .cp-why{margin:7px 0 0;color:var(--ink-2);line-height:1.5}
+#mod-compliance .cp-fixline{margin-top:7px;font-size:13px;color:var(--ink-2);overflow-wrap:anywhere}
+#mod-compliance .cp-more summary{cursor:pointer;font-family:var(--display);font-weight:600;font-size:12px;color:var(--link);margin-top:8px}
+#mod-compliance .cp-more .btnrow{margin-bottom:2px}
+#mod-compliance .cp-disp{font-family:var(--display);font-weight:700;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;padding:1px 7px;border:1px solid var(--line-strong);color:var(--ink-2);white-space:nowrap}
+#mod-compliance .cp-disp.d-c{border-color:var(--critical);color:var(--critical)}
+#mod-compliance .cp-disp.d-k{border-color:var(--warning);color:var(--warning)}
+#mod-compliance .cp-disp.d-x{border-color:var(--good);color:var(--good)}
+#mod-compliance .cp-disp.d-n{border-style:dashed;color:var(--ink-3)}
+#mod-compliance .cp-disp.d-i{border-color:var(--note);color:var(--note)}
+#mod-compliance .pill.p-info{border-color:var(--note);color:var(--note)}
+
+/* the hit marked in context, the whole copy marked, the diff */
+#mod-compliance mark{color:var(--ink);padding:0 1px;background:color-mix(in srgb,var(--warning) 26%,transparent);box-shadow:inset 0 -2px 0 var(--warning)}
+#mod-compliance mark.m-block{background:color-mix(in srgb,var(--critical) 24%,transparent);box-shadow:inset 0 -2px 0 var(--critical)}
+#mod-compliance mark.m-fix{background:color-mix(in srgb,var(--serious) 22%,transparent);box-shadow:inset 0 -2px 0 var(--serious)}
+#mod-compliance mark.m-warn{background:color-mix(in srgb,var(--warning) 26%,transparent);box-shadow:inset 0 -2px 0 var(--warning)}
+#mod-compliance mark.m-info{background:color-mix(in srgb,var(--note) 14%,transparent);box-shadow:inset 0 -2px 0 var(--note)}
+#mod-compliance .cp-marked,#mod-compliance .cp-diff{background:var(--sunk);border:1px solid var(--line);padding:10px 12px;font-size:13px;line-height:1.65;white-space:pre-wrap;overflow-wrap:anywhere;max-height:340px;overflow:auto;margin-bottom:10px;color:var(--ink)}
+#mod-compliance del{background:color-mix(in srgb,var(--critical) 16%,transparent);color:var(--ink);text-decoration:line-through;text-decoration-color:var(--critical)}
+#mod-compliance ins{background:color-mix(in srgb,var(--good) 22%,transparent);color:var(--ink);text-decoration:none;box-shadow:inset 0 -2px 0 var(--good)}
+
+/* tables that hold prose */
+#mod-compliance table.t.cp-wrap th,#mod-compliance table.t.cp-wrap td{white-space:normal;text-align:left;vertical-align:top}
+#mod-compliance table.t.cp-wrap td{min-width:80px;line-height:1.45}
+#mod-compliance table.t.cp-wrap td:first-child,#mod-compliance table.t.cp-wrap th:first-child{position:static}
+#mod-compliance table.t.cp-wrap td .small{margin-top:3px}
+#mod-compliance table.t.cp-reg td:nth-child(3),#mod-compliance table.t.cp-reg td:nth-child(4){min-width:220px}
+#mod-compliance table.t.cp-reg details summary{cursor:pointer;color:var(--link);margin-top:4px}
+#mod-compliance table.t.cp-reg details p{margin:4px 0;font-size:12px}
+#mod-compliance .cp-nowrap{white-space:nowrap!important}
+#mod-compliance table.cp-items tbody tr{cursor:pointer}
+#mod-compliance table.cp-items tbody tr:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+#mod-compliance tr.cp-hot td{background:color-mix(in srgb,var(--accent) 10%,transparent)}
+
+/* controls gate, drop zone */
+#mod-compliance .cp-ctrl{display:grid;gap:9px}
+#mod-compliance .cp-ctrl .chk{align-items:flex-start;line-height:1.45}
+#mod-compliance .cp-ctrl .chk input{margin-top:2px;flex:none}
+#mod-compliance .dropzone{line-height:1.5}
+
+@media (max-width:640px){
+  #mod-compliance .cp-f{padding:9px 10px}
+  #mod-compliance .controls .ctl{flex:1 1 100%}
+  #mod-compliance .controls .ctl select,#mod-compliance .controls .ctl input{width:100%}
+  #mod-compliance table.t.cp-reg td:nth-child(3),#mod-compliance table.t.cp-reg td:nth-child(4){min-width:180px}
+  #mod-compliance .cp-marked,#mod-compliance .cp-diff{max-height:260px}
+}
