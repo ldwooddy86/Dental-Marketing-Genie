@@ -40,13 +40,13 @@ eq(S.find('GET', '/site-properties/v4/properties').headers.authorization, KEY, '
 
 /* create */
 const u1 = await W.upsertPage(cfg, page(), { publish: false }, ctx);
-const q1 = S.all('POST', '/wix-data/v2/items/query')[1]; eq(q1.json, { dataCollectionId: 'Pages', query: { filter: { slug: { $eq: 'ac-repair' } }, paging: { limit: 1 } } }, 'slug lookup body');
+const q1 = S.all('POST', '/wix-data/v2/items/query')[1]; eq(q1.json, { dataCollectionId: 'Pages', query: { filter: { slug: { $eq: 'divorce-lawyer' } }, paging: { limit: 1 } } }, 'slug lookup body');
 const ins = S.find('POST', '/wix-data/v2/items'); assert(ins && ins.headers.authorization === KEY && ins.headers['wix-site-id'] === SITE && ins.headers['content-type'] === 'application/json', 'insert posted with headers');
 eq(ins.json.dataCollectionId, 'Pages', 'insert collection id'); const d1 = ins.json.dataItem.data;
-eq([d1.title, d1.slug, d1.metaTitle, d1.metaDescription, d1.summary], ['AC Repair in Mesquite, TX', 'ac-repair', 'AC Repair in Mesquite, TX | Test Co', 'Same day AC repair across Mesquite.', 'AC repair from Test Co.'], 'item fields');
+eq([d1.title, d1.slug, d1.metaTitle, d1.metaDescription, d1.summary], ['Divorce Lawyer in Plano, TX', 'divorce-lawyer', 'Divorce Lawyer in Plano, TX | Test Co', 'Divorce and custody counsel across Plano.', 'Family law counsel from Test Co.'], 'item fields');
 assert(d1.body.startsWith('<h1>') && !d1.body.includes('<style') && !d1.body.includes('<section') && !d1.body.includes('<details') && !d1.body.includes('class=') && d1.body.includes('<img src="https://cdn.example.com/hero.webp" alt="Technician at a condenser"') && d1.body.includes('<h3>How fast?</h3><p>Same day in most cases.</p>') && !d1.body.includes('application/ld+json'), 'body is editorial HTML only: no css, sections, details, classes or JSON-LD: ' + d1.body.slice(0, 200));
 assert(!('schema' in d1) && !('status' in d1) && !('hero' in d1) && !('_id' in d1), 'no unmapped fields, no _id on insert');
-eq([u1.id, u1.link, u1.status, u1.updated], ['item-1', 'https://www.example.com/pages/ac-repair', 'publish', false], 'create result (items are live)');
+eq([u1.id, u1.link, u1.status, u1.updated], ['item-1', 'https://www.example.com/pages/divorce-lawyer', 'publish', false], 'create result (items are live)');
 assert(/JSON-LD dropped/.test(u1.notes) && /live as soon as they are saved/.test(u1.notes), 'notes: ' + u1.notes); assert(/manage\.wix\.com\/dashboard\/site-1234\/database\/data\/Pages/.test(u1.edit), 'dashboard link');
 
 /* update with schema, image and status fields */
@@ -72,15 +72,15 @@ const lp = S.find('GET', '/blog/v3/posts'); eq(lp.query['paging.limit'], '1', 'p
 const html = page().html + '<section id="why"><div class="forge-inner"><h2>Why us</h2><ul><li><strong>Licensed</strong> technicians</li><li>Written <em>prices</em> first, see <a href="https://www.example.com/pricing/">pricing</a></li></ul><blockquote>Great service.</blockquote></div></section>';
 const pgB = page({ html, featured_media_url: 'https://static.wixstatic.com/media/f9a8b7_hero~mv2.webp', featured_media_id: 'f9a8b7_hero~mv2.webp' });
 const b1 = await W.upsertPage(cfgB, pgB, { publish: false }, ctx);
-const bySlug = S.find('GET', '/blog/v3/posts/slugs/ac-repair'); assert(bySlug && bySlug.headers.authorization === KEY, 'published post looked up by slug');
-const dq = S.find('POST', '/blog/v3/draft-posts/query'); eq(dq.json, { query: { filter: { title: { $eq: 'AC Repair in Mesquite, TX' } }, paging: { limit: 1 } } }, 'draft lookup by title');
+const bySlug = S.find('GET', '/blog/v3/posts/slugs/divorce-lawyer'); assert(bySlug && bySlug.headers.authorization === KEY, 'published post looked up by slug');
+const dq = S.find('POST', '/blog/v3/draft-posts/query'); eq(dq.json, { query: { filter: { title: { $eq: 'Divorce Lawyer in Plano, TX' } }, paging: { limit: 1 } } }, 'draft lookup by title');
 const cr = S.find('POST', '/blog/v3/draft-posts'); assert(cr && cr.headers.authorization === KEY && cr.headers['wix-site-id'] === SITE && cr.headers['wix-account-id'] === ACCT, 'create draft with headers'); eq(cr.json.publish, false, 'publish false on a draft');
-const dp = cr.json.draftPost; eq([dp.title, dp.slug, dp.excerpt], ['AC Repair in Mesquite, TX', 'ac-repair', 'AC repair from Test Co.'], 'draft fields'); assert(!('id' in dp), 'no id on create');
-eq(dp.seoData.tags[0], { type: 'title', children: 'AC Repair in Mesquite, TX | Test Co' }, 'seo title tag'); eq(dp.seoData.tags[1], { type: 'meta', props: { name: 'description', content: 'Same day AC repair across Mesquite.' } }, 'seo description tag');
-assert(dp.seoData.tags.some(t => t.type === 'link' && t.props.rel === 'canonical' && t.props.href === 'https://www.example.com/ac-repair/'), 'canonical tag'); assert(!dp.seoData.tags.some(t => t.type === 'meta' && t.props.name === 'robots'), 'no robots tag when indexable');
+const dp = cr.json.draftPost; eq([dp.title, dp.slug, dp.excerpt], ['Divorce Lawyer in Plano, TX', 'divorce-lawyer', 'Family law counsel from Test Co.'], 'draft fields'); assert(!('id' in dp), 'no id on create');
+eq(dp.seoData.tags[0], { type: 'title', children: 'Divorce Lawyer in Plano, TX | Test Co' }, 'seo title tag'); eq(dp.seoData.tags[1], { type: 'meta', props: { name: 'description', content: 'Divorce and custody counsel across Plano.' } }, 'seo description tag');
+assert(dp.seoData.tags.some(t => t.type === 'link' && t.props.rel === 'canonical' && t.props.href === 'https://www.example.com/divorce-lawyer/'), 'canonical tag'); assert(!dp.seoData.tags.some(t => t.type === 'meta' && t.props.name === 'robots'), 'no robots tag when indexable');
 eq(dp.media, { wixMedia: { image: { id: 'f9a8b7_hero~mv2.webp' } }, displayed: true, custom: true }, 'cover from the uploaded media id');
 const nodes = dp.richContent.nodes; const types = nodes.map(n => n.type);
-eq(types[0], 'HEADING', 'first node is the h1'); eq(nodes[0].headingData, { level: 1 }, 'heading level'); eq(nodes[0].nodes[0].type, 'TEXT', 'text node in the heading'); eq(nodes[0].nodes[0].textData.text, 'AC Repair in Mesquite, TX', 'heading text');
+eq(types[0], 'HEADING', 'first node is the h1'); eq(nodes[0].headingData, { level: 1 }, 'heading level'); eq(nodes[0].nodes[0].type, 'TEXT', 'text node in the heading'); eq(nodes[0].nodes[0].textData.text, 'Divorce Lawyer in Plano, TX', 'heading text');
 assert(nodes.every(n => typeof n.id === 'string' && n.id) && nodes.filter(n => n.type === 'PARAGRAPH').every(n => n.nodes.every(t => t.type === 'TEXT' && Array.isArray(t.nodes))), 'ids everywhere, TEXT only inside PARAGRAPH');
 const ctas = nodes.find(n => n.type === 'PARAGRAPH' && n.nodes.some(t => t.textData.decorations.some(d => d.type === 'LINK'))); assert(ctas, 'link decoration present'); eq(ctas.nodes[0].textData.decorations[0].linkData.link, { url: '#contact', target: 'SELF' }, 'internal link');
 const img = nodes.find(n => n.type === 'IMAGE'); eq(img.imageData.image.src, { url: 'https://cdn.example.com/hero.webp' }, 'external image src url'); eq(img.imageData.altText, 'Technician at a condenser', 'image alt'); eq(img.imageData.containerData.alignment, 'CENTER', 'container data');
@@ -91,17 +91,17 @@ const ext = runs.find(r => r.textData.decorations.some(d => d.type === 'LINK'));
 assert(types.includes('BLOCKQUOTE') && nodes.find(n => n.type === 'BLOCKQUOTE').nodes[0].type === 'PARAGRAPH', 'quote wraps a paragraph');
 assert(nodes.some(n => n.type === 'HEADING' && n.headingData.level === 3 && n.nodes[0].textData.text === 'How fast?'), 'faq summary heading kept as h3');
 const rc = JSON.stringify(dp.richContent); assert(!rc.includes('schema.org') && !rc.includes('<') && !rc.includes('<style'), 'no JSON-LD, no raw html, no css in the Ricos document');
-eq([b1.id, b1.link, b1.status, b1.updated], ['dp-3', 'https://www.example.com/post/ac-repair', 'draft', false], 'draft result'); assert(/cover image set/.test(b1.notes), 'cover note');
+eq([b1.id, b1.link, b1.status, b1.updated], ['dp-3', 'https://www.example.com/post/divorce-lawyer', 'draft', false], 'draft result'); assert(/cover image set/.test(b1.notes), 'cover note');
 
 /* the post exists: update, then publish through the publish endpoint */
-published['ac-repair'] = 'dp-3';
+published['divorce-lawyer'] = 'dp-3';
 const b2 = await W.upsertPage(cfgB, pgB, { publish: true }, ctx);
-const pt = S.find('PATCH', '/blog/v3/draft-posts/dp-3'); assert(pt && pt.headers.authorization === KEY, 'update patches the draft'); eq(pt.json.draftPost.id, 'dp-3', 'draftPost.id in the patch'); eq(pt.json.draftPost.title, 'AC Repair in Mesquite, TX', 'patched title'); assert(!('publish' in pt.json), 'no publish flag on the patch');
+const pt = S.find('PATCH', '/blog/v3/draft-posts/dp-3'); assert(pt && pt.headers.authorization === KEY, 'update patches the draft'); eq(pt.json.draftPost.id, 'dp-3', 'draftPost.id in the patch'); eq(pt.json.draftPost.title, 'Divorce Lawyer in Plano, TX', 'patched title'); assert(!('publish' in pt.json), 'no publish flag on the patch');
 assert(S.find('POST', '/blog/v3/draft-posts/dp-3/publish'), 'publish endpoint called'); eq(S.all('POST', '/blog/v3/draft-posts').length, 1, 'no second create'); eq(S.all('POST', '/blog/v3/draft-posts/query').length, 1, 'no draft query when the post is published');
-eq([b2.id, b2.link, b2.status, b2.updated], ['dp-3', 'https://www.example.com/post/ac-repair', 'publish', true], 'update result uses the post url');
+eq([b2.id, b2.link, b2.status, b2.updated], ['dp-3', 'https://www.example.com/post/divorce-lawyer', 'publish', true], 'update result uses the post url');
 
 /* create and publish in one call; noindex tag; no cover without a wix media id */
-const b3 = await W.upsertPage(cfgB, page({ slug: 'plano', h1: 'AC Repair in Plano', noindex: true }), { publish: true }, ctx);
+const b3 = await W.upsertPage(cfgB, page({ slug: 'plano', h1: 'Divorce Lawyer in Frisco', noindex: true }), { publish: true }, ctx);
 const cr3 = S.all('POST', '/blog/v3/draft-posts').pop(); eq(cr3.json.publish, true, 'create carries publish true'); assert(cr3.json.draftPost.seoData.tags.some(t => t.type === 'meta' && t.props.name === 'robots' && t.props.content === 'noindex'), 'robots noindex tag');
 assert(!cr3.json.draftPost.media && /cover image skipped/.test(b3.notes), 'no cover without a wix media id'); eq([b3.status, b3.updated, b3.link], ['publish', false, 'https://www.example.com/post/plano'], 'create and publish result');
 

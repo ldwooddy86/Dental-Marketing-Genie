@@ -38,15 +38,15 @@ const t3 = await WF.test(Object.assign({}, cfg, { bodyField: 'content' }), ctx);
 
 /* create a staged draft */
 const u1 = await WF.upsertPage(cfg, page(), { publish: false }, ctx);
-const look = S.find('GET', '/v2/collections/c1/items'); eq([look.query.slug, look.query.limit], ['ac-repair', '1'], 'slug filter'); eq(look.headers.authorization, AUTH, 'lookup auth');
+const look = S.find('GET', '/v2/collections/c1/items'); eq([look.query.slug, look.query.limit], ['divorce-lawyer', '1'], 'slug filter'); eq(look.headers.authorization, AUTH, 'lookup auth');
 const cr = S.find('POST', '/v2/collections/c1/items'); assert(cr && cr.headers.authorization === AUTH && cr.headers['content-type'] === 'application/json', 'create posted'); eq([cr.json.isArchived, cr.json.isDraft], [false, true], 'draft flags');
-const fd = cr.json.fieldData; eq([fd.name, fd.slug, fd.summary, fd['meta-title'], fd['meta-description']], ['AC Repair in Mesquite, TX', 'ac-repair', 'AC repair from Test Co.', 'AC Repair in Mesquite, TX | Test Co', 'Same day AC repair across Mesquite.'], 'field slugs');
+const fd = cr.json.fieldData; eq([fd.name, fd.slug, fd.summary, fd['meta-title'], fd['meta-description']], ['Divorce Lawyer in Plano, TX', 'divorce-lawyer', 'Family law counsel from Test Co.', 'Divorce Lawyer in Plano, TX | Test Co', 'Divorce and custody counsel across Plano.'], 'field slugs');
 eq(JSON.parse(fd.schema)['@graph'][0]['@type'], 'WebPage', 'schema field is the JSON-LD string'); eq(fd['main-image'], { url: 'https://cdn.example.com/hero.webp', alt: 'Technician at a condenser' }, 'image field from the hero');
 const rt = fd['post-body'];
 assert(!/<(section|div|details|summary|style|script)\b/i.test(rt) && !/class=/.test(rt) && !/ id=/.test(rt), 'wrappers, classes and ids removed: ' + rt);
-assert(rt.includes('<h1>AC Repair in Mesquite, TX</h1>') && rt.includes('<p>Written prices first.</p>') && rt.includes('<p><a href="#contact">Book service</a></p>') && rt.includes('<img src="https://cdn.example.com/hero.webp" alt="Technician at a condenser" width="1600" height="1000">') && rt.includes('<h2>Frequently asked questions</h2><h3>How fast?</h3><p>Same day in most cases.</p>'), 'rich text keeps the content: ' + rt);
+assert(rt.includes('<h1>Divorce Lawyer in Plano, TX</h1>') && rt.includes('<p>Written fee agreements first.</p>') && rt.includes('<p><a href="#contact">Book a consultation</a></p>') && rt.includes('<img src="https://cdn.example.com/hero.webp" alt="Technician at a condenser" width="1600" height="1000">') && rt.includes('<h2>Frequently asked questions</h2><h3>How fast?</h3><p>Same day in most cases.</p>'), 'rich text keeps the content: ' + rt);
 assert(!rt.includes('application/ld+json'), 'no JSON-LD in the rich text');
-eq([u1.id, u1.link, u1.edit, u1.status, u1.updated, u1.notes], ['i1', 'https://www.example.com/pages/ac-repair', 'https://webflow.com/dashboard/sites/test-co', 'draft', false, ''], 'create result');
+eq([u1.id, u1.link, u1.edit, u1.status, u1.updated, u1.notes], ['i1', 'https://www.example.com/pages/divorce-lawyer', 'https://webflow.com/dashboard/sites/test-co', 'draft', false, ''], 'create result');
 
 /* forms, videos, pictures, dl and spans in the rich text; unmapped fields skipped with a note */
 const html2 = '<section><div><h2>Facts</h2><dl class="forge-facts"><div><dt>24/7</dt><dd>Emergency service</dd></div></dl><form class="forge-form"><label>Name</label><input type="text"><button>Send</button></form><div class="forge-video"><iframe src="https://www.youtube.com/embed/x"></iframe></div><picture><source srcset="a.avif"><img src="https://cdn.example.com/b.webp" alt="b"></picture><p class="x" onclick="evil()">Text <span class="y">span</span> <strong>bold</strong></p><p></p><ol><li>One</li></ol></div></section>';
@@ -58,7 +58,7 @@ assert(/summary skipped: no field excerpt/.test(u2.notes) && /JSON-LD dropped/.t
 eq(WF.richText('<p>x</p>'), '<p>x</p>', 'richText exported');
 /* remapped name and slug fields: the built in name and slug are still sent (the lookup keys on fieldData.slug); an image url into a plain text field is a string */
 const u2b = await WF.upsertPage(Object.assign({}, cfg, { nameField: 'title', slugField: 'path', summaryField: 'excerpt', imageField: 'summary', schemaField: '' }), page({ slug: 'frisco' }), {}, ctx);
-const cr2b = S.all('POST', '/v2/collections/c1/items').pop(); eq([cr2b.json.fieldData.name, cr2b.json.fieldData.slug, cr2b.json.fieldData.summary], ['AC Repair in Mesquite, TX', 'frisco', 'https://cdn.example.com/hero.webp'], 'built in name and slug always sent; url string into a PlainText image field');
+const cr2b = S.all('POST', '/v2/collections/c1/items').pop(); eq([cr2b.json.fieldData.name, cr2b.json.fieldData.slug, cr2b.json.fieldData.summary], ['Divorce Lawyer in Plano, TX', 'frisco', 'https://cdn.example.com/hero.webp'], 'built in name and slug always sent; url string into a PlainText image field');
 assert(!('title' in cr2b.json.fieldData) && !('path' in cr2b.json.fieldData) && /mapped name skipped: no field title/.test(u2b.notes) && /mapped slug skipped: no field path/.test(u2b.notes), 'mapped name and slug skipped with notes when the collection lacks them: ' + u2b.notes);
 const u2c = await WF.upsertPage(cfg, page({ slug: 'frisco' }), {}, ctx); assert(u2c.updated && S.all('PATCH', /\/items\/i3$/).length === 1, 'the remapped item is found again by fieldData.slug');
 
@@ -66,7 +66,7 @@ const u2c = await WF.upsertPage(cfg, page({ slug: 'frisco' }), {}, ctx); assert(
 /* the item exists: update, publish items (429 then retry) and publish the site with its custom domain ids */
 const cfg3 = Object.assign({}, cfg, { publishItems: true, publishSite: true }); rate = 1;
 const u3 = await WF.upsertPage(cfg3, page(), { publish: true }, ctx);
-const pt = S.find('PATCH', '/v2/collections/c1/items/i1'); assert(pt && pt.headers.authorization === AUTH, 'existing item patched'); eq([pt.json.isDraft, pt.json.isArchived, pt.json.fieldData.slug, pt.json.fieldData.name], [false, false, 'ac-repair', 'AC Repair in Mesquite, TX'], 'patch body'); eq(S.all('POST', '/v2/collections/c1/items').length, 3, 'no fourth create');
+const pt = S.find('PATCH', '/v2/collections/c1/items/i1'); assert(pt && pt.headers.authorization === AUTH, 'existing item patched'); eq([pt.json.isDraft, pt.json.isArchived, pt.json.fieldData.slug, pt.json.fieldData.name], [false, false, 'divorce-lawyer', 'Divorce Lawyer in Plano, TX'], 'patch body'); eq(S.all('POST', '/v2/collections/c1/items').length, 3, 'no fourth create');
 const pubs = S.all('POST', '/v2/collections/c1/items/publish'); eq(pubs.length, 2, '429 then one retry'); eq(pubs[1].json, { itemIds: ['i1'] }, 'publish items body'); eq(pubs[1].headers.authorization, AUTH, 'publish items auth');
 const sp = S.find('POST', '/v2/sites/s1/publish'); eq(sp.json, { publishToWebflowSubdomain: true, customDomains: ['d1', 'd2'] }, 'site publish body with the domain ids'); eq(sp.headers.authorization, AUTH, 'site publish auth');
 eq([u3.id, u3.status, u3.updated], ['i1', 'publish', true], 'publish result'); assert(/published to test-co\.webflow\.io and www\.example\.com, example\.com/.test(u3.notes), 'publish note: ' + u3.notes);

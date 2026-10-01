@@ -123,9 +123,12 @@ if (!args.has('--no-test') && !args.has('--single') && exists('tests/run.mjs')) 
 console.log('single file');
 /* data/*.js hold `JSON.parse("<json as a string literal>")`; the literal is recovered and embedded as a JSON script tag. */
 const dataJson = rel => { const t = read(rel); const a = t.indexOf('JSON.parse(') + 11, b = t.lastIndexOf(');'); return JSON.parse(t.slice(a, b)); };
+/* Inline scripts: '</script' would end the element, and '<!--' followed by '<script' puts the HTML tokenizer in the double escaped
+   state where the real closing tag is ignored. Both are rewritten with escapes that mean the same inside JS strings, templates and
+   regexes ('<\/script', '<\x21--'); String.raw templates would keep the backslash, so the build refuses a file that uses one. */
 const scriptSafe = (js, f) => {
-  if (/<!--/.test(js)) bad(`${f} contains "<!--", which changes how an inline script is parsed; write it as '<' + '!--'`);
-  return js.replace(/<\/(script)/gi, '<\\/$1');
+  if (/String\.raw/.test(js) && /<\/script|<!--/i.test(js)) bad(`${f} uses String.raw next to '</script' or '<!--'; the inline escape would change it`);
+  return js.replace(/<\/(script)/gi, '<\\/$1').replace(/<!--/g, '<\\x21--');
 };
 const jsonSafe = j => j.replace(/<\/(script)/gi, '<\\/$1').replace(/<!--/g, '<\\u0021--');
 let single = html;

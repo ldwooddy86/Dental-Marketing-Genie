@@ -20,7 +20,7 @@ const B = await mock([
   { method: 'GET', path: '/wp-json/forge/v1/status', handler: c => authed(c, { status: 200, json: Object.assign({}, STATUS, { home: B.url + '/', settings: SET }) }) },
   { method: 'POST', path: '/wp-json/forge/v1/import', handler: c => authed(c, { status: 200, json: { id: 42, slug: c.json.slug, status: c.json.status, link: B.url + '/' + c.json.slug + '/', edit: B.url + '/wp-admin/post.php?post=42&action=edit', updated: c.json.slug === 'again' } }) },
   { method: 'GET', path: '/wp-json/forge/v1/media/find', handler: c => authed(c, { status: 200, json: /hero/.test(c.query.q) ? [{ id: 4, title: 'hero banner', url: B.url + '/wp-content/uploads/2026/09/hero-banner.webp', mime: 'image/webp', alt: '', width: 1200, height: 600, file: '2026/09/hero-banner.webp' }, { id: 3, title: 'hero', url: B.url + '/wp-content/uploads/2026/09/hero-1.webp', mime: 'image/webp', alt: 'Old alt', width: 1600, height: 1000, file: '2026/09/hero-1.webp' }] : [] }) },
-  { method: 'GET', path: '/wp-json/forge/v1/urls', handler: c => authed(c, { status: 200, json: { count: 3, urls: [B.url + '/', B.url + '/ac-repair/', B.url + '/blog/hello/'] } }) },
+  { method: 'GET', path: '/wp-json/forge/v1/urls', handler: c => authed(c, { status: 200, json: { count: 3, urls: [B.url + '/', B.url + '/divorce-lawyer/', B.url + '/blog/hello/'] } }) },
   { method: 'GET', path: '/wp-json/forge/v1/settings', handler: c => authed(c, { status: 200, json: SET }) },
   { method: 'POST', path: '/wp-json/forge/v1/settings', handler: c => { SET = Object.assign({}, SET, c.json); return authed(c, { status: 200, json: SET }); } },
   { method: 'POST', path: '/wp-json/forge/v1/template', handler: c => authed(c, { status: 200, json: { id: 77, edit: B.url + '/wp-admin/post.php?post=77&action=edit' } }) },
@@ -42,13 +42,13 @@ const pg = page({ media: { hero: { url: 'https://cdn.example.com/hero.webp', id:
 const u1 = await WPE.upsertPage(cfgB, pg, { publish: false }, ctx);
 const imp = B.find('POST', '/wp-json/forge/v1/import'); assert(imp && imp.headers.authorization === AUTH && imp.headers['content-type'] === 'application/json', 'import posted with auth and json');
 const b1 = imp.json;
-eq(b1.slug, 'ac-repair', 'bundle slug'); eq(b1.title, pg.title, 'bundle title'); eq(b1.post_title, pg.h1, 'bundle post_title is the h1'); eq(b1.status, 'draft', 'draft by default'); eq(b1.post_type, 'page', 'post_type'); eq(b1.template, 'default', 'template from page_settings');
+eq(b1.slug, 'divorce-lawyer', 'bundle slug'); eq(b1.title, pg.title, 'bundle title'); eq(b1.post_title, pg.h1, 'bundle post_title is the h1'); eq(b1.status, 'draft', 'draft by default'); eq(b1.post_type, 'page', 'post_type'); eq(b1.template, 'default', 'template from page_settings');
 assert(Array.isArray(b1.elementor_data) && b1.elementor_data[0].elType === 'container', 'elementor_data'); eq(b1.page_settings, pg.page_settings, 'page_settings');
 assert(b1.content_html.includes('<section id="hero"') && !b1.content_html.includes('application/ld+json') && b1.content_html.startsWith('<style>'), 'content_html carries the forge css inline and no JSON-LD (the bridge prints the JSON-LD in the head, nothing prints the css)');
 eq(b1.seo, pg.seo, 'seo'); eq(b1.schema, pg.schema, 'schema'); eq(b1.summary, pg.summary, 'summary'); eq(b1.featured_media, 5, 'featured_media from featured_media_id');
 eq(b1.blueprint.media_resolved, { hero: { id: 5, url: 'https://cdn.example.com/hero.webp', alt: 'Technician at a condenser', kind: 'image', width: 1600, height: 1000, mime: 'image/webp' } }, 'blueprint.media_resolved from page.media without blobs');
 eq(b1.blueprint.forge, '1.1', 'blueprint kept');
-eq([u1.id, u1.link, u1.status, u1.updated, u1.route], [42, B.url + '/ac-repair/', 'draft', false, 'bridge'], 'bridge upsert result'); assert(/post=42&action=edit/.test(u1.edit), 'edit link');
+eq([u1.id, u1.link, u1.status, u1.updated, u1.route], [42, B.url + '/divorce-lawyer/', 'draft', false, 'bridge'], 'bridge upsert result'); assert(/post=42&action=edit/.test(u1.edit), 'edit link');
 const u2 = await WPE.upsertPage(cfgB, page({ slug: 'again', post_type: 'post' }), { publish: true }, ctx);
 const imp2 = B.all('POST', '/wp-json/forge/v1/import')[1]; eq(imp2.json.status, 'publish', 'opts.publish publishes'); eq(imp2.json.post_type, 'post', 'post type honoured'); eq(imp2.json.featured_media, 0, 'no featured media'); assert(u2.updated === true && u2.status === 'publish', 'bridge reports updated');
 eq(B.all('GET', '/wp-json/').length, 1, 'discovery cached across upserts');
@@ -66,11 +66,11 @@ const alt = B.find('POST', '/wp-json/wp/v2/media/9'); eq(alt.json, { alt_text: '
 eq([m2.id, m2.url, m2.width, m2.height, m2.mime, m2.alt, m2.reused], [9, B.url + '/wp-content/uploads/2026/09/condenser.webp', 1600, 1000, 'image/webp', 'Condenser coil', false], 'upload result');
 
 /* live urls, template, indexnow, settings through the bridge */
-eq(await WPE.listUrls(cfgB, ctx), [B.url + '/', B.url + '/ac-repair/', B.url + '/blog/hello/'], 'bridge urls');
+eq(await WPE.listUrls(cfgB, ctx), [B.url + '/', B.url + '/divorce-lawyer/', B.url + '/blog/hello/'], 'bridge urls');
 const tp = await WPE.importTemplate(cfgB, { title: 'Service page', content: pg.elementor_data, page_settings: pg.page_settings, type: 'page' }, ctx);
 eq(B.find('POST', '/wp-json/forge/v1/template').json, { title: 'Service page', content: pg.elementor_data, page_settings: pg.page_settings, type: 'page' }, 'template body'); eq(tp.id, 77, 'template id');
-const ix = await WPE.indexNow(cfgB, [B.url + '/ac-repair/', '', B.url + '/blog/hello/'], ctx);
-eq(B.find('POST', '/wp-json/forge/v1/indexnow').json, { urls: [B.url + '/ac-repair/', B.url + '/blog/hello/'] }, 'indexnow body'); eq(ix, { sent: 2, code: 200 }, 'indexnow result');
+const ix = await WPE.indexNow(cfgB, [B.url + '/divorce-lawyer/', '', B.url + '/blog/hello/'], ctx);
+eq(B.find('POST', '/wp-json/forge/v1/indexnow').json, { urls: [B.url + '/divorce-lawyer/', B.url + '/blog/hello/'] }, 'indexnow body'); eq(ix, { sent: 2, code: 200 }, 'indexnow result');
 eq((await WPE.getSettings(cfgB, ctx)).indexnow_key, 'k1', 'get settings');
 const ss = await WPE.setSettings(cfgB, { indexnow_key: 'k2' }, ctx); eq(ss.indexnow_key, 'k2', 'set settings'); eq(B.find('POST', '/wp-json/forge/v1/settings').json, { indexnow_key: 'k2' }, 'settings patch only');
 
@@ -95,11 +95,11 @@ const me = P.find('GET', '/wp-json/wp/v2/users/me'); eq(me.query.context, 'edit'
 
 /* upsert without the bridge: create, then update */
 const u3 = await WPE.upsertPage(cfgP, page(), { publish: false }, ctx);
-const look = P.find('GET', '/wp-json/wp/v2/pages'); eq([look.query.slug, look.query.status, look.query._fields], ['ac-repair', 'any', 'id'], 'slug lookup query');
+const look = P.find('GET', '/wp-json/wp/v2/pages'); eq([look.query.slug, look.query.status, look.query._fields], ['divorce-lawyer', 'any', 'id'], 'slug lookup query');
 const cr = P.find('POST', '/wp-json/wp/v2/pages'); assert(cr && cr.headers.authorization === AUTH, 'create posted with auth');
-eq([cr.json.slug, cr.json.title, cr.json.status, cr.json.excerpt], ['ac-repair', 'AC Repair in Mesquite, TX', 'draft', 'AC repair from Test Co.'], 'create body fields');
+eq([cr.json.slug, cr.json.title, cr.json.status, cr.json.excerpt], ['divorce-lawyer', 'Divorce Lawyer in Plano, TX', 'draft', 'Family law counsel from Test Co.'], 'create body fields');
 assert(cr.json.content.includes('<section id="hero"') && cr.json.content.includes('application/ld+json') && cr.json.content.startsWith('<style>'), 'content carries the forge css and the JSON-LD inline'); eq(cr.json.meta, {}, 'meta {}'); assert(!('featured_media' in cr.json), 'no featured_media without an id');
-eq([u3.id, u3.link, u3.edit, u3.status, u3.updated, u3.route], [12, P.url + '/ac-repair/', P.url + '/wp-admin/post.php?post=12&action=edit', 'draft', false, 'rest'], 'create result');
+eq([u3.id, u3.link, u3.edit, u3.status, u3.updated, u3.route], [12, P.url + '/divorce-lawyer/', P.url + '/wp-admin/post.php?post=12&action=edit', 'draft', false, 'rest'], 'create result');
 exists = true;
 const u4 = await WPE.upsertPage(cfgP, page({ featured_media_id: 21 }), { publish: true }, ctx);
 const upd = P.find('POST', '/wp-json/wp/v2/pages/12'); assert(upd, 'update posts to the id'); eq([upd.json.status, upd.json.featured_media], ['publish', 21], 'update publishes with featured media');
@@ -137,14 +137,14 @@ const cf2 = await WPH.configure(Object.assign({}, cfgH, { revalidateSecret: '', 
 const sp2 = B.all('POST', '/wp-json/forge/v1/settings').pop(); assert(!('revalidate_secret' in sp2.json) && sp2.json.revalidate_url === 'https://hooks.example.com/reval', 'empty secret left alone, custom revalidate url'); assert(cf2.ok, 'configure again ok');
 
 /* headless upsert: canonical rewritten onto the front end, link on the front end host */
-const pgH = page({ schema: { '@context': 'https://schema.org', '@graph': [{ '@type': 'WebPage', '@id': 'https://www.example.com/ac-repair/#webpage', url: 'https://www.example.com/ac-repair/' }] } });
+const pgH = page({ schema: { '@context': 'https://schema.org', '@graph': [{ '@type': 'WebPage', '@id': 'https://www.example.com/divorce-lawyer/#webpage', url: 'https://www.example.com/divorce-lawyer/' }] } });
 const u5 = await WPH.upsertPage(cfgH, pgH, { publish: true }, ctx);
 const impH = B.all('POST', '/wp-json/forge/v1/import').pop();
-eq(impH.json.seo.canonical, F.url + '/ac-repair/', 'seo.canonical on the front end'); eq(impH.json.seo.title, pgH.seo.title, 'other seo fields kept');
-eq(impH.json.schema['@graph'][0].url, F.url + '/ac-repair/', 'schema urls follow the canonical'); eq(impH.json.schema['@graph'][0]['@id'], F.url + '/ac-repair/#webpage', 'schema ids follow the canonical');
+eq(impH.json.seo.canonical, F.url + '/divorce-lawyer/', 'seo.canonical on the front end'); eq(impH.json.seo.title, pgH.seo.title, 'other seo fields kept');
+eq(impH.json.schema['@graph'][0].url, F.url + '/divorce-lawyer/', 'schema urls follow the canonical'); eq(impH.json.schema['@graph'][0]['@id'], F.url + '/divorce-lawyer/#webpage', 'schema ids follow the canonical');
 eq(impH.json.status, 'publish', 'headless publish'); assert(impH.json.blueprint && impH.json.elementor_data, 'same bundle as the Elementor route');
-eq([u5.id, u5.link, u5.wpLink, u5.status, u5.updated], [42, F.url + '/ac-repair/', B.url + '/ac-repair/', 'publish', false], 'headless result links to the front end');
-eq(await WPH.listUrls(cfgH, ctx), [F.url + '/', F.url + '/ac-repair/', F.url + '/blog/hello/'], 'headless live urls on the front end host');
+eq([u5.id, u5.link, u5.wpLink, u5.status, u5.updated], [42, F.url + '/divorce-lawyer/', B.url + '/divorce-lawyer/', 'publish', false], 'headless result links to the front end');
+eq(await WPH.listUrls(cfgH, ctx), [F.url + '/', F.url + '/divorce-lawyer/', F.url + '/blog/hello/'], 'headless live urls on the front end host');
 
 /* ---------- error branches ---------- */
 const E = await mock([{ method: 'GET', path: '/wp-json/', handler: () => ({ status: 401, json: { code: 'invalid_password', message: 'The provided password is an invalid application password.', data: { status: 401 } } }) }]);

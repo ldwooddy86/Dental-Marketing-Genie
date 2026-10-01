@@ -9,15 +9,15 @@ const POSTS = '/cms/v3/blogs/posts', BLOGS = '/cms/v3/blog-settings/settings', P
 const CDN = 'https://12345.fs1.hubspotusercontent-na1.net/hubfs/12345/forge/hero.webp';
 let exists = false, live = false, pageExists = false, pageLive = false, filterFail = false, unauth = false, pageNested = false, rateLimitOnce = false, scheduleStrict = 0;
 const LIMITED = { status: 429, json: { status: 'error', message: 'You have reached your ten secondly limit.', errorType: 'RATE_LIMIT', correlationId: 'y', category: 'RATE_LIMITS' } };
-const POST = (over) => Object.assign({ id: '101', slug: 'blog/ac-repair', contentGroupId: '987', name: 'Old', url: srv.url + '/blog/ac-repair', state: live ? 'PUBLISHED' : 'DRAFT', currentState: live ? 'PUBLISHED' : 'DRAFT' }, over || {});
-const PAGE = (over) => Object.assign({ id: '202', slug: 'ac-repair', name: 'Old', url: srv.url + '/ac-repair', state: pageLive ? 'PUBLISHED' : 'DRAFT', currentState: pageLive ? 'PUBLISHED' : 'DRAFT' }, over || {});
+const POST = (over) => Object.assign({ id: '101', slug: 'blog/divorce-lawyer', contentGroupId: '987', name: 'Old', url: srv.url + '/blog/divorce-lawyer', state: live ? 'PUBLISHED' : 'DRAFT', currentState: live ? 'PUBLISHED' : 'DRAFT' }, over || {});
+const PAGE = (over) => Object.assign({ id: '202', slug: 'divorce-lawyer', name: 'Old', url: srv.url + '/divorce-lawyer', state: pageLive ? 'PUBLISHED' : 'DRAFT', currentState: pageLive ? 'PUBLISHED' : 'DRAFT' }, over || {});
 const AUTH = { status: 401, json: { status: 'error', message: 'Authentication credentials not found. This API supports OAuth 2.0 authentication and you can find more details at https://developers.hubspot.com/docs/methods/auth/oauth-overview', correlationId: 'x', category: 'INVALID_AUTHENTICATION' } };
 const srv = await mock([
   { method: 'GET', path: POSTS, handler: c => { if (unauth) return AUTH; if (rateLimitOnce) { rateLimitOnce = false; return LIMITED; }
-    if (c.query.slug__icontains != null) return filterFail ? { status: 400, json: { status: 'error', message: "Filter violation: Filtering by 'slug contains' is not allowed", category: 'VALIDATION_ERROR' } } : { status: 200, json: { results: exists && c.query.slug__icontains === 'ac-repair' ? [POST(), POST({ id: '999', slug: 'blog/ac-repair-2' })] : [], total: exists ? 2 : 0 } };
+    if (c.query.slug__icontains != null) return filterFail ? { status: 400, json: { status: 'error', message: "Filter violation: Filtering by 'slug contains' is not allowed", category: 'VALIDATION_ERROR' } } : { status: 200, json: { results: exists && c.query.slug__icontains === 'divorce-lawyer' ? [POST(), POST({ id: '999', slug: 'blog/divorce-lawyer-2' })] : [], total: exists ? 2 : 0 } };
     if (c.query.state__eq === 'PUBLISHED') return c.query.after ? { status: 200, json: { results: [{ id: '3', url: srv.url + '/blog/c' }], paging: {} } } : { status: 200, json: { results: [{ id: '1', url: srv.url + '/blog/a' }, { id: '2', url: srv.url + '/blog/b' }], paging: { next: { after: 'cur1', link: '' } } } };
     if (c.query.limit === '1') return { status: 200, json: { results: [POST()], total: 12 } };
-    return { status: 200, json: { results: exists ? [POST({ slug: 'blog/other' }), POST({ slug: 'news/tips/ac-repair', contentGroupId: '555', url: srv.url + '/news/tips/ac-repair' })] : [], total: exists ? 2 : 0 } }; } },
+    return { status: 200, json: { results: exists ? [POST({ slug: 'blog/other' }), POST({ slug: 'news/tips/divorce-lawyer', contentGroupId: '555', url: srv.url + '/news/tips/divorce-lawyer' })] : [], total: exists ? 2 : 0 } }; } },
   { method: 'GET', path: BLOGS, reply: { results: [{ id: 987, name: 'News', slug: 'blog', absoluteUrl: 'https://www.test.co/blog', htmlTitle: 'News' }], total: 1 } },
   { method: 'GET', path: BLOGS + '/987', reply: { id: 987, name: 'News', slug: 'blog', absoluteUrl: 'https://www.test.co/blog' } },
   { method: 'GET', path: BLOGS + '/555', reply: { id: 555, name: 'Other', slug: 'news/tips' } },
@@ -27,7 +27,7 @@ const srv = await mock([
   { method: 'PATCH', path: POSTS + '/101', handler: c => ({ status: 200, json: POST({ slug: c.json.slug, url: srv.url + '/' + c.json.slug }) }) },
   { method: 'PATCH', path: POSTS + '/101/draft', handler: c => ({ status: 200, json: POST({ slug: c.json.slug, url: srv.url + '/' + c.json.slug }) }) },
   { method: 'POST', path: POSTS + '/schedule', handler: c => { if (scheduleStrict && Date.parse(c.json.publishDate) < Date.now() + 30000) { scheduleStrict++; return { status: 400, json: { status: 'error', message: 'Publish date must be in the future', category: 'VALIDATION_ERROR' } }; } return { status: 204 }; } },
-  { method: 'GET', path: PAGES, handler: c => { if (c.query.slug__icontains != null) return { status: 200, json: { results: pageNested ? [PAGE({ id: '303', slug: 'about/ac-repair', url: srv.url + '/about/ac-repair' })] : pageExists ? [PAGE()] : [], total: pageExists || pageNested ? 1 : 0 } };
+  { method: 'GET', path: PAGES, handler: c => { if (c.query.slug__icontains != null) return { status: 200, json: { results: pageNested ? [PAGE({ id: '303', slug: 'about/divorce-lawyer', url: srv.url + '/about/divorce-lawyer' })] : pageExists ? [PAGE()] : [], total: pageExists || pageNested ? 1 : 0 } };
     if (c.query.state__in === 'PUBLISHED_OR_SCHEDULED') return { status: 200, json: { results: [{ id: '7', url: srv.url + '/p1', state: 'PUBLISHED', currentState: 'PUBLISHED' }, { id: '8', url: srv.url + '/p2', state: 'SCHEDULED', currentState: 'SCHEDULED' }], paging: {} } };
     return { status: 200, json: { results: [PAGE()], total: 34 } }; } },
   { method: 'POST', path: PAGES, handler: c => ({ status: 201, json: PAGE({ id: '202', slug: c.json.slug, url: srv.url + '/' + c.json.slug, state: 'DRAFT', currentState: 'DRAFT' }) }) },
@@ -46,14 +46,14 @@ const tp = await A.test(Object.assign({}, cfg, { mode: 'page', contentGroupId: '
 /* upsert blog post: blog root + author + slug lookup, then POST as a draft with the SEO fields, JSON-LD in headHtml */
 let n0 = srv.calls.length; const r1 = await A.upsertPage(cfg, page(), { publish: false }, ctx);
 const seq = srv.calls.slice(n0).map(c => c.method + ' ' + c.path); eq(seq, ['GET /cms/v3/blogs/authors', 'GET ' + POSTS, 'POST ' + POSTS], 'create sequence (blog root cached by test)');
-eq(srv.calls[n0].query, { limit: '1' }, 'first author'); eq(srv.calls[n0 + 1].query, { slug__icontains: 'ac-repair', limit: '100' }, 'slug filter');
+eq(srv.calls[n0].query, { limit: '1' }, 'first author'); eq(srv.calls[n0 + 1].query, { slug__icontains: 'divorce-lawyer', limit: '100' }, 'slug filter');
 const cr = srv.calls[n0 + 2]; eq(cr.headers['content-type'], 'application/json', 'json body'); const b = cr.json;
-eq(b.name, 'AC Repair in Mesquite, TX', 'name is h1'); eq(b.slug, 'blog/ac-repair', 'slug under the blog root'); eq(b.contentGroupId, '987', 'blog id'); eq(b.blogAuthorId, '55', 'author from the account'); eq(b.state, 'DRAFT', 'draft');
-assert(b.postBody.startsWith('<style>') && b.postBody.includes('<h1>AC Repair in Mesquite, TX</h1>') && !b.postBody.includes('ld+json'), 'postBody with css, no schema'); eq(b.postSummary, 'AC repair from Test Co.', 'summary');
-eq(b.htmlTitle, 'AC Repair in Mesquite, TX | Test Co', 'htmlTitle'); eq(b.metaDescription, 'Same day AC repair across Mesquite.', 'metaDescription'); eq(b.linkRelCanonicalUrl, 'https://www.example.com/ac-repair/', 'canonical');
+eq(b.name, 'Divorce Lawyer in Plano, TX', 'name is h1'); eq(b.slug, 'blog/divorce-lawyer', 'slug under the blog root'); eq(b.contentGroupId, '987', 'blog id'); eq(b.blogAuthorId, '55', 'author from the account'); eq(b.state, 'DRAFT', 'draft');
+assert(b.postBody.startsWith('<style>') && b.postBody.includes('<h1>Divorce Lawyer in Plano, TX</h1>') && !b.postBody.includes('ld+json'), 'postBody with css, no schema'); eq(b.postSummary, 'Family law counsel from Test Co.', 'summary');
+eq(b.htmlTitle, 'Divorce Lawyer in Plano, TX | Test Co', 'htmlTitle'); eq(b.metaDescription, 'Divorce and custody counsel across Plano.', 'metaDescription'); eq(b.linkRelCanonicalUrl, 'https://www.example.com/divorce-lawyer/', 'canonical');
 assert(b.headHtml.startsWith('<script type="application/ld+json">') && !b.headHtml.includes('robots'), 'JSON-LD in headHtml, no robots when indexable');
 eq(b.useFeaturedImage, true, 'featured on'); eq(b.featuredImage, 'https://cdn.example.com/hero.webp', 'featured image'); eq(b.featuredImageAltText, 'Technician at a condenser', 'featured alt');
-eq(r1, { id: '101', link: srv.url + '/blog/ac-repair', edit: 'https://app-eu1.hubspot.com/blog/12345/editor/101/content', status: 'draft', updated: false, notes: 'SEO title and description in htmlTitle and metaDescription; JSON-LD in headHtml; css inline in the body' }, 'create result (editor on the account ui host)');
+eq(r1, { id: '101', link: srv.url + '/blog/divorce-lawyer', edit: 'https://app-eu1.hubspot.com/blog/12345/editor/101/content', status: 'draft', updated: false, notes: 'SEO title and description in htmlTitle and metaDescription; JSON-LD in headHtml; css inline in the body' }, 'create result (editor on the account ui host)');
 assert(!srv.find('POST', POSTS + '/schedule'), 'no schedule on a draft');
 /* publish a new post: POST then schedule now; the blog root and author come from the cache */
 n0 = srv.calls.length; const before = Date.now(); const r2 = await A.upsertPage(cfg, page(), { publish: true }, ctx);
@@ -66,11 +66,11 @@ const sc = srv.calls.slice(n0).filter(c => c.path === POSTS + '/schedule'); eq(s
 assert(r2b.status === 'publish' && /goes live in 60 s/.test(r2b.notes) && logs.some(l => /schedule refused/.test(l)), 'schedule fallback noted: ' + r2b.notes); scheduleStrict = 0;
 /* 429 once → wait and repeat the same request */
 rateLimitOnce = true; n0 = srv.calls.length; const r2c = await A.upsertPage(cfg, page(), { publish: false }, ctx);
-eq(srv.calls.slice(n0, n0 + 2).map(c => c.method + ' ' + c.path + ' ' + (c.query.slug__icontains || '')), ['GET ' + POSTS + ' ac-repair', 'GET ' + POSTS + ' ac-repair'], 'rate limited request repeated'); assert(r2c.id === '101' && logs.some(l => /rate limit/.test(l)), 'retry logged');
+eq(srv.calls.slice(n0, n0 + 2).map(c => c.method + ' ' + c.path + ' ' + (c.query.slug__icontains || '')), ['GET ' + POSTS + ' divorce-lawyer', 'GET ' + POSTS + ' divorce-lawyer'], 'rate limited request repeated'); assert(r2c.id === '101' && logs.some(l => /rate limit/.test(l)), 'retry logged');
 /* exists as a draft → PATCH the post (no state), then schedule when publishing; the exact slug wins over the icontains neighbours */
 exists = true; n0 = srv.calls.length; const r3 = await A.upsertPage(cfg, page(), { publish: true }, ctx);
 eq(srv.calls.slice(n0).map(c => c.method + ' ' + c.path), ['GET ' + POSTS, 'PATCH ' + POSTS + '/101', 'POST ' + POSTS + '/schedule'], 'update + publish sequence');
-assert(!('state' in srv.calls[n0 + 1].json) && srv.calls[n0 + 1].json.slug === 'blog/ac-repair', 'PATCH without state'); eq(r3.updated, true, 'updated'); eq(r3.status, 'publish', 'published');
+assert(!('state' in srv.calls[n0 + 1].json) && srv.calls[n0 + 1].json.slug === 'blog/divorce-lawyer', 'PATCH without state'); eq(r3.updated, true, 'updated'); eq(r3.status, 'publish', 'published');
 /* exists and live: draft goes to the draft buffer, publish patches the live post, neither schedules */
 live = true; n0 = srv.calls.length; const r4 = await A.upsertPage(cfg, page(), { publish: false }, ctx);
 eq(srv.calls.slice(n0).map(c => c.method + ' ' + c.path), ['GET ' + POSTS, 'PATCH ' + POSTS + '/101/draft'], 'draft of a live post'); eq(r4.status, 'draft', 'draft status'); assert(/live page is unchanged/.test(r4.notes), 'draft note');
@@ -79,19 +79,19 @@ eq(srv.calls.slice(n0).map(c => c.method + ' ' + c.path), ['GET ' + POSTS, 'PATC
 assert(srv.calls[n0 + 1].json.headHtml.includes('<meta name="robots" content="noindex,follow">') && srv.calls[n0 + 1].json.headHtml.includes('ld+json'), 'robots and JSON-LD in headHtml'); assert(/noindex/.test(r5.notes), 'noindex note');
 /* the slug filter refused → list and match; a configured author skips the authors call; another blog root */
 filterFail = true; live = false; n0 = srv.calls.length; const r6 = await A.upsertPage(Object.assign({}, cfg, { authorId: '9', contentGroupId: '555' }), page(), {}, ctx);
-const s6 = srv.calls.slice(n0); eq(s6.map(c => c.method + ' ' + c.path), ['GET ' + BLOGS + '/555', 'GET ' + POSTS, 'GET ' + POSTS, 'PATCH ' + POSTS + '/101'], 'fallback listing'); eq(s6[2].query, { limit: '100' }, 'plain list'); eq(s6[3].json.slug, 'news/tips/ac-repair', 'nested blog root'); eq(s6[3].json.blogAuthorId, '9', 'configured author'); eq(s6[3].json.contentGroupId, '555', 'group');
+const s6 = srv.calls.slice(n0); eq(s6.map(c => c.method + ' ' + c.path), ['GET ' + BLOGS + '/555', 'GET ' + POSTS, 'GET ' + POSTS, 'PATCH ' + POSTS + '/101'], 'fallback listing'); eq(s6[2].query, { limit: '100' }, 'plain list'); eq(s6[3].json.slug, 'news/tips/divorce-lawyer', 'nested blog root'); eq(s6[3].json.blogAuthorId, '9', 'configured author'); eq(s6[3].json.contentGroupId, '555', 'group');
 assert(r6.updated && logs.some(l => /slug filter refused/.test(l)), 'fallback logged'); filterFail = false;
 let e = null; try { await A.upsertPage({ token: 't', apiBase: srv.url, mode: 'blog' }, page(), {}, ctx); } catch (x) { e = x; } assert(e && e.status === 0 && /Blog id/.test(e.message), 'blog id required');
 /* page mode: one rich text module inside the dnd area, template path, domain, schedule to publish */
 const pcfg = Object.assign({}, cfg, { mode: 'page', templatePath: '@hubspot/growth/templates/blank.html', domain: 'https://www.test.co/' });
 n0 = srv.calls.length; const r7 = await A.upsertPage(pcfg, page(), { publish: true }, ctx);
-eq(srv.calls.slice(n0).map(c => c.method + ' ' + c.path), ['GET ' + PAGES, 'POST ' + PAGES, 'POST ' + PAGES + '/schedule'], 'page sequence'); eq(srv.calls[n0].query, { slug__icontains: 'ac-repair', limit: '100' }, 'page slug filter');
-const pb = srv.calls[n0 + 1].json; eq(pb.name, 'AC Repair in Mesquite, TX', 'page name'); eq(pb.slug, 'ac-repair', 'page slug'); eq(pb.templatePath, '@hubspot/growth/templates/blank.html', 'template'); eq(pb.domain, 'www.test.co', 'domain'); eq(pb.state, 'DRAFT', 'page draft'); eq(pb.htmlTitle, 'AC Repair in Mesquite, TX | Test Co', 'page htmlTitle');
+eq(srv.calls.slice(n0).map(c => c.method + ' ' + c.path), ['GET ' + PAGES, 'POST ' + PAGES, 'POST ' + PAGES + '/schedule'], 'page sequence'); eq(srv.calls[n0].query, { slug__icontains: 'divorce-lawyer', limit: '100' }, 'page slug filter');
+const pb = srv.calls[n0 + 1].json; eq(pb.name, 'Divorce Lawyer in Plano, TX', 'page name'); eq(pb.slug, 'divorce-lawyer', 'page slug'); eq(pb.templatePath, '@hubspot/growth/templates/blank.html', 'template'); eq(pb.domain, 'www.test.co', 'domain'); eq(pb.state, 'DRAFT', 'page draft'); eq(pb.htmlTitle, 'Divorce Lawyer in Plano, TX | Test Co', 'page htmlTitle');
 assert(!('postBody' in pb) && !('contentGroupId' in pb), 'no post fields'); const sec = pb.layoutSections.dnd_area; assert(sec && sec.type === 'cell' && sec.name === 'dnd_area' && sec.w === 12 && sec.rowMetaData[0].cssClass === 'dnd-section', 'section');
 const col = sec.rows[0]['0']; assert(col.type === 'cell' && col.params.css_class === 'dnd-column', 'column'); const mod = col.rows[0]['0'];
-eq(mod.type, 'custom_widget', 'module type'); eq(mod.params.path, '@hubspot/rich_text', 'rich text module'); assert(mod.params.html.startsWith('<style>') && mod.params.html.includes('<h1>AC Repair in Mesquite, TX</h1>') && !mod.params.html.includes('ld+json'), 'module html'); eq(mod.w, 12, 'full width');
-eq(srv.calls[n0 + 2].json.id, '202', 'page schedule id'); eq(r7.id, '202'); eq(r7.link, srv.url + '/ac-repair', 'page link'); eq(r7.edit, 'https://app-eu1.hubspot.com/pages/12345/editor/202/content', 'page edit'); eq(r7.status, 'publish');
-/* a page whose slug only ends with ours (about/ac-repair) is another page: create, do not overwrite it */
+eq(mod.type, 'custom_widget', 'module type'); eq(mod.params.path, '@hubspot/rich_text', 'rich text module'); assert(mod.params.html.startsWith('<style>') && mod.params.html.includes('<h1>Divorce Lawyer in Plano, TX</h1>') && !mod.params.html.includes('ld+json'), 'module html'); eq(mod.w, 12, 'full width');
+eq(srv.calls[n0 + 2].json.id, '202', 'page schedule id'); eq(r7.id, '202'); eq(r7.link, srv.url + '/divorce-lawyer', 'page link'); eq(r7.edit, 'https://app-eu1.hubspot.com/pages/12345/editor/202/content', 'page edit'); eq(r7.status, 'publish');
+/* a page whose slug only ends with ours (about/divorce-lawyer) is another page: create, do not overwrite it */
 pageNested = true; n0 = srv.calls.length; const r7b = await A.upsertPage(pcfg, page(), {}, ctx);
 eq(srv.calls.slice(n0).map(c => c.method + ' ' + c.path), ['GET ' + PAGES, 'POST ' + PAGES], 'nested slug is not a match in page mode'); eq(r7b.updated, false, 'created'); pageNested = false;
 pageExists = true; pageLive = true; n0 = srv.calls.length; const r8 = await A.upsertPage(Object.assign({}, pcfg, { dndArea: 'main' }), page(), {}, ctx);

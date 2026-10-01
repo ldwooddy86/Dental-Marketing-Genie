@@ -29,13 +29,13 @@ async function saveFile(filename, data, o) {
   if (inViewer()) {
     let dl = null; try { dl = await window.claude.use('downloads'); } catch (e) { dl = null; }
     if (dl) { try { await dl.save({ filename, data }); toast('Saved ' + filename); } catch (e) { const c = e && e.code; toast(c === 'declined' ? 'Download canceled' : c === 'rate_limited' ? 'A save prompt is already open' : 'Could not save ' + filename + (c ? ' (' + c + ')' : '')); } return; }
-    if (typeof data === 'string') { exportText(filename, data, mimeOf(filename)); return; }
+    if (typeof data === 'string') { exportModal(filename, data, false); return; }
     toast('Downloads are not enabled in this view'); return;
   }
   const blob = data instanceof Blob ? data : new Blob([data], { type: mimeOf(filename) });
   try { const u = URL.createObjectURL(blob); const a = el('a', { href: u, download: filename }); document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(u), 2500); toast('Downloaded ' + filename); }
-  catch (e) { if (typeof data === 'string') exportText(filename, data, mimeOf(filename)); else toast('Could not download ' + filename); }
-  if (o.show && typeof data === 'string') exportText(filename, data, mimeOf(filename));
+  catch (e) { if (typeof data === 'string') exportModal(filename, data, false); else toast('Could not download ' + filename); return; }
+  if (o.show && typeof data === 'string') exportModal(filename, data, true);
 }
 const mimeOf = f => /\.csv$/i.test(f) ? 'text/csv;charset=utf-8' : /\.tsv$/i.test(f) ? 'text/tab-separated-values;charset=utf-8' : /\.json$/i.test(f) ? 'application/json' : /\.html?$/i.test(f) ? 'text/html;charset=utf-8' : /\.php$/i.test(f) ? 'text/plain;charset=utf-8' : /\.zip$/i.test(f) ? 'application/zip' : /\.md$/i.test(f) ? 'text/markdown;charset=utf-8' : 'text/plain;charset=utf-8';
 const csvQ = v => { const s = v == null ? '' : String(v); return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };

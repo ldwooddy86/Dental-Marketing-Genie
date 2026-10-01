@@ -19,4 +19,7 @@
   $('#themeTop').onclick = () => { toggleTheme(); BUS.emit('theme'); };
   $('#firmTop').onclick = () => FIRM.panel(); FIRM.applyShell();
   $('#methodTop').onclick = () => showModule('method');
+  $('#backupTop').onclick = () => WORKSPACE.panel();
+  // back and forward between modules, and links that carry only a hash
+  window.addEventListener('hashchange', () => { const k = (location.hash || '').slice(1).split('?')[0]; if (MODI[k] && $('#mod-' + k) && $('#mod-' + k).hidden) showModule(k); });
 })();

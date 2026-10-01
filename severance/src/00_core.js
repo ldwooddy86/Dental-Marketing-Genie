@@ -33,6 +33,8 @@ const store = {
   get(k, d) { try { const v = localStorage.getItem('sv.' + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
   set(k, v) { try { localStorage.setItem('sv.' + k, JSON.stringify(v)); } catch (e) { } }
 };
+// counties and ZIPs ship columnar ({__packed, cols, rows}, written by tools/extract.mjs); unpack them before anything reads them
+(function unpackSuite() { const MISS = '\u0000'; const un = p => { const paths = p.cols.map(c => c.split('.')); return p.rows.map(r => { const o = {}; for (let i = 0; i < paths.length; i++) { const v = r[i]; if (v === MISS) continue; const ks = paths[i]; let t = o; for (let j = 0; j < ks.length - 1; j++) t = t[ks[j]] || (t[ks[j]] = {}); t[ks[ks.length - 1]] = v; } return o; }); }; ['zctas', 'counties'].forEach(k => { if (D[k] && D[k].__packed) D[k] = un(D[k]); }); })();
 // ---- data indices
 const CTY = D.counties; const CI = {}; CTY.forEach(c => CI[c.fips] = c);
 const ZC = D.zctas; const ZI = {}; ZC.forEach(z => ZI[z.zip] = z);
@@ -158,14 +160,22 @@ function table(el, o) {
 // ---- csv / export
 function csv(rows, cols) { const q = v => { const s = v == null ? '' : String(v); return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; }; return [cols.map(c => q(c.l)).join(',')].concat(rows.map(r => cols.map(c => q(typeof c.k === 'function' ? c.k(r) : r[c.k])).join(','))).join('\n'); }
 function exportText(name, text, mime = 'text/csv') {
+  /* the extension downloads and confirms with a toast; the hosted viewer uses its downloads capability; a page opened from disk or the
+     web downloads where the browser allows and also opens the copy box, because sandboxed frames drop downloads silently */
+  if (typeof ENV !== 'undefined' && ENV === 'viewer') { saveFile(name, text); return; }
   let downloaded = false;
   try { const b = new Blob([text], { type: mime }); const u = URL.createObjectURL(b); const a = document.createElement('a'); a.href = u; a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(u), 2000); downloaded = true; } catch (e) { }
-  openModal(`<h3 style="font-family:var(--display);font-size:22px">${esc(name)}</h3><p class="small">${downloaded ? 'A download was started where the viewer allows it. ' : ''}If no file appeared, copy the text below and paste it into a file.</p><textarea class="copy" id="exportText">${esc(text)}</textarea><div style="display:flex;gap:8px;margin-top:8px"><button class="btn primary" id="copyBtn">Copy to clipboard</button><button class="btn" id="closeBtn">Close</button></div>`);
+  if (downloaded && typeof ENV !== 'undefined' && (ENV === 'chrome' || ENV === 'firefox')) { toast('Downloaded ' + name); return; }
+  exportModal(name, text, downloaded);
+}
+function exportModal(name, text, downloaded) {
+  openModal(`<h3 style="font-family:var(--display);font-size:22px">${esc(name)}</h3><p class="small">${downloaded ? 'A download was started where the viewer allows it. ' : ''}If no file appeared, copy the text below and paste it into a file.</p><textarea class="copy" id="exportText" aria-label="${esc(name)}">${esc(text)}</textarea><div style="display:flex;gap:8px;margin-top:8px"><button class="btn primary" id="copyBtn">Copy to clipboard</button><button class="btn" id="closeBtn">Close</button></div>`);
   $('#copyBtn').onclick = () => { const ta = $('#exportText'); navigator.clipboard.writeText(ta.value).then(() => { $('#copyBtn').textContent = 'Copied'; }).catch(() => { ta.select(); document.execCommand && document.execCommand('copy'); $('#copyBtn').textContent = 'Selected, press Ctrl or Cmd C'; }); };
   $('#closeBtn').onclick = closeModal;
 }
-function openModal(html) { let m = $('#modal'); if (!m) { m = document.createElement('div'); m.id = 'modal'; m.className = 'modal'; m.innerHTML = '<div class="box"></div>'; document.body.appendChild(m); m.addEventListener('click', e => { if (e.target === m) closeModal(); }); } m.querySelector('.box').innerHTML = html; m.classList.add('on'); }
-function closeModal() { const m = $('#modal'); if (m) m.classList.remove('on'); }
+let MODAL_RET = null;
+function openModal(html) { let m = $('#modal'); if (!m) { m = document.createElement('div'); m.id = 'modal'; m.className = 'modal'; m.innerHTML = '<div class="box" role="dialog" aria-modal="true" tabindex="-1"></div>'; document.body.appendChild(m); m.addEventListener('click', e => { if (e.target === m) closeModal(); }); m.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); }); } if (!m.classList.contains('on')) MODAL_RET = document.activeElement; const box = m.querySelector('.box'); box.innerHTML = html; const h = box.querySelector('h3'); if (h) { h.id = 'modalTitle'; box.setAttribute('aria-labelledby', 'modalTitle'); } m.classList.add('on'); box.focus(); }
+function closeModal() { const m = $('#modal'); if (m && m.classList.contains('on')) { m.classList.remove('on'); if (MODAL_RET && MODAL_RET.focus) try { MODAL_RET.focus(); } catch (e) { } MODAL_RET = null; } }
 // ---- shell bits
 function mastHTML(o) { return `<div class="mast"><div class="eyebrow">${esc(o.eyebrow)}</div><h2>${esc(o.title)}</h2><div class="dek">${o.dek}</div>${o.ribbon ? `<button type="button" class="ribbon" data-go="${esc(o.ribbon.go)}">${esc(o.ribbon.text)}</button><div style="height:14px"></div>` : '<div class="rule"></div>'}<div class="facts">${(o.facts || []).map(f => `<span><b>${f[0]}</b> ${f[1]}</span>`).join('')}</div></div>`; }
 function tile(l, v, s, g) { return `<div class="tile"><div class="l"><span>${esc(l)}</span>${g ? `<span class="grade ${g}">${g}</span>` : ''}</div><div class="v">${v}</div><div class="s">${s || ''}</div></div>`; }

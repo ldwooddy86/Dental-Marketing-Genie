@@ -12,15 +12,15 @@ async function checkJwt(header) {
   const sig = CMS.b64url(await CMS.hmacSha256(CMS.fromHex(SECRET), h + '.' + p)); eq(s, sig, 'signature with the hex secret');
 }
 let exists = false; let fail422 = false; let version = '5.115.1';
-const PAGE = (over) => Object.assign({ id: 'p-1', uuid: 'u', title: 'AC Repair in Mesquite, TX', slug: 'ac-repair', status: 'draft', url: srv.url + '/ac-repair/', updated_at: '2026-09-26T10:00:00.000Z' }, over || {});
+const PAGE = (over) => Object.assign({ id: 'p-1', uuid: 'u', title: 'Divorce Lawyer in Plano, TX', slug: 'divorce-lawyer', status: 'draft', url: srv.url + '/divorce-lawyer/', updated_at: '2026-09-26T10:00:00.000Z' }, over || {});
 const srv = await mock([
   { method: 'GET', path: ADM + '/site/', handler: () => ({ status: 200, json: { site: { title: 'Test Blog', description: 'x', logo: null, version, url: srv.url + '/' } } }) },
   { method: 'GET', path: ADM + '/users/me/', reply: { users: [{ id: '1', name: 'Owner One', email: 'owner@example.com', roles: [{ name: 'Owner' }] }] } },
-  { method: 'GET', path: ADM + '/pages/slug/ac-repair/', handler: () => exists ? { status: 200, json: { pages: [PAGE()] } } : { status: 404, json: { errors: [{ message: 'Resource not found error, cannot read page.', type: 'NotFoundError' }] } } },
+  { method: 'GET', path: ADM + '/pages/slug/divorce-lawyer/', handler: () => exists ? { status: 200, json: { pages: [PAGE()] } } : { status: 404, json: { errors: [{ message: 'Resource not found error, cannot read page.', type: 'NotFoundError' }] } } },
   { method: 'POST', path: ADM + '/pages/', handler: c => fail422 ? { status: 422, json: { errors: [{ message: 'Validation error, cannot save page.', context: 'Value in [pages.meta_title] exceeds maximum length of 300 characters.', type: 'ValidationError' }] } } : { status: 201, json: { pages: [PAGE({ status: c.json.pages[0].status })] } } },
   { method: 'PUT', path: ADM + '/pages/p-1/', handler: c => ({ status: 200, json: { pages: [PAGE({ status: c.json.pages[0].status })] } }) },
-  { method: 'GET', path: ADM + '/posts/slug/ac-repair/', handler: () => ({ status: 404, json: { errors: [{ message: 'Resource not found error, cannot read post.', type: 'NotFoundError' }] } }) },
-  { method: 'POST', path: ADM + '/posts/', handler: () => ({ status: 201, json: { posts: [PAGE({ id: 'po-1', url: srv.url + '/ac-repair/' })] } }) },
+  { method: 'GET', path: ADM + '/posts/slug/divorce-lawyer/', handler: () => ({ status: 404, json: { errors: [{ message: 'Resource not found error, cannot read post.', type: 'NotFoundError' }] } }) },
+  { method: 'POST', path: ADM + '/posts/', handler: () => ({ status: 201, json: { posts: [PAGE({ id: 'po-1', url: srv.url + '/divorce-lawyer/' })] } }) },
   { method: 'POST', path: ADM + '/images/upload/', reply: { images: [{ url: 'https://blog.example.com/content/images/2026/09/hero.webp', ref: 'hero.webp' }] } },
   { method: 'GET', path: ADM + '/pages/', handler: c => { const pg = parseInt(c.query.page || '1', 10); return { status: 200, json: { pages: pg === 1 ? [{ url: srv.url + '/a/', slug: 'a' }, { url: srv.url + '/b/', slug: 'b' }] : [{ url: srv.url + '/c/', slug: 'c' }], meta: { pagination: { page: pg, limit: 100, pages: 2, total: 3, next: pg === 1 ? 2 : null, prev: pg === 2 ? 1 : null } } } }; } },
   { method: 'GET', path: ADM + '/posts/', reply: { posts: [{ url: 'https://blog.example.com/post-1/', slug: 'post-1' }], meta: { pagination: { page: 1, limit: 100, pages: 1, total: 1, next: null, prev: null } } } },
@@ -34,14 +34,14 @@ const me = srv.find('GET', ADM + '/users/me/'); await checkJwt(me.headers.author
 /* upsert: create draft page */
 const p = page({ summary: 's'.repeat(320), featured_media_url: 'https://blog.example.com/content/images/2026/09/hero.webp' });
 const r1 = await A.upsertPage(cfg, p, { publish: false }, ctx);
-const look = srv.find('GET', ADM + '/pages/slug/ac-repair/'); assert(look, 'slug lookup'); await checkJwt(look.headers.authorization);
+const look = srv.find('GET', ADM + '/pages/slug/divorce-lawyer/'); assert(look, 'slug lookup'); await checkJwt(look.headers.authorization);
 const cr = srv.find('POST', ADM + '/pages/'); assert(cr, 'POST page'); eq(cr.query.source, 'html', 'source=html'); eq(cr.headers['content-type'], 'application/json', 'json body'); eq(cr.headers['accept-version'], 'v5.0', 'accept version on write');
-const d = cr.json.pages[0]; eq(d.title, 'AC Repair in Mesquite, TX', 'title is h1'); eq(d.slug, 'ac-repair', 'slug'); eq(d.status, 'draft', 'draft'); eq(d.visibility, 'public', 'visibility');
-assert(d.html.startsWith('<!--kg-card-begin: html-->\n<style>') && d.html.trim().endsWith('<!--kg-card-end: html-->') && d.html.includes('<h1>AC Repair in Mesquite, TX</h1>') && !d.html.includes('ld+json'), 'html card with css, markup, no schema in body');
+const d = cr.json.pages[0]; eq(d.title, 'Divorce Lawyer in Plano, TX', 'title is h1'); eq(d.slug, 'divorce-lawyer', 'slug'); eq(d.status, 'draft', 'draft'); eq(d.visibility, 'public', 'visibility');
+assert(d.html.startsWith('<!--kg-card-begin: html-->\n<style>') && d.html.trim().endsWith('<!--kg-card-end: html-->') && d.html.includes('<h1>Divorce Lawyer in Plano, TX</h1>') && !d.html.includes('ld+json'), 'html card with css, markup, no schema in body');
 assert(d.codeinjection_head.startsWith('<script type="application/ld+json">') && !d.codeinjection_head.includes('robots'), 'JSON-LD in the head, no robots when indexable');
-eq(d.meta_title, 'AC Repair in Mesquite, TX | Test Co', 'meta title'); eq(d.meta_description, 'Same day AC repair across Mesquite.', 'meta description'); eq(d.canonical_url, 'https://www.example.com/ac-repair/', 'canonical'); eq(d.custom_excerpt.length, 300, 'excerpt cut to 300');
+eq(d.meta_title, 'Divorce Lawyer in Plano, TX | Test Co', 'meta title'); eq(d.meta_description, 'Divorce and custody counsel across Plano.', 'meta description'); eq(d.canonical_url, 'https://www.example.com/divorce-lawyer/', 'canonical'); eq(d.custom_excerpt.length, 300, 'excerpt cut to 300');
 eq(d.feature_image, 'https://blog.example.com/content/images/2026/09/hero.webp', 'feature image'); eq(d.feature_image_alt, 'Technician at a condenser', 'feature alt'); eq(d.og_image, 'https://cdn.example.com/hero.webp', 'og image'); assert(d.updated_at === undefined, 'no updated_at on create');
-eq(r1.id, 'p-1', 'id'); eq(r1.link, srv.url + '/ac-repair/', 'link from response'); eq(r1.edit, srv.url + '/ghost/#/editor/page/p-1', 'edit'); eq(r1.status, 'draft', 'status'); eq(r1.updated, false, 'created'); assert(/300/.test(r1.notes), 'excerpt note');
+eq(r1.id, 'p-1', 'id'); eq(r1.link, srv.url + '/divorce-lawyer/', 'link from response'); eq(r1.edit, srv.url + '/ghost/#/editor/page/p-1', 'edit'); eq(r1.status, 'draft', 'status'); eq(r1.updated, false, 'created'); assert(/300/.test(r1.notes), 'excerpt note');
 /* upsert: exists → PUT with updated_at, publish, noindex */
 exists = true;
 const r2 = await A.upsertPage(cfg, page({ noindex: true, seo: Object.assign({}, page().seo, { noindex: true }) }), { publish: true }, ctx);
@@ -49,7 +49,7 @@ const up = srv.find('PUT', ADM + '/pages/p-1/'); assert(up, 'PUT sent'); eq(up.q
 assert(up.json.pages[0].codeinjection_head.includes('<meta name="robots" content="noindex,follow">') && up.json.pages[0].codeinjection_head.includes('ld+json'), 'robots and JSON-LD in the head');
 eq(r2.updated, true, 'updated'); eq(r2.status, 'publish', 'publish status'); assert(srv.all('POST', ADM + '/pages/').length === 1, 'no second POST');
 /* posts when the page says so and postType is auto */
-const r3 = await A.upsertPage(Object.assign({}, cfg, { postType: 'auto' }), page({ post_type: 'post' }), {}, ctx); assert(srv.find('GET', ADM + '/posts/slug/ac-repair/') && srv.find('POST', ADM + '/posts/'), 'posts branch'); eq(r3.edit, srv.url + '/ghost/#/editor/post/po-1', 'post edit link');
+const r3 = await A.upsertPage(Object.assign({}, cfg, { postType: 'auto' }), page({ post_type: 'post' }), {}, ctx); assert(srv.find('GET', ADM + '/posts/slug/divorce-lawyer/') && srv.find('POST', ADM + '/posts/'), 'posts branch'); eq(r3.edit, srv.url + '/ghost/#/editor/post/po-1', 'post edit link');
 /* Ghost validates title at 255 characters */
 await A.upsertPage(cfg, page({ h1: 'T'.repeat(400) }), {}, ctx); eq(srv.all('PUT', ADM + '/pages/p-1/').pop().json.pages[0].title.length, 255, 'title cut to 255');
 /* uploadMedia: multipart file, purpose, ref */
