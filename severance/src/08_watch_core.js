@@ -424,6 +424,13 @@ const WATCH = (() => {
   function obsCounties(o) { const s = new Set(o.counties || []); (o.zips || []).forEach(z => { if (ZI[z]) s.add(ZI[z].county); }); String(o.geo || '').split(/[,;/]+/).forEach(g => { const f = countyByName(g.replace(/\bcounty\b/i, '').trim()); if (f && /county/i.test(g)) s.add(f); else { const cc = countyOfCity(g.trim()); if (cc) s.add(cc); } }); if (o.rank && o.rank.county) s.add(o.rank.county); return [...s]; }
   function countyCounts() { const m = {}; S.obs.forEach(o => { if (o.comp === FIRM_KEY || (o.kind === 'ad' && !isLive(o))) return; obsCounties(o).forEach(f => { m[f] = (m[f] || 0) + 1; }); }); return m; }
   function rosterByCounty() { const m = {}; list().forEach(c => new Set((c.counties || []).concat((c.offices || []).map(o => o.county)).filter(Boolean)).forEach(f => { (m[f] = m[f] || []).push(c.key); })); return m; }
+  /* the field's paid pressure by county for other modules (the Thermal Atlas fed its paid pressure the same way): live competitor ads
+     seen in the last 120 days, placed in the counties they name, else the counties the competitor serves; {fips: {_all, <line>: n}} */
+  function activity() {
+    const out = {}; S.obs.forEach(o => { if (o.comp === FIRM_KEY || !isLiveAd(o) || daysAgo(o.last) > 120) return; let fs = obsCounties(o); if (!fs.length) { const c = comp(o.comp); fs = c ? c.counties : []; }
+      fs.forEach(f => { const a = out[f] = out[f] || { _all: 0 }; a._all++; if (o.line) a[o.line] = (a[o.line] || 0) + 1; }); });
+    return out;
+  }
   function context(fipsList) {
     const F = (fipsList && fipsList.length ? fipsList : firmCounties()).filter(f => CI[f]); const rb = rosterByCounty(); const cc = countyCounts();
     const rows = F.map(f => { const c = CI[f]; const lo = c.rates.lawoffices || 0; const tracked = (rb[f] || []).length; return { fips: f, name: c.name, lawoffices: c.rates.lawoffices, legal_emp: c.rates.legal_emp, priv: priv(f), div: (c.filings.ttm || {}).div, fpo: c.rates.filings_per_lawoffice, tracked, trackedShare: lo ? tracked / lo : null, named: cc[f] || 0 }; });
@@ -552,7 +559,7 @@ const WATCH = (() => {
     KEY, FIRM_KEY, TIERS, KINDS, PLATFORMS, PLAT_SHORT, FORMATS, STATUSES, OFFERS, HOOKS, RANK_WHERE, LINKS, API_FIELDS, CSV_H, ROSTER_H, SWEEP_H,
     get state() { return S; }, get obs() { return S.obs; }, list, get: comp, add, addMany, update, archive, remove, setChecked, setIds,
     observe, obsUpdate, obsRemove, obsAddMany, forComp, blankObs, blankComp, normComp, matchComp, compLinks, placeOf,
-    score, scoreDetail, reviews, coverage, lineOverlap, compare, profileOf, claims, positionFor, lintFind, stats, weekly, activeAds, timeline, obsCounties, countyCounts, rosterByCounty, context, uncontested, digest,
+    score, scoreDetail, reviews, coverage, lineOverlap, compare, profileOf, claims, positionFor, lintFind, stats, weekly, activeAds, timeline, obsCounties, countyCounts, rosterByCounty, activity, context, uncontested, digest,
     importText, importBackup, parseAdText, parseRosterText, fromMetaApi, fromUrls, metaApiUrl, metaApiRun, canFetch,
     csv, json, rosterCSV, rosterTemplate: ROSTER_TEMPLATE, sweepRows, sweepCSV, compareCSV, settings, setSettings, clear, reload: load,
     isLive, isLiveAd, daysAgo, today, inferLine, inferOffer, inferHook, priceIn, isoFrom, domOf, countyByName, countiesFrom, linesFrom, parseOffice, officeStr, lawyerStr,

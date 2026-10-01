@@ -87,6 +87,7 @@ const ctxR = W.context(); eq(ctxR.counties, ['48201', '48157', '48339'], 'contex
 assert(ctxR.tracked === 2 && Math.abs(ctxR.fpo - ctxR.filings / ctxR.offices) < 1e-9, 'tracked competitors and filings per office');
 eq(ctxR.rows.find(r => r.fips === '48201').named, 2, 'observations naming Harris (the live ad and the ranking check)');
 assert(W.uncontested().every(c => c.fips !== '48201'), 'a county named by a live ad is not uncontested');
+const act = W.activity(); assert(act['48201'] && act['48201']._all === 2 && act['48157']._all === 1 && act['48339']._all === 1, 'activity: live ads placed in the counties they name (Harris), else the counties the competitor serves (all three)');
 const st = W.stats(); assert(st.live === 2 && st.byPlat.meta === 1 && st.byPlat.google === 1 && st.prices.some(p => p.price === 2500), 'stats');
 assert(W.weekly(26).reduce((s, w) => s + w.meta + w.google + w.other, 0) === 2, 'weekly counts the two ads first seen in the last 26 weeks');
 const dg = W.digest(); assert(dg.length >= 4 && dg.every(s => !/[–—]/.test(s)), 'digest sentences, no dashes');
