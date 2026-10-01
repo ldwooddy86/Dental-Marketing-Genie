@@ -86,7 +86,13 @@ redraw on resize through one shared ResizeObserver; `drawMap` takes `alt: {test,
 to draw part of the map; `table()` returns `{render, setRows, setSel, sorted, sort, reveal}` and takes `caption`; `csv()` columns take `d`
 (decimals) and `pct` (a fraction written as a percent); `ctl()` labels its control; `expName(module, geo, ext)` names exports
 `severance_<module>_<geo>_<yyyy-mm-dd>.<ext>`; data helpers `stTTM(k)`, `ttmSpan()`, `seriesSpan()`, `repGap(c)` (a clerk reporting gap).
-Any element with `data-kbd` answers Enter and Space like a click.
+Any element with `data-kbd` answers Enter and Space like a click. Data cleaning in core: `DATA_FIX` (ACS sentinel values such as
+-666666666 become null across counties, ZIPs and metros; `moved` lists ZIPs reassigned to the county holding most of their residents,
+with the original kept as `z.county_raw`; county filings are reallocated to ZIPs exactly as the source does and still sum to the clerk
+counts). `srcFoot(items)` renders the sources, judgment calls and caveats panel. Deep links: `#key/arg` (for example `#atlas/hou`,
+`#others/48660`). Analysis modules accept payloads through `receive`: index {county}, econ and supply {county}, lines {line, county},
+paid {metro, zip, line}, timing {county, line}, atlas {mk, metro}, others {code}, ground {county, zip, city, metro}, desk {geo, zips,
+counties, line, lines, bids}, forge {counties, zips, msa}, watch {county, zip, line, metro}.
 
 From `01_kit.js`: `RT` (the extension runtime or null), `ENV` (`chrome` | `firefox` | `viewer` | `file`), `ENV_LABEL`, `inViewer()`, `slug`,
 `debounce`, `el`, `todayISO`, `uid`, `phoneFmt`, `pctRank`, `BUS.on/emit` (events: `firm`, `theme`, `actuals`, `plan`, `forge`, `watch`,
