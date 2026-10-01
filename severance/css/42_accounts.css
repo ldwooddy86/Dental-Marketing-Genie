@@ -2,7 +2,7 @@
 #mod-accounts .ac-cards{grid-template-columns:repeat(auto-fill,minmax(min(100%,330px),1fr));margin-bottom:0;align-items:start}
 #mod-accounts .ac-conn{gap:8px}
 #mod-accounts .ac-ch{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px}
-#mod-accounts .ac-ch h4{margin:0 4px 0 0;border-left:4px solid var(--line-strong);padding-left:8px;line-height:1.2}
+#mod-accounts .ac-ch h4{margin:0 4px 0 0;border-left-width:4px;border-left-style:solid;padding-left:8px;line-height:1.2}
 #mod-accounts .ac-ch .pill{white-space:normal;text-align:left}
 #mod-accounts .ac-ver{margin-left:auto}
 #mod-accounts .ac-fg{grid-template-columns:repeat(auto-fill,minmax(min(100%,200px),1fr));margin-bottom:4px}

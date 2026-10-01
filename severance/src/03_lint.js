@@ -290,7 +290,7 @@ const LINT = (() => {
       why: 'Written and mailed solicitations are permitted with the label; in person, telephone and real time electronic solicitation of non clients for pecuniary gain is not. No payment to non lawyers for referrals beyond nominal gifts.' },
     { id: 'arc_filing', fam: FIL, sev: 'info', t: 'Advertising Review Committee filing', rule: 'Rule 7.04 and 7.05', src: 'sbot', v: '✔', lang: 'any', needKind: true, self: true, obs: false, test: arcTest,
       why: 'Unless the piece is exempt, file it with the Advertising Review Committee, State Bar of Texas, within ten days of first dissemination, or seek pre approval thirty days ahead. Log it in module 11.', settle: 'A filing log entry, or the Rule 7.05 exemption that applies.' },
-    { id: 'r706', fam: TX, sev: 'info', t: 'Prohibited employment', rule: 'Rule 7.06', src: 'tdrpc', v: '✔', lang: 'any', obs: false, post: true,
+    { id: 'r706', fam: TX, sev: 'info', t: 'Prohibited employment', rule: 'Rule 7.06', src: 'tdrpc', v: '✔', lang: 'any', obs: false, post: true, noComp: true,
       why: 'A lawyer may not accept or continue employment in a matter procured by conduct that violates Rules 7.01 to 7.03, personally or through the firm. Leads from this copy carry the problem with them until it is fixed.' },
 
     /* ad platform policies */
@@ -320,9 +320,9 @@ const LINT = (() => {
       why: 'Remove self served ratings from LegalService schema; show real reviews with a dated source instead.', settle: 'Remove the self served rating from the schema.' },
 
     /* placeholders and house style */
-    { id: 'ph', fam: HOUSE, sev: 'block', t: 'Unfilled placeholder', rule: 'Rule 7.01(a)', src: 'house', v: '✔', lang: 'any', test: placeholderTest,
+    { id: 'ph', fam: HOUSE, sev: 'block', t: 'Unfilled placeholder', rule: 'Rule 7.01(a)', src: 'house', v: '✔', lang: 'any', noComp: true, test: placeholderTest,
       why: 'The copy still carries a bracketed placeholder or a template token. Fill the firm profile (the Firm button) or edit the copy.', settle: 'Fill the placeholder.' },
-    { id: 'meta_note', fam: HOUSE, sev: 'block', t: 'Note or filler left in copy', rule: 'House style', src: 'house', v: '✔', lang: 'any',
+    { id: 'meta_note', fam: HOUSE, sev: 'block', t: 'Note or filler left in copy', rule: 'House style', src: 'house', v: '✔', lang: 'any', noComp: true,
       re: /\b(?:lorem ipsum|as an ai(?: language model)?|note to (?:self|editor|writer)|insert (?:here|name|city|phone|firm)|placeholder text|TBD)\b/gi,
       why: 'No explanatory notes, filler or template text inside a deliverable.', settle: 'Remove the note.' },
     { id: 'house', fam: HOUSE, sev: 'fix', t: 'Hyphen or dash in outbound copy', rule: 'House style', src: 'house', v: '✔', lang: 'any', needKind: true, self: true, test: houseTest,
@@ -436,6 +436,7 @@ const LINT = (() => {
     if (r.kinds && !r.kinds.includes(ctx.kind)) return false;
     if (r.plats && !r.plats.includes(ctx.plat)) return false;
     if (r.self && ctx.posture !== 'self') return false;
+    if (r.noComp && ctx.posture === 'comp') return false;
     if (r.id === 'house' && (ctx.o.house === false)) return false;
     return true;
   }
@@ -477,7 +478,13 @@ const LINT = (() => {
     return { text: out.slice(k).join(''), map: map.slice(k) };
   }
   /* run f on the text between tags (not inside script, style or comments) */
-  function mapTextSegments(html, f) { return String(html).split(/(<script\b[\s\S]*?<\/script\s*>|<style\b[\s\S]*?<\/style\s*>|<!--[\s\S]*?-->|<[^>]*>)/i).map((seg, i) => i % 2 || !seg.trim() ? seg : f(seg)).join(''); }
+  function mapTextSegments(html, f, ftag) { return String(html).split(/(<script\b[\s\S]*?<\/script\s*>|<style\b[\s\S]*?<\/style\s*>|<!--[\s\S]*?-->|<[^>]*>)/i).map((seg, i) => i % 2 ? (ftag ? ftag(seg) : seg) : !seg.trim() ? seg : f(seg)).join(''); }
+  /* the visible attributes the screen reads (meta description and social titles, image alt text) get the same fixes */
+  function fixTagAttrs(tag, f) {
+    if (/^<meta\b/i.test(tag)) return /\b(?:name|property)\s*=\s*["']?(?:description|og:title|og:description|twitter:title|twitter:description)\b/i.test(tag) ? tag.replace(/(\bcontent\s*=\s*)(["'])([\s\S]*?)\2/i, (m, a, q, v) => a + q + f(v) + q) : tag;
+    if (/^<img\b/i.test(tag)) return tag.replace(/(\balt\s*=\s*)(["'])([\s\S]*?)\2/i, (m, a, q, v) => v.trim() ? a + q + f(v) + q : m);
+    return tag;
+  }
 
   /* ---- language: Spanish or English, from common words */
   function detectLang(t) {
@@ -528,7 +535,7 @@ const LINT = (() => {
       let hits; try { hits = r.test ? r.test(ctx.t, ctx) : matchAll(r, ctx.t, ctx); } catch (e) { hits = []; }
       if (hits && hits.length) findings.push(mkFinding(r, hits, ctx, S));
     }
-    if (findings.some(f => f.sev === 'block' && f.fam === TX && f.id !== 'r702a')) findings.push(mkFinding(RULE.r706, [{ at: -1, hit: '' }], ctx, S));
+    if (ctx.posture !== 'comp' && findings.some(f => f.sev === 'block' && f.fam === TX && f.id !== 'r702a')) findings.push(mkFinding(RULE.r706, [{ at: -1, hit: '' }], ctx, S));
     findings.sort((a, b) => rank(a.sev) - rank(b.sev) || (a.at < 0) - (b.at < 0) || a.at - b.at);
     const counts = { block: 0, fix: 0, warn: 0, info: 0 }; findings.forEach(f => { counts[f.sev] = (counts[f.sev] || 0) + 1; });
     return { findings, counts, pass: !counts.block, text: ctx.t, lang: ctx.lang, html: isHtml, version: VERSION };
@@ -553,7 +560,7 @@ const LINT = (() => {
   function fix(text, o) {
     o = Object.assign({}, o || {}); const raw = String(text == null ? '' : text); const isHtml = o.html === true || (o.html == null && looksHTML(raw));
     const applied = []; let out;
-    if (isHtml) { const whole = stripHTML(raw).text; out = mapTextSegments(raw, seg => fixPlain(seg.replace(/&(?:mdash|#8212|#x2014);/gi, '\u2014').replace(/&(?:ndash|#8211|#x2013);/gi, '\u2013'), o, applied, whole)); }
+    if (isHtml) { const whole = stripHTML(raw).text; const fp = seg => fixPlain(seg.replace(/&(?:mdash|#8212|#x2014);/gi, '\u2014').replace(/&(?:ndash|#8211|#x2013);/gi, '\u2013'), o, applied, whole); out = mapTextSegments(raw, fp, tag => fixTagAttrs(tag, fp)); }
     else out = fixPlain(raw, o, applied, raw);
     if (o.solicitation && !/\bADVERTISEMENT\b/.test(out)) { out = isHtml ? (/<body\b[^>]*>/i.test(out) ? out.replace(/(<body\b[^>]*>)/i, '$1\n<p><strong>ADVERTISEMENT</strong></p>') : '<p><strong>ADVERTISEMENT</strong></p>\n' + out) : 'ADVERTISEMENT\n\n' + out; applied.push({ id: 'sol_label', from: '', to: 'ADVERTISEMENT' }); }
     if (['page', 'email', 'social'].includes(o.kind) && o.footer !== false && o.posture !== 'comp') {

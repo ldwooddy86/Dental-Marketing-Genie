@@ -100,6 +100,8 @@ has(h1, 'stale_cap'); has(h1, 'number_one'); has(h1, 'competence');
 const h2 = LINT.screen('<p>Divorce help</p><script src="https://connect.facebook.net/en_US/fbevents.js"></script><form><input type="checkbox" name="sms" checked></form><script type="application/ld+json">{"aggregateRating":{"ratingValue":"5"}}</script>', { kind: 'page', footer: false });
 assert(h2.html, 'HTML detected without the flag'); has(h2, 'web_pixel'); has(h2, 'web_precheck'); has(h2, 'web_rating');
 const hfix = LINT.fix(html, { html: true, kind: 'page', footer: false }); assert(hfix.text.includes('$11,700') && hfix.text.includes('var a = "we guarantee"') && hfix.text.includes('<b>guarantee</b>'), 'HTML fix touches text only');
+const hmeta = LINT.fix('<head><meta name="description" content="Top rated divorce specialists in Plano"></head><body><img src="a.webp" alt="Our expert attorneys"><p>Hi</p></body>', { html: true, kind: 'page', footer: false });
+assert(/content="Top rated practice focused on divorce in Plano"/.test(hmeta.text) && /alt="Our attorneys"/.test(hmeta.text), 'meta description and alt text fixed: ' + hmeta.text);
 eq(LINT.stripHTML('<p>A &amp; B&nbsp;&mdash; C</p>').text, 'A & B — C', 'entities decoded');
 
 /* 6. Spanish */
@@ -162,6 +164,7 @@ has(LINT.screen('Doe & Associates', { posture: 'self' }), 'trade_partner', 'one 
 hasNot(LINT.screen('Board Certified, Criminal Law, Texas Board of Legal Specialization. Free consultation. Flat fee $3,000.', {}), 'tbls_unsupported', 'no kind and no posture: not compared with our firm (Competitor Watch calls)');
 assert(!LINT.screen('Free consultation. Rated 5 stars by 300 reviews.', {}).findings.some(f => f.id === 'free_consult' || (f.id === 'reviews_claim' && f.sev !== 'info')), 'neutral posture: no firm comparison');
 hasNot(LINT.screen('Co-parenting help.', { posture: 'comp', kind: 'ad' }), 'house', 'house style is off for a competitor');
+const compR = LINT.screen('Call [Firm name]. We guarantee results. TBD.', { posture: 'comp', kind: 'ad' }); ['ph', 'meta_note', 'r706', 'arc_filing', 'house'].forEach(id => hasNot(compR, id, 'competitor posture drops ' + id)); has(compR, 'guarantee', 'competitor posture keeps the rules');
 
 /* 10. platforms, solicitation, sms, register samples */
 has(LINT.screen('Are you getting divorced? We can help.', { platform: 'google' }), 'google_hardship');

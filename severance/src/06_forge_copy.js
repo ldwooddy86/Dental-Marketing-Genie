@@ -50,7 +50,8 @@ const FCOPY = (() => {
     interest: { v: '6%', l: 'simple interest a year accrues on unpaid child support', c: FC + ' § 157.265' },
     indep: { v: 'Independent', l: 'duties: unpaid support does not justify denying possession, and denied possession does not justify withholding support', c: FC + ' § 105.006(e)' },
     podef: { v: 'Family violence', l: 'must be found by the court before it grants a protective order', c: FC + ' ch. 85' },
-    po2: { v: '2 years', es: '2 años', l: 'the usual longest term of a protective order; some orders can run longer', c: FC + ' § 85.025' },
+    po2: { v: '2 years', es: '2 años', l: 'the usual longest term the court sets for a final protective order; some orders run longer', c: FC + ' § 85.025' },
+    posapcr: { v: '2 years after the decree', es: '2 años después del decreto', l: 'how long an order tied to a pending divorce or custody case can run, since September 2025', c: FC + ' § 85.025 and SB 1120 (2025)' },
     exparte: { v: '20 days', es: '20 días', l: 'how long a temporary ex parte protective order lasts unless the court extends it', c: FC + ' § 83.002' },
     poviolate: { v: 'A crime', l: 'violating a protective order is a criminal offense', c: 'Texas Penal Code § 25.07' },
     e911: { v: '911', l: 'the emergency number to call first when anyone is in danger', c: 'Emergency services' },
@@ -118,7 +119,7 @@ const FCOPY = (() => {
       { title: 'Book a consultation', text: 'Call {phone} or use the form. Tell us the county where you live, whether there are children and any court dates already set.' },
       { title: 'Plan the case', text: 'We go through the children, the property, the debts and any safety concerns, and decide whether temporary orders are needed while the case is pending.' },
       { title: 'File and serve', text: 'The petition is filed in the right county, the other spouse is served or signs a waiver, and the waiting period starts.' },
-      { title: 'Agreement or trial', text: 'Many cases settle by agreement or in mediation; the rest are decided at a final trial. Either way the court signs a final decree.' }],
+      { title: 'Agreement or trial', when: 'No sooner than {law.wait} after filing', text: 'Many cases settle by agreement or in mediation; the rest are decided at a final trial. Either way the court signs a final decree.' }],
     custody: [
       { title: 'Book a consultation', text: 'Call {phone} or use the form. Tell us where the child lives now, any existing orders and any court dates.' },
       { title: 'Know what you are asking for', text: 'Conservatorship covers parental rights and duties, possession and access covers the schedule, and child support is set by the guidelines.' },
@@ -127,7 +128,7 @@ const FCOPY = (() => {
     protect: [
       { title: 'Safety first', text: 'If you are in danger now, call {law.e911}. Then call {phone} or use the form when it is safe to do so.' },
       { title: 'The application', text: 'We prepare the application and the sworn statement the court reads, with the dates and details of what happened.' },
-      { title: 'Temporary order', text: 'The court can sign a temporary ex parte order without notice to the other side, which lasts up to {law.exparte} unless extended.' },
+      { title: 'Temporary order', when: 'Up to {law.exparte} unless extended', text: 'The court can sign a temporary ex parte order without notice to the other side when it finds a clear and present danger.' },
       { title: 'The hearing', text: 'Both sides can present evidence, and the court decides whether to grant a final protective order and what it requires.' }],
     respond: [
       { title: 'Read the papers', text: 'Follow every term of any order from the moment you are served, and note the hearing date and time.' },
@@ -137,13 +138,13 @@ const FCOPY = (() => {
     cps: [
       { title: 'Call right away', text: 'Call {phone} or use the form. A removal starts short deadlines, beginning with the full adversary hearing within {law.adv14}.' },
       { title: 'Before the hearing', text: 'We read the removal affidavit and the department\'s reasons, and gather records, witnesses and family placement options.' },
-      { title: 'The adversary hearing', text: 'The court decides whether the child returns home or stays in the department\'s care while the case goes on.' },
-      { title: 'The service plan', text: 'We go through each task in the plan, the review hearings and the deadline to finish the case.' }],
+      { title: 'The adversary hearing', when: 'Within {law.adv14} of the removal', text: 'The court decides whether the child returns home or stays in the department\'s care while the case goes on.' },
+      { title: 'The service plan', when: 'About {law.cps1} to finish', text: 'We go through each task in the plan, the review hearings and the deadline to finish the case.' }],
     adopt: [
       { title: 'Book a consultation', text: 'Call {phone} or use the form. Tell us who is adopting, the child\'s age and where the other parent is.' },
       { title: 'Consents and termination', text: 'The other parent\'s rights end by signed relinquishment or by court order, and the child gives consent when old enough.' },
       { title: 'Studies and checks', text: 'The court orders the social study and criminal history checks it needs before the final hearing.' },
-      { title: 'Final hearing', text: 'The judge signs the adoption order, and a new birth certificate can be requested.' }],
+      { title: 'Final hearing', when: 'After {law.adopt6} in the home, unless waived', text: 'The judge signs the adoption order, and a new birth certificate can be requested.' }],
     agree: [
       { title: 'Book a consultation', text: 'Call {phone} or use the form, ideally months before the wedding date.' },
       { title: 'Disclosure', text: 'Each side lists assets, debts and income, which is what keeps the agreement enforceable later.' },
@@ -259,7 +260,7 @@ const FCOPY = (() => {
       who: '<p>Bring the order, the payment history from the Texas State Disbursement Unit or your own records, and a calendar of each missed or denied possession period with the messages around it.</p>',
       steps: 'enforce',
       faq: [
-        { q: 'Can I keep the children if support is not paid?', a: 'No. Possession and support are independent duties under Texas law, and denying possession because of unpaid support can itself violate the order.' },
+        { q: 'If support is not paid, can I refuse possession?', a: 'No. Support and possession are independent duties under Texas law; refusing a period of possession over unpaid support can itself violate the order.' },
         { q: 'Is there a deadline to collect back child support?', a: 'Texas allows back support to be confirmed and collected long after the support duty ends, within deadlines set in the Family Code. Bring your dates to the consultation.' },
         { q: 'What happens at a contempt hearing?', a: 'The court decides whether each violation is proved and can order jail time, fines, payment of the arrears and attorney\'s fees.' },
         { q: 'Does unpaid support earn interest?', a: 'Yes. Unpaid child support accrues {law.interest} simple interest a year.' }],
@@ -268,29 +269,29 @@ const FCOPY = (() => {
       es: { h: 'Hacer cumplir órdenes de custodia en {city}', e: 'Hacer cumplir la orden · {city}', d: 'Si el otro padre no paga la manutención de menores o no respeta la posesión y acceso, el tribunal puede hacer cumplir la orden.', d2: 'Cuéntenos lo básico. Le llamamos para fijar la consulta.',
         aq: '¿Cómo se hace cumplir una orden en Texas?', answer: 'Si el otro padre no paga la manutención de menores o no respeta el horario de posesión y acceso, el tribunal puede hacer cumplir la orden con una sentencia por lo adeudado, la retención de salario y el desacato. La manutención atrasada acumula {law.interest} de interés simple al año. Pagar la manutención y permitir la posesión son deberes independientes.',
         fact: 'k_enf', factL: 'demandas para hacer cumplir órdenes presentadas en el condado de {county} en {k_whenEs}',
-        faq: [{ q: '¿Puedo negar las visitas si no paga?', a: 'No. Pagar la manutención y permitir la posesión y acceso son deberes independientes.' }, { q: '¿La manutención atrasada genera interés?', a: 'Sí, {law.interest} de interés simple al año.' }, { q: '¿Qué debo traer a la consulta?', a: 'La orden, el historial de pagos y un calendario de cada período de posesión negado.' }] } },
+        faq: [{ q: 'Si no paga la manutención, ¿puedo negar la posesión?', a: 'No. Pagar la manutención y permitir la posesión y acceso son deberes independientes.' }, { q: '¿La manutención atrasada genera interés?', a: 'Sí, {law.interest} de interés simple al año.' }, { q: '¿Qué debo traer a la consulta?', a: 'La orden, el historial de pagos y un calendario de cada período de posesión negado.' }] } },
 
     po: { nm: 'Protective orders', short: 'Protective orders', slug: 'protective-order-lawyer', lp: 'protective-order',
       h1n: 'Protective Orders in Texas', h1: 'Protective Order Lawyer in {city}', eyebrow: 'Protective orders · applicants and respondents',
       lede: 'A protective order is the Texas court order for family violence. {brand} helps people ask for one and people who have been served with an application respond.',
       aq: 'How does a Texas protective order work?',
-      answer: 'An application asks the court to find that family violence occurred and to order the respondent to stay away and stop contact. The court can sign a temporary ex parte order without notice, which lasts up to {law.exparte} unless extended, and then holds a hearing where both sides can present evidence. A final protective order usually lasts up to {law.po2}. If anyone is in danger now, call {law.e911}.',
+      answer: 'An application asks the court to find that family violence occurred and to order the respondent to stay away and stop contact. The court can sign a temporary ex parte order without notice, good for up to {law.exparte} unless extended, and then holds a hearing where both sides can present evidence. The court sets the term of a final protective order: up to {law.po2} in most cases, and an order tied to a pending divorce or custody case can run until {law.posapcr}. If anyone is in danger now, call {law.e911}.',
       areaFact: 'In {areaCounties}, {a_po} protective order cases were filed in {period}.',
-      facts: ['a_po', 'law.exparte', 'law.po2', 'law.poviolate'],
-      what: '<p>For applicants:</p><ul><li><strong>The application:</strong> a sworn statement of what happened and when, filed in the county where either party lives.</li><li><strong>The temporary order:</strong> signed without notice when the court finds a clear and present danger, lasting up to {law.exparte} unless extended.</li><li><strong>The hearing and the final order:</strong> stay away terms, no contact, and terms about the children and the home.</li></ul><p>For respondents:</p><ul><li><strong>Follow the order from service:</strong> violating a protective order is a criminal offense.</li><li><strong>What is at stake:</strong> an order can limit firearm possession and affect custody decisions.</li><li><strong>Prepare for the hearing:</strong> bring the papers, messages and witnesses that answer the application.</li></ul>',
+      facts: ['a_po', 'law.exparte', 'law.posapcr', 'law.poviolate'],
+      what: '<p>For applicants:</p><ul><li><strong>The application:</strong> a sworn statement of what happened and when, filed in the county where either party lives.</li><li><strong>The temporary order:</strong> signed without notice when the court finds a clear and present danger, good for up to {law.exparte} unless extended.</li><li><strong>The hearing and the final order:</strong> stay away terms, no contact, and terms about the children and the home.</li></ul><p>For respondents:</p><ul><li><strong>Follow the order from service:</strong> violating a protective order is a criminal offense.</li><li><strong>What is at stake:</strong> an order can limit firearm possession and affect custody decisions.</li><li><strong>Prepare for the hearing:</strong> bring the papers, messages and witnesses that answer the application.</li></ul>',
       who: '<p>Applicants: bring photos, messages, medical records, police report numbers and a list of the dates violence occurred. Respondents: follow every term of the order from the moment you are served, even if you believe the application is untrue, and bring everything you were served with.</p>',
       steps: 'protect',
       faq: [
         { q: 'How is a protective order different from temporary orders in a divorce?', a: 'A protective order is the family violence remedy in the Family Code, and violating one is a crime. Temporary orders in a divorce or custody case govern the family while that case is pending.' },
-        { q: 'How long does a protective order last?', a: 'A final protective order usually lasts up to {law.po2}, and some orders can run longer. A temporary ex parte order lasts up to {law.exparte} unless extended.' },
+        { q: 'How long does a protective order last?', a: 'The court sets the term: up to {law.po2} in most cases, longer in some, and an order tied to a pending divorce or custody case can run until {law.posapcr}. A temporary ex parte order is good for up to {law.exparte} unless extended.' },
         { q: 'I was served with an application. What now?', a: 'Follow every term of any temporary order, note the hearing date and talk with a lawyer before the hearing. Do not contact the applicant to discuss it.' },
         { q: 'Can a protective order affect custody?', a: 'Yes. Courts must consider evidence of family violence in conservatorship and possession decisions.' }],
       related: ['sapcr', 'div_k', 'mod'], band: 'Talk with a lawyer about a protective order.',
       tok: ['protective', 'violence', 'abuse', 'order'],
       es: { h: 'Abogado de órdenes de protección en {city}', e: 'Orden de protección · {city}', d: 'Órdenes de protección por violencia familiar en Texas, para quien la pide y para quien responde. Si está en peligro, llame al {law.e911}.', d2: 'Cuéntenos lo básico cuando sea seguro hacerlo. Le llamamos.',
-        aq: '¿Cómo funciona una orden de protección en Texas?', answer: 'Una orden de protección prohíbe la violencia familiar y el contacto. El tribunal puede firmar una orden temporal sin aviso a la otra parte, que dura hasta {law.exparte.es} salvo prórroga, y luego celebra una audiencia. Una orden final suele durar hasta {law.po2.es}. Si alguien está en peligro, llame al {law.e911}.',
+        aq: '¿Cómo funciona una orden de protección en Texas?', answer: 'Una orden de protección prohíbe la violencia familiar y el contacto. El tribunal puede firmar una orden temporal sin aviso a la otra parte, válida hasta {law.exparte.es} salvo prórroga, y luego celebra una audiencia. El tribunal fija la duración de la orden final: hasta {law.po2.es} en la mayoría de los casos, y una orden ligada a un divorcio o una demanda de custodia pendiente puede durar hasta {law.posapcr.es}. Si alguien está en peligro, llame al {law.e911}.',
         fact: 'k_po', factL: 'casos de órdenes de protección presentados en el condado de {county} en {k_whenEs}',
-        faq: [{ q: '¿Cuánto dura una orden de protección?', a: 'Una orden final suele durar hasta {law.po2.es}; una orden temporal dura hasta {law.exparte.es} salvo prórroga.' }, { q: 'Me notificaron una solicitud. ¿Qué hago?', a: 'Cumpla cada término de la orden temporal, anote la fecha de la audiencia y hable con un abogado antes de la audiencia.' }, { q: '¿Afecta la custodia?', a: 'Sí. El tribunal debe considerar la violencia familiar al decidir la custodia y la posesión y acceso.' }] } },
+        faq: [{ q: '¿Cuánto dura una orden de protección?', a: 'El tribunal fija la duración: hasta {law.po2.es} en la mayoría de los casos, o hasta {law.posapcr.es} si está ligada a un divorcio o una demanda de custodia pendiente. Una orden temporal es válida hasta {law.exparte.es} salvo prórroga.' }, { q: 'Me notificaron una solicitud. ¿Qué hago?', a: 'Cumpla cada término de la orden temporal, anote la fecha de la audiencia y hable con un abogado antes de la audiencia.' }, { q: '¿Afecta la custodia?', a: 'Sí. El tribunal debe considerar la violencia familiar al decidir la custodia y la posesión y acceso.' }] } },
 
     ivd: { nm: 'Child support and paternity', short: 'Child support', slug: 'child-support-lawyer', lp: 'child-support',
       h1n: 'Child Support and Paternity in Texas', h1: 'Child Support Lawyer in {city}', eyebrow: 'Child support and paternity',
@@ -465,7 +466,6 @@ const FCOPY = (() => {
     { q: 'How many protective order cases are filed in {county} County?', a: '{k_po} protective order cases were filed in {county} County {k_when}, according to the Texas Office of Court Administration.', need: 'k_po' }];
   const ATTY_FAQ = [
     { q: 'Is {at_name} licensed in Texas?', a: '{at_name} is licensed by the State Bar of Texas{at_barClause}{at_sinceClause}. You can confirm any Texas lawyer\'s license with the State Bar of Texas lawyer search.' },
-    { q: 'Is {at_name} board certified?', a: '{at_cert}.', need: 'at_cert' },
     { q: 'Which cases does {at_name} handle?', a: '{lineListCap} for clients of {brand}.' },
     { q: 'How do I meet with {at_name}?', a: 'Call {phone} or use the form to book a consultation. {consultLine}' }];
 
@@ -546,13 +546,13 @@ const FCOPY = (() => {
     { id: 'po', scope: 'county', label: 'Protective orders in the county', need: V => has(V, 'k_po', 'k_po_prev') && +String(V.k_po).replace(/\D/g, '') >= 20,
       h1: 'Protective Orders in {county} County: How They Work', title: 'Protective Orders in {county} County',
       meta: '{k_po} protective order cases were filed in {county} County {k_when}. How Texas protective orders work for applicants and respondents.',
-      answer: '{k_po} protective order cases were filed in {county} County {k_when}, according to the Texas Office of Court Administration. A temporary ex parte order lasts up to {law.exparte} unless extended, and a final protective order usually lasts up to {law.po2}. If anyone is in danger now, call {law.e911}.',
-      facts: ['k_po', 'law.exparte', 'law.po2', 'law.poviolate'],
+      answer: '{k_po} protective order cases were filed in {county} County {k_when}, according to the Texas Office of Court Administration. A temporary ex parte order is good for up to {law.exparte} unless extended. The court sets the term of a final order: up to {law.po2} in most cases, and until {law.posapcr} when the order is tied to a pending divorce or custody case. If anyone is in danger now, call {law.e911}.',
+      facts: ['k_po', 'law.exparte', 'law.posapcr', 'law.poviolate'],
       body: ['<p>{county} County courts received {k_po} protective order cases {k_when}, against {k_po_prev} the year before. Each case starts with an application and a sworn statement of what happened.</p>',
         '<p>A protective order is the family violence remedy in the Family Code. The court must find that family violence occurred before granting one, and violating an order is a criminal offense. Orders can also limit firearm possession and shape custody decisions.</p>',
         '<p>Applicants should keep photos, messages, medical records and police report numbers. Respondents should follow every term of a temporary order from the moment they are served and talk with a lawyer before the hearing.</p>'],
       faq: [
-        { q: 'How long does a protective order last in Texas?', a: 'A final order usually lasts up to {law.po2}; some run longer. A temporary ex parte order lasts up to {law.exparte} unless extended.' },
+        { q: 'How long does a protective order last in Texas?', a: 'The court sets the term: up to {law.po2} in most cases, and until {law.posapcr} when the order is tied to a pending divorce or custody case. A temporary ex parte order is good for up to {law.exparte} unless extended.' },
         { q: 'What happens if a protective order is violated?', a: 'Violating a protective order is a criminal offense.' },
         { q: 'Where is an application filed?', a: 'In the county where the applicant or the respondent lives, or where the family violence occurred.' }] },
     { id: 'modify', scope: 'state', label: 'Changing an order',
