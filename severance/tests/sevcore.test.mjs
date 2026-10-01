@@ -11,12 +11,12 @@ const read = f => fs.readFileSync(path.join(ROOT, f), 'utf8');
 const node = () => ({ style: { setProperty() { } }, dataset: {}, classList: { add() { }, remove() { }, toggle() { }, contains: () => false }, setAttribute() { }, removeAttribute() { }, appendChild() { }, addEventListener() { }, querySelector: () => null, querySelectorAll: () => [] });
 const ls = new Map();
 const ctx = { console, URL, URLSearchParams, TextEncoder, TextDecoder, setTimeout, clearTimeout, Intl, Blob,
-  document: { createElement: node, body: node(), documentElement: node(), getElementById: () => null, querySelector: () => null, querySelectorAll: () => [], addEventListener() { }, removeEventListener() { }, activeElement: null },
+  document: { createElement: node, body: node(), head: node(), documentElement: node(), getElementById: () => null, querySelector: () => null, querySelectorAll: () => [], addEventListener() { }, removeEventListener() { }, activeElement: null },
   addEventListener() { }, removeEventListener() { }, matchMedia: () => ({ matches: false, addEventListener() { } }), performance: globalThis.performance, ResizeObserver: class { observe() { } unobserve() { } disconnect() { } }, requestAnimationFrame: f => setTimeout(f, 0), cancelAnimationFrame: clearTimeout, innerWidth: 1400, innerHeight: 900, scrollX: 0, scrollY: 0, getComputedStyle: () => ({ getPropertyValue: () => '' }),
   localStorage: { getItem: k => (ls.has(k) ? ls.get(k) : null), setItem: (k, v) => ls.set(k, String(v)), removeItem: k => ls.delete(k) },
   navigator: { userAgent: 'node' }, location: { hash: '' }, history: { replaceState() { } } };
 ctx.window = ctx; vm.createContext(ctx);
-for (const f of ['data/suite.js', 'src/00_core.js', 'src/20_m01_index.js']) vm.runInContext(read(f), ctx, { filename: f });
+for (const f of ['data/suite.js', 'src/00_core.js', 'src/01_kit.js', 'src/02_firm.js', 'src/20_m01_index.js']) vm.runInContext(read(f), ctx, { filename: f });
 const run = code => vm.runInContext(code, ctx);
 
 /* csv: rounding to the column's decimals, fractions as percents, no thousands separators, blanks for null and non finite */
@@ -90,4 +90,49 @@ eq(run(`(() => { const t = table(document.createElement('div'), { cols: [{ k: 'n
 /* diverging legends keep the layer's unit; WARN names cut off mid parenthesis are closed */
 assert(/ pts$/.test(run(`layerScale({ ramp: 'div', v: c => c.econ.ur_chg_yoy, f: v => sgn(v, 1, ' pts') }, CTY).legend.max`)), 'points legend');
 eq(run(`CO('Remington Lodging and Hospitality, LLC (Hilton Houston NASA ')`), 'Remington Lodging and Hospitality, LLC (Hilton Houston NASA…)', 'truncated company name closed');
+
+/* the CSV formula guard: text cells starting with = + - @ (or a tab or a carriage return) get an apostrophe; plain numbers do not;
+   platform files opt out and carry no note */
+eq(run(`csv([{ a: '=SUM(A1)', b: '-12.5', c: '+3%', d: '@cmd', e: '-dash', f: -4, g: 'ok', h: '\tx', i: '1,234' }], ['a','b','c','d','e','f','g','h','i'].map(k => ({ l: k, k })))`), "a,b,c,d,e,f,g,h,i\n'=SUM(A1),-12.5,+3%,'@cmd,'-dash,-4,ok,'\tx,\"1,234\"", 'csv guards text cells');
+eq(run(`csv([{ a: '=1+1' }], [{ l: '=h', k: 'a' }], { guard: false })`), '=h\n=1+1', 'guard off');
+eq(run(`csv([{ a: '=1+1' }], [{ l: 'h', k: 'a' }], { platform: true, note: 'x' })`), 'h\n=1+1', 'a platform file: no guard, no note');
+eq(run(`csv([{ a: 1 }], [{ l: 'h', k: 'a' }], { note: 'one\\n# two' })`), '# one\n# two\nh\n1', 'notes become # lines');
+eq(run(`csvSafe("'=x")`), "'=x", 'the guard does not stack');
+const note = run(`csvNote('index', ['Counties ranked'])`);
+assert(note.split('\n').every(l => l.startsWith('# ')) && /module 01 Dissolution Index/.test(note) && /court filings \(Texas Office of Court Administration\) August 2026/.test(note) && /WARN notices June 23, 2026/.test(note) && /weekly unemployment claims September 12, 2026/.test(note) && /BLS LAUS\) August 2026/.test(note) && /ACS 2020 to 2024/.test(note) && /Grades: A primary and direct; B primary with a caveat or a model on primary data; C proxy or allocation; D assumption/.test(note) && /# Counties ranked$/.test(note), 'csvNote ' + note);
+assert(!/[‐-―-]/.test(note.replace(/^# /gm, '')), 'csvNote has no hyphens or dashes');
+eq(run(`csvNote('Custom sheet').split('\\n')[0].startsWith('# Severance, Custom sheet.')`), true, 'csvNote takes a free name');
+eq(run(`toCSV(['h', 'i'], [['=1+1', '-5'], { h: '+a', i: 'ok' }], 'n1')`), "# n1\nh,i\n'=1+1,-5\n'+a,ok\n", 'toCSV guards and notes');
+eq(run(`toCSV(['h'], [['=1+1']], { note: 'n', platform: true })`), 'h\n=1+1\n', 'toCSV options object, platform file');
+eq(run(`toCSV(['h'], [['=1+1']], null, { guard: false })`), 'h\n=1+1\n', 'toCSV guard off');
+eq(run(`JSON.stringify(parseCSV(toCSV(['h', 'i'], [['=1+1', '@x'], ['-y', "'plain"]], csvNote('index'))))`), JSON.stringify([['h', 'i'], ['=1+1', '@x'], ['-y', "'plain"]]), 'parseCSV takes the guard off again and skips the notes');
+eq(run(`JSON.stringify(parseCSV("h\\n'=1", null, { raw: true }))`), JSON.stringify([['h'], ["'=1"]]), 'parseCSV raw keeps it');
+
+/* grades, defined once */
+eq(run(`gradeLegend()`), 'Grades: A primary and direct; B primary with a caveat or a model on primary data; C proxy or allocation; D assumption', 'grade legend');
+assert(/class="grade B" title="Confidence grade B: primary with a caveat/.test(run(`gradeChip('B')`)) && run(`gradeChip('x')`) === '', 'grade chip');
+assert(/title="Confidence grade A: primary and direct"/.test(run(`tile('l', 'v', 's', 'A')`)), 'tiles carry the definition');
+
+/* storage: false when the browser refuses, true otherwise */
+eq(run(`store.set('sev.test.ok', 1)`), true, 'store.set true');
+eq(run(`(() => { const o = localStorage.setItem; localStorage.setItem = () => { const e = new Error('The quota has been exceeded.'); e.name = 'QuotaExceededError'; throw e; }; const r = [store.set('sev.test.a', 1), STORE_FULL, store.set('sev.test.b', 2)]; localStorage.setItem = o; return r; })()`), [false, true, false], 'store.set false on a full storage, noted once');
+
+/* tables: rowClass and the firm's rows */
+const tb = (o) => run(`(() => { const el = document.createElement('div'); table(el, Object.assign({ cols: [{ k: 'n', l: 'n' }, { k: 'v', l: 'v' }], rows: [{ _id: '48085', n: 'Collin', v: 1 }, { _id: '48201', n: 'Harris', v: 2 }, { _id: '75024', n: '75024', v: 3 }] }, ${o})); return el.innerHTML; })()`);
+assert(!/class="[^"]*firm/.test(tb('{}')), 'no firm, no firm rows');
+assert(/data-id="48201"[^>]*class="hot"/.test(tb(`{ rowClass: r => r.v > 1 ? 'hot' : '' }`)), 'rowClass function');
+run(`FIRM.set({ name: 'Example Family Law', offices: [{ label: 'Main', city: 'Plano', zip: '75024', county: '48085', primary: true }] })`);
+const ft = tb(`{ rowClass: 'x' }`); assert(/data-id="48085"[^>]*class="firm x"/.test(ft) && /data-id="75024"[^>]*class="firm x"/.test(ft) && /data-id="48201"[^>]*class="x"/.test(ft), 'firm counties and office ZIPs carry the class firm ' + ft.slice(0, 400));
+assert(!/class="firm/.test(tb(`{ firm: false }`)), 'firm: false');
+
+/* the firm on the shell: colors checked for contrast in both themes, the title */
+eq(run(`FIRM.docTitle('Dissolution Index')`), 'Example Family Law · Dissolution Index · Severance', 'title with a firm');
+for (const c of [['#f2c12e', '#ffd84d'], ['#1b4332', '#307a4f'], ['#ffffff', '#ffffff'], ['#000000', '#000000'], ['#5b2a86', '#c9a0ff']]) {
+  run(`FIRM.set({ colors: { primary: '${c[0]}', accent: '${c[1]}', dark: '#111111' } })`); const v = run(`FIRM.brandVars()`);
+  assert(run(`FIRM.contrast('${v.light['--firm-accent']}', '#ffffff')`) >= 3 && run(`FIRM.contrast('${v.dark['--firm-accent']}', '#11261b')`) >= 3, 'accent reads at 3:1 on both cards ' + JSON.stringify(c));
+  assert(run(`FIRM.contrast('${v.light['--firm-accent']}', '${v.light['--firm-accent-ink']}')`) >= 4.5 && run(`FIRM.contrast('${v.dark['--firm-accent']}', '${v.dark['--firm-accent-ink']}')`) >= 4.5, 'ink reads at 4.5:1 on the accent ' + JSON.stringify(c));
+}
+run(`FIRM.set({ name: '', colors: { primary: '#1b4332', accent: '#307a4f', dark: '#0a291a' } })`); eq(run(`FIRM.brandVars()`), null, 'no firm and the default colors: nothing set');
+eq(run(`FIRM.docTitle('Dissolution Index')`), 'Severance · Dissolution Index', 'title without a firm');
+run(`FIRM.set({ logo: 'data:image/png;base64,' + 'A'.repeat(400000) })`); eq(run(`FIRM.importJSON(JSON.stringify({ firm: { name: 'X', logo: 'data:image/png;base64,' + 'A'.repeat(400000) } })).logo`), '', 'an imported logo over the cap is left out');
 console.log('sevcore ok');

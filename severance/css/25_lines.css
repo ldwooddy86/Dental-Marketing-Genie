@@ -1,0 +1,47 @@
+/* Module 06 · Service Lines. Scoped to #mod-lines; CSS variables only so both themes work. */
+#mod-lines .ln-viewbar{margin:14px 0 12px}
+#mod-lines .ln-h3{font-family:var(--display);font-size:20px;margin:0}
+#mod-lines .ln-h4{font-family:var(--display);font-weight:700;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--judg);margin:14px 0 6px}
+#mod-lines .ln-bhead{display:flex;gap:10px;align-items:baseline;justify-content:space-between;flex-wrap:wrap}
+#mod-lines .ln-brief{min-width:0}
+#mod-lines .ln-lensmark{font-family:var(--display);font-weight:700;font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);border:1px solid var(--line);padding:0 4px;vertical-align:1px;white-space:nowrap}
+#mod-lines .ln-catleg{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:12px;color:var(--ink-2);margin-top:8px}
+#mod-lines .ln-catleg span{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+#mod-lines .ln-catleg i,#mod-lines .ln-sw{display:inline-block;width:12px;height:12px;border:1px solid var(--line);flex:none;vertical-align:-1px;margin-right:6px}
+#mod-lines .ln-leg p{margin:6px 0 0}
+#mod-lines .mapwrap path.area.ln-dim{opacity:.22}
+#mod-lines svg.ln-spark{width:100%;max-width:300px;height:auto;display:block}
+#mod-lines svg.ln-spark rect{fill:var(--ink-3)}
+#mod-lines svg.ln-spark rect.hi{fill:var(--s2)}
+#mod-lines svg.ln-spark rect.lo{fill:var(--s3)}
+#mod-lines svg.ln-spark text{font-family:var(--sans);font-size:8.5px;fill:var(--ink-3)}
+#mod-lines .ln-fit{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:4px 12px;font-size:12px}
+#mod-lines .ln-fitc{display:flex;align-items:center;justify-content:space-between;gap:6px;min-width:0;color:var(--ink-2)}
+#mod-lines .ln-fitc>span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#mod-lines .ln-fitc i{display:inline-flex;gap:2px;flex:none}
+#mod-lines .ln-fitc b{display:inline-block;width:9px;height:9px;border:1px solid var(--line-strong);background:var(--card)}
+#mod-lines .ln-fitc b.on{background:var(--accent);border-color:var(--accent)}
+#mod-lines .ln-list{margin:0;padding-left:18px;font-size:13px;line-height:1.5;color:var(--ink)}
+#mod-lines .ln-list li{margin:2px 0}
+#mod-lines .ln-negs code,#mod-lines #lnPlay code{font-size:11.5px;background:var(--sunk);border:1px solid var(--line);padding:0 4px;margin:1px 0;display:inline-block}
+#mod-lines table.ln-heat td{text-align:center;font-variant-numeric:tabular-nums;color:var(--ink)}
+#mod-lines table.ln-heat td.ln-flat{color:var(--ink-3);font-style:italic;background:var(--sunk)}
+#mod-lines table.ln-day td{text-align:center;font-variant-numeric:tabular-nums;color:var(--ink);min-width:58px}
+#mod-lines .ln-form{grid-template-columns:repeat(auto-fill,minmax(min(190px,100%),1fr));margin-bottom:8px}
+#mod-lines .ln-form .ctl label{font-size:12px}
+#mod-lines .ln-src{display:inline-flex;align-items:center;gap:4px;font-size:11px;color:var(--ink-3);margin-top:3px}
+#mod-lines .ln-src.act{color:var(--good)}
+#mod-lines .ln-src.you{color:var(--title);font-weight:600}
+#mod-lines details.ln-rates{border:1px solid var(--line);background:var(--sunk);padding:8px 10px;margin:4px 0 10px}
+#mod-lines details.ln-rates summary{cursor:pointer;font-weight:600;font-size:13px;color:var(--title)}
+#mod-lines details.ln-rates .ln-form{margin-top:10px}
+#mod-lines .ln-etiles{margin-top:12px}
+#mod-lines tr.ln-tot td{border-top:2px solid var(--line-strong)}
+#mod-lines .ln-meth{margin:0;padding-left:20px;font-size:13.5px;line-height:1.55;color:var(--ink)}
+#mod-lines .ln-meth li{margin:4px 0}
+#mod-lines .ln-judg{margin:0;font-size:13px;line-height:1.5}
+#mod-lines .ln-judg dt{font-weight:600;color:var(--title);margin-top:8px}
+#mod-lines .ln-judg dd{margin:2px 0 0;color:var(--ink-2)}
+#mod-lines #lnZCard .pill,#mod-lines #lnBrief .pill{font-family:var(--sans);font-weight:500;font-size:12px;letter-spacing:0;text-transform:none;white-space:normal;color:var(--ink);margin:2px 0}
+@media (max-width:640px){#mod-lines .ln-fit{grid-template-columns:repeat(2,minmax(0,1fr))}}
+#mod-lines .ln-find{display:contents}

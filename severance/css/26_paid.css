@@ -1,0 +1,39 @@
+/* Module 07 · Paid Acquisition. Scoped to #mod-paid; CSS variables only so both themes work. */
+#mod-paid .pd-h3{font-family:var(--display);font-size:20px;margin:0}
+#mod-paid .pd-h4{font-family:var(--display);font-weight:700;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--judg);margin:14px 0 6px}
+#mod-paid .mapwrap path.area.pd-dim{opacity:.22}
+#mod-paid .pd-pins{pointer-events:auto}
+#mod-paid .pd-pin{stroke:var(--card);stroke-width:1.2;vector-effect:non-scaling-stroke}
+#mod-paid .pd-pin.firm{fill:var(--title);stroke:var(--accent-ink)}
+#mod-paid .pd-pin.rival{fill:var(--s2);fill-opacity:.85;cursor:pointer}
+#mod-paid .pd-catleg{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:12px;color:var(--ink-2);margin-top:8px}
+#mod-paid .pd-catleg span{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+#mod-paid .pd-catleg i,#mod-paid .pd-sw{display:inline-block;width:12px;height:12px;border:1px solid var(--line);flex:none}
+#mod-paid .pd-leg p{margin:6px 0 0}
+#mod-paid .pd-flag{border-left:3px solid var(--warning);padding-left:8px}
+#mod-paid .pd-big{display:flex;gap:18px;flex-wrap:wrap;margin:8px 0 2px}
+#mod-paid .pd-big div{display:flex;flex-direction:column}
+#mod-paid .pd-big b{font-family:var(--display);font-size:26px;font-weight:700;line-height:1.1;color:var(--title);font-variant-numeric:tabular-nums}
+#mod-paid .pd-big b.up{color:var(--good)} #mod-paid .pd-big b.dn{color:var(--critical)}
+#mod-paid .pd-big span{font-size:11.5px;color:var(--ink-3)}
+#mod-paid .pd-mono{font-family:var(--mono);font-size:12px}
+#mod-paid .pd-quads{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:10px}
+#mod-paid .pd-qb{border:1px solid var(--line);background:var(--card);padding:8px 10px;min-width:0}
+#mod-paid .pd-qt{display:flex;align-items:center;gap:6px;font-weight:600;color:var(--title);font-size:13px}
+#mod-paid .pd-qv{font-family:var(--display);font-size:22px;font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums}
+#mod-paid .pd-xh{stroke:var(--ink-3);stroke-dasharray:4 3;stroke-width:1.2}
+#mod-paid circle.pd-pt{stroke:var(--card);stroke-width:.8;cursor:pointer}
+#mod-paid circle.pd-pt:hover{stroke:var(--ink);stroke-width:1.5}
+#mod-paid table.pd-corr td{text-align:center;font-variant-numeric:tabular-nums;color:var(--ink)}
+#mod-paid .pd-src p{margin:0 0 4px}
+#mod-paid .pd-tag{display:inline-block;font-size:11px;border:1px solid var(--line);padding:0 5px;margin:1px 2px 1px 0;color:var(--ink-3);white-space:nowrap}
+#mod-paid .pd-tag.actuals{color:var(--good);border-color:var(--good)}
+#mod-paid .pd-tag.you{color:var(--title);border-color:var(--title)}
+#mod-paid .pd-meth{margin:0;padding-left:20px;font-size:13.5px;line-height:1.55;color:var(--ink)}
+#mod-paid .pd-meth li{margin:4px 0}
+#mod-paid .pd-judg{margin:0;font-size:13px;line-height:1.5}
+#mod-paid .pd-judg dt{font-weight:600;color:var(--title);margin-top:8px}
+#mod-paid .pd-judg dd{margin:2px 0 0;color:var(--ink-2)}
+#mod-paid #pdZip .pill,#mod-paid #pdZip .kv{font-size:12.5px}
+#mod-paid #pdZip .pill{font-family:var(--sans);font-weight:500;letter-spacing:0;text-transform:none;white-space:normal;color:var(--ink);margin:2px 0}
+@media (max-width:640px){#mod-paid .pd-quads{grid-template-columns:minmax(0,1fr)}#mod-paid .pd-tag{white-space:normal}}

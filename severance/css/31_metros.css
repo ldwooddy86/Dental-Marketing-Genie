@@ -1,0 +1,14 @@
+/* Metro tabs 12, 14 to 19: the ledger beside the map, the find box, the watch list */
+.mt-led{min-width:0}
+.mt-led h3{font-family:var(--display);font-size:20px;line-height:1.15;margin:2px 0 3px;color:var(--title)}
+.mt-led>.small{margin-bottom:8px}
+.mt-row{display:flex;justify-content:space-between;align-items:baseline;gap:10px;border-bottom:1px solid var(--line);padding:5px 0;font-size:13px}
+.mt-row>span{color:var(--ink-2);min-width:0}
+.mt-row>span .grade{margin-left:2px}
+.mt-row em{display:block;font-style:normal;font-size:11.5px;color:var(--ink-3);line-height:1.35;margin-top:1px}
+.mt-row>b{font-weight:500;color:var(--ink);text-align:right;font-variant-numeric:tabular-nums;flex:none;max-width:55%;overflow-wrap:anywhere}
+.mt-row>b .small{font-weight:400;color:var(--ink-3)}
+.mt-led .callout,.mt-led>div>.small{margin-top:8px}
+.mt-find{min-width:0}
+.mt-find .ctl input{min-width:200px}
+@media (max-width:640px){.mt-find,.mt-find .ctl,.mt-find .ctl input{width:100%;min-width:0}}

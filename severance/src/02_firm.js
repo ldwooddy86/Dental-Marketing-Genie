@@ -11,7 +11,12 @@
      FIRM.counties()       the FIPS codes the firm serves (offices' counties when none are picked)
      FIRM.lines()          the service line keys the firm sells (LINE_META keys)
      FIRM.adFooter()       'Responsible attorney: <name>. Office: <city>, Texas.' for ads and pages
-     FIRM.panel()          the editor (modal) */
+     FIRM.panel()          the editor (modal)
+     FIRM.applyShell()     the firm on the shell: the lockup (logo, or a monogram), <style id="firm-style"> with --firm-accent and
+                           --firm-accent-ink for the primary buttons and the previews (contrast checked, a variant per theme; never the
+                           data ramps), and the page title; runs again on every BUS 'firm'
+     FIRM.docTitle(t)      '<firm> · <module> · Severance' once a firm is set, 'Severance · <module>' before
+     FIRM.LOGO_MAX         the largest logo kept, as a data URL (about 300 KB); a bigger raster is scaled down at upload */
 'use strict';
 const FIRM_DEFAULT = {
   name: '', legal_name: '', tagline: '', url: '', phone: '', intake_email: '', founded: '',
@@ -43,7 +48,13 @@ const FIRM = (() => {
   const phone = () => phoneFmt(P.phone || primary().phone || '');
   const certs = () => P.attorneys.filter(a => a.name && a.tbls).map(a => `${a.name}, Board Certified, ${a.tbls}, Texas Board of Legal Specialization`);
   function exportJSON() { return JSON.stringify({ severance_firm: 1, saved: todayISO(), firm: P }, null, 2); }
-  function importJSON(text) { const j = JSON.parse(text); const f = j.firm || j; if (!f || typeof f !== 'object') throw new Error('No firm profile in that file'); return set(f); }
+  function importJSON(text) { const j = JSON.parse(text); const f = j.firm || j; if (!f || typeof f !== 'object') throw new Error('No firm profile in that file'); if (typeof f.logo === 'string' && f.logo.length > LOGO_MAX) { f.logo = ''; toast('The logo in that file is over 300 KB, so it was left out; choose it again to scale it down'); } return set(f); }
+  /* the logo is kept as a data URL in this browser: anything over about 300 KB is scaled down (a raster image, or an SVG drawn to a
+     bitmap) to 480 px on its long side as PNG, then WebP; null when it still does not fit */
+  const LOGO_MAX = 300 * 1024;
+  function shrinkLogo(url) {
+    return new Promise(res => { const img = new Image(); img.onload = () => { try { const k = Math.min(1, 480 / Math.max(img.naturalWidth || 480, img.naturalHeight || 480)); const w = Math.max(1, Math.round((img.naturalWidth || 480) * k)), h = Math.max(1, Math.round((img.naturalHeight || 480) * k)); const c = document.createElement('canvas'); c.width = w; c.height = h; c.getContext('2d').drawImage(img, 0, 0, w, h); const out = [c.toDataURL('image/png'), c.toDataURL('image/webp', 0.9), c.toDataURL('image/webp', 0.75)].filter(u => /^data:image\/(png|webp)/.test(u) && u.length <= LOGO_MAX); res(out.length ? out.sort((a, b) => a.length - b.length)[0] : null); } catch (e) { res(null); } }; img.onerror = () => res(null); img.src = url; });
+  }
 
   /* ---- the editor */
   function panel() {
@@ -92,14 +103,52 @@ const FIRM = (() => {
     $$('[data-rm-atty]').forEach(b => b.onclick = () => { const c = collect(); c.attorneys.splice(+b.dataset.rmAtty, 1); c.responsible = 0; P = merge(P, c); panel(); });
     $$('[data-rm-off]').forEach(b => b.onclick = () => { const c = collect(); c.offices.splice(+b.dataset.rmOff, 1); if (!c.offices.some(o => o.primary) && c.offices[0]) c.offices[0].primary = true; P = merge(P, c); panel(); });
     $$('#fLines input').forEach(i => i.onchange = () => reopen());
-    $('#fLogo').onclick = async () => { const [file] = await pickFiles('image/*'); if (!file) return; if (file.size > 400000) { $('#fMsg').textContent = 'Pick a logo under 400 KB (SVG or PNG).'; return; } reopen({ logo: await readDataUrl(file) }); };
+    $('#fLogo').onclick = async () => { const [file] = await pickFiles('image/*'); if (!file) return; if (file.size > 8e6) { $('#fMsg').textContent = 'That file is over 8 MB. Pick a logo file (SVG, PNG or WebP).'; return; } let url = await readDataUrl(file); if (url.length > LOGO_MAX) { url = await shrinkLogo(url); if (!url) { $('#fMsg').textContent = 'That logo is over 300 KB and could not be scaled down here. Pick an SVG or PNG under 220 KB.'; return; } toast('Logo scaled down to fit the 300 KB limit'); } reopen({ logo: url }); };
     if ($('#fLogoRm')) $('#fLogoRm').onclick = () => reopen({ logo: '' });
     $('#fSave').onclick = () => { set(collect()); closeModal(); toast('Firm profile saved'); applyShell(); };
     $('#fExport').onclick = () => { set(collect()); saveFile('severance_firm_profile.json', exportJSON()); };
     $('#fImport').onclick = async () => { const [file] = await pickFiles('.json,application/json'); if (!file) return; try { importJSON(await readText(file)); panel(); toast('Firm profile imported'); applyShell(); } catch (e) { $('#fMsg').textContent = e.message; } };
     $('#fClose').onclick = closeModal;
   }
-  /* the shell shows the firm next to the product name once it is set */
-  function applyShell() { const sb = $('.lockup .prod .sb'); if (!sb) return; if (!sb.dataset.base) sb.dataset.base = sb.textContent; sb.textContent = P.name ? `${P.name} · ${sb.dataset.base}` : sb.dataset.base; const b = $('#firmTop span'); if (b) b.textContent = P.name ? 'Firm' : 'Set up the firm'; }
-  return { get, set, ready, missing, responsible, primary, counties, lines, name, adFooter, phone, certs, panel, applyShell, exportJSON, importJSON, officeCounty };
+  /* the shell shows the firm next to the product name once it is set: the lockup (logo or monogram), the firm colors for the primary
+     buttons and the previews, the page title */
+  const hex6 = h => { h = String(h || '').trim(); if (/^#[0-9a-f]{3}$/i.test(h)) h = '#' + h.slice(1).split('').map(x => x + x).join(''); return /^#[0-9a-f]{6}$/i.test(h) ? h.toLowerCase() : null; };
+  const rgbOf = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
+  const lum = h => { const c = rgbOf(h).map(v => { v /= 255; return v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }); return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]; };
+  const contrast = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); };
+  const mixHex = (a, b, t) => { const A = rgbOf(a), B = rgbOf(b); return '#' + A.map((v, i) => Math.round(v + (B[i] - v) * t).toString(16).padStart(2, '0')).join(''); };
+  // a color moved away from the card it sits on (white in the light theme, the dark green card in the dark theme) until it reads at 3:1
+  const against = (c, card) => { const to = lum(card) > 0.4 ? '#000000' : '#ffffff'; let x = c; for (let i = 1; i <= 20 && contrast(x, card) < 3; i++) x = mixHex(c, to, i * 0.05); return x; };
+  const inkOn2 = c => contrast(c, '#ffffff') >= contrast(c, '#0b1a12') ? '#ffffff' : '#0b1a12';
+  const CARD_L = '#ffffff', CARD_D = '#11261b';
+  function brandVars() {
+    const c = P.colors || {}; const pr = hex6(c.primary), ac = hex6(c.accent), dk = hex6(c.dark); const d = FIRM_DEFAULT.colors;
+    const custom = (pr && pr !== d.primary) || (ac && ac !== d.accent) || (dk && dk !== d.dark);
+    if (!P.name && !custom) return null;   // nothing set: the shell keeps its own greens
+    const base = pr || d.primary; const L = against(base, CARD_L); const Dk = against(ac || base, CARD_D);
+    return { light: { '--firm-accent': L, '--firm-accent-ink': inkOn2(L), '--firm-accent-hover': mixHex(L, '#000000', 0.14) }, dark: { '--firm-accent': Dk, '--firm-accent-ink': inkOn2(Dk), '--firm-accent-hover': mixHex(Dk, '#ffffff', 0.16) }, mark: base, markInk: inkOn2(base), dark0: dk || d.dark };
+  }
+  function brandCSS() {
+    const v = brandVars(); if (!v) return ''; const decl = o => Object.keys(o).map(k => `${k}:${o[k]}`).join(';');
+    return `:root{${decl(v.light)};--firm-mark:${v.mark};--firm-mark-ink:${v.markInk};--firm-dark:${v.dark0}}\n@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){${decl(v.dark)}}}\n:root[data-theme="dark"]{${decl(v.dark)}}`;
+  }
+  const initials = n => String(n || '').replace(/[,.]/g, ' ').split(/\s+/).filter(w => w && !/^(&|and|the|of|law|firm|group|office|offices|pllc|llp|llc|pc|p\.c|attorneys?|lawyers?)$/i.test(w)).slice(0, 2).map(w => w[0].toUpperCase()).join('') || (String(n || '').trim()[0] || '').toUpperCase();
+  function docTitle(modTitle) { const t = modTitle || 'Texas family law market intelligence'; return P.name ? `${P.name} · ${t} · Severance` : `Severance · ${t}`; }
+  function applyShell() {
+    let st = document.getElementById('firm-style'); if (!st) { st = document.createElement('style'); st.id = 'firm-style'; document.head.appendChild(st); } const css = brandCSS(); if (st.textContent !== css) st.textContent = css;
+    const sb = $('.lockup .prod .sb'); if (sb) { if (!sb.dataset.base) sb.dataset.base = sb.textContent; sb.textContent = P.name ? `${P.name} · ${sb.dataset.base}` : sb.dataset.base; }
+    const b = $('#firmTop span'); if (b) b.textContent = P.name ? 'Firm' : 'Set up the firm';
+    const mk = $('#firmMark');
+    if (mk) {
+      const show = !!(P.name || P.logo); mk.hidden = !show; mk.classList.toggle('logo', !!P.logo);
+      mk.setAttribute('aria-label', P.name ? P.name : 'Firm logo'); mk.title = P.name || '';
+      const mono = () => { mk.classList.remove('logo'); mk.innerHTML = `<span class="mono" aria-hidden="true">${esc(initials(P.name) || '§')}</span>`; };
+      if (show && P.logo) { if (mk.dataset.src !== P.logo) { mk.dataset.src = P.logo; const img = new Image(); img.alt = ''; img.decoding = 'async'; img.onload = () => { mk.innerHTML = ''; mk.appendChild(img); mk.classList.add('logo'); }; img.onerror = () => { mk.dataset.src = ''; mono(); }; mono(); img.src = P.logo; } }
+      else if (show) { mk.dataset.src = ''; mono(); } else { mk.dataset.src = ''; mk.innerHTML = ''; }
+    }
+    const on = typeof MODS !== 'undefined' ? MODS.find(m => { const s = document.getElementById('mod-' + m.key); return s && !s.hidden; }) : null;
+    if (on) document.title = docTitle(on.title);
+  }
+  if (typeof BUS !== 'undefined') BUS.on('firm', () => { try { applyShell(); } catch (e) { console.error(e); } });
+  return { get, set, ready, missing, responsible, primary, counties, lines, name, adFooter, phone, certs, panel, applyShell, docTitle, brandVars, contrast, shrinkLogo, exportJSON, importJSON, officeCounty, LOGO_MAX };
 })();

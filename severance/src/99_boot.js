@@ -20,7 +20,7 @@
   // each rail group is one tab stop (the selected tab, or the group's first); the arrow keys, Home and End move along the group
   const railStops = () => $$('#rail [role=tablist]').forEach(g => { const tabs = $$('[role=tab]', g); const on = tabs.find(t => t.getAttribute('aria-selected') === 'true') || tabs[0]; tabs.forEach(t => t.tabIndex = t === on ? 0 : -1); });
   $('#rail').addEventListener('keydown', e => { const t = e.target.closest && e.target.closest('[role=tab]'); if (!t) return; const tabs = $$('[role=tab]', t.parentElement); const i = tabs.indexOf(t); const j = e.key === 'ArrowRight' || e.key === 'ArrowDown' ? (i + 1) % tabs.length : e.key === 'ArrowLeft' || e.key === 'ArrowUp' ? (i - 1 + tabs.length) % tabs.length : e.key === 'Home' ? 0 : e.key === 'End' ? tabs.length - 1 : -1; if (j < 0) return; e.preventDefault(); tabs.forEach(x => x.tabIndex = -1); tabs[j].tabIndex = 0; tabs[j].focus(); });
-  window.onModuleShown = key => { railStops(); const c = $('#methodTop'); if (c) { c.classList.toggle('on', key === 'method'); c.setAttribute('aria-pressed', String(key === 'method')); } const mm = MODI[key]; document.title = 'Severance · ' + (mm ? mm.title : 'Texas family law market intelligence'); const b = $('#tab-' + key); const row = b && b.parentElement; if (row && row.scrollWidth > row.clientWidth + 2) row.scrollLeft = Math.max(0, b.offsetLeft - row.offsetLeft - 16); };
+  window.onModuleShown = key => { railStops(); const c = $('#methodTop'); if (c) { c.classList.toggle('on', key === 'method'); c.setAttribute('aria-pressed', String(key === 'method')); } const mm = MODI[key]; document.title = FIRM.docTitle(mm ? mm.title : null); const b = $('#tab-' + key); const row = b && b.parentElement; if (row && row.scrollWidth > row.clientWidth + 2) row.scrollLeft = Math.max(0, b.offsetLeft - row.offsetLeft - 16); };
   // a hash may carry one argument after a slash: #atlas/hou opens the Houston atlas, #others/48660 one of the other metros
   const parseHash = () => { const m = (location.hash || '').slice(1).match(/^([a-z0-9_]+)(?:[/?]([^/?#]+))?/i); return m ? { key: m[1], arg: m[2] ? decodeURIComponent(m[2]) : null } : { key: '', arg: null }; };
   const ph = parseHash(); const start = MODI[ph.key] ? ph.key : store.get('sev.tab', 'index');
@@ -34,6 +34,11 @@
   const skip = document.createElement('a'); skip.className = 'skip'; skip.href = '#modules'; skip.textContent = 'Skip to module'; document.body.insertBefore(skip, document.body.firstChild);
   skip.onclick = e => { e.preventDefault(); const s = $$('#modules > .module').find(x => !x.hidden); if (!s) return; const h = s.querySelector('h1'); const t = h || s; if (h && !h.hasAttribute('tabindex')) h.setAttribute('tabindex', '-1'); t.focus(); s.scrollIntoView({ block: 'start' }); };
   $('#firmTop').onclick = () => FIRM.panel(); FIRM.applyShell();
+  // the footer: the grade legend (defined once, GRADE_DEF in the core), the data vintages from META, and the review rule for ads and pages
+  { const f = $('#footProv'); if (f) { const acs = String(META.acs || '').match(/(\d{4})\D+(\d{4})/) || [];
+    f.innerHTML = `<div class="fl"><b>Grades:</b>${Object.keys(GRADE_DEF).map(g => `<span><span class="grade ${g}">${g}</span> ${esc(GRADE_DEF[g])}</span>`).join('')}</div>`
+      + `<div class="fl"><b>Data through:</b><span>Court filings (OCA) ${esc(fmtDate(META.oca_through))}</span><span>Weekly claims ${esc(fmtDate(META.ui_through))}</span><span>Unemployment (LAUS) ${esc(fmtDate(META.laus_through))}</span><span>WARN notices ${esc(fmtDate(META.warn_through))}</span>${acs[1] ? `<span>ACS ${acs[1]} to ${acs[2]}</span>` : ''}<span>Compiled ${esc(fmtDate(META.compiled))}</span></div>`
+      + '<div class="fl"><b>Ads and pages:</b><span>the responsible attorney reviews before use and before Advertising Review Committee filing (Rule 7.04).</span></div>'; } }
   $('#methodTop').onclick = () => showModule('method');
   $('#backupTop').onclick = () => WORKSPACE.panel();
   // back and forward between modules, and links that carry only a hash

@@ -178,6 +178,14 @@ const FLM = (() => {
   /* ---- the metro projection: km per map unit from the metro's bounds (an equirectangular fit, about 1% at metro scale) */
   function kmPer(code) { const G = GEO.metros && GEO.metros[code]; if (!G || !G.bounds) return null; const [x0, y0, x1, y1] = G.bounds; const lat = (y0 + y1) / 2 * Math.PI / 180; return Math.max((x1 - x0) * Math.cos(lat) * 111.32 / G.W, (y1 - y0) * 110.57 / G.H); }
   const distKm = (code, a, b) => { const k = kmPer(code); return k && a && b ? Math.hypot(a[0] - b[0], a[1] - b[1]) * k : null; };
+  /* the view box around some ZIPs of a metro map (drawMap's view), padded and at the metro map's shape so the map keeps its size */
+  function box(code, zips) {
+    const G = GEO.metros && GEO.metros[code]; if (!G || !zips || !zips.length) return null; let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+    zips.forEach(z => { const n = (G.zcta[z] || '').match(/-?\d+(?:\.\d+)?/g) || []; for (let i = 0; i + 1 < n.length; i += 2) { const x = +n[i], y = +n[i + 1]; if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; } });
+    if (!isFinite(x0)) return null; let w = x1 - x0, h = y1 - y0; const pad = Math.max(w, h) * 0.08 + 4; x0 -= pad; y0 -= pad; w += 2 * pad; h += 2 * pad;
+    const asp = G.W / G.H; if (w / h < asp) { const nw = h * asp; x0 -= (nw - w) / 2; w = nw; } else { const nh = w / asp; y0 -= (nh - h) / 2; h = nh; }
+    return [x0, y0, w, h];
+  }
   /* ---- matters a year by line in a ZIP: the court allocation where the courts report the line; the county count spread by a
      composition weight for the lines without one */
   const marr = z => (z.acs && z.acs.married) || 0;
@@ -340,8 +348,8 @@ const FLM = (() => {
   }
   const ranked = (code, id, zips, n) => { const C = compute(code); const set = zips && zips.length ? new Set(zips) : null; return C.rows.filter(r => !set || set.has(r.zip)).map(r => C.cells[r.zip][id]).filter(c => c.contrib > 0).sort((a, b) => b.pri - a.pri || a.z.zip.localeCompare(b.z.zip)).slice(0, n || 40); };
   const bidTxt = b => (b > 0 ? '+' : '') + b + '%';
-  function googleLocations(code, id, zips, n, camp) { return csv(ranked(code, id, zips, n).map(c => ({ c: camp, loc: c.z.zip + ', Texas, United States', id: c.z.gt || '', bid: bidTxt(c.bid), t: 'Location', s: 'Enabled' })), [{ l: 'Campaign', k: 'c' }, { l: 'Location', k: 'loc' }, { l: 'ID', k: 'id' }, { l: 'Bid Modifier', k: 'bid' }, { l: 'Criterion Type', k: 't' }, { l: 'Status', k: 's' }]); }
-  function metaZips(code, id, zips, n) { const C = compute(code); return csv(ranked(code, id, zips, n).map(c => ({ k: 'US:' + c.z.zip, zip: c.z.zip, city: c.z.city, county: c.z.county_name, pri: c.pri, lev: C.by[c.z.zip].lev.tags.map(t => (LEVERS.find(x => x[0] === t) || [])[1]).join('; ') })), [{ l: 'Zip', k: 'k' }, { l: 'zip', k: 'zip' }, { l: 'city', k: 'city' }, { l: 'county', k: 'county' }, { l: 'priority_pct', k: 'pri', d: 0 }, { l: 'levers', k: 'lev' }]); }
+  function googleLocations(code, id, zips, n, camp) { return csv(ranked(code, id, zips, n).map(c => ({ c: camp, loc: c.z.zip + ', Texas, United States', id: c.z.gt || '', bid: bidTxt(c.bid), t: 'Location', s: 'Enabled' })), [{ l: 'Campaign', k: 'c' }, { l: 'Location', k: 'loc' }, { l: 'ID', k: 'id' }, { l: 'Bid Modifier', k: 'bid' }, { l: 'Criterion Type', k: 't' }, { l: 'Status', k: 's' }], { platform: true }); }
+  function metaZips(code, id, zips, n) { const C = compute(code); return csv(ranked(code, id, zips, n).map(c => ({ k: 'US:' + c.z.zip, zip: c.z.zip, city: c.z.city, county: c.z.county_name, pri: c.pri, lev: C.by[c.z.zip].lev.tags.map(t => (LEVERS.find(x => x[0] === t) || [])[1]).join('; ') })), [{ l: 'Zip', k: 'k' }, { l: 'zip', k: 'zip' }, { l: 'city', k: 'city' }, { l: 'county', k: 'county' }, { l: 'priority_pct', k: 'pri', d: 0 }, { l: 'levers', k: 'lev' }], { platform: true }); }
   function calendarCSV(code, budget, zips, alpha) {
     const a = csv(ALL.map(id => { const s = season(id); const o = { line: lname(id), kind: LENS.includes(id) ? 'lens' : 'additive', src: s.src, trig: ((LM(id) || {}).triggers || []).join(' | ') }; MO.forEach((m, i) => o[m] = s.months[i]); return o; }), [{ l: 'Line', k: 'line' }, { l: 'Kind', k: 'kind' }].concat(MO.map(m => ({ l: m + ' index', k: m, d: 0 }))).concat([{ l: 'Season source', k: 'src' }, { l: 'Triggers', k: 'trig' }]));
     const al = MO.map((_, m) => allocate(code, budget, m, zips, alpha));
@@ -350,6 +358,6 @@ const FLM = (() => {
   }
   function hourlyCSV(id, from, days, useObs) { return csv(hourlyPlan(id, from, days, useObs), [{ l: 'Date', k: 'date' }, { l: 'Day', k: 'day' }, { l: 'Hour', k: 'hour' }, { l: 'Start', k: 'start' }, { l: 'End', k: 'end' }, { l: 'Block', k: 'block' }, { l: 'Bid adjustment (%)', k: 'bid' }, { l: 'Template', k: 'template' }, { l: 'Grade', k: 'grade' }, { l: 'Line', k: 'line' }]); }
   return { ADD, LENS, ALL, PAYER, PIPE_TO, QUICK, QN, QD, TIERS, TIER_CUT, TIER_BID, BANDS, LEVERS, PLATS, PLAB, DAYPARTS, BLOCKS, BH, DAYS, DAYL, SRC,
-    compute, matters, payer, valueAt, pipeValue, kmPer, distKm, ranker, bandOf, tierOf, quadOf, cplByPlatform, blended, econ, season, allocate, grid, hourlyPlan,
+    compute, matters, payer, valueAt, pipeValue, kmPer, distKm, box, ranker, bandOf, tierOf, quadOf, cplByPlatform, blended, econ, season, allocate, grid, hourlyPlan,
     matrixLong, matrixWide, ranked, googleLocations, metaZips, calendarCSV, hourlyCSV, lname, observed, activity, clear: () => { Object.keys(CACHE).forEach(k => delete CACHE[k]); } };
 })();

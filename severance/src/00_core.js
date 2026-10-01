@@ -285,7 +285,7 @@ function mapClamp(mz, v) {
 const mapCanPan = mz => { const b = mapClamp(mz, [-1e9, -1e9, mz.v[2], mz.v[3]]), c = mapClamp(mz, [1e9, 1e9, mz.v[2], mz.v[3]]); return Math.abs(c[0] - b[0]) > 0.5 || Math.abs(c[1] - b[1]) > 0.5; };
 // a module may set the svg's viewBox itself after drawing (the Site Forge frames its counties): that frame becomes home
 function mapAdopt(el, s, mz) { const cur = s.getAttribute('viewBox'); if (cur && cur !== mz.set) { const a = cur.split(/[\s,]+/).map(Number); if (a.length === 4 && a.every(isN) && a[2] > 0 && a[3] > 0) { mz.v = a; mz.home = a.slice(); mz.set = cur; } } }
-function mapApply(el, s, mz) { const vbs = mz.v.map(n => +n.toFixed(2)).join(' '); s.setAttribute('viewBox', vbs); mz.set = vbs; el.classList.toggle('zoomed', mz.home[2] / mz.v[2] > 1.01); mapScale(el); }
+function mapApply(el, s, mz) { hideTip(); const vbs = mz.v.map(n => +n.toFixed(2)).join(' '); s.setAttribute('viewBox', vbs); mz.set = vbs; el.classList.toggle('zoomed', mz.home[2] / mz.v[2] > 1.01); mapScale(el); }
 // zoom by f (below 1 zooms in) about a screen point, or about the middle of the view without one
 function mapZoomAt(el, s, mz, cx, cy, f) {
   mapAdopt(el, s, mz); const v = mz.v; let p = null;
@@ -295,7 +295,9 @@ function mapZoomAt(el, s, mz, cx, cy, f) {
   const nw = clamp(v[2] * f, h0[2] / mz.max, Math.max(h0[2], bw, bh * asp)); const r = nw / v[2];
   mz.v = mapClamp(mz, [p[0] - (p[0] - v[0]) * r, p[1] - (p[1] - v[1]) * r, nw, v[3] * r]); mapApply(el, s, mz);
 }
-function mapHint(el, s) { const h = el.querySelector(':scope > .maphint'); if (!h) return; h.style.top = (s.offsetTop + s.offsetHeight / 2) + 'px'; h.classList.add('on'); clearTimeout(el.__mzHint); el.__mzHint = setTimeout(() => h.classList.remove('on'), 1300); }
+// the middle of the svg in the map element's own box (an svg has no offsetTop)
+function mapMid(el, s) { const a = el.getBoundingClientRect(), b = s.getBoundingClientRect(); return [b.left - a.left + b.width / 2, b.top - a.top + b.height / 2]; }
+function mapHint(el, s) { const h = el.querySelector(':scope > .maphint'); if (!h) return; h.style.top = mapMid(el, s)[1] + 'px'; h.classList.add('on'); clearTimeout(el.__mzHint); el.__mzHint = setTimeout(() => h.classList.remove('on'), 1300); }
 function mapWire(el, s, mz) {
   const ptrs = new Map(); let drag = null, pinch = null; mz.dragged = false;
   s.addEventListener('pointerdown', e => {
@@ -319,7 +321,7 @@ function mapWire(el, s, mz) {
   // a plain wheel scrolls the page and shows the hint; Ctrl or Cmd (and a trackpad pinch, which arrives as a Ctrl wheel) zooms
   s.addEventListener('wheel', e => { if (!(e.ctrlKey || e.metaKey)) { mapHint(el, s); return; } e.preventDefault(); mapZoomAt(el, s, mz, e.clientX, e.clientY, Math.exp(clamp(e.deltaY * (e.deltaMode === 1 ? 16 : 1), -120, 120) * 0.0022)); }, { passive: false });
   s.addEventListener('dblclick', e => { e.preventDefault(); mapZoomAt(el, s, mz, e.clientX, e.clientY, e.shiftKey ? 2 : 0.5); });
-  s.addEventListener('focus', () => { const x = el.querySelector(':scope > .mzx'); if (x) { x.style.top = (s.offsetTop + s.offsetHeight / 2) + 'px'; x.style.left = (s.offsetLeft + s.offsetWidth / 2) + 'px'; } });
+  s.addEventListener('focus', () => { const x = el.querySelector(':scope > .mzx'); if (x) { const m = mapMid(el, s); x.style.left = m[0] + 'px'; x.style.top = m[1] + 'px'; } });
   s.addEventListener('keydown', e => {
     const k = e.key; if (e.altKey || e.ctrlKey || e.metaKey) return;
     if (k === '+' || k === '=' || k === '-' || k === '_') { e.preventDefault(); mapZoomAt(el, s, mz, null, null, k === '+' || k === '=' ? 0.6 : 1 / 0.6); return; }
@@ -394,12 +396,17 @@ function lineChart(el, o) {
   const AX = 11.5;   // the axis text size in px (app.css .chart .ax)
   const m = { l: Math.max(40, Math.round(Math.max(...ylab.map(s => textW(s, AX))) + 12)), r: 12, t: 14, b: 26 };
   const X = x => m.l + (x - x0) / (x1 - x0 || 1) * (W - m.l - m.r), Y = y => m.t + (1 - (y - y0) / (y1 - y0)) * (H - m.t - m.b);
+  // the marks down (vlines) get label rows above the plot: each label takes the first of three rows where it clears the one before it,
+  // and the plot starts below the rows in use (a label that fits no row is left to the tooltip-free line alone)
+  const vl = (o.vlines || []).filter(v => v && isN(v.x) && v.x >= x0 && v.x <= x1).sort((a, b) => a.x - b.x).map(v => ({ v, x: X(v.x) })); const rowR = [];
+  vl.forEach(q => { if (!q.v.label) return; const tw = textW(q.v.label, AX); q.end = q.x + 4 + tw > W - m.r; const L = q.end ? q.x - 4 - tw : q.x + 4; let r = rowR.findIndex(R => L > R + 8); if (r < 0 && rowR.length < 3) { rowR.push(-Infinity); r = rowR.length - 1; } if (r < 0) return; rowR[r] = L + tw; q.row = r; });
+  if (rowR.length) m.t += rowR.length * 13;
   const svg = [`<svg viewBox="0 0 ${W} ${H}"${o.title ? ` role="img" aria-label="${esc(o.title)}"` : ''}>`];
   yt.forEach((v, i) => { svg.push(`<line class="gridl" x1="${m.l}" x2="${W - m.r}" y1="${Y(v)}" y2="${Y(v)}"></line><text class="ax" x="${m.l - 6}" y="${Y(v) + 4}" text-anchor="end">${esc(ylab[i])}</text>`); });
   if (o.bands) o.bands.forEach(b => { const bw = Math.max(1, X(b.x1) - X(b.x0)); const fits = textW(b.label || '', AX) < Math.max(bw, 90); svg.push(`<rect x="${X(b.x0)}" y="${m.t}" width="${bw}" height="${H - m.t - m.b}" fill="var(--sunk-2)" opacity=".5"></rect>${fits ? `<text class="ax" x="${X(b.x0) + 3}" y="${m.t + 11}">${esc(b.label || '')}</text>` : ''}`); });
   // reference lines: across at a value (the state rate), down at a moment (the 2020 closures, a large WARN notice); labels keep clear of each other
   hl.forEach(h => { const y = Y(h.y); if (y < m.t - 0.5 || y > H - m.b + 0.5) return; const c = h.color || 'var(--ink-3)'; const below = y - 4 < m.t + 9; svg.push(`<line class="refl" x1="${m.l}" x2="${W - m.r}" y1="${y.toFixed(1)}" y2="${y.toFixed(1)}" style="stroke:${c}"></line>${h.label ? `<text class="ax refl-l" x="${W - m.r - 4}" y="${(below ? y + 13 : y - 4).toFixed(1)}" text-anchor="end">${esc(h.label)}</text>` : ''}`); });
-  { let lastR = -Infinity, dy = 0; (o.vlines || []).filter(v => v && isN(v.x) && v.x >= x0 && v.x <= x1).sort((a, b) => a.x - b.x).forEach(v => { const x = X(v.x); const c = v.color || 'var(--ink-3)'; svg.push(`<line class="refl" x1="${x.toFixed(1)}" x2="${x.toFixed(1)}" y1="${m.t}" y2="${H - m.b}" style="stroke:${c}"></line>`); if (!v.label) return; const tw = textW(v.label, AX); const end = x + 4 + tw > W - m.r; const L = end ? x - 4 - tw : x + 4; dy = L < lastR + 6 ? (dy + 13) % 39 : 0; lastR = L + tw; svg.push(`<text class="ax refl-l" x="${(end ? x - 4 : x + 4).toFixed(1)}" y="${m.t + 11 + dy}" text-anchor="${end ? 'end' : 'start'}">${esc(v.label)}</text>`); }); }
+  vl.forEach(q => { const c = q.v.color || 'var(--ink-3)'; svg.push(`<line class="refl" x1="${q.x.toFixed(1)}" x2="${q.x.toFixed(1)}" y1="${m.t - (q.row != null ? 13 * (rowR.length - q.row) : 0)}" y2="${H - m.b}" style="stroke:${c}"></line>`); if (q.row != null) svg.push(`<text class="ax refl-l" x="${(q.end ? q.x - 4 : q.x + 4).toFixed(1)}" y="${m.t - 13 * (rowR.length - q.row) + 9}" text-anchor="${q.end ? 'end' : 'start'}">${esc(q.v.label)}</text>`); });
   // x ticks: drop every other one (then more) until the labels no longer collide at this width
   let xt = (o.xTicks || niceTicks(x0, x1, 6)).filter(v => v >= x0 && v <= x1); const xlab = v => String(o.xTickFmt ? o.xTickFmt(v) : v);
   const room = (W - m.l - m.r) / Math.max(1, xt.length - 1); const need = Math.max(...xt.map(v => textW(xlab(v), AX)), 6) + 10;
