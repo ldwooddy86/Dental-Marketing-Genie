@@ -99,7 +99,11 @@ with the original kept as `z.county_raw`; county filings are reallocated to ZIPs
 counts). `srcFoot(items)` renders the sources, judgment calls and caveats panel. Deep links: `#key/arg` (for example `#atlas/hou`,
 `#others/48660`). Analysis modules accept payloads through `receive`: index {county}, econ and supply {county}, lines {line, county},
 paid {metro, zip, line}, timing {county, line}, atlas {mk, metro}, others {code}, ground {county, zip, city, metro}, desk {geo, zips,
-counties, line, lines, bids}, forge {counties, zips, msa}, watch {county, zip, line, metro}.
+counties, line, lines, bids}, forge {counties, zips, msa, cities}, watch {county, zip, line, metro}; index also takes {arg} and the
+metro tabs {zip, county, arg}. Deep links: `#index/<FIPS or county name>` (`#index/texas` clears the selection), `#dfw/48113` (a
+county) or `#dfw/75024` (a ZIP) on any metro tab, `#others/76502`. Index helpers shared with the metro tabs live in 20_m01_index.js
+(`ixPins`, `ixDim`, `ixMarkFirm`, `ixFirmPins`, `ixPlace`, `ixAcctLine`, `ixWatchIn`, `LAYERS_CTY`, `idxValidate`, `idxSanity`); store
+keys `sev.index.layer`, `sev.index.pins`, `sev.metro.<num>`.
 
 **Build 2 core additions (core4).** Every old call keeps working; these are options and helpers on top.
 

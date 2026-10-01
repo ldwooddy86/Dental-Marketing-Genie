@@ -44,6 +44,7 @@
 .ix-sw.firm{background:var(--sunk);border:2px solid var(--ink)}
 .ix-sw.dim{background:var(--rp-forest-5);opacity:.22}
 .ix-sw.pinf{width:9px;height:9px;background:var(--firm-accent,var(--s2));transform:rotate(45deg);border:1px solid var(--card);margin:0 2px}
+.ix-sw.pinc{width:9px;height:9px;background:var(--title);border:1px solid var(--card)}
 .ix-sw.pinw{width:10px;height:10px;border-radius:50%;background:var(--s3);border:1px solid var(--card)}
 /* map decorations */
 .mapwrap path.area.ix-thin{opacity:.38}
@@ -60,7 +61,8 @@
 table.t.ix-meth td.wrap,table.t.ix-val td.wrap,table.t.ix-san td.l{min-width:200px;white-space:normal}
 table.t.ix-san td .small,table.t.ix-meth td .small,table.t.ix-val td .small{font-weight:400;margin-top:2px;line-height:1.35}
 .ix-scat .legendc{margin:4px 0}
+.tblwrap.ix-free{max-height:none}
 @media (max-width:640px){
   .ix-big b{font-size:32px}
-  table.t.ix-meth td.wrap,table.t.ix-val td.wrap,table.t.ix-san td.l{min-width:160px}
+  table.t.ix-meth td.wrap,table.t.ix-val td.wrap,table.t.ix-san td.l{min-width:150px}
 }

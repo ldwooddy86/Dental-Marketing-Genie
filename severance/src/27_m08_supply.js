@@ -60,7 +60,7 @@ registerModule({
     const rows = () => CTY.map(c => ({ _id: c.fips, firm: IX_FIRM().includes(c.fips) ? 1 : 0, name: c.name, pop: c.pop2025, offices: c.rates.lawoffices || 0, emp: c.rates.legal_emp, per10k: c.rates.lawoffices ? c.rates.lawoffices / c.pop2025 * 10000 : 0, priv: c.filings.ttm.priv, fpo: c.rates.filings_per_lawoffice, div: c.filings.ttm.div, dpo: c.rates.lawoffices ? (c.filings.ttm.div || 0) / c.rates.lawoffices : null, di: c.di, msa: c.msa_title ? MNAME(c.msa_title) : 'non metro' }));
     const tbl = table($('#spTable'), { caption: 'Counties by law office supply', cols, rows: rows(), sort: { k: 'fpo', dir: -1 }, onRow: id => { st.sel = id; store.set('sev.county', id); markSel(mapEl, id); side(); tbl.setSel(id); }, selected: st.sel });
     $('#spLayer').onchange = e => { st.layer = e.target.value; draw(); };
-    $('#spCsv').onclick = () => exportText(expName('supply', 'texas'), csv(tbl.sorted(), xcols([cols[0], { k: '_id', l: 'FIPS' }].concat(cols.slice(1)))));
+    $('#spCsv').onclick = () => exportText(expName('supply', 'texas'), csv(tbl.sorted(), xcols([cols[0], { k: '_id', l: 'FIPS' }].concat(cols.slice(1))), { note: typeof csvNote === 'function' ? csvNote('supply', ['Law offices are every office of lawyers with a payroll (CBP 2023, NAICS 541110), not only family law.']) : null }));
     draw(); side();
     this.sync = () => { const f = store.get('sev.county', st.sel); if (CI[f] && f !== st.sel) { st.sel = f; markSel(mapEl, f); side(); tbl.setSel(f); } };
     this.receive = p => { if (p && CI[p.county]) { store.set('sev.county', p.county); this.sync(); } };
