@@ -71,3 +71,11 @@
 #mod-desk .dk-kv2 dd code,#mod-desk .dk-ad code,#mod-desk .finding code{overflow-wrap:anywhere;word-break:break-word;white-space:normal}
 #mod-desk .dk-kv2 dd{min-width:0;overflow-wrap:anywhere}
 #mod-desk .dk-flag{font-size:11px;color:var(--ink-3);white-space:nowrap}
+/* static tables: no sort affordance on the headers */
+#mod-desk table.t th{cursor:default}
+#mod-desk .dk-shr{display:inline-flex;align-items:center;gap:6px;justify-content:flex-end}
+#mod-desk .dk-pin{font-size:11px;color:var(--ink-3);min-width:34px;text-align:left}
+#mod-desk tr.dk-tot td{border-top:2px solid var(--line-strong);font-weight:700;background:var(--sunk)}
+@media (max-width:640px){#mod-desk tr.dk-tot td:first-child{border-bottom:0}}
+#mod-desk #dkAlloc .tblwrap{max-height:none}
+@media (max-width:640px){#mod-desk table.dk-alloc tr.dk-tot td.dk-empty{display:none}}

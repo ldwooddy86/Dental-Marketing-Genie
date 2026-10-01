@@ -62,6 +62,15 @@ registerModule({
     const SAMPLE_BATCH = `## Google ad · custody\nCustody lawyer in Collin County\nConservatorship, possession and child support explained.\n---\n## Meta ad\nAre you getting divorced? Our expert attorneys fight for you.\n---\n## Social post\nTexas does not recognize legal separation. Temporary orders, a SAPCR or a partition agreement may fit instead.\n---\n## Email · homepage announcement\nThe expanded standard possession order is new for 2025. Call [Firm name] at 972-555-0100.`;
 
     const firmName = () => { try { return FIRM.get().name || ''; } catch (e) { return ''; } };
+    const cpSev = s => pill(LINT.SEV_LABEL[s] || s, 'p-' + s);   // severity in words (Blocks, Fix, Review, Info), never by color alone
+    const segL = (id, label, opts, cur) => `<div class="ctl"><span class="lbl" id="${id}L">${esc(label)}</span>${segHTML(id, opts, cur).replace('role="group"', `role="group" aria-labelledby="${id}L"`)}</div>`;
+    /* the user's own copy is kept under sev.comp.text; a sample or a hand over from another module never overwrites it, and "Back to my
+       copy" brings it back */
+    const SAMPLES = new Set([SAMPLE_AD, SAMPLE_ES, SAMPLE_PAGE, SAMPLE_BATCH].concat(LINT.CHANGES.map(c => c.sample).filter(Boolean)));
+    let HANDED = '';   // the text another module last handed over (not the user's draft either)
+    const isSample = t => SAMPLES.has(t) || (!!HANDED && t === HANDED);
+    const draft = () => { const d = store.get('sev.comp.text', ''); return typeof d === 'string' ? d : ''; };
+    const keepDraft = t => { if (t && t.trim() && !isSample(t)) store.set('sev.comp.text', t); };
     root.innerHTML = mastHTML({ eyebrow: 'Module 11 · Compliance Screen · Texas Disciplinary Rules of Professional Conduct, Part VII (eff. July 1, 2021), the family law facts and the platform policies', title: 'Compliance Screen',
       dek: `Paste an ad, a landing page, a social post or a batch of them; upload a CSV of ads or .txt and .html files; or pull every ad the Campaign Desk wrote, every page the Site Forge built and the firm profile itself. Each item is read against the Texas advertising rules (false or misleading statements, trade names, special competence, contingent fees in family matters, past results, the responsible lawyer and primary practice location, solicitation labels, the ten day filing requirement), against the family law facts ads get wrong or that went stale, against the Google and Meta policies that decide whether a campaign runs at all, and against each platform's character limits. It flags, cites the rule and says why. Where a correction is safe and deterministic (a stale number, a banned word with a neutral replacement, the house style) it shows the corrected copy and exactly what changed; it never rewrites a guarantee, a myth or a result.`,
       facts: [[String(LINT.RULES.length), 'rules with stable ids, English and Spanish'], ['10 days', 'to file a non exempt ad with the Advertising Review Committee (Rule 7.04)'], ['$11,700', 'current child support cap; the most common stale number'], ['7.02(a)', 'name of a responsible lawyer and primary practice location']] }) +
@@ -70,15 +79,15 @@ registerModule({
       callout('judg', 'Judgment call: a screen, not a lawyer', `<p>Pattern matching catches the phrases that get firms grievances and the facts that went stale in September 2025. It reads context where it can: "the best interest of the child" is a statute, not a superlative; "Board Certified, Family Law, Texas Board of Legal Specialization" passes when a lawyer in the firm profile holds it; a sentence saying Texas has no legal separation is not the myth. It will not know every case. Treat a flag as a reason to look, and file what needs filing. In competitor posture the same findings become intelligence: the duty to report another lawyer covers violations that raise a substantial question about honesty, trustworthiness or fitness, not every advertising flag, and a grievance attaches to a named lawyer. File the few that clear that bar; keep the rest in house.</p>`) +
       `<div class="grid2">
         <div class="panel" id="cpSrcP"><h3>Copy to screen</h3><div class="sub">One item, or many separated by a line of three dashes (start an item with "## label" to name it; a label that names a platform, "page", "email" or "Spanish" sets those too). HTML is detected and stripped; scripts and styles are skipped.</div>
-          ${segHTML('cpSrc', [['paste', 'Paste'], ['files', 'Upload files'], ['desk', 'Campaign Desk feed'], ['forge', 'Site Forge feed'], ['firm', 'Firm profile']], 'paste')}
-          <div id="cpPaste" style="margin-top:10px"><div class="ctl wide"><label for="cpText">Copy, HTML, or a batch</label><textarea class="copy" id="cpText" spellcheck="false">${esc(store.get('sev.comp.text', SAMPLE_AD))}</textarea></div>
+          ${segHTML('cpSrc', [['paste', 'Paste'], ['files', 'Upload files'], ['desk', 'Campaign Desk feed'], ['forge', 'Site Forge feed'], ['firm', 'Firm profile']], 'paste').replace('role="group"', 'role="group" aria-label="Source of the copy"')}
+          <div id="cpPaste" style="margin-top:10px"><div class="ctl wide"><label for="cpText">Copy, HTML, or a batch</label><textarea class="copy" id="cpText" spellcheck="false">${esc(draft() || SAMPLE_AD)}</textarea></div>
             <div class="formgrid" style="margin-top:8px">${fieldHTML({ k: 'label', id: 'cpLabel', l: 'Label (single item)', ph: 'Google ad, custody, Collin County' }, '')}</div>
-            <div class="btnrow"><button type="button" class="btn primary" id="cpRun">Screen this copy</button><button type="button" class="btn" id="cpSample">Sample ad</button><button type="button" class="btn" id="cpSampleEs">Sample Spanish ad</button><button type="button" class="btn" id="cpSamplePage">Sample page (fictional)</button><button type="button" class="btn" id="cpSampleBatch">Sample batch</button><button type="button" class="btn" id="cpClear">Clear</button></div></div>
+            <div class="btnrow"><button type="button" class="btn primary" id="cpRun">Screen this copy</button><button type="button" class="btn" id="cpSample">Sample ad</button><button type="button" class="btn" id="cpSampleEs">Sample Spanish ad</button><button type="button" class="btn" id="cpSamplePage">Sample page (fictional)</button><button type="button" class="btn" id="cpSampleBatch">Sample batch</button><button type="button" class="btn" id="cpClear">Clear</button><button type="button" class="btn accent" id="cpRestore" hidden>Back to my copy</button></div><div class="small" id="cpDraftNote"></div></div>
           <div id="cpFiles" hidden style="margin-top:10px"><div class="dropzone" id="cpDrop">Drop files here: a CSV or TSV of ads (one row per ad, columns such as Platform, Headline 1, Description 1, Primary text, Title), .txt or .md copy (a line of three dashes between items), .html pages, or a JSON list of {label, text, platform}.</div><div class="btnrow"><button type="button" class="btn" id="cpPick">Choose files</button><button type="button" class="btn" id="cpCsvTpl">↓ CSV template</button></div></div>
           <div class="small" id="cpNote" role="status" aria-live="polite" style="margin-top:6px"></div>
         </div>
         <div class="panel" id="cpOptP"><h3>Posture, scope and the question</h3><div class="sub">Pin these before a run. Posture decides the deliverable: a self audit writes fixes and applies the house style; competitor posture writes routes and leaves our firm profile out of it.</div>
-          <div class="ctl" style="margin-bottom:10px"><label>Posture</label>${segHTML('cpPos', [['self', 'Self audit'], ['comp', 'Competitor']], st.posture)}</div>
+          <div style="margin-bottom:10px">${segL('cpPos', 'Posture', [['self', 'Self audit'], ['comp', 'Competitor']], st.posture)}</div>
           <div class="formgrid">
             ${fieldHTML({ k: 'target', id: 'cpTarget', l: 'Whose copy', ph: firmName() || 'Firm or competitor name' }, st.target)}
             ${fieldHTML({ k: 'domain', id: 'cpDomain', l: 'Domain', ph: 'example.com' }, st.domain)}
@@ -86,7 +95,7 @@ registerModule({
             ${fieldHTML({ k: 'kind', id: 'cpKind', l: 'Type of copy (unless an item says)', t: 'select', opts: KINDS }, st.kind)}
             ${fieldHTML({ k: 'plat', id: 'cpPlat', l: 'Platform (unless an item says)', t: 'select', opts: [['', 'Not set (every platform rule)']].concat(Object.keys(PLAB).map(k => [k, PLAB[k]])) }, st.plat)}
           </div>
-          <div class="ctl" style="margin-bottom:10px"><label>Language</label>${segHTML('cpLang', [['auto', 'Detect'], ['en', 'English'], ['es', 'Spanish']], st.lang)}</div>
+          <div style="margin-bottom:10px">${segL('cpLang', 'Language', [['auto', 'Detect'], ['en', 'English'], ['es', 'Spanish']], st.lang)}</div>
           <div class="btnrow" style="flex-direction:column;align-items:flex-start"><label class="chk"><input type="checkbox" id="cpSol"${st.sol ? ' checked' : ''}> A solicitation sent to specific people known to need a lawyer (Rule 7.03)</label><label class="chk"><input type="checkbox" id="cpHome"${st.home ? ' checked' : ''}> Pages are the homepage (Rule 7.05 exempts other pages from filing)</label></div>
         </div>
       </div>
@@ -94,8 +103,8 @@ registerModule({
       <div class="panel" id="cpItemsP" style="margin-bottom:14px"><h3>Items</h3><div class="sub" id="cpItemsSub">Pass means no open block. Click an item for its findings and its corrected copy.</div><div id="cpItems"></div></div>
       <div class="grid2">
         <div class="panel" id="cpFindP"><h3 id="cpFindH">Findings</h3><div class="callout judg" id="cpCompNote" hidden><div class="h">Competitor posture: positioning notes</div><p>These notes say where a competitor's copy sits against the Texas rules, the family law facts and the platform policies, and so where your own copy can stand apart. They are not findings against a lawyer: the copy may be filed, approved, out of date or carried elsewhere (an extension, a landing page). Our firm profile and house style are left out.</p></div><div class="sub" id="cpFindSub"></div>
-          <div class="controls">${ctl('Scope', segHTML('cpScope', [['item', 'This item'], ['all', 'All items']], 'item'))}${ctl('Severity', segHTML('cpSev', [['', 'All'], ['block', 'Blocks'], ['fix', 'Fix'], ['warn', 'Review'], ['info', 'Info']], ''))}${fieldHTML({ k: 'fam', id: 'cpFam', l: 'Family', t: 'select', opts: [['', 'All']] }, '')}${fieldHTML({ k: 'disp', id: 'cpDisp', l: 'Disposition', t: 'select', opts: [['', 'All']].concat(DISPS.map(d => [d, DLAB(d)])) }, '')}</div>
-          <div id="cpMarkedW"><div class="minihd">The copy with every hit marked</div><div class="cp-marked" id="cpMarked"></div></div>
+          <div class="controls">${segL('cpScope', 'Scope', [['item', 'This item'], ['all', 'All items']], 'item')}${segL('cpSev', 'Severity', [['', 'All'], ['block', 'Blocks'], ['fix', 'Fix'], ['warn', 'Review'], ['info', 'Info']], '')}${fieldHTML({ k: 'fam', id: 'cpFam', l: 'Family', t: 'select', opts: [['', 'All']] }, '')}${fieldHTML({ k: 'disp', id: 'cpDisp', l: 'Disposition', t: 'select', opts: [['', 'All']].concat(DISPS.map(d => [d, DLAB(d)])) }, '')}</div>
+          <div id="cpMarkedW"><div class="minihd">The copy with every hit marked</div><div class="small cp-legend">Marks by severity, each named on hover and for screen readers: <mark class="m-block">Blocks</mark> double underline, <mark class="m-fix">Fix</mark> dotted, <mark class="m-warn">Review</mark> dashed, <mark class="m-info">Info</mark> thin.</div><div class="cp-marked" id="cpMarked"></div></div>
           <div id="cpFind"></div></div>
         <div class="panel" id="cpFixP"><h3>Safe fixes</h3><div class="sub">Deterministic corrections only: stale numbers ($9,200 to $11,700, 3% to 6%), banned phrasing with a neutral replacement ("specialist" to "practice focused on", "#1" removed), the TBLS form completed from the firm profile, the ADVERTISEMENT label on a solicitation, the responsible lawyer footer on a page, and the house style. Guarantees, myths and results are flagged for a person, never rewritten.</div>
           <div class="btnrow"><button type="button" class="btn primary" id="cpFixOne">Apply safe fixes to this item</button><button type="button" class="btn" id="cpFixUse" disabled>Use the corrected copy</button><button type="button" class="btn" id="cpFixCopy" disabled>Copy</button><button type="button" class="btn" id="cpFixDl" disabled>↓ Corrected copy</button></div>
@@ -188,7 +197,7 @@ registerModule({
     }
     const note = msg => { $('#cpNote', root).textContent = msg; };
     function runPaste() {
-      const raw = $('#cpText', root).value; store.set('sev.comp.text', raw);
+      const raw = $('#cpText', root).value; keepDraft(raw); draftUI();
       if (!raw.trim()) { note('Nothing pasted.'); ITEMS = []; SEL = null; render(); return; }
       const parts = LINT.splitBatch(raw);
       if (parts.length > 1) { runItems(parts, 'Pasted batch', `${parts.length} items`); return; }
@@ -241,7 +250,7 @@ registerModule({
     function fCard(it, f, d, showItem) {
       const ctxHTML = f.at >= 0 && f.hit && f.ctx ? `<div class="cp-ctx">${esc(f.ctx.before)}<mark class="m-${f.sev}">${esc(f.hit)}</mark>${esc(f.ctx.after)}</div>` : f.hit ? `<div class="cp-ctx"><mark class="m-${f.sev}">${esc(f.hit.slice(0, 240))}${f.hit.length > 240 ? '…' : ''}</mark></div>` : '';
       return `<div class="cp-f s-${f.sev}" data-fk="${esc(it.id + '|' + f.id)}">
-        <div class="cp-fh">${sevPill(f.sev)} <span class="cp-disp d-${DCLS[d.s]}">${DLAB(d.s)}</span> <b>${esc(f.title)}</b> <code>${esc(f.id)}</code>${f.field ? ` <span class="small">field ${esc(f.field)}</span>` : ''}${showItem ? ` <span class="small">· ${esc(it.label)}</span>` : ''}</div>
+        <div class="cp-fh">${cpSev(f.sev)} <span class="cp-disp d-${DCLS[d.s]}">${DLAB(d.s)}</span> <b>${esc(f.title)}</b> <code>${esc(f.id)}</code>${f.field ? ` <span class="small">field ${esc(f.field)}</span>` : ''}${showItem ? ` <span class="small">· ${esc(it.label)}</span>` : ''}</div>
         <div class="cp-rule">${f.url ? `<a href="${esc(f.url)}" target="_blank" rel="noopener">${esc(f.rule)}</a>` : esc(f.rule)} · ${esc(f.fam || '')} · ${f.v === '✔' ? 'cited from the primary text' : 'verify the live text'}${f.n > 1 ? ` · ${N(f.n)} hits` : ''}${f.line ? ` · line ${N(f.line)}` : ''}${f.src_at != null ? ` · source position ${N(f.src_at)}` : f.at >= 0 ? ` · position ${N(f.at)}` : ''}</div>
         ${ctxHTML}<p class="cp-why">${esc(f.why)}</p>
         ${f.fix ? `<div class="cp-fixline">Safe fix: ${f.fix.from ? `<del>${esc(f.fix.from)}</del>` : '<i>add</i>'} → ${f.fix.to ? `<ins>${esc(f.fix.to)}</ins>` : '<i>removed</i>'}</div>` : ''}
@@ -265,7 +274,7 @@ registerModule({
       const t = it.res.text || ''; if (!t) return '<span class="small">Empty.</span>';
       const marks = []; it.res.findings.forEach(f => (f.hits || []).forEach(h => { if (h.at >= 0 && h.len > 0) marks.push({ at: h.at, end: h.at + h.len, sev: h.sev || f.sev, id: f.id, title: f.title }); }));
       marks.sort((a, b) => a.at - b.at || LINT.SEVS.indexOf(a.sev) - LINT.SEVS.indexOf(b.sev)); let pos = 0, out = '';
-      marks.forEach(m => { if (m.at < pos) return; out += esc(t.slice(pos, m.at)) + `<mark class="m-${m.sev}" title="${esc(m.id + ': ' + m.title)}">${esc(t.slice(m.at, m.end))}</mark>`; pos = m.end; });
+      marks.forEach(m => { if (m.at < pos) return; out += esc(t.slice(pos, m.at)) + `<mark class="m-${m.sev}" title="${esc(LINT.SEV_LABEL[m.sev] + ': ' + m.title + ' (' + m.id + ')')}">${esc(t.slice(m.at, m.end))}</mark><span class="vh"> (${esc(LINT.SEV_LABEL[m.sev])}: ${esc(m.title)})</span>`; pos = m.end; });
       return out + esc(t.slice(pos));
     }
     $('#cpFind', root).onclick = e => { const b = e.target.closest('[data-mv]'); if (!b) return; const card = b.closest('[data-fk]'); const [iid, fid] = card.dataset.fk.split('|'); const it = ITEMS.find(x => x.id === iid); if (!it) return; const k = it.label + '|' + fid; if (b.dataset.mv) OVR[k] = b.dataset.mv; else delete OVR[k]; store.set('sev.comp.ovr', OVR); render(); const again = $(`[data-fk="${CSS.escape(card.dataset.fk)}"] details`, root); if (again) again.open = true; };
@@ -297,7 +306,7 @@ registerModule({
     $('#cpFixOne', root).onclick = () => { const it = curItem(); if (!it) { toast('Run a source first'); return; } fixItem(it); render(); };
     $('#cpFixAll', root).onclick = () => { if (!ITEMS.length) { toast('Run a source first'); return; } ITEMS.forEach(fixItem); render(); note(`Safe fixes applied to ${ITEMS.length} item${ITEMS.length === 1 ? '' : 's'}; ${ITEMS.filter(x => x.fixed.after.pass).length} pass afterwards.`); };
     $('#cpFixCopy', root).onclick = () => { const it = curItem(); if (it && it.fixed) copyText(it.fixed.text); };
-    $('#cpFixUse', root).onclick = () => { const it = curItem(); if (!it || !it.fixed) return; it.text = it.fixed.text; if (it.fields) it.fields = it.fixed.fields; screenItem(it); if (ITEMS.length === 1 && SRCV === 'paste') { $('#cpText', root).value = it.text; store.set('sev.comp.text', it.text); } render(); toast('Corrected copy screened again'); };
+    $('#cpFixUse', root).onclick = () => { const it = curItem(); if (!it || !it.fixed) return; it.text = it.fixed.text; if (it.fields) it.fields = it.fixed.fields; screenItem(it); if (ITEMS.length === 1 && SRCV === 'paste') { const was = $('#cpText', root).value; $('#cpText', root).value = it.text; if (!isSample(was)) keepDraft(it.text); draftUI(); } render(); toast('Corrected copy screened again'); };
     $('#cpFixDl', root).onclick = () => { const done = ITEMS.filter(x => x.fixed); if (!done.length) { toast('Apply the safe fixes first'); return; }
       if (done.length === 1) { const it = done[0]; saveFile(`${slug(it.label) || 'copy'}_corrected.${it.res.html ? 'html' : 'txt'}`, it.fixed.text); return; }
       saveFile('compliance_corrected_copy.csv', toCSV(['item', 'platform', 'status_after', 'blocks_left', 'changes', 'original', 'corrected'], done.map(it => [it.label, optsFor(it).platform, it.fixed.after.pass ? 'pass' : 'needs review', it.fixed.after.counts.block, it.fixed.applied.map(a => `${a.id}: ${a.from} > ${a.to}`).join(' | '), it.fields ? JSON.stringify(it.fields) : it.text, it.fields ? JSON.stringify(it.fixed.fields) : it.fixed.text]), `Severance Compliance Screen, rule pack ${LINT.VERSION}, ${todayISO()}`)); };
@@ -353,12 +362,15 @@ registerModule({
     wireSeg($('#cpSrc', root), v => { setSrc(v); if (v === 'desk') fromDesk(); else if (v === 'forge') fromForge(); else if (v === 'firm') fromFirm(); });
     $('#cpRun', root).onclick = () => { setSrc('paste'); runPaste(); };
     $('#cpRunTop', root).onclick = () => { if (SRCV === 'desk') fromDesk(); else if (SRCV === 'forge') fromForge(); else if (SRCV === 'firm') fromFirm(); else if (SRCV === 'files') $('#cpPick', root).click(); else runPaste(); };
-    const loadSample = (txt, label) => { setSrc('paste'); $('#cpText', root).value = txt; $('#cpLabel', root).value = label || ''; runPaste(); };
+    function draftUI() { const d = draft(); const box = $('#cpText', root).value; const show = !!(d && d.trim() && d !== box); $('#cpRestore', root).hidden = !show; $('#cpDraftNote', root).textContent = show ? 'Your own copy is kept in this browser; "Back to my copy" puts it back in the box.' : ''; }
+    const loadSample = (txt, label) => { setSrc('paste'); keepDraft($('#cpText', root).value); $('#cpText', root).value = txt; $('#cpLabel', root).value = label || ''; runPaste(); };
+    $('#cpRestore', root).onclick = () => { const d = draft(); if (!d) return; setSrc('paste'); $('#cpText', root).value = d; $('#cpLabel', root).value = ''; runPaste(); $('#cpText', root).focus(); };
+    $('#cpText', root).oninput = debounce(() => { keepDraft($('#cpText', root).value); draftUI(); }, 500);   // the user's copy is saved as it is typed, not only when it runs
     $('#cpSample', root).onclick = () => loadSample(SAMPLE_AD, 'Sample ad');
     $('#cpSampleEs', root).onclick = () => loadSample(SAMPLE_ES, 'Sample Spanish ad');
     $('#cpSamplePage', root).onclick = () => loadSample(SAMPLE_PAGE, 'Sample page (fictional, written to trip the rules)');
     $('#cpSampleBatch', root).onclick = () => loadSample(SAMPLE_BATCH, '');
-    $('#cpClear', root).onclick = () => { $('#cpText', root).value = ''; $('#cpLabel', root).value = ''; store.set('sev.comp.text', ''); ITEMS = []; SEL = null; LAST = { src: '', label: '' }; render(); note('Cleared.'); };
+    $('#cpClear', root).onclick = () => { keepDraft($('#cpText', root).value); $('#cpText', root).value = ''; $('#cpLabel', root).value = ''; ITEMS = []; SEL = null; LAST = { src: '', label: '' }; render(); draftUI(); note('Cleared. Your copy stays saved until you type or screen new copy.'); };
     $('#cpPick', root).onclick = async () => { const files = await pickFiles('.csv,.tsv,.txt,.md,.html,.htm,.json,text/plain,text/csv,text/html', true); if (files.length) fromFiles(files); };
     $('#cpCsvTpl', root).onclick = () => saveFile('compliance_ads_template.csv', toCSV(['Platform', 'Ad name', 'Language', 'Headline 1', 'Headline 2', 'Headline 3', 'Description 1', 'Description 2', 'Primary text', 'Title'], [['google', 'Custody, Collin County', 'en', 'Custody Lawyer In Plano', 'Collin County Family Law', 'Conservatorship Explained', 'Possession and child support explained in plain terms.', 'Flat fee options for agreed cases.', '', ''], ['meta', 'Divorce with children', 'en', '', '', '', '', '', 'Divorce with children in Collin County: conservatorship, possession and support, explained.', 'Plano family law']]));
     const dz = $('#cpDrop', root);
@@ -426,7 +438,7 @@ registerModule({
       const fam = $('#cpBookFam', root).value; const q = $('#cpBookQ', root).value.trim().toLowerCase();
       const rows = LINT.RULES.filter(r => (!fam || r.fam === fam) && (!q || [r.id, r.alias, r.t, r.rule, r.why, r.fam].join(' ').toLowerCase().includes(q)));
       const fixable = r => !!(r.fix || ['house', 'certified', 'sol_label', 'r702a'].includes(r.id));
-      $('#cpBookT', root).innerHTML = rows.length ? `<div class="tblwrap" style="max-height:560px"><table class="t cp-wrap"><thead><tr><th>Rule id</th><th>Family</th><th>Severity</th><th>Language</th><th>What it catches</th><th>Citation</th><th>Safe fix</th><th>Vintage</th></tr></thead><tbody>${rows.map(r => `<tr${q && r.id === q ? ' class="sel"' : ''}><td><code>${esc(r.id)}</code>${r.alias ? `<div class="small">build 1 ${esc(r.alias)}</div>` : ''}</td><td>${esc(r.fam)}</td><td>${sevPill(r.sev)}</td><td>${r.lang === 'es' ? 'Spanish' : r.lang === 'any' ? 'Any' : 'English'}</td><td><b>${esc(r.t)}</b><div class="small">${esc(r.why)}</div></td><td>${r.url ? `<a href="${esc(r.url)}" target="_blank" rel="noopener">${esc(r.rule)}</a>` : esc(r.rule)}</td><td>${fixable(r) ? 'Yes' : 'No'}</td><td>${r.v === '✔' ? 'Cited' : 'Verify'}</td></tr>`).join('')}</tbody></table></div><p class="small">${N(rows.length)} of ${N(LINT.RULES.length)} rules. Platform limits run per field as <code>len_&lt;field&gt;</code> and <code>count_&lt;field&gt;</code> (Google and Microsoft headline and description counts).</p>` : '<p class="small">No rule matches.</p>';
+      $('#cpBookT', root).innerHTML = rows.length ? `<div class="tblwrap" style="max-height:560px"><table class="t cp-wrap"><thead><tr><th>Rule id</th><th>Family</th><th>Severity</th><th>Language</th><th>What it catches</th><th>Citation</th><th>Safe fix</th><th>Vintage</th></tr></thead><tbody>${rows.map(r => `<tr${q && r.id === q ? ' class="sel"' : ''}><td><code>${esc(r.id)}</code>${r.alias ? `<div class="small">build 1 ${esc(r.alias)}</div>` : ''}</td><td>${esc(r.fam)}</td><td>${cpSev(r.sev)}</td><td>${r.lang === 'es' ? 'Spanish' : r.lang === 'any' ? 'Any' : 'English'}</td><td><b>${esc(r.t)}</b><div class="small">${esc(r.why)}</div></td><td>${r.url ? `<a href="${esc(r.url)}" target="_blank" rel="noopener">${esc(r.rule)}</a>` : esc(r.rule)}</td><td>${fixable(r) ? 'Yes' : 'No'}</td><td>${r.v === '✔' ? 'Cited' : 'Verify'}</td></tr>`).join('')}</tbody></table></div><p class="small">${N(rows.length)} of ${N(LINT.RULES.length)} rules. Platform limits run per field as <code>len_&lt;field&gt;</code> and <code>count_&lt;field&gt;</code> (Google and Microsoft headline and description counts).</p>` : '<p class="small">No rule matches.</p>';
     }
     $('#cpBookFam', root).onchange = renderBook; $('#cpBookQ', root).oninput = debounce(renderBook, 150);
     $('#cpSrcList', root).innerHTML = Object.keys(LINT.SOURCES).map(k => { const s = LINT.SOURCES[k]; return `<li>${s.url ? `<a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.label)}</a>` : esc(s.label)}</li>`; }).join('');
@@ -444,7 +456,7 @@ registerModule({
       if (Array.isArray(p.items) && p.items.length) { setSrc('paste'); runItems(p.items, src, p.label || `${p.items.length} items`); toFindings(); return; }
       if (p.text || p.fields) {
         setSrc('paste'); const label = p.label || (st.posture === 'comp' && st.target ? st.target + ' copy' : src + ' copy');
-        if (p.text) { $('#cpText', root).value = String(p.text); store.set('sev.comp.text', String(p.text)); } $('#cpLabel', root).value = label;
+        if (p.text) { keepDraft($('#cpText', root).value); HANDED = String(p.text); $('#cpText', root).value = HANDED; draftUI(); } $('#cpLabel', root).value = label;
         runItems([Object.assign({}, p, { label, platform: p.platform || p.plat, html: p.html === true || (p.html == null && LINT.looksHTML(String(p.text || ''))) || undefined })], src, st.posture === 'comp' ? `${st.target || 'a competitor'}, positioning notes` : label);
         toFindings(); return;
       }
@@ -455,7 +467,7 @@ registerModule({
     self.screenItems = (items, src) => { runItems(items || [], src || 'Handed over', `${(items || []).length} items`); return ITEMS.map(it => ({ label: it.label, pass: status(it) === 'pass', counts: it.res.counts })); };
     BUS.on('firm', () => { if (root.isConnected && ITEMS.length) rerun(); });
 
-    renderCtrl(); renderArc(); renderReg(); renderBook();
+    renderCtrl(); renderArc(); renderReg(); renderBook(); draftUI();
     if (self._pending) { const p = self._pending; self._pending = null; self._recv(p); } else runPaste();
   }
 });

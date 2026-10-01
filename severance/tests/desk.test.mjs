@@ -103,6 +103,24 @@ ads.forEach(r => {
 assert(ads.some(r => v(r, 'Headline 1') === 'Orden de Protección'), 'Spanish creative in Spanish campaigns');
 assert(!ads.some(r => [...Array(15)].map((_, i) => v(r, 'Headline ' + (i + 1))).some(h => /^Office in (Frisco|Dallas)/.test(h))), 'market cities never appear as an office');
 
+/* ---- keywords: the modifiers shown are the ones used; crossings well formed; base seeds only near the base; DIY seeds left out */
+{ const MK = model(X, { geoMods: ['Plano', 'Frisco', 'McKinney', 'Allen', 'Collin County', 'Dallas County', 'Extra'], lineInfo: { mil: { kw: ['military divorce lawyer', 'Fort Hood divorce attorney', 'Fort Bliss divorce lawyer', 'USFSPA retirement division'] }, mod: { kw: ['modify child support Texas', 'custody modification lawyer', 'how long does a modification take', 'child support calculator Texas'] } } });
+  const mods = X.kwMods(MK, 'en'); eq(mods, ['Plano', 'Frisco', 'McKinney', 'Allen', 'Collin County', 'Dallas County'], 'six modifiers, cities then counties');
+  const loc = X.keywords(MK, 'mod', 'en').filter(k => k.group === 'Local'); const used = new Set(); loc.forEach(k => mods.forEach(m => { if (k.kw.includes(m.toLowerCase())) used.add(m); }));
+  eq([...used].sort(), mods.slice().sort(), 'every modifier shown is used, and the county modifiers appear'); assert(!loc.some(k => /extra/.test(k.kw)), 'a modifier not shown is not used');
+  assert(!loc.some(k => /\btexas\b/.test(k.kw)), 'no "texas" left inside a city crossing: ' + loc.filter(k => /texas/.test(k.kw)).map(k => k.kw).join(', '));
+  assert(loc.some(k => k.kw === 'custody modification lawyer plano') && loc.some(k => k.kw === 'plano custody modification lawyer'), 'lawyer seed crossed both ways');
+  const mk = X.keywords(MK, 'mil', 'en'); assert(!mk.some(k => /fort (hood|bliss)/.test(k.kw)), 'no Fort Hood or Fort Bliss keywords in a Collin County plan');
+  const bell = X.keywords(model(X, { counties: [{ fips: '48027', name: 'Bell', gt: '' }], markets: [{ zip: '76542', city: 'Killeen', county: '48027', county_name: 'Bell', gt: '', bid: 0 }], geoMods: ['Killeen', 'Bell County'], lineInfo: MK.lineInfo }), 'mil', 'en');
+  assert(bell.some(k => k.kw === 'fort hood divorce attorney' && k.group === 'Core') && !bell.some(k => /fort bliss/.test(k.kw)) && !bell.some(k => k.group === 'Local' && /fort hood/.test(k.kw)), 'Bell County: Fort Hood seed kept in Core, never crossed with a city, Fort Bliss left out');
+  const sp = X.seedPlan(MK, 'mod', 'en'); assert(sp.left.some(x => /calculator/.test(x.kw)) && sp.questions.includes('how long does a modification take') && !sp.core.some(k => /calculator|^how/.test(k)), 'DIY seeds left out, question seeds go to Questions');
+  assert(X.keywords(MK, 'mod', 'en').some(k => k.group === 'Questions' && k.kw === 'how long does a modification take' && k.match === 'Phrase'), 'question seed in phrase');
+  const es = X.kwMods(MK, 'es'); assert(es.includes('condado de Collin') && !es.some(m => / County$/.test(m)), 'Spanish modifiers say condado de');
+  const freeM = model(X, { firm: Object.assign({}, FIRM_FULL, { consult: { free: true, fee: 0, virtual: true } }) }); assert(!X.negsFor(freeM, 'div_k', 'en').includes('free') && !X.negsFor(freeM, 'div_k', 'es').includes('gratis') && !X.negText(freeM).split('\n').includes('free'), 'a firm with free consultations does not block "free"');
+  assert(X.negsFor(M, 'div_k', 'en').includes('free'), 'otherwise "free" is a negative');
+  const ov = model(X, { lines: M.lines.concat([{ key: 'mil', name: 'Military divorce', short: 'Military', share: 0.1 }]) }); assert(X.negsFor(ov, 'div_k', 'en').includes('military') && !X.negsFor(ov, 'mil', 'en').includes('military') && !X.negsFor(M, 'div_k', 'en').includes('military'), 'divorce campaigns carry the overlay terms as negatives only when that line runs');
+  const gx = X.google(ov); assert(gx.rows.some(r => /_DIV_K_GOOGLE_EN_/.test(r[0]) && r[gx.header.indexOf('Keyword')] === 'military' && r[gx.header.indexOf('Criterion Type')] === 'Negative Phrase'), 'cross campaign negative in the Editor file'); }
+
 /* ---- military bases by county: Bell and Coryell carry Fort Hood (renamed from Fort Cavazos in 2025) */
 const bell = X.rsa(M, 'mil', { zip: '76542', city: 'Killeen', county: '48027', county_name: 'Bell', gt: '' }, 'en');
 assert(bell.h.includes('Military Divorce, Fort Hood') && !bell.h.some(h => /Cavazos/.test(h)), 'Bell County military headline names Fort Hood');
@@ -112,6 +130,13 @@ assert(!X.rsa(M, 'mil', M.markets[0], 'en').h.some(h => /Fort|JBSA/.test(h)), 'n
 const many = X.rsa(model(X, { firm: Object.assign({}, FIRM_FULL, { consult: { free: true, fee: 0, virtual: true } }), langs: ['en', 'es'] }), 'div_k', M.markets[0], 'en');
 assert(many.h.length === 15, 'RSA caps at 15 headlines when more are available'); assert(many.d.length === 4, 'RSA caps at 4 descriptions');
 
+/* ---- prices in ads come only from the firm profile's fees (Rule 7.02(d)); the model's value per matter never appears */
+{ const noFee = X.rsa(M, 'div_nk', M.markets[0], 'en'); assert(!noFee.h.some(h => /From \$|\$5,000/.test(h)) && noFee.h.filter(h => /\$/.test(h)).every(h => h === 'Consultation Fee $150'), 'no line fee in the profile: no price headline; only the profile consultation fee (value per matter is 5000 in the model and must not appear)');
+  const withFee = X.rsa(model(X, { firm: Object.assign({}, FIRM_FULL, { fees: { div_nk: 3900 } }) }), 'div_nk', M.markets[0], 'en'); assert(withFee.h.includes('Agreed Divorce From $3,900'), 'the profile fee is the advertised price');
+  const all2 = X.creative(M).map(a => Object.values(a.fields).join(' ')).join(' '); assert(!/\$5,000/.test(all2), 'value per matter never printed'); }
+/* ---- the Rule 7.02(a) line names the primary office from the firm, never the market city */
+assert(X.rsa(M, 'div_k', M.markets[2], 'en').d[0] === 'Responsible attorney: Jane Smith. Primary office: Plano, Texas.' && !X.rsa(M, 'div_k', M.markets[2], 'en').d[0].includes('Dallas'), 'the 7.02(a) line uses the primary office, not the market city (Dallas)');
+
 /* ---- Microsoft: same rows, no Google criterion IDs */
 const MS = files.microsoft; const mcol = h => MS.header.indexOf(h);
 assert(MS.rows.filter(r => r[mcol('Location')]).every(r => r[mcol('ID')] === ''), 'Microsoft rows leave the Google criterion ID empty');
@@ -120,7 +145,10 @@ assert(MS.rows.filter(r => r[mcol('Campaign Type')] === 'Search').every(r => /_M
 /* ---- county scope: county criterion IDs */
 const MC = model(X, { scope: 'counties' }); const gc = X.google(MC); const gcc = h => gc.header.indexOf(h);
 const cl = gc.rows.filter(r => r[gcc('Location')]); assert(cl.length && cl.every(r => r[gcc('Location')] === 'Collin County, Texas, United States' && r[gcc('ID')] === '9059489'), 'county targets carry the county criterion ID');
-const zc = X.zipCSV(MC); eq(zc.header, ['Location', 'ID', 'Type', 'Bid adjustment', 'City', 'County'], 'ZIP target header (build 1)'); eq(zc.rows[0].slice(0, 3), ['Collin County, Texas, United States', '9059489', 'County'], 'county target row');
+/* the ZIP targets file is in the Editor layout: every location row names a Google search campaign and carries a status */
+const zc = X.zipCSV(MC); eq(zc.header, ['Campaign', 'Location', 'ID', 'Bid Modifier', 'Criterion Type', 'Status', 'Location type', 'City', 'County', 'Monthly allocation'], 'ZIP target header (Editor layout)'); eq(zc.rows[0].slice(0, 7), ['DFW_DIV_K_GOOGLE_EN_20261015', 'Collin County, Texas, United States', '9059489', '+0%', 'Location', 'Enabled', 'County'], 'county target row');
+eq(zc.rows.length, 3 * 2, 'one location row per Google campaign (3 lines x 2 languages) per county');
+{ const zz = X.zipCSV(M); const gc0 = new Set(X.google(M).rows.filter(r => r[0] && r[1] === 'Search').map(r => r[0])); eq(zz.rows.length, 3 * 2 * 3, 'ZIP rows: campaigns x ZIPs'); assert(zz.rows.every(r => gc0.has(r[0]) && r[4] === 'Location' && r[5] === 'Enabled'), 'every ZIP row names a campaign of the Editor file and carries a status'); eq(zz.rows[0].slice(1, 4), ['75024, Texas, United States', '9026883', '+20%'], 'ZIP row'); }
 
 /* ---- Meta */
 const MT = files.meta; const mc = h => MT.header.indexOf(h);
@@ -169,8 +197,12 @@ eq(X.endDate('2026-10-01', 13), '2026-12-30', 'end date is inclusive');
 const fc = X.flightCSV(M, fl); eq(fc.header, ['month', 'days', 'season_index', 'live_multiplier', 'media_usd', 'live_reasons'], 'flight CSV header'); eq(fc.rows[0][0], 'Oct 2026', 'flight CSV starts at the flight start');
 
 /* ---- the build 1 exports, kept */
-eq(X.kwCSV(M).header, ['Campaign', 'Ad Group', 'Keyword', 'Match Type'], 'keywords CSV header (build 1)'); assert(X.negText(M).split('\n').includes('pro bono') && X.negText(M).split('\n').includes('gratis'), 'negatives text');
-eq(X.planCSV(M).header.slice(0, 9), ['geography', 'line', 'expected_matters', 'value_per_matter', 'share_pct', 'budget_month', 'leads_month', 'retained_month', 'revenue_month'], 'plan CSV header (build 1 columns first)');
+{ const kc = X.kwCSV(M); eq(kc.header, ['Campaign', 'Ad Group', 'Keyword', 'Criterion Type', 'Status'], 'keywords CSV in the Editor layout'); assert(kc.rows.every(r => /_GOOGLE_(EN|ES)_20261015$/.test(r[0]) && r[4] === 'Enabled' && ['Exact', 'Phrase', 'Negative Phrase'].includes(r[3])), 'every keyword row names its campaign, a criterion type and a status'); assert(kc.rows.some(r => r[3] === 'Negative Phrase' && r[2] === 'pro bono' && r[1] === ''), 'campaign negatives in the keyword file'); }
+assert(X.negText(M).split('\n').includes('pro bono') && X.negText(M).split('\n').includes('gratis'), 'negatives text');
+eq(X.planCSV(M).header.slice(0, 9), ['geography', 'line', 'expected_matters', 'value_per_matter', 'share_pct', 'budget_month', 'leads_month', 'retained_month', 'matter_value_month'], 'plan CSV header (build 1 columns first; value retained, not cash)');
+{ const MO = model(X, { lines: [{ key: 'div_k', name: 'Divorce with children', short: 'Divorce, kids', share: 0.5, n: 1000, nNet: 800, fee: 9500, budget: 600 }, { key: 'high', name: 'High asset', short: 'High asset', share: 0.5, n: 250, nNet: 200, overlay: true, pinned: true, fee: 35000, budget: 600 }], nTotal: 1000 });
+  const pc = X.planCSV(MO); const H = pc.header; const tot = pc.rows[pc.rows.length - 1];
+  eq(tot[H.indexOf('expected_matters')], 1000, 'plan total counts each matter once (not 1000 + 250)'); eq(pc.rows[1][H.indexOf('overlay_of')], 'divorce with and without children', 'overlay line marked'); eq(pc.rows[1][H.indexOf('share_set_by')], 'user', 'a share the user set is marked'); eq(pc.rows[0][H.indexOf('matters_counted')], 800, 'matters counted once per line'); }
 { const MS2 = model(X, { lines: M.lines.map(l => Object.assign({}, l, { seas, shift: 1 })) }); const pc = X.planCSV(MS2); const mi = pc.header.indexOf('Oct 2026 usd');
   assert(mi > 0 && pc.header[mi + 11] === 'Sep 2027 usd', 'plan CSV carries the twelve month plan from the flight start month');
   const tot = pc.rows[pc.rows.length - 1]; eq(tot[1], 'Total', 'plan CSV total row'); assert(Math.abs(+tot[mi] - pc.rows.slice(0, -1).reduce((a, r) => a + +r[mi], 0)) <= 2, 'total row sums the lines for the month');
@@ -184,6 +216,33 @@ eq(X.creativeCSV(M).header, ['platform', 'line', 'language', 'ad', 'field', 'tex
 
 /* ---- the line mix */
 const mix = X.lineMix([{ key: 'po', share: 1 }]); eq(mix.lsa, 26, 'protective order mix'); const mix2 = X.lineMix([{ key: 'po', share: 0.5 }, { key: 'div_k', share: 0.5 }]); eq(mix2.google, Math.round((52 + 46) / 2), 'budget weighted blend');
+
+/* ---- module 10's model helpers (src/29_m10_desk.js): each matter counted once, shares held exactly, no silent $0 plan */
+{ const LM = { div_k: { cnt: c => c.lines.div_k.n, pool: c => c.lines.div_k.pool }, div_nk: { cnt: c => c.lines.div_nk.n, pool: c => c.lines.div_nk.pool }, sapcr: { cnt: c => c.lines.sapcr.n, pool: c => c.lines.sapcr.pool }, adopt: { cnt: c => c.lines.adopt.n, pool: () => null }, prenup: { cnt: c => c.lines.prenup.est, pool: c => c.lines.prenup.pool }, high: { cnt: c => c.lines.high.n, pool: c => c.lines.high.pool }, mil: { cnt: c => c.lines.mil.n, pool: c => c.lines.mil.pool }, gray: { cnt: c => c.lines.gray.n, pool: c => c.lines.gray.pool } };
+  const cty = (fips, pop, f, lines) => ({ fips, pop2025: pop, filings: { ttm: f }, lines });
+  const L1 = { div_k: { n: 400, pool: 10000 }, div_nk: { n: 600, pool: 20000 }, sapcr: { n: 200, pool: 5000 }, adopt: { n: 50 }, prenup: { est: 30, pool: 900 }, high: { n: 200, pool: 4000 }, mil: { n: 10, pool: 300 }, gray: { n: 250, pool: 6000 } };
+  const L0 = { div_k: { n: 0, pool: 1000 }, div_nk: { n: 0, pool: 2000 }, sapcr: { n: 0, pool: 500 }, adopt: { n: 0 }, prenup: { est: 3, pool: 90 }, high: { n: 0, pool: 400 }, mil: { n: 0, pool: 0 }, gray: { n: 0, pool: 600 } };
+  const CTY = [cty('48001', 100000, { div: 1000, sapcr: 200 }, L1), cty('48407', 10000, { div: 0, sapcr: 0, po: 0 }, L0)];
+  const dctx = vm.createContext({ console, LINE_META: LM, CTY, registerModule: () => {}, FIRM: { get: () => ({}), lines: () => [] }, isFinite, Math });
+  vm.runInContext(read('src/29_m10_desk.js') + '\n;globalThis.T = { dkCountOnce, dkShares, dkCount, dkReports };', dctx, { filename: 'src/29_m10_desk.js' }); const T = dctx.T;
+  const rows = ['div_k', 'div_nk', 'high', 'gray', 'mil'].map(k => ({ key: k, n: L1[k].n }));
+  const r = T.dkCountOnce(rows, 1000); const by = Object.fromEntries(rows.map(x => [x.key, x]));
+  const U = 1000 * (1 - (1 - 0.2) * (1 - 0.25) * (1 - 0.01)); assert(Math.abs(r.U - U) < 1e-9, 'overlay union assumes random overlap: ' + r.U);
+  assert(Math.abs(r.total - 1000) < 1e-9, 'with both divorce lines, the counted total is the divorce count: ' + r.total);
+  assert(by.high.overlay && !by.div_k.overlay && Math.abs(by.div_k.nNet - 400 * (1 - U / 1000)) < 1e-9 && Math.abs(by.high.nNet + by.gray.nNet + by.mil.nNet - U) < 1e-9, 'overlays carved out of the divorce lines');
+  const r2 = T.dkCountOnce([{ key: 'div_k', n: 400 }, { key: 'high', n: 200 }], 1000); assert(Math.abs(r2.total - (400 + 200 * 600 / 1000)) < 1e-9, 'with one divorce line, the overlay counts only its part outside it: ' + r2.total);
+  const r3 = T.dkCountOnce([{ key: 'high', n: 200 }, { key: 'gray', n: 250 }], 1000); assert(Math.abs(r3.total - 1000 * (1 - 0.8 * 0.75)) < 1e-9, 'two overlays alone: their union, not their sum');
+  const sh = rows => rows.map(x => +(x.share * 100).toFixed(6));
+  const a = [{ key: 'div_k', w: 600 }, { key: 'div_nk', w: 300 }, { key: 'sapcr', w: 100 }]; let n = T.dkShares(a, null); eq(sh(a), [60, 30, 10], 'model shares follow the weights'); eq(n.unalloc, 0, 'nothing unallocated');
+  n = T.dkShares(a, { div_k: 20 }); eq(sh(a), [20, 60, 20], 'a typed share stays exactly; the others split the rest by weight');
+  n = T.dkShares(a, { div_k: 20, div_nk: 30 }); eq(sh(a), [20, 30, 50], 'two typed shares both stay');
+  n = T.dkShares(a, { div_k: 20, div_nk: 30, sapcr: 10 }); eq(sh(a), [20, 30, 10], 'every line typed: held as typed'); assert(Math.abs(n.unalloc - 0.4) < 1e-9, 'and the remainder is reported unallocated');
+  n = T.dkShares(a, { div_k: 80, div_nk: 40 }); assert(n.over === 120 && a[2].share === 0 && Math.abs(a[0].share - 80 / 120) < 1e-9, 'over 100: pins scaled to fit and reported');
+  n = T.dkShares([{ key: 'x', w: 0 }, { key: 'y', w: 0 }], null); assert(n.equal && a.length && Math.abs(n.sum - 1) < 1e-9, 'no matters at all: an equal split, reported');
+  assert(!T.dkReports(CTY[1]) && T.dkReports(CTY[0]), 'a county with no family filings is not reporting');
+  const e = T.dkCount('div_k', CTY[1]); assert(e.est && Math.abs(e.n - 1000 * 400 / 10000) < 1e-9, 'a county that reports nothing is estimated from the statewide rate per pool: ' + e.n);
+  const ea = T.dkCount('adopt', CTY[1]); assert(ea.est && Math.abs(ea.n - 10000 * 50 / 100000) < 1e-9, 'a line with no pool is estimated per resident');
+  eq(T.dkCount('prenup', CTY[1]), { n: 3, est: false }, 'prenups keep their own estimate'); eq(T.dkCount('div_k', CTY[0]), { n: 400, est: false }, 'a reporting county keeps its filings'); }
 
 /* ---- the real compliance engine, when it loads: a filled firm profile yields no block findings */
 let real = null;

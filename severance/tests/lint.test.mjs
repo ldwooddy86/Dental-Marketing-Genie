@@ -182,4 +182,25 @@ const pr = LINT.screenAd(pc.items[0], { footer: false }); assert(pr.findings.som
 const metaCsv = LINT.parseAdsCSV('Platform,Ad name,Primary text,Title\nfacebook,Spring,Your divorce handled,Plano family law\n'); eq(metaCsv.items[0].platform, 'meta', 'platform column'); assert(metaCsv.items[0].fields.text, 'text column');
 const fi = LINT.firmItems(); assert(fi.some(i => i.label === 'Tagline') && fi.some(i => /^Bio, Jane Doe/.test(i.label)) && fi.some(i => /Ad footer/.test(i.label)), 'firm items');
 fi.forEach(i => { const r = LINT.screen(i.text, i); assert(r.pass, 'firm item passes: ' + i.label + ' ' + JSON.stringify(ids(r))); });
+/* 11. the code audit of the build 1 screen, item by item: every case must still behave */
+has(LINT.screen('Number 1 rated divorce firm.', {}), 'number_one', '"Number 1" is a ranking'); hasNot(LINT.screen('Step number 1: gather your tax returns.', {}), 'number_one', 'a numbered step is not a ranking');
+['We have won over $3 million in settlements.', 'Millions recovered for our clients.', 'Our attorneys secured $250,000 for a client.'].forEach(t => has(LINT.screen(t, {}), 'results', 'past results: ' + t));
+hasNot(LINT.screen("We won't charge more than $5,000 for an agreed case.", {}), 'results', "won't is not a result");
+{ const r = LINT.screen('Board Certified, Family Law, Texas Board of Legal Specialization. Our expert team specializes in custody.', {}); assert(ids(r).filter(x => x === 'competence').length === 1 && r.findings.find(f => f.id === 'competence').n === 2, 'one TBLS line does not silence the expert and specializes claims elsewhere: ' + JSON.stringify(r.findings.map(f => [f.id, f.hit, f.n]))); }
+has(LINT.screen('Board Certified expert in Family Law, Texas Board of Legal Specialization.', {}), 'competence', '"expert" inside a TBLS line is still a claim');
+assert(!COMP_RULES.some(r => r.ok), 'COMP_RULES carries no whole text exemption');
+['Going through a divorce? Call us.', 'Facing a custody battle? We can help.', 'Divorcing? Talk with a lawyer.'].forEach(t => { const r = LINT.screen(t, { platform: 'meta', footer: false }); has(r, 'meta_attr', 'personal attribute question: ' + t); eq(r.findings.find(f => f.id === 'meta_attr').sev, 'block', 'blocks on Meta: ' + t); });
+hasNot(LINT.screen('Divorce with children in Collin County, explained.', { platform: 'meta', footer: false }), 'meta_attr', 'third person copy passes');
+has(LINT.screen('¿Pasando por un divorcio? Llame hoy.', { platform: 'meta', lang: 'es', footer: false }), 'meta_attr', 'Spanish question form');
+hasNot(LINT.screen('We focus on the best interest of the child.', {}), 'superlative', 'best interest of the child');
+eq(LINT.screen('We want 50/50 custody for dads.', {}).findings.filter(f => f.id === 'equal_time' || f.id === 'property_5050').map(f => f.id + ':' + f.sev), ['equal_time:warn'], '50/50 custody as a goal: one review, not the property myth');
+eq(LINT.screen('Texas presumes equal time for both parents.', {}).findings.find(f => f.id === 'equal_time').sev, 'block', 'equal time stated as the law blocks');
+['equal time is not presumed', 'Texas has no equal time presumption.', 'Texas does not presume equal time.'].forEach(t => hasNot(LINT.screen(t, {}), 'equal_time', 'correct statement: ' + t));
+hasNot(LINT.screen('Certified mail service of process.', {}), 'certified', 'certified mail'); hasNot(LINT.screen('Modification Reviews This Week', {}), 'testimonials', 'reviews as a verb');
+has(LINT.screen('Free consultation, pay only if we win.', {}), 'contingent', 'pay only if we win');
+has(LINT.screen('Uncontested divorce done in sixty days.', {}), 'sixty_days', 'done in sixty days'); hasNot(LINT.screen('A divorce cannot be final within sixty days of filing.', {}), 'sixty_days', 'the minimum stated as a minimum');
+{ const r = LINT.screen('Abogado de divorcio especialista, el mejor, resultados garantizados.', {}); ['competence_es', 'superlative_es', 'guarantee_es'].forEach(id => has(r, id, 'Spanish ' + id)); }
+has(LINT.screen('Common law marriages do not need a divorce.', {}), 'informal_divorce'); hasNot(LINT.screen('It is a myth that common law marriages do not need a divorce.', {}), 'informal_divorce', 'stated as a myth');
+has(LINT.screen('Child support ends at 18.', {}), 'support_18'); hasNot(LINT.screen('Child support ends at 18 or high school graduation, whichever is later.', {}), 'support_18', 'complete statement');
+has(LINT.screen('Grandparents have automatic visitation rights in Texas.', {}), 'grandparent_rights'); hasNot(LINT.screen('Grandparents have access rights only in limited cases.', {}), 'grandparent_rights', 'limited stated');
 console.log('lint ok: ' + LINT.RULES.length + ' rules');

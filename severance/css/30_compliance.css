@@ -70,3 +70,15 @@
   #mod-compliance table.t.cp-reg td:nth-child(3),#mod-compliance table.t.cp-reg td:nth-child(4){min-width:180px}
   #mod-compliance .cp-marked,#mod-compliance .cp-diff{max-height:260px}
 }
+
+/* severity is never color alone (WCAG 1.4.1): the pills carry the word, the marks a different underline per severity and a hidden label */
+#mod-compliance mark{text-decoration:underline dashed 2px var(--warning);text-underline-offset:3px;box-shadow:none}
+#mod-compliance mark.m-block{text-decoration:underline double 3px var(--critical);box-shadow:none}
+#mod-compliance mark.m-fix{text-decoration:underline dotted 3px var(--serious);box-shadow:none}
+#mod-compliance mark.m-warn{text-decoration:underline dashed 2px var(--warning);box-shadow:none}
+#mod-compliance mark.m-info{text-decoration:underline solid 1px var(--note);box-shadow:none}
+#mod-compliance .cp-legend{margin:2px 0 6px;line-height:1.8}
+#mod-compliance .cp-legend mark{padding:0 3px}
+#mod-compliance .ctl > .lbl{font-family:var(--display);font-weight:700;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--judg)}
+#mod-compliance table.t th{cursor:default}
+#mod-compliance #cpDraftNote:empty{display:none}
