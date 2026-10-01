@@ -1,0 +1,41 @@
+{
+ "source": "7f11c0f3-Severance_1.html",
+ "extracted": "2026-10-01",
+ "blobs": {
+  "suite-data": {
+   "file": "data/suite.js",
+   "json_bytes": 8056870,
+   "sha256": "359c8cbb647ff672fbd2f7f5234c96c998a493bd5cc33947d1abf047e320d79e"
+  },
+  "atlas-dfw": {
+   "file": "data/atlas-dfw.js",
+   "json_bytes": 2675275,
+   "sha256": "96f3400b5d47060290f9f9dea33ab2cd521c450867ca475af61e99665ff81af6"
+  },
+  "atlas-hou": {
+   "file": "data/atlas-hou.js",
+   "json_bytes": 2504427,
+   "sha256": "e88f2d907579e8e2806e6a08314d1e902ba7005afe92b9636a4c822ab668dd5b"
+  },
+  "atlas-sat": {
+   "file": "data/atlas-sat.js",
+   "json_bytes": 1033891,
+   "sha256": "da0e22f9f73a5f32ffb5e514e297e4ed22d33d934fae718886c768587df5368a"
+  },
+  "atlas-aus": {
+   "file": "data/atlas-aus.js",
+   "json_bytes": 886033,
+   "sha256": "9e65831a5e1a3964eb2370e1d74e051520bf7c105798b78ce7ed42925a6a0968"
+  },
+  "atlas-elp": {
+   "file": "data/atlas-elp.js",
+   "json_bytes": 333931,
+   "sha256": "8fe03a8edbbe0ddd8a4dfc731c21f3a66c54e29214c4a95846e0ee85f09d25d9"
+  },
+  "atlas-rgv": {
+   "file": "data/atlas-rgv.js",
+   "json_bytes": 533773,
+   "sha256": "d21804970d3916527797eda759497261f6cf12d2224120299725e2bb1cf875fd"
+  }
+ }
+}

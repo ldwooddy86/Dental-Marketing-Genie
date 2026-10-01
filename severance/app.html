@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Severance</title>
+<meta name="description" content="Texas family law market intelligence: county and ZIP dissolution index, court filings, marriage cohorts, job loss shock, service lines, paid acquisition and compliance.">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<header class="shell-top">
+<div class="util"><div class="in"><div class="facts" id="shellFacts"></div><button class="sq firm" id="firmTop" type="button" aria-label="Edit the firm profile">⚖<span>Set up the firm</span></button><button class="sq" id="themeTop" type="button" aria-label="Switch between light and dark">◐<span>Theme</span></button></div></div>
+<div class="mainbar"><div class="in"><div class="lockup"><div class="prod"><div class="nm">Severance</div><div class="sb">Texas family law market intelligence · 254 counties · 26 metros · 1,127 ZIP codes</div></div></div><button class="cta" id="methodTop" type="button"><span class="lg">Sources and </span>Method</button></div></div>
+</header>
+<nav class="rail" id="rail" aria-label="Modules"><div class="in"></div></nav>
+<main id="modules"></main>
+<footer class="foot"><div class="in"><div class="txt"><b>Severance market intelligence.</b> Built from public Texas court, Census, labor market and child welfare data. Sources, formulas and limits are in module 20. Informational analysis for marketing and planning; not legal advice.</div></div></footer>
+
+<!-- data: the suite; the six Metro Atlas files load on first use -->
+<script src="data/suite.js"></script>
+<!-- shared layers: core, kit, firm profile, compliance engine, forge, accounts, watch and signal cores -->
+<script src="src/00_core.js"></script>
+<script src="src/01_kit.js"></script>
+<script src="src/02_firm.js"></script>
+<script src="src/03_lint.js"></script>
+<script src="src/04_forge_compile.js"></script>
+<script src="src/05_forge_bridge_raw.js"></script>
+<!-- CMS publish layer (shared with the Thermal Atlas): the contract, one adapter per platform, the headless kit -->
+<script src="src/cms/00_cms_core.js"></script>
+<script src="src/cms/10_wordpress.js"></script>
+<script src="src/cms/11_drupal.js"></script>
+<script src="src/cms/12_wix.js"></script>
+<script src="src/cms/13_duda.js"></script>
+<script src="src/cms/14_webflow.js"></script>
+<script src="src/cms/15_shopify.js"></script>
+<script src="src/cms/16_hubspot.js"></script>
+<script src="src/cms/17_joomla.js"></script>
+<script src="src/cms/18_ghost.js"></script>
+<script src="src/cms/19_headless_kit.js"></script>
+<!-- modules, in file order; the boot sorts the rail -->
+<script src="src/20_m01_index.js"></script>
+<script src="src/21_m02_ledger.js"></script>
+<script src="src/22_m03_market.js"></script>
+<script src="src/23_m04_signals.js"></script>
+<script src="src/24_m05_econ.js"></script>
+<script src="src/25_m06_lines.js"></script>
+<script src="src/26_m07_paid.js"></script>
+<script src="src/27_m08_supply.js"></script>
+<script src="src/28_m09_timing.js"></script>
+<script src="src/29_m10_desk.js"></script>
+<script src="src/30_m11_compliance.js"></script>
+<script src="src/31_m12_metros.js"></script>
+<script src="src/32_m13_atlas.js"></script>
+<script src="src/39_m20_method.js"></script>
+<!-- boot: builds the rail and shows the module in the hash -->
+<script src="src/99_boot.js"></script>
+</body>
+</html>
