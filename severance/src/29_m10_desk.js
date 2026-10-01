@@ -104,7 +104,7 @@ registerModule({
       }
       const c = CI[id]; return { type: 'cty', id, title: c.name + ' County', code: slug(c.name).replace(/-/g, '').toUpperCase().slice(0, 10) + 'CO', metro: c.msa && GEO.metros[c.msa] ? c.msa : null, counties: [c], zips: ZC.filter(z => z.county === id) };
     }
-    const firmM = () => { const F = FIRM.get(); const r = FIRM.responsible(), p = FIRM.primary(); const o = P.ov || {}; return { name: (o.name || F.name || '').trim(), atty: (o.atty || r.name || '').trim(), city: (o.city || p.city || '').trim(), phone: phoneFmt(o.phone || F.phone || p.phone || ''), url: (o.url || F.url || '').trim(), street: p.street || '', zip: p.zip || '', hours: p.hours || '', offices: (F.offices || []).map(x => ({ street: x.street, city: x.city, zip: x.zip })), lawyers: (F.attorneys || []).map(a => ({ name: a.name, bar_no: a.bar_no })), consult: F.consult || {}, fees: F.fees || {}, payment: F.payment || '', languages: F.languages || ['en'] }; };
+    const firmM = () => { const F = FIRM.get(); const r = FIRM.responsible(), p = FIRM.primary(); const o = P.ov || {}; return { name: (o.name || F.name || '').trim(), atty: (o.atty || r.name || '').trim(), city: (o.city || p.city || '').trim(), phone: phoneFmt(o.phone || F.phone || p.phone || ''), url: (o.url || F.url || '').trim(), street: p.street || '', zip: p.zip || '', hours: p.hours || '', offices: (F.offices || []).map(x => ({ street: x.street, city: x.city, zip: x.zip })), lawyers: (F.attorneys || []).map(a => ({ name: a.name, bar_no: a.bar_no })), consult: F.name ? (F.consult || {}) : {}, fees: F.name ? (F.fees || {}) : {}, payment: F.name ? (F.payment || '') : '', languages: F.languages || ['en'] }; };   // consultation, fee and payment claims only once the firm has filled its profile (the defaults are not the firm's word)
     /* ACCT.rates(line): observed cpc ($), cvr and retain (percents), each null below its threshold; ACCT.applied(): what Accounts' Apply wrote */
     const appliedLines = () => { try { const a = hasACCT() && typeof ACCT.applied === 'function' ? ACCT.applied() : null; return (a && a.lines) || {}; } catch (e) { return {}; } };
     function actualFor(l) { if (!hasACCT()) return null; try { const a = ACCT.rates(l) || {}; const ap = appliedLines()[l] || {}; const ok = v => { v = +v; return v != null && isFinite(v) && v > 0 ? v : null; }; const r = { cpc: ok(a.cpc) || ok(ap.cpc), cvr: ok(a.cvr) || ok(ap.cvr), retain: ok(a.retain) || ok(ap.retain), n: +a.n || +ap.n || 0, since: a.since || ap.since || '' }; return r.cpc || r.cvr || r.retain ? r : null; } catch (e) { return null; } }
@@ -168,10 +168,11 @@ registerModule({
       const g = geoObj(); const cs = $r('#dkCounties'); cs.innerHTML = g.counties.map(c => `<option value="${c.fips}"${P.counties.includes(c.fips) ? ' selected' : ''}>${esc(c.name)}</option>`).join(''); cs.disabled = g.counties.length < 2;
       const today = todayISO(); $r('#dkStartHint').textContent = P.start < today ? 'This start is in the past; the flight and the month plan still begin on it.' : `Ends ${fmtDate(DESKX.endDate(P.start, P.weeks))}.`;
     }
+    const mixNote = tot => `Total ${N(tot, 0)}%${Math.abs(tot - 100) > 0.5 ? ' (shares are rescaled to 100%)' : ''}. ${P.mix ? 'Your split.' : 'Line default: the budget weighted blend of each line\'s split (grade D).'}`;
     function mixUI() {
       const mix = M.mix; const tot = sum(DESKX.PLATS.map(p => mix[p] || 0)) || 1;
       $r('#dkMix').innerHTML = DESKX.PLATS.map(p => `<div class="m"><label for="dkMx_${p}">${esc(DESKX.PLAB[p])}</label><input type="range" id="dkMx_${p}" min="0" max="80" step="1" value="${mix[p] || 0}" data-p="${p}"><b>${N(mix[p] || 0, 0)}%</b><span class="usd">${$$$(P.budget * (mix[p] || 0) / tot)}</span></div>`).join('');
-      $r('#dkMixNote').textContent = `Total ${N(tot, 0)}%${Math.abs(tot - 100) > 0.5 ? ' (shares are rescaled to 100%)' : ''}. ${P.mix ? 'Your split.' : 'Line default: the budget weighted blend of each line\'s split (grade D).'}`;
+      $r('#dkMixNote').textContent = mixNote(tot);
       $$r('#dkMix input').forEach(i => i.oninput = () => { const cur = P.mix || Object.assign({}, M.mix); cur[i.dataset.p] = +i.value; P.mix = cur; i.parentElement.querySelector('b').textContent = i.value + '%'; mixRebuild(); });
     }
     function asmUI() {
@@ -184,7 +185,7 @@ registerModule({
     // ---------- render ----------
     function rebuild(light) {
       M = model(); CR = null; FLT = DESKX.flightMonths({ start: P.start, weeks: P.weeks, budget: clientBudget(), lines: flightLines(M), timing: liveTiming() }); save();
-      if (!light) mixUI(); else $$r('#dkMix .m').forEach(row => { const i = row.querySelector('input'); const tot = sum(DESKX.PLATS.map(p => M.mix[p] || 0)) || 1; row.querySelector('.usd').textContent = $$$(P.budget * (M.mix[i.dataset.p] || 0) / tot); });
+      if (!light) mixUI(); else { const tot = sum(DESKX.PLATS.map(p => M.mix[p] || 0)) || 1; $$r('#dkMix .m').forEach(row => { const i = row.querySelector('input'); row.querySelector('.usd').textContent = $$$(P.budget * (M.mix[i.dataset.p] || 0) / tot); }); $r('#dkMixNote').textContent = mixNote(tot); }
       firmNote(); tiles(); actuals(); drawMarketMap(); tab(); alloc(); zipTable(); builder(); keys(); kwDesk(); months(); screenPanel(); meas(); liveOut();
       emitPlan();
     }
@@ -300,7 +301,7 @@ registerModule({
       const cr = creative(); const nr = cr.filter(a => a.review.block); const wf = cr.filter(a => a.review.findings.some(f => f.sev !== 'info'));
       $r('#dkScrSum').textContent = `${N(cr.length)} ads across ${new Set(cr.map(a => a.platform)).size} platforms and ${M.langs.length} language${M.langs.length > 1 ? 's' : ''}: ${nr.length} need review, ${wf.length - nr.length} more with findings to read, ${cr.length - wf.length} clear.`;
       const list = UI.scr === 'issues' ? nr : UI.scr === 'findings' ? wf : cr;
-      $r('#dkScrOut').innerHTML = list.length ? list.slice(0, 120).map(a => `<div class="dk-ad"><div class="dk-adh">${sevPill(a.review.block ? 'block' : a.review.findings.some(f => f.sev === 'warn' || f.sev === 'fix') ? 'warn' : 'ok')} <b>${esc(a.label)}</b> <span class="dk-mute">${a.lang === 'es' ? 'Spanish' : 'English'}</span></div><div class="small dk-wrap">${esc(Object.values(a.fields).filter(Boolean).join(' | '))}</div>${a.review.findings.filter(f => UI.scr === 'all' || f.sev !== 'info' || f.note).map(f => `<div class="small">${sevPill(f.sev)} ${esc(f.title)}${f.rule ? ' · ' + esc(f.rule) : ''}${f.hit ? ` · <code>${esc(f.hit)}</code>` : ''}</div>`).join('')}</div>`).join('') + (list.length > 120 ? `<p class="small">Showing 120 of ${list.length}; the findings CSV has all of them.</p>` : '') : `<p class="small">${UI.scr === 'issues' ? 'No ad needs review: no block findings.' : 'No findings.'}</p>`;
+      $r('#dkScrOut').innerHTML = list.length ? '<div class="dk-scr">' + list.slice(0, 120).map(a => `<div class="dk-ad"><div class="dk-adh">${sevPill(a.review.block ? 'block' : a.review.findings.some(f => f.sev === 'warn' || f.sev === 'fix') ? 'warn' : 'ok')} <b>${esc(a.label)}</b> <span class="dk-mute">${a.lang === 'es' ? 'Spanish' : 'English'}</span></div><div class="small dk-wrap">${esc(Object.values(a.fields).filter(Boolean).join(' | '))}</div>${a.review.findings.filter(f => UI.scr === 'all' || f.sev !== 'info' || f.note).map(f => `<div class="small">${sevPill(f.sev)} ${esc(f.title)}${f.rule ? ' · ' + esc(f.rule) : ''}${f.hit ? ` · <code>${esc(f.hit)}</code>` : ''}</div>`).join('')}</div>`).join('') + '</div>' + (list.length > 120 ? `<p class="small">Showing 120 of ${list.length}; the findings CSV has all of them.</p>` : '') : `<p class="small">${UI.scr === 'issues' ? 'No ad needs review: no block findings.' : 'No findings.'}</p>`;
     }
     // ---------- measurement, live, compliance, method ----------
     function meas() {

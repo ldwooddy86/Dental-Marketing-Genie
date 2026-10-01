@@ -1,0 +1,49 @@
+/* Module 21 · Site Forge. Scoped to #mod-forge; CSS variables only so both themes work. */
+#mod-forge [hidden]{display:none!important}
+#mod-forge .fg-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+#mod-forge .fg-kv{grid-template-columns:minmax(120px,auto) 1fr;margin:0 0 6px}
+#mod-forge .fg-kv dd{overflow-wrap:anywhere}
+#mod-forge .fg-miss{margin:8px 0 0;border-left-color:var(--critical)}
+#mod-forge .fg-miss .h{color:var(--critical)}
+#mod-forge .fg-map svg{width:100%;height:auto;display:block}
+#mod-forge .fg-map path.area.fg-on{stroke:var(--title);stroke-width:1.6;stroke-linejoin:round}
+#mod-forge .fg-chips{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 6px}
+#mod-forge .fg-chip{background:var(--card);border:1px solid var(--line-strong);color:var(--ink-2);font-family:var(--display);font-size:12px;font-weight:700;letter-spacing:.03em;padding:5px 10px;border-radius:0;cursor:pointer}
+#mod-forge .fg-chip[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--title);color:var(--title);box-shadow:inset 3px 0 0 var(--accent)}
+#mod-forge .fg-chip:focus-visible,#mod-forge .dropzone:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+#mod-forge .fg-code{width:100%;font-family:var(--mono,ui-monospace,monospace);font-size:12px;line-height:1.45;background:var(--sunk);color:var(--ink);border:1px solid var(--line-strong);padding:8px;border-radius:0;resize:vertical;min-height:110px}
+#mod-forge .fg-sp{flex:1 1 auto}
+#mod-forge .fg-studio{display:grid;grid-template-columns:minmax(0,2.1fr) minmax(0,1fr);gap:16px;margin-top:10px}
+#mod-forge .fg-main,#mod-forge .fg-side{min-width:0}
+#mod-forge .fg-pane{margin-top:8px}
+#mod-forge .fg-pane iframe.preview{height:640px}
+#mod-forge .fg-mobile{max-width:400px;margin:0 auto}
+#mod-forge .fg-mobile iframe.preview{height:760px}
+#mod-forge .fg-pre{max-height:620px;overflow:auto;background:var(--sunk);border:1px solid var(--line);padding:10px;font-size:11.5px;line-height:1.45;white-space:pre-wrap;overflow-wrap:anywhere;color:var(--ink);margin:0}
+#mod-forge .fg-side .fh:first-child{margin-top:0}
+#mod-forge .fg-issue{border-left:3px solid var(--line-strong);padding:5px 0 5px 9px;margin:0 0 6px;font-size:12.5px;line-height:1.4;overflow-wrap:anywhere}
+#mod-forge .fg-issue.block{border-left-color:var(--critical)}
+#mod-forge .fg-issue.fix{border-left-color:var(--serious)}
+#mod-forge .fg-issue.warn{border-left-color:var(--warning)}
+#mod-forge .fg-issue.info,#mod-forge .fg-issue.note{border-left-color:var(--s3)}
+#mod-forge .fg-row{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;border-bottom:1px solid var(--line);padding:5px 0;font-size:12.5px;overflow-wrap:anywhere}
+#mod-forge .fg-row .grade{flex:none}
+#mod-forge .fg-thumb{width:72px;height:48px;object-fit:cover;display:block;border:1px solid var(--line)}
+#mod-forge table.t td.fg-l,#mod-forge table.t th.fg-l{text-align:left}
+#mod-forge table.t td.fg-wrap{white-space:normal;min-width:180px}
+#mod-forge table.fg-media input[type=text]{min-width:180px;width:100%;background:var(--card);color:var(--ink);border:1px solid var(--line-strong);padding:5px 7px;border-radius:0;font:inherit;font-size:12.5px}
+#mod-forge table.fg-media select{max-width:220px;background:var(--card);color:var(--ink);border:1px solid var(--line-strong);padding:4px 6px;border-radius:0;font:inherit;font-size:12.5px}
+#mod-forge .fg-slug{font-size:11px}
+#mod-forge .fg-bad{color:var(--critical)}
+#mod-forge .fg-warnc{color:var(--warning)}
+#mod-forge .fg-list{margin:0;padding-left:18px;font-size:13.5px;line-height:1.55;color:var(--ink-2)}
+#mod-forge .fg-list li{margin-bottom:6px}
+#mod-forge table.fg-prose td{white-space:normal;text-align:left;vertical-align:top;min-width:90px}
+#mod-forge table.fg-prose td:nth-child(2){min-width:220px}
+#mod-forge .logbox{margin-top:10px}
+#mod-forge #fgSite .ctl textarea{width:100%;background:var(--card);color:var(--ink);border:1px solid var(--line-strong);padding:6px 8px;border-radius:0;font:inherit}
+#mod-forge #fgSite input[type=color]{width:100%;height:34px;padding:2px;border:1px solid var(--line-strong);background:var(--card);border-radius:0}
+#mod-forge .ctl select[multiple]{min-width:220px;width:100%;background:var(--card);color:var(--ink);border:1px solid var(--line-strong);border-radius:0}
+#mod-forge .controls .ctl.wide input[type=text]{width:100%}
+@media (max-width:1100px){#mod-forge .fg-studio{grid-template-columns:1fr}}
+@media (max-width:760px){#mod-forge .fg-pane iframe.preview{height:480px}#mod-forge .fg-mobile iframe.preview{height:620px}#mod-forge .fg-kv{grid-template-columns:1fr}#mod-forge .ctl select[multiple]{min-width:0}#mod-forge table.fg-media input[type=text]{min-width:140px}}

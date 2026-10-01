@@ -15,7 +15,7 @@
 'use strict';
 const WATCH_HOST_ORIGINS = ['https://graph.facebook.com/*'];   // the Meta Ad Library API bridge (a click with the user's own token)
 const WATCH = (() => {
-  const KEY = 'sev.watch'; const FIRM_KEY = '_firm'; const HALF_LIFE = 45; const SKIP_LINT = new Set(['house', 'r702a', 'ph']);
+  const KEY = 'sev.watch'; const FIRM_KEY = '_firm'; const HALF_LIFE = 45; const SKIP_LINT = new Set(['house', 'r702a', 'ph', 'meta_note', 'r706', 'arc_filing']);   // the firm's own obligations, not claims in the copy
   let NOW = null;   // test clock: WATCH.setClock('2026-10-01')
   const nowMs = () => NOW ? Date.parse(NOW + 'T12:00:00Z') : Date.now();
   const today = () => NOW || todayISO();
@@ -133,10 +133,11 @@ const WATCH = (() => {
     return o;
   }
   const lintText = o => ['ad', 'offer', 'page', 'signal'].includes(o.kind) ? [o.text, o.offer && o.offer.text, o.offer && o.offer.fin, o.cta].filter(Boolean).join(' \n') : '';
-  /* LINT on competitor copy: the rule set only (no kind, so the firm's own footer and house style checks do not run on their copy) */
+  /* LINT on competitor copy, in competitor posture: the claims in the copy only. No kind, so the firm's own footer, filing and house
+     style checks do not run; rules that read the firm profile are skipped by LINT itself in this posture. */
   function lintFind(o) {
     const txt = lintText(o); if (!txt.trim() || typeof LINT === 'undefined') return [];
-    let r; try { r = LINT.screen(txt, { platform: o.platform, lang: o.lang || 'en', footer: false }); } catch (e) { return []; }
+    let r; try { r = LINT.screen(txt, { posture: 'comp', platform: o.platform, lang: o.lang || 'en', footer: false, house: false }); } catch (e) { return []; }
     return ((r && r.findings) || []).filter(f => !SKIP_LINT.has(f.id) && !/house style/i.test(String(f.rule || '')));
   }
   function fixObs(o) {
@@ -151,7 +152,7 @@ const WATCH = (() => {
     if (o.reviews && (o.reviews.count === '' || o.reviews.count == null || !isFinite(+o.reviews.count))) o.reviews = null; else if (o.reviews) o.reviews = { count: +o.reviews.count, rating: o.reviews.rating === '' || o.reviews.rating == null || !isFinite(+o.reviews.rating) ? null : +o.reviews.rating, source: String(o.reviews.source || 'Google') };
     if (o.rank && !String(o.rank.query || '').trim()) o.rank = null; else if (o.rank) o.rank = { query: String(o.rank.query).trim(), position: o.rank.position === '' || o.rank.position == null || !isFinite(+o.rank.position) ? null : +o.rank.position, where: RANK_WHERE[o.rank.where] ? o.rank.where : 'organic', county: countyByName(o.rank.county) };
     if (o.comp === FIRM_KEY) o.compName = firmName(); else { const c = S && S.comps.find(x => x.key === o.comp); if (c) o.compName = c.name; else { o.comp = ''; o.compName = String(o.compName || '').trim() || 'Unmatched advertiser'; } }
-    const f = lintFind(o); o.lint = f.map(x => x.id); o.lintBlock = f.filter(x => x.sev === 'block').length;
+    const f = lintFind(o); o.lint = f.map(x => x.id); o.lintBlock = f.filter(x => x.sev === 'block').length; o.lintFlag = f.filter(x => x.sev !== 'info').length;
     return o;
   }
   /* a new observation: first seen defaults to today; last seen defaults to today for an active ad and to the first seen date otherwise */
@@ -410,7 +411,7 @@ const WATCH = (() => {
     const prices = offers.filter(o => isN(o.offer.price)).map(o => ({ comp: o.compName, key: o.comp, line: o.line || inferLine(o.text), type: o.offer.type, price: +o.offer.price, text: o.offer.text || o.text, last: o.last, id: o.id }));
     const terms = offers.filter(o => o.offer.type === 'payplan' || o.offer.fin).map(o => ({ comp: o.compName, text: o.offer.fin || o.offer.text || o.text, last: o.last, lint: o.lint || [] }));
     const lastObs = S.obs.map(o => o.last).sort().pop() || null; const lastSweep = S.comps.map(c => c.lastChecked).filter(Boolean).sort().pop() || null;
-    return { n: obs.length, ads: ads.length, live: live.length, byComp, byPlat, byOffer, byHook, byLine, prices, terms, comps: list().length, archived: list({ archived: true }).length, lastObs, lastSweep, lints: obs.filter(o => (o.lint || []).length).length, blocks: obs.filter(o => o.lintBlock).length, unmatched: obs.filter(o => !o.comp).length };
+    return { n: obs.length, ads: ads.length, live: live.length, byComp, byPlat, byOffer, byHook, byLine, prices, terms, comps: list().length, archived: list({ archived: true }).length, lastObs, lastSweep, lints: obs.filter(o => o.lintFlag).length, blocks: obs.filter(o => o.lintBlock).length, unmatched: obs.filter(o => !o.comp).length };
   }
   function weekly(weeks) {
     weeks = weeks || 26; const now = nowMs(); const out = Array.from({ length: weeks }, (_, i) => ({ w: i, t: now - (weeks - 1 - i) * 7 * 864e5, meta: 0, google: 0, other: 0 }));
@@ -438,25 +439,37 @@ const WATCH = (() => {
   /* ---------- LINT on the field's copy: which claims would be violations if the firm made them ---------- */
   const POSITION = [
     [/guarantee/i, 'An outcome promise is a misleading communication under Rule 7.01(a). Describe the process instead: the first meeting, the written fee agreement, the timeline the Family Code sets.'],
-    [/special competence/i, 'Only a Texas Board of Legal Specialization certification may be advertised as a specialty (Rule 7.02(b)). Where a lawyer holds it, the exact wording "Board Certified, Family Law, Texas Board of Legal Specialization" is a lawful differentiator; otherwise "practice focused on family law" is the lawful phrase.'],
-    [/superlative/i, 'Unverifiable "#1" and "best" claims leave room for facts a reader can check: years licensed, counties served, languages spoken, a review count with its source and date.'],
+    [/special competence|certified|certification/i, 'Only a Texas Board of Legal Specialization certification may be advertised as a specialty (Rule 7.02(b)). Where a lawyer holds it, the exact wording "Board Certified, Family Law, Texas Board of Legal Specialization" is a lawful differentiator; otherwise "practice focused on family law" is the lawful phrase.'],
+    [/superlative|#1|number one/i, 'Unverifiable "#1" and "best" claims leave room for facts a reader can check: years licensed, counties served, languages spoken, a review count with its source and date.'],
     [/contingent/i, 'A contingent fee that depends on securing a divorce or on the amount of support or property is prohibited (Rule 1.04(e)). Plain flat fee or hourly language reads as the trustworthy option beside it.'],
     [/past results/i, 'Dollar results say little about the next family case. Explaining how a Texas court divides property (just and right, § 7.001) answers the question readers actually have.'],
     [/testimonial|review/i, 'Reviews are allowed when truthful and not misleading, and a paid or incentivized endorsement must say so. Cite your own review count with its source and date.'],
-    [/50\s*\/\s*50|property myth/i, 'Texas divides community property in a manner that is just and right, not necessarily equally (§ 7.001). Stating it correctly is an easy authority signal.'],
+    [/property/i, 'Texas divides community property in a manner that is just and right, not necessarily equally (§ 7.001). Stating it correctly is an easy authority signal.'],
     [/legal separation/i, 'Texas has no legal separation. Content on temporary orders, protective orders and partition agreements answers the searcher correctly.'],
     [/gender/i, 'Courts may not prefer a parent by sex (§ 153.003). Copy that speaks to both parents is accurate and reaches both audiences.'],
     [/at 12|chooses/i, 'At 12 the judge must interview the child in chambers on request, and the preference never controls (§ 153.009). Saying so plainly sets your copy apart.'],
     [/common law/i, 'An informal marriage has no duration element (§ 2.401): agreement, living together in Texas and holding out.'],
     [/alimony/i, 'Spousal maintenance exists, is limited and is capped at the lesser of $5,000 a month or 20% of average gross income (chapter 8).'],
-    [/child support cap/i, 'The guideline cap is $11,700 in monthly net resources since September 1, 2025. A competitor citing an older cap leaves room for your accurate number.'],
+    [/child support cap|at the cap/i, 'The guideline cap is $11,700 in monthly net resources since September 1, 2025 ($2,340 a month for one child at the cap). A competitor citing an older figure leaves room for your accurate number.'],
     [/sixty days/i, 'Sixty days is the statutory minimum from filing (§ 6.702), not a delivery time. A realistic timeline builds trust.'],
+    [/protective order: proof/i, 'Since 2023 the applicant proves that family violence occurred, not that it will recur (chapter 85). Stating the current standard is accurate and reassuring.'],
+    [/protective order duration/i, 'Since September 2025 an order tied to a pending divorce or SAPCR can run until two years after the final decree; a flat duration misstates it.'],
     [/restraining/i, 'A temporary restraining order and a protective order are different remedies; naming the right one is accurate and helps searchers.'],
     [/equal time/i, 'Texas has no equal time presumption; joint managing conservatorship does not mean equal time.'],
+    [/expanded possession/i, 'The expanded standard possession order has been the default within 50 miles since 2021; it is not new.'],
+    [/support and possession/i, 'Support and possession are independent obligations (the § 105.006(e) warning): unpaid support does not justify withholding access, and denied access does not stop support.'],
+    [/birth certificate/i, 'Parental rights attach through an acknowledgment of paternity or an adjudication, not the birth certificate (chapter 160).'],
+    [/prenup/i, 'Texas premarital agreements are enforced unless one of the § 4.006 defenses is proven; accurate copy on that is a strong prenup message.'],
     [/lay terms/i, 'Pair the lay term with the Texas term (conservatorship, possession and access) on your own pages.'],
-    [/arrears/i, 'Child support arrears accrue 6% simple interest (§ 157.265).'],
+    [/arrears/i, 'Child support arrears accrue 6% simple interest (§ 157.265) and stay enforceable long after the order ends (§ 157.005).'],
     [/termination ground/i, 'Ground (O) was repealed effective September 1, 2025.'],
     [/anonymous/i, 'DFPS has not accepted anonymous reports since September 1, 2023.'],
+    [/government office|legal aid/i, 'A name may not imply a connection with a government agency, a court or a legal aid organization; your own firm name and responsible lawyer are the plain contrast.'],
+    [/personal attribute|hardship/i, 'A platform policy rather than a disciplinary rule: write to the situation in the third person ("Divorce with children in Harris County") and target by keyword and geography.'],
+    [/editorial|phone number/i, 'A platform editorial rule: no exclamation marks or all capitals in headlines, and phone numbers in call assets.'],
+    [/urgency/i, 'Invented deadlines read as pressure. Real dates are the honest urgency: the April 1 summer possession notice, the 60 day waiting period.'],
+    [/availability/i, 'A "24/7" or "same day" claim must be true whenever the ad runs; state the hours you actually keep.'],
+    [/advertised fee/i, 'An advertised fee binds the advertiser while the ad runs (Rule 7.02(d)). If you advertise one, record it in the firm profile so every ad and page states the same number.'],
     [/aggression/i, 'Not a violation by itself. Calm, clear copy is the lawful contrast, and judges and mediators read ads too.']
   ];
   const positionFor = title => { const p = POSITION.find(([re]) => re.test(String(title || ''))); return p ? p[1] : 'Your own copy must not repeat this claim; the rule, the reason and the fix are in the Compliance Screen (module 11).'; };
@@ -473,9 +486,9 @@ const WATCH = (() => {
     const freeConsult = isF ? !!(f.consult && f.consult.free) : obs.some(o => o.offer.type === 'consult_free' || /free (initial |case )?consult/i.test(lintText(o))) ? true : null;
     const spanish = isF ? (f.languages || []).includes('es') : obs.some(o => o.lang === 'es' || o.offer.type === 'spanish' || /se habla|bilingual|en espa[nñ]ol/i.test(lintText(o))) ? true : null;
     const ranks = obs.filter(o => o.kind === 'rank' && o.rank && isN(o.rank.position)).sort((a, b) => a.rank.position - b.rank.position);
-    const lf = isF ? [] : obs.map(o => lintFind(o)).flat(); const lintBlock = lf.filter(x => x.sev === 'block').length, lintWarn = lf.filter(x => x.sev === 'warn').length;
+    const lf = isF ? [] : obs.map(o => lintFind(o)).flat(); const lintBlock = lf.filter(x => x.sev === 'block').length, lintWarn = lf.filter(x => x.sev === 'warn' || x.sev === 'fix').length;
     const zipOffices = c.offices.map(o => ZI[o.zip] ? ZI[o.zip].lawoffices : null).filter(isN);
-    return { key, name: c.name, isFirm: isF, tier: c.tier, counties: c.counties, lines: c.lines, offices: c.offices, lawyers: c.lawyers, domain: c.domain, cov: isF ? { share: c.counties.length ? 1 : null, filingShare: c.counties.length ? 1 : null, covered: c.counties, of: c.counties.length } : coverage(c), lov: isF ? { share: c.lines.length ? 1 : null, both: c.lines, of: c.lines.length } : lineOverlap(c), score: sd.score, live: sd.live, platforms: sd.platforms, reviews: rv, fees, freeConsult, spanish, bestRank: ranks[0] ? ranks[0].rank : null, lintBlock, lintWarn, lintTitles: [...new Set(lf.map(x => x.title))], zipOffices: zipOffices.length ? sum(zipOffices) : null, lastChecked: c.lastChecked || '', certs: isF && typeof FIRM !== 'undefined' ? FIRM.certs() : [] };
+    return { key, name: c.name, isFirm: isF, tier: c.tier, counties: c.counties, lines: c.lines, offices: c.offices, lawyers: c.lawyers, domain: c.domain, cov: isF ? { share: c.counties.length ? 1 : null, filingShare: c.counties.length ? 1 : null, covered: c.counties, of: c.counties.length } : coverage(c), lov: isF ? { share: c.lines.length ? 1 : null, both: c.lines, of: c.lines.length } : lineOverlap(c), score: sd.score, live: sd.live, platforms: sd.platforms, reviews: rv, fees, freeConsult, spanish, bestRank: ranks[0] ? ranks[0].rank : null, lintBlock, lintWarn, lintTitles: [...new Set(lf.filter(x => x.sev !== 'info').map(x => x.title))], zipOffices: zipOffices.length ? sum(zipOffices) : null, lastChecked: c.lastChecked || '', certs: isF && typeof FIRM !== 'undefined' ? FIRM.certs() : [] };
   }
   const yn = v => v === true ? 'yes' : v === false ? 'no' : 'not on record';
   function compare(keys) {
@@ -509,7 +522,7 @@ const WATCH = (() => {
   function digest() {
     const st = stats(); const out = []; const active = list(); const ctx = context();
     if (!active.length) { out.push('The roster is empty. Severance ships no competitor list: add the firms you meet in consultations, in court and on the results page, or paste a list, and the scores, links and comparisons fill in.'); }
-    else out.push(`${N(active.length)} competitors on the roster${st.archived ? `, ${N(st.archived)} archived` : ''}; ${N(st.n)} observations logged${st.lastObs ? `, the latest dated ${fmtDate(st.lastObs)}` : ''}.`);
+    else out.push(`${N(active.length)} ${active.length === 1 ? 'competitor' : 'competitors'} on the roster${st.archived ? `, ${N(st.archived)} archived` : ''}; ${N(st.n)} observations of competitors logged${st.lastObs ? `, the latest dated ${fmtDate(st.lastObs)}` : ''}.`);
     if (ctx.counties.length) out.push(`Your ${N(ctx.counties.length)} ${ctx.counties.length === 1 ? 'county has' : 'counties have'} ${N(ctx.offices)} law offices in County Business Patterns 2023 and ${N(ctx.filings)} private family filings a year, ${N(ctx.fpo, 1)} filings per office against ${N(ctx.stateFpo, 1)} statewide. You track ${N(ctx.tracked)} competitors serving them.`);
     else out.push('Set the counties you serve in the firm profile (the Firm button) to compare the roster against the law office counts and filings there.');
     if (st.live) { const tops = Object.entries(st.byComp).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([k, n]) => `${esc((comp(k) || { name: k.replace(/^\?/, '') }).name)} (${n})`); out.push(`${N(st.live)} ads are on record as live${st.byPlat.meta ? `, ${N(st.byPlat.meta)} on Meta` : ''}${st.byPlat.google ? `, ${N(st.byPlat.google)} on Google Search` : ''}${st.byPlat.lsa ? `, ${N(st.byPlat.lsa)} in Local Services` : ''}. Most live ads: ${tops.join(', ')}.`); }
@@ -520,7 +533,7 @@ const WATCH = (() => {
     const lines = Object.entries(st.byLine).sort((a, b) => b[1] - a[1]).slice(0, 3); if (lines.length) out.push(`Lines most often advertised: ${lines.map(([k, v]) => `${lineName(k)} (${v})`).join(', ')}.`);
     if (st.lints) out.push(`${N(st.lints)} logged entries carry a claim the compliance rules flag (${N(st.blocks)} would block if the firm made them). Read them as positioning: what your own copy must not say, and the accurate statement that sets it apart.`);
     if (st.unmatched) out.push(`${N(st.unmatched)} entries are not matched to a roster competitor; assign them in the timeline.`);
-    const stale = active.filter(c => !c.lastChecked || daysAgo(c.lastChecked) > (S.settings.staleDays || 14)).length; if (active.length) out.push(stale ? `${N(stale)} of ${N(active.length)} competitors have not been checked in ${S.settings.staleDays || 14} days.` : 'Every competitor has been checked in the last two weeks.');
+    const sd = S.settings.staleDays || 14; const stale = active.filter(c => !c.lastChecked || daysAgo(c.lastChecked) > sd).length; if (active.length) out.push(stale ? `${N(stale)} of ${N(active.length)} competitors ${stale === 1 ? 'has' : 'have'} not been checked in ${sd} days.` : `Every competitor has been checked in the last ${sd} days.`);
     return out;
   }
   /* ---------- exports ---------- */
@@ -530,7 +543,7 @@ const WATCH = (() => {
   function rosterCSV() { return toCSV(ROSTER_H, S.comps.map(rosterRow), `Competitor Watch roster, Severance module 24, exported ${today()}. Import this file to restore or share the roster; scores and links are recomputed on import.`); }
   const ROSTER_TEMPLATE = () => toCSV(['name', 'domain', 'tier', 'counties', 'lines', 'offices', 'lawyers', 'meta_page_id', 'google_advertiser_id', 'aliases', 'notes'], [], 'Roster template for Competitor Watch. One competitor per row. tier: direct, adjacent, referral or legalaid. counties: county names separated by semicolons.\nlines: service line names or keys (div_k, div_nk, sapcr, mod, enf, po, ivd, adopt, cps, prenup, high, mil, gray) separated by semicolons.\noffices: street, city, TX ZIP; separate several offices with semicolons. lawyers: names, optionally with the bar number in parentheses, separated by semicolons.');
   const SWEEP_H = ['competitor', 'domain', 'tier', 'counties', 'last_checked', 'days_since', 'live_ads_on_record', 'meta_ad_library_by_name', 'meta_ad_library_page', 'google_transparency_by_domain', 'google_transparency_advertiser', 'state_bar_search', 'tbls_search', 'google_maps', 'google_reviews', 'county_search'];
-  function sweepRows(keys) { return (keys ? keys.map(comp).filter(Boolean) : list()).map(c => [c.name, c.domain, c.tier, c.counties.map(f => CI[f] ? CI[f].name : f).join('; '), c.lastChecked || '', c.lastChecked ? Math.round(daysAgo(c.lastChecked)) : '', forComp(c.key).filter(isLiveAd).length, LINKS.metaKw(c.name), c.meta_page_id ? LINKS.metaPage(c.meta_page_id) : '', c.domain ? LINKS.googleDomain(c.domain) : '', c.google_advertiser_id ? LINKS.googleAdv(c.google_advertiser_id) : '', LINKS.barSearch(c.name), LINKS.tblsForm(), LINKS.gMaps(c.name, placeOf(c)), LINKS.gReviews(c.name), c.counties[0] && CI[c.counties[0]] ? LINKS.gCounty(CI[c.counties[0]].name) : '']); }
+  function sweepRows(keys) { return (keys ? keys.map(comp).filter(Boolean) : list()).map(c => [c.name, c.domain, c.tier, c.counties.map(f => CI[f] ? CI[f].name : f).join('; '), c.lastChecked || '', c.lastChecked ? Math.max(0, Math.round(daysAgo(c.lastChecked))) : '', forComp(c.key).filter(isLiveAd).length, LINKS.metaKw(c.name), c.meta_page_id ? LINKS.metaPage(c.meta_page_id) : '', c.domain ? LINKS.googleDomain(c.domain) : '', c.google_advertiser_id ? LINKS.googleAdv(c.google_advertiser_id) : '', LINKS.barSearch(c.name), LINKS.tblsForm(), LINKS.gMaps(c.name, placeOf(c)), LINKS.gReviews(c.name), c.counties[0] && CI[c.counties[0]] ? LINKS.gCounty(CI[c.counties[0]].name) : '']); }
   function sweepCSV() { return toCSV(SWEEP_H, sweepRows(), `Weekly sweep, Severance module 24, exported ${today()}. Open each link, log what you see, mark the competitor checked.`); }
   function compareCSV(keys) { const c = compare(keys); return toCSV(['measure'].concat(c.cols.map(x => x.name)), c.rows.map(r => [r.label].concat(r.values)), `Competitor comparison, Severance module 24, ${today()}. Competitor values come from the roster and the observations logged in this browser.`); }
   function settings() { return S.settings; }

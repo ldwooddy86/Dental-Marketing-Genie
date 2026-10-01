@@ -14,7 +14,8 @@
      LINT.PLATFORMS, LINT.FILING, LINT.stripHTML, LINT.detectLang, LINT.splitBatch, LINT.parseAdsCSV, LINT.diff, LINT.firmItems
    Severity: block (pass is false until it is fixed), fix (a safe correction exists), warn (a person decides), info (a reminder).
    A finding can be a block and still carry a safe fix (a stale number): LINT.fix removes it. Rules that need the firm (the responsible
-   lawyer, certifications, advertised fees, ratings, Spanish staff) read FIRM at call time and are skipped in competitor posture. */
+   lawyer, certifications, advertised fees, ratings, Spanish staff) read FIRM at call time and run only on our own copy: a call with a
+   kind or posture 'self'. posture 'comp' (a competitor) and calls with neither (posture 'neutral') skip them and the house style. */
 'use strict';
 const SAMPLE_AD = `Texas's #1 Divorce Specialists. We guarantee the best outcome for you and your kids. Texas splits everything 50/50, but our expert attorneys have recovered millions for clients. Mothers get custody in Texas, and your child can choose at 12. Ask about legal separation and our no fee unless we win promise. Child support is capped at $9,200. Call today, divorced in 60 days.`;
 const LINT = (() => {
@@ -71,8 +72,11 @@ const LINT = (() => {
   const PROTECT = /\b(?:https?:\/\/|www\.)[^\s<>"']+|[\w.+-]+@[\w-]+(?:\.[\w-]+)+|\b[\w-]+(?:\.[\w-]+)*\.(?:com|net|org|law|legal|lawyer|attorney|us|gov|edu|info|co|io|biz)\b(?:\/[^\s<>"']*)?|\bTitle IV-D\b|\bIV-D\b|\bT-Mobile\b|\bChick-fil-A\b|\bJELD-WEN\b|\bCOVID-19\b/gi;
 
   /* ---- the firm, when the rule needs it (skipped in competitor posture) */
+  /* posture: 'self' (our own outbound copy: a kind is set or posture 'self' is passed), 'comp' (a competitor's copy) or 'neutral'
+     (text with neither, such as Competitor Watch observations): the firm comparisons run only on our own copy */
+  const postureOf = o => o.posture === 'comp' ? 'comp' : (o.posture === 'self' || o.kind) ? 'self' : 'neutral';
   function firmCtx(o) {
-    if (o.posture === 'comp') return null; const F = FIRM_(); if (!F) return null;
+    if (postureOf(o) !== 'self') return null; const F = FIRM_(); if (!F) return null;
     try { const g = F.get() || {}; const r = (F.responsible && F.responsible()) || {}; const p = (F.primary && F.primary()) || {}; const atts = (g.attorneys || []).filter(a => a && a.name);
       return { F, g, r, p, atts, certs: F.certs ? F.certs() : [], ready: F.ready ? !!F.ready() : !!(g.name && r.name && p.city), langs: g.languages || ['en'] }; } catch (e) { return null; }
   }
@@ -83,7 +87,7 @@ const LINT = (() => {
   const areaMatch = (a, b) => { const n = s => String(s || '').toLowerCase().replace(/[^a-z ]/g, ' ').replace(/\s+/g, ' ').trim(); const x = n(a), y = n(b); return !!x && !!y && (x === y || x.includes(y) || y.includes(x)); };
 
   /* ---- personal attribute and personal hardship assertions (second person) */
-  const PA_EN = /\b(?:are you|you'?re|you are|r u)\s+(?:getting|going through|facing|considering|thinking (?:about|of)|in the middle of|dealing with|ready for|headed for)\s+(?:a\s+|an\s+|your\s+)?(?:divorce|separation|custody (?:battle|fight|case|dispute)|breakup|split|protective order|cps (?:case|investigation))\b|\b(?:are you|you'?re|you are)\s+(?:divorcing|separating|separated|being divorced|recently divorced|a victim of (?:domestic|family) violence|being abused)\b|\byour (?:divorce|custody (?:battle|case|fight|dispute)|ex(?:[ -](?:husband|wife|spouse|partner))?|failing marriage|marriage (?:is )?(?:ending|over|falling apart|in trouble)|separation|protective order|cps case|abuser|abusive (?:husband|wife|spouse|partner))\b/gi;
+  const PA_EN = /\b(?:are you|you'?re|you are|r u)\s+(?:getting|going through|facing|considering|thinking (?:about|of)|in the middle of|dealing with|ready for|headed for)\s+(?:a\s+|an\s+|your\s+)?(?:divorced?|separated|separation|custody (?:battle|fight|case|dispute)|breakup|split|protective order|cps (?:case|investigation))\b|\b(?:are you|you'?re|you are)\s+(?:divorcing|separating|separated|being divorced|recently divorced|a victim of (?:domestic|family) violence|being abused)\b|\byour (?:divorce|custody (?:battle|case|fight|dispute)|ex(?:[ -](?:husband|wife|spouse|partner))?|failing marriage|marriage (?:is )?(?:ending|over|falling apart|in trouble)|separation|protective order|cps case|abuser|abusive (?:husband|wife|spouse|partner))\b/gi;
   const PA_ES = esRe('¿?(?:se está|te estás|está usted|está|estás) (?:divorciando|separando)\\??|(?:está|estás) (?:pasando por|enfrentando) (?:un |una |su |tu )?(?:divorcio|separación|batalla por la custodia)|(?:su|tu) (?:divorcio|separación|ex(?: esposo| esposa| pareja)?|caso de custodia|batalla por la custodia|abusador)');
   function paHits(t, ctx) { const out = []; [PA_EN].concat(ctx.langSet === 'en' ? [] : [PA_ES]).forEach(re => { re.lastIndex = 0; let m; while ((m = re.exec(t))) { if (!m[0]) { re.lastIndex++; continue; } if (!inSpans(m.index, ctx.protect)) out.push({ at: m.index, hit: m[0] }); } }); return out.sort((a, b) => a.at - b.at); }
 
@@ -431,7 +435,7 @@ const LINT = (() => {
     if (r.needKind && !ctx.kind) return false;
     if (r.kinds && !r.kinds.includes(ctx.kind)) return false;
     if (r.plats && !r.plats.includes(ctx.plat)) return false;
-    if (r.self && ctx.posture === 'comp') return false;
+    if (r.self && ctx.posture !== 'self') return false;
     if (r.id === 'house' && (ctx.o.house === false)) return false;
     return true;
   }
@@ -441,7 +445,7 @@ const LINT = (() => {
     while ((m = re.exec(t))) { if (!m[0]) { re.lastIndex++; continue; } const at = m.index; if (inSpans(at, sk) || inSpans(at, ctx.protect)) continue; if (r.neg && isNeg(t, at, m[0].length, r.neg, r.lang === 'any' ? null : r.lang)) continue; out.push({ at, hit: m[0] }); if (out.length >= 200) break; }
     return out;
   }
-  function mkCtx(t, o, extra) { const langSet = o.lang === 'en' || o.lang === 'es' ? o.lang : null; return Object.assign({ o, t, raw: t, html: false, langSet, lang: langSet || detectLang(t), kind: o.kind || '', plat: normPlat(o.platform), posture: o.posture === 'comp' ? 'comp' : 'self', firm: firmCtx(o), protect: spansOf(PROTECT, t) }, extra || {}); }
+  function mkCtx(t, o, extra) { const langSet = o.lang === 'en' || o.lang === 'es' ? o.lang : null; return Object.assign({ o, t, raw: t, html: false, langSet, lang: langSet || detectLang(t), kind: o.kind || '', plat: normPlat(o.platform), posture: postureOf(o), firm: firmCtx(o), protect: spansOf(PROTECT, t) }, extra || {}); }
 
   /* ---- HTML: strip tags, skip script, style, noscript, template and comments, decode entities, keep a map back to the source */
   const ENT = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ', mdash: '\u2014', ndash: '\u2013', hellip: '\u2026', rsquo: '\u2019', lsquo: '\u2018', ldquo: '\u201c', rdquo: '\u201d', copy: '\u00a9', reg: '\u00ae', trade: '\u2122', sect: '\u00a7', laquo: '\u00ab', raquo: '\u00bb', iexcl: '\u00a1', iquest: '\u00bf', ntilde: '\u00f1', Ntilde: '\u00d1', aacute: '\u00e1', eacute: '\u00e9', iacute: '\u00ed', oacute: '\u00f3', uacute: '\u00fa', uuml: '\u00fc', Aacute: '\u00c1', Eacute: '\u00c9', Iacute: '\u00cd', Oacute: '\u00d3', Uacute: '\u00da', minus: '\u2212', shy: '' };
@@ -543,7 +547,7 @@ const LINT = (() => {
     for (let k = keep.length - 1; k >= 0; k--) { const e = keep[k]; let rest = t.slice(e.end); if (e.cap) rest = rest.replace(/^\p{Ll}/u, c => c.toUpperCase()); t = t.slice(0, e.start) + e.to + rest; }
     keep.forEach(e => applied.push({ id: e.id, from: e.from, to: e.to }));
     if (keep.length) t = t.split('\n').map(l => l.replace(/[ \t]{2,}/g, ' ').replace(/ +([,.;:!?])/g, '$1')).join('\n');
-    if (o.house !== false && o.posture !== 'comp') { const log = []; const h = house(t, log); if (h !== t) { log.forEach(x => applied.push(x)); t = h; } }
+    if (o.house !== false && postureOf(o) !== 'comp') { const log = []; const h = house(t, log); if (h !== t) { log.forEach(x => applied.push(x)); t = h; } }
     return t;
   }
   function fix(text, o) {

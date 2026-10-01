@@ -80,6 +80,7 @@
 #mod-watch .cw-msg{padding:8px 10px;border:1px solid var(--line);border-left:4px solid var(--good);background:var(--sunk);font-size:13px;margin-top:8px}
 #mod-watch .cw-msg.err{border-left-color:var(--critical)}
 #mod-watch pre.cw-url{white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-all;font-size:12px;background:var(--sunk);border:1px solid var(--line);padding:8px 10px;margin:8px 0 0;max-height:120px;overflow:auto;color:var(--ink-2)}
+#mod-watch .ctl label.chk{font-family:var(--sans);font-weight:400;font-size:12.5px;letter-spacing:0;text-transform:none;color:var(--ink-2)}
 #mod-watch .cw-vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 
 /* tables */
@@ -89,11 +90,13 @@
 #mod-watch table.cw-cmp th.cw-firm,#mod-watch table.cw-cmp td.cw-firm{background:var(--sel-soft)}
 #mod-watch table.cw-cmp th{cursor:default}
 #mod-watch table.cw-matrix td{text-align:center;min-width:44px}
-#mod-watch table.cw-matrix td.sells{color:var(--ink-3)}
+#mod-watch table.cw-matrix td:first-child{text-align:left}
+#mod-watch table.cw-matrix td.sells{color:var(--ink-3);font-size:16px;line-height:1}
 #mod-watch table.cw-matrix th{font-size:9.5px;cursor:default}
 #mod-watch tr.cw-stale td:first-child{box-shadow:inset 3px 0 0 var(--warning)}
 #mod-watch .cw-bad{color:var(--critical);font-weight:600}
 #mod-watch td.cw-sl a{margin-right:8px;white-space:nowrap}
+#mod-watch #cwCmp .tblwrap,#mod-watch #cwClaims .tblwrap{max-height:none}
 #mod-watch .cw-pick{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;margin-bottom:10px}
 
 /* claims */

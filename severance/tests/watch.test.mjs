@@ -54,6 +54,7 @@ const ad1 = W.observe(a.key, { kind: 'ad', platform: 'meta', status: 'active', f
 eq(ad1.compName, 'Alpha Family Law, PLLC', 'observation carries the name'); eq(ad1.zips, ['77002'], 'invalid ZIPs dropped'); eq(ad1.counties, ['48201'], 'counties by name');
 assert(ad1.lint.length >= 2 && ad1.lintBlock >= 1, 'LINT runs on competitor copy: guarantee blocks, superlative and specialist flagged');
 assert(!ad1.lint.includes('r702a') && !ad1.lint.includes('house'), 'firm only checks (responsible lawyer footer, house style) are not run on competitor copy');
+assert(!['r706', 'free_consult', 'arc_filing', 'tbls_unsupported'].some(id => ad1.lint.includes(id)), 'competitor posture: rules about the firm\'s own profile and conduct are not applied to their copy');
 W.observe(a.key, { kind: 'ad', platform: 'google', status: 'active', first: '2026-09-25', text: 'Houston divorce lawyer. Flat fee options.' });
 W.observe(a.key, { kind: 'offer', platform: 'site', first: '2026-09-10', offer: { type: 'flat', text: 'Agreed divorce $2,500 flat', price: 2500 }, line: 'div_nk' });
 W.observe(a.key, { kind: 'review', platform: 'gbp', first: '2026-06-01', reviews: { count: 100, rating: 4.6 } });

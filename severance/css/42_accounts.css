@@ -1,0 +1,60 @@
+/* Module 23 · Accounts. Scoped to #mod-accounts; theme tokens only (light and dark follow app.css). */
+#mod-accounts .ac-cards{grid-template-columns:repeat(auto-fill,minmax(min(100%,330px),1fr));margin-bottom:0;align-items:start}
+#mod-accounts .ac-conn{gap:8px}
+#mod-accounts .ac-ch{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px}
+#mod-accounts .ac-ch h4{margin:0 4px 0 0;border-left:4px solid var(--line-strong);padding-left:8px;line-height:1.2}
+#mod-accounts .ac-ch .pill{white-space:normal;text-align:left}
+#mod-accounts .ac-ver{margin-left:auto}
+#mod-accounts .ac-fg{grid-template-columns:repeat(auto-fill,minmax(min(100%,200px),1fr));margin-bottom:4px}
+#mod-accounts .ac-fg .ctl input,#mod-accounts .ac-fg .ctl select{width:100%;min-width:0}
+#mod-accounts .ac-fg .ctl label{letter-spacing:.06em;text-transform:none;font-size:11.5px;line-height:1.3}
+#mod-accounts .ac-conn .btnrow{margin:2px 0}
+#mod-accounts .ac-det{border-top:1px solid var(--line);padding-top:6px}
+#mod-accounts .ac-det summary{cursor:pointer;font-family:var(--display);font-weight:700;font-size:12px;letter-spacing:.04em;color:var(--title);padding:2px 0}
+#mod-accounts .ac-det[open] summary{margin-bottom:6px}
+#mod-accounts .ac-det .small{margin:6px 0}
+#mod-accounts .ac-log{margin-top:2px;max-height:160px}
+#mod-accounts .ac-log.ac-err{border-color:var(--critical);color:var(--critical)}
+#mod-accounts .ac-code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px;background:var(--sunk);border:1px solid var(--line);padding:1px 5px;white-space:normal;overflow-wrap:anywhere;word-break:break-all}
+#mod-accounts .ac-src{display:inline-block;font-family:var(--display);font-weight:700;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;padding:1px 6px;border:1px solid var(--line-strong);border-left:4px solid var(--line-strong);color:var(--ink-2);background:var(--card);white-space:nowrap;vertical-align:1px}
+#mod-accounts .ac-s-google{border-left-color:var(--s3)} #mod-accounts .ac-s-lsa{border-left-color:var(--s1)} #mod-accounts .ac-s-youtube{border-left-color:var(--s2)}
+#mod-accounts .ac-s-meta,#mod-accounts .ac-s-facebook,#mod-accounts .ac-s-instagram{border-left-color:var(--s5)} #mod-accounts .ac-s-tiktok{border-left-color:var(--ink)}
+#mod-accounts .ac-s-microsoft{border-left-color:var(--s7)} #mod-accounts .ac-s-linkedin,#mod-accounts .ac-s-linkedinpage{border-left-color:var(--s6)} #mod-accounts .ac-s-gbp{border-left-color:var(--s3)}
+#mod-accounts .ac-s-callrail,#mod-accounts .ac-s-ctm{border-left-color:var(--s4)} #mod-accounts .ac-s-clio,#mod-accounts .ac-s-lawmatics{border-left-color:var(--s8)}
+#mod-accounts .ac-s-organic,#mod-accounts .ac-s-referral,#mod-accounts .ac-s-direct,#mod-accounts .ac-s-directory{border-left-color:var(--green-mid)}
+#mod-accounts .ac-drop{display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+#mod-accounts .ac-g{align-items:start}
+#mod-accounts .ac-g>.panel{margin-bottom:0!important}
+#mod-accounts .grid2.ac-g{margin-bottom:14px}
+#mod-accounts .ac-g2{grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));margin:12px 0 0}
+#mod-accounts .ac-q{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+#mod-accounts .ac-qb{background:var(--sunk);border:1px solid var(--line);padding:10px 12px;min-width:0}
+#mod-accounts .ac-qt{font-family:var(--display);font-weight:700;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--judg)}
+#mod-accounts .ac-qv{font-family:var(--display);font-weight:700;font-size:24px;color:var(--title);font-variant-numeric:tabular-nums;margin:2px 0}
+#mod-accounts .ac-qv.ac-hi{color:var(--critical)} #mod-accounts .ac-qv.ac-lo{color:var(--warning)} #mod-accounts .ac-qv.ac-ok{color:var(--good)}
+#mod-accounts .ac-tbl{max-height:460px}
+#mod-accounts .ac-tbl.ac-short{max-height:360px}
+#mod-accounts .ac-tbl td.ac-wrap{white-space:normal;min-width:140px;max-width:280px}
+#mod-accounts .ac-tbl td.ac-narrow{min-width:90px;max-width:140px}
+#mod-accounts .ac-tbl td.ac-plats{white-space:normal;min-width:240px;line-height:1.9}
+#mod-accounts .ac-dev{font-size:11.5px;color:var(--ink-3)} #mod-accounts .ac-dev.up{color:var(--critical)} #mod-accounts .ac-dev.dn{color:var(--good)}
+#mod-accounts .ac-obs{margin-bottom:8px}
+#mod-accounts .ac-hour svg{width:100%;height:auto;display:block}
+#mod-accounts .ac-bl{fill:var(--s1)} #mod-accounts .ac-bs{fill:var(--s3)}
+#mod-accounts .ac-even{stroke:var(--ink-3);stroke-width:1.5;stroke-dasharray:5 4}
+#mod-accounts .ac-hit{fill:transparent;cursor:crosshair} #mod-accounts .ac-hit:hover{fill:var(--sel-soft);fill-opacity:.35}
+#mod-accounts .legendc i.ac-li-l{background:var(--s1)} #mod-accounts .legendc i.ac-li-s{background:var(--s3)} #mod-accounts .legendc i.ac-li-e{background:none;border-top:2px dashed var(--ink-3);height:0;vertical-align:3px}
+#mod-accounts .ac-empty{padding:18px 0}
+#mod-accounts .ac-meth li{margin-bottom:8px;max-width:118ch}
+#mod-accounts .ac-meth b,#mod-accounts .ac-judg dt{color:var(--title)}
+#mod-accounts .ac-judg{margin:0;font-size:13px;line-height:1.55}
+#mod-accounts .ac-judg dt{font-family:var(--display);font-weight:700;margin-top:10px}
+#mod-accounts .ac-judg dt:first-child{margin-top:0}
+#mod-accounts .ac-judg dd{margin:2px 0 0;color:var(--ink-2)}
+#mod-accounts .callout code{font-size:12px}
+@media (max-width:760px){
+  #mod-accounts .ac-q{grid-template-columns:repeat(2,minmax(0,1fr))}
+  #mod-accounts .ac-qv{font-size:20px}
+  #mod-accounts .ac-ver{margin-left:0}
+  #mod-accounts .toolbar .btn{flex:1 1 auto}
+}

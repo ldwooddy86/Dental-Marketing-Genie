@@ -474,8 +474,11 @@ const ACCT = (() => {
     let hi = rows.findIndex(r => r.filter(x => String(x).trim()).length >= 3 && r.some(c => HDR_RE.test(c))); if (hi < 0) hi = 0;
     const H = rows[hi].map(h => String(h).trim().toLowerCase().replace(/\s+/g, ' '));
     const imp = IMPORTERS.find(i => i.id === forceId) || IMPORTERS.find(i => i.detect(H)); if (!imp) return { rows: [], note: 'Columns not recognized; pick the format or start from the template' };
-    const col = k => { const cands = imp.map[k] || []; for (const c of cands) { const i = H.indexOf(c); if (i >= 0) return i; } for (const c of cands) { const i = H.findIndex(h => h.startsWith(c)); if (i >= 0) return i; } return -1; };
-    const ix = {}; Object.keys(imp.map).forEach(k => ix[k] = col(k)); const g = (r, k) => ix[k] >= 0 ? String(r[ix[k]] == null ? '' : r[ix[k]]).trim() : '';
+    /* every column a field may come from, best first (exact header names, then headers that start with one); a cell left empty falls through to the next */
+    const cols = k => { const cands = imp.map[k] || []; const out = []; cands.forEach(c => { const i = H.indexOf(c); if (i >= 0 && !out.includes(i)) out.push(i); }); cands.forEach(c => H.forEach((h, i) => { if (h.startsWith(c) && !out.includes(i)) out.push(i); })); return out; };
+    const ix = {}, ixs = {}; Object.keys(imp.map).forEach(k => { ixs[k] = cols(k); ix[k] = ixs[k].length ? ixs[k][0] : -1; });
+    const NUMK = ['imp', 'clicks', 'spend', 'leads', 'calls', 'msgs', 'conv', 'retained', 'value', 'price', 'duration', 'hour', 'qualified'];   /* a blank count is a zero, not a reason to read another column */
+    const g = (r, k) => { for (const i of (NUMK.includes(k) ? (ix[k] >= 0 ? [ix[k]] : []) : ixs[k] || [])) { const v = String(r[i] == null ? '' : r[i]).trim(); if (v !== '') return v; } return ''; };
     const src = String(srcLabel || '').trim().toLowerCase().replace(/[^a-z0-9 ]+/g, '').trim() || imp.src;
     const key = 'import:' + imp.src; const prev = S.actuals[key] || { rows: [] }; const seen = new Set(prev.rows.map(r => r.h).filter(Boolean));
     const out = []; let dup = 0, skipped = 0; const today = dstr(new Date());

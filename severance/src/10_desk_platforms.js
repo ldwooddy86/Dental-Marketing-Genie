@@ -245,8 +245,8 @@ const DESKX = (() => {
     let fields = {}, lp = false;
     if (platform === 'meta') { const pr = body(limit('meta', 'primary'), mt.p); fields = { primary: pr.text, headline: fill(mt.h, ctx, limit('meta', 'headline')) || '', description: fill(mt.d, ctx, limit('meta', 'description')) || '' }; lp = pr.lp; }
     else if (platform === 'dg') { const hm = limit('dg', 'headline'), dm = limit('dg', 'description'); const hs = dedupe(C.h.map(t => fill(t, ctx, hm)).concat([fill(mt.h, ctx, hm)]).concat(S.h(ctx).slice(1, 3).map(t => fill(t, ctx, hm))), 5); const f = footer(ctx, dm, lang); const ds = dedupe([f].concat(C.d.map(t => fill(t, ctx, dm))), 5); hs.forEach((x, i) => fields['headline' + (i + 1)] = x); ds.forEach((x, i) => fields['description' + (i + 1)] = x); fields.business = ctx.firm || PH.firm; lp = !f; }
-    else if (platform === 'yelp') { const pr = body(limit('yelp', 'body'), join(mt.p, fill(C.d[0], ctx) || '')); fields = { headline: fill(mt.h, ctx, limit('yelp', 'headline')) || '', body: pr.text }; lp = pr.lp; }
-    else if (platform === 'nextdoor') { const pr = body(limit('nextdoor', 'body'), join(mt.p, fill(C.d[1] || C.d[0], ctx) || '')); fields = { headline: fill(mt.h, ctx, limit('nextdoor', 'headline')) || '', body: pr.text }; lp = pr.lp; }
+    else if (platform === 'yelp') { const pr = body(limit('yelp', 'body'), join(mt.p, fill(C.d[1] || C.d[0], ctx) || '')); fields = { headline: fill(mt.h, ctx, limit('yelp', 'headline')) || '', body: pr.text }; lp = pr.lp; }
+    else if (platform === 'nextdoor') { const pr = body(limit('nextdoor', 'body'), join(mt.p, fill(C.d[2] || C.d[1] || C.d[0], ctx) || '')); fields = { headline: fill(mt.h, ctx, limit('nextdoor', 'headline')) || '', body: pr.text }; lp = pr.lp; }
     else if (platform === 'tiktok') { const pr = body(limit('tiktok', 'text'), mt.h + '.'); fields = { text: pr.text, display_name: (ctx.firm || PH.firm).slice(0, limit('tiktok', 'display_name')) }; lp = pr.lp; }
     return { fields, lp, ctx };
   }

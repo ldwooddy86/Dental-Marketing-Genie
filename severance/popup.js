@@ -10,7 +10,7 @@ async function render() {
   let st = {}; try { st = (await PB.storage.local.get('sev.ext.state'))['sev.ext.state'] || {}; } catch (e) { st = {}; }
   const s = st.summary, last = st.last || {};
   const errs = (last.errors || []).concat(last.error && !(last.errors || []).includes(last.error) ? [last.error] : []);
-  q1('#err').hidden = !errs.length; q1('#err').textContent = errs.join(' ');
+  q1('#err').hidden = !errs.length; q1('#err').textContent = errs.join('\n');
   if (!s) { q1('#trig').innerHTML = `<p class="small">${errs.length ? 'No answer yet from the sources.' : 'Waiting for the first check. It runs a few seconds after install and then on the timer set in Options.'}</p>`; return; }
   q1('#sub').textContent = s.scope && s.scope.length ? 'Watching ' + s.scope.slice(0, 3).join(', ') + (s.scope.length > 3 ? ' and ' + (s.scope.length - 3) + ' more' : '') : 'Watching all of Texas';
   q1('#kNew').textContent = s.new14 != null ? s.new14 : 'n/a';
