@@ -1,0 +1,102 @@
+/* Module 22 · Publish (src/41_m22_publish.js). Severance tokens only (app.css :root and both dark blocks), so light and dark both work
+   without a theme block here. Only what app.css and the build 2 kit lack, every class prefixed pb-; the module reuses .panel .tiles
+   .tile .controls .ctl .formgrid .btnrow .btn .seg .pill .chk .logbox .dropzone .ccard .steps .finding .callout .tblwrap table.t
+   iframe.preview from app.css. */
+.pb-panel{margin-bottom:14px}
+.pb-tiles .tile .v .pb-tv{display:block;font-size:19px;line-height:1.2;overflow-wrap:anywhere}
+.pb-mh{max-width:380px}
+.pb-sp{flex:1 1 auto}
+.pb-gap{margin-top:10px}
+.pb-empty{padding:10px 0}
+.pb-foot{margin:4px 0 0}
+.pb-head{display:flex;gap:10px 16px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap}
+.pb-head>div:first-child{flex:1 1 320px;min-width:0}
+.pb-head .btnrow{margin:0}
+.pb-lab{font-family:var(--display);font-weight:700;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--judg)}
+.pb-opt{font-weight:500;letter-spacing:.04em;color:var(--ink-3);text-transform:none}
+.pb-red{color:var(--critical);font-weight:600}
+.pb-warn{color:var(--warning);font-weight:600}
+.pb-ok{color:var(--good)}
+
+/* target cards: one column flow so tall cards (Drupal, Webflow) do not leave holes */
+.pb-cards{columns:3 330px;column-gap:12px}
+.pb-card{break-inside:avoid;margin:0 0 12px}
+.pb-card.on{border-color:var(--title);box-shadow:inset 4px 0 0 var(--accent)}
+.pb-grp{font-family:var(--display);font-weight:700;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent)}
+.pb-ch{display:flex;align-items:baseline;gap:6px 12px;flex-wrap:wrap}
+.pb-ch h4{flex:1 1 auto;min-width:0}
+.pb-use{font-size:12px}
+.pb-card .st .pill{white-space:normal;text-transform:none;letter-spacing:.02em;font-size:11.5px;max-width:100%;overflow-wrap:anywhere}
+.pb-caps{display:flex;flex-wrap:wrap;gap:4px}
+.pb-caps span{font-family:var(--display);font-weight:600;font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;border:1px solid var(--line);padding:1px 5px;color:var(--ink-3);text-decoration:line-through;text-decoration-color:var(--line-strong)}
+.pb-caps span.on{color:var(--accent);border-color:var(--accent);text-decoration:none}
+.pb-fields{display:grid;gap:9px;margin-top:4px}
+.pb-fields .ctl input,.pb-fields .ctl select,.pb-fields .ctl textarea{width:100%;min-width:0}
+.pb-fields .ctl .hint{max-width:none}
+.pb-chkf{display:flex;flex-direction:column;gap:3px}
+.pb-chkf .hint{font-size:11.5px;color:var(--ink-3);line-height:1.35}
+.pb-det{border-top:1px solid var(--line);padding-top:6px}
+.pb-det summary{cursor:pointer;font-family:var(--display);font-weight:700;font-size:12px;letter-spacing:.06em;color:var(--title)}
+.pb-det summary:hover{color:var(--accent)}
+.pb-det .steps{margin-top:8px}
+.pb-det a{overflow-wrap:anywhere}
+.pb-card .btnrow{margin:4px 0 0}
+.pb-clog{max-height:160px;margin-top:2px}
+.pb-clog.pb-err{color:var(--critical);border-color:var(--critical)}
+
+/* what to publish: panes, composer, import */
+#pbTabs{margin:2px 0 12px}
+.pb-pane{margin:0 0 6px}
+.pb-firmline{background:var(--sunk);border:1px solid var(--line);border-left:3px solid var(--accent);padding:8px 12px;margin:0 0 12px;font-size:13px;color:var(--ink-2);line-height:1.55}
+.pb-firmline b{color:var(--title)}
+.pb-firmline .btn{margin-left:6px}
+.pb-opts{grid-column:1/-1;display:flex;flex-wrap:wrap;align-items:center;gap:6px 18px}
+.pb-comp .ctl.wide .hint{max-width:none}
+.pb-ctls{align-items:flex-start}
+.pb-count{font-family:var(--display);font-weight:600;letter-spacing:.02em;text-transform:none;color:var(--ink-3);font-variant-numeric:tabular-nums}
+.pb-count.over{color:var(--critical)}
+.pb-count.short{color:var(--warning)}
+.pb-count.pb-ok{color:var(--good)}
+.pb-count.pb-red{color:var(--critical)}
+.ctl textarea.pb-code{min-height:240px;font-family:var(--sans);font-size:12.5px;line-height:1.5;white-space:pre-wrap;tab-size:2}
+.ctl textarea.pb-code-s{min-height:130px}
+.pb-drop{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:center}
+
+/* pages, results and ledger tables */
+.pb-tbl{max-height:560px}
+.pb-tbl.pb-short{max-height:380px}
+.pb-tbl td.pb-wrap{white-space:normal;line-height:1.4;min-width:180px;max-width:340px}
+.pb-tbl td.pb-lint{white-space:normal;min-width:128px}
+.pb-tbl td code{font-size:11.5px}
+.pb-tbl tr.pb-sel td{background:var(--accent-soft)}
+.pb-tbl tr.pb-cur td:first-child{box-shadow:inset 3px 0 0 var(--accent)}
+.pb-acts{display:flex;gap:4px;flex-wrap:nowrap}
+.pb-ovr{display:flex;width:max-content;font-size:12px;margin-top:4px;color:var(--ink-2)}
+.pb-ovr input{accent-color:var(--critical)}
+
+/* screen and preview panes under the table */
+.pb-sub{margin-top:14px;border-top:1px solid var(--line);padding-top:12px}
+.pb-subh{font-family:var(--display);font-weight:700;font-size:17px;color:var(--title);margin:0 0 3px}
+.pb-finds{margin-top:8px;max-height:520px;overflow:auto}
+.pb-finds .finding p{margin:4px 0 0;color:var(--ink-2)}
+.pb-finds .finding .pill{vertical-align:1px}
+iframe.preview.pb-prev{height:640px;margin-top:10px}
+
+/* deploy, method, judgment calls, sources */
+.pb-log{max-height:280px;margin-top:4px}
+.pb-meth li{margin-bottom:8px}
+.pb-meth b{color:var(--title)}
+.pb-judg>div{border-bottom:1px solid var(--line);padding:8px 0}
+.pb-judg>div:last-child{border-bottom:0}
+.pb-judg b{display:block;font-family:var(--display);font-weight:700;color:var(--title);font-size:14px}
+.pb-judg p{margin:3px 0 0;font-size:13px;color:var(--ink-2);line-height:1.5}
+#pbSrc{padding-left:18px;margin:0}
+#pbSrc a{overflow-wrap:anywhere}
+#pbSrc .grade{margin-left:4px}
+
+@media (max-width:760px){
+  iframe.preview.pb-prev{height:480px}
+  .pb-mh{max-width:none;flex:1 1 100%}
+  .pb-mh select{width:100%}
+  .pb-firmline .btn{margin:6px 0 0}
+}
