@@ -1,6 +1,7 @@
 /* Module 27 · Evidence (src/46_m27_evidence.js). Theme variables only; square corners. */
 #mod-evidence .ev-sec{margin-bottom:14px}
 #mod-evidence .ev-g{margin-bottom:0}
+#mod-evidence .ev-g > *{min-width:0}
 #mod-evidence .ev-g > .panel.ev-sec{margin-bottom:14px}
 #mod-evidence .ev-note{margin-top:8px;max-width:118ch;line-height:1.55}
 #mod-evidence .ev-h4{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);margin:16px 0 8px;border-bottom:1px solid var(--line);padding-bottom:3px;font-weight:700}

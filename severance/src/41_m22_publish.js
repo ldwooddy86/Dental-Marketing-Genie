@@ -315,6 +315,7 @@ registerModule({
     function armed(btn, key, label, ask) { if (st.confirm[key]) { st.confirm[key] = false; if (btn) btn.textContent = label; return true; } st.confirm[key] = true; if (btn) btn.textContent = ask || 'Click again to confirm'; setTimeout(() => { st.confirm[key] = false; if (btn && btn.isConnected) btn.textContent = label; }, 4000); return false; }
     async function act(id, a, cardEl) {
       const ad = CMS.get(id); if (!ad) return; const btn = $(`button[data-a="${a}"]`, cardEl); const busy = on => { if (btn) btn.disabled = on; };
+      if (applyMode(id)) await CMS.setSettings({});   /* a card that does not remember is moved out of sv.cms.v1 before anything is written */
       try {
         if (a === 'save') { const patch = readFields(cardEl); const old = CMS.cfg(id); const norm = v => (v === true ? 'true' : (v == null || v === false) ? '' : String(v)); const changed = Object.keys(patch).some(k => norm(old[k]) !== norm(patch[k])); if (changed && old._tested) patch._tested = null; await CMS.setCfg(id, patch); log(id, changed && old._tested ? 'Saved. The settings changed, so Test again.' : 'Saved in this browser.'); toast(`${ad.name} settings saved`); }
         if (a === 'test') { busy(true); await CMS.setCfg(id, readFields(cardEl)); await grant(ad); log(id, 'Testing…'); const r = await CMS.test(id); if (r && r.ok === false) { await CMS.setCfg(id, { _tested: null }); log(id, (r.info || 'The test did not pass') + (r.hint ? ' · ' + r.hint : ''), true); toast(`${ad.name}: test did not pass`); } else { log(id, (r && r.info) || 'Connected.'); toast(`${ad.name}: connected`); } }
@@ -322,10 +323,10 @@ registerModule({
         if (a === 'configure') { busy(true); await CMS.setCfg(id, readFields(cardEl)); await grant(ad); log(id, 'Configuring…'); const r = await ad.configure(CMS.cfg(id), ctxFor()); log(id, (r && r.info) || 'Configured.'); toast(`${ad.name}: configured`); }
         if (a === 'kit') kitZip();
         if (a === 'bridge') bridgeZip();
-        if (a === 'forget') { if (!armed(btn, id + ':forget', 'Forget credentials')) return; await CMS.clearCfg(id); if (CMS.settings().mediaHost === id) await CMS.setSettings({ mediaHost: '' }); renderTargets(); toast(`${ad.name}: credentials removed`); }
+        if (a === 'forget') { if (!armed(btn, id + ':forget', 'Forget credentials')) return; await CMS.clearCfg(id); const kp = store.get(KEEP_KEY, {}) || {}; if (kp[id]) { delete kp[id]; store.set(KEEP_KEY, kp); } const ss = ssGet(); if (ss[id]) { delete ss[id]; ssSet(ss); } if (CMS.settings().mediaHost === id) await CMS.setSettings({ mediaHost: '' }); renderTargets(); toast(`${ad.name}: credentials removed from this browser and this session`); }
         if (a === 'clearLedger') { if (!armed(btn, id + ':ledger', 'Clear sent ledger')) return; await CMS.clearDeployed(id); log(id, 'Ledger cleared for this target.'); renderPages(); renderLedger(); }
       } catch (e) { log(id, errText(e), true); toast(`${ad.name}: ${modFix(e.message || e)}`); }
-      finally { busy(false); pills(); tiles(); }
+      finally { if (a !== 'forget') mirror(id); busy(false); pills(); tiles(); }
     }
     function setTarget(id) {
       st.target = id && CMS.get(id) ? id : ''; CMS.setSettings({ target: st.target });
