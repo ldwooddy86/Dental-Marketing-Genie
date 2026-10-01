@@ -7,10 +7,11 @@
   const ttmDivAll = stTTM('div');
   const shocked = CTY.filter(c => c.econ && isN(c.econ.ur_chg_yoy) && c.econ.ur_chg_yoy >= 0.5).length;
   $('#shellFacts').innerHTML = `<span><b>${K(ttmDivAll)}</b> Texas divorce filings in 12 months</span><span><b>${K(ST.acs.married)}</b> married Texans</span><span><b>${shocked}</b> counties with unemployment up half a point or more on a year ago</span><span>Filings through <b>${esc(fmtDate(META.oca_through))}</b></span>`;
-  const order = ['index', 'ledger', 'market', 'signals', 'econ', 'lines', 'paid', 'supply', 'timing', 'desk', 'compliance', 'dfw', 'atlas', 'hou', 'sat', 'aus', 'elp', 'rgv', 'others', 'forge', 'publish', 'accounts', 'watch', 'live', 'method'];
+  const order = ['index', 'ledger', 'market', 'signals', 'econ', 'lines', 'paid', 'supply', 'timing', 'desk', 'compliance', 'dfw', 'atlas', 'hou', 'sat', 'aus', 'elp', 'rgv', 'others', 'forecast', 'evidence', 'ground', 'forge', 'publish', 'accounts', 'watch', 'live', 'method'];
+  const MODELS = ['forecast', 'evidence', 'ground'];
   const LAUNCH = ['forge', 'publish', 'accounts', 'watch', 'live'];
   MODS.sort((a, b) => order.indexOf(a.key) - order.indexOf(b.key));
-  const groups = [['Statewide', MODS.filter(m => !m.metro && m.key !== 'method' && !LAUNCH.includes(m.key))], ['Metro areas', MODS.filter(m => m.metro)], ['Launch', MODS.filter(m => LAUNCH.includes(m.key))]].filter(g => g[1].length);
+  const groups = [['Statewide', MODS.filter(m => !m.metro && m.key !== 'method' && !LAUNCH.includes(m.key) && !MODELS.includes(m.key))], ['Metro areas', MODS.filter(m => m.metro)], ['Models', MODS.filter(m => MODELS.includes(m.key))], ['Launch', MODS.filter(m => LAUNCH.includes(m.key))]].filter(g => g[1].length);
   const btn = m => `<button type="button" id="tab-${m.key}" role="tab" aria-selected="false" aria-controls="mod-${m.key}" title="${esc(m.desc)}"><span class="n">${m.num}</span><span class="t">${esc(m.title)}</span></button>`;
   $('#rail .in').innerHTML = groups.map(g => `<div class="grp"><div class="glabel">${g[0]}</div><div class="row" role="tablist" aria-label="${g[0]}">${g[1].map(btn).join('')}</div></div>`).join('');
   // method has no rail tab; its panel is named by the top bar button that opens it
