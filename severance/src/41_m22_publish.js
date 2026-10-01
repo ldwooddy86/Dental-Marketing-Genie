@@ -387,7 +387,7 @@ registerModule({
         'Each folder holds one page:', '  index.html   the page as a standalone document (title, meta description, canonical, robots, css and JSON-LD in the head)', '  body.html    the section markup with its css and JSON-LD inline, for a CMS field or block that takes HTML', '  page.json    the portable page (title, slug, meta description, language, SEO fields, schema, media slots, Elementor data when the Site Forge wrote it) and the screen result', '  media/       photos that were local to this browser; the markup points at them by relative path, so upload them and replace the paths', '',
         'Folders under held/ carry blocking findings from the compliance screen (compliance.csv lists them). Fix them, or have the responsible lawyer decide, before they go anywhere.', '',
         'By hand, per platform:', '  WordPress: a Custom HTML block (or the code editor) with body.html; the FORGE bridge through the Severance extension writes Elementor data and the SEO fields instead.', '  Drupal: the body field in a text format that keeps style and script tags (Full HTML).', '  Wix and Webflow: a CMS collection item (title, slug, rich text body, meta fields) behind a dynamic or template page; the css and scripts do not survive a rich text field.', '  Duda: an HTML widget on a page built from the template page.', '  Shopify, HubSpot, Joomla, Ghost: the page or post body editor in HTML mode (Ghost: an HTML card; the JSON-LD goes in the code injection head).', '',
-        'Texas rules: every page names the responsible lawyer and the primary practice location (Rule 7.02(a)) when the screen is clear. The homepage is not exempt from filing: file it with the Advertising Review Committee within ten days of first dissemination (Rule 7.04); other website pages are exempt (Rule 7.05).', ''].join('\n');
+        'Texas rules: every page names the responsible lawyer and the primary practice location (Rule 7.02(a)) when the screen is clear. The homepage is not exempt from filing: file it with the Advertising Review Committee within ten days of first dissemination (Rule 7.04); other website pages are exempt (Rule 7.05). A campaign landing page is the page an ad sends people to: file it with that ad, or record the exemption, as the responsible lawyer decides. Nothing here is published until the responsible lawyer has reviewed and approved it.', ''].join('\n');
     }
     /* ---------- pages ---------- */
     function persistLoaded() { store.set('sev.publish.loaded', { at: new Date().toISOString(), slugs: st.pages.map(p => p.slug) }); }
@@ -410,7 +410,7 @@ registerModule({
     }
     function rowHTML(p, led) {
       const m = mediaOf(p); const sel = st.selected.has(p.slug); const d = led[p.slug];
-      return `<tr class="${sel ? 'pb-sel' : ''}${st.previewSlug === p.slug || st.screenSlug === p.slug ? ' pb-cur' : ''}" data-slug="${esc(p.slug)}"><td><input type="checkbox" data-sel="${esc(p.slug)}" ${sel ? 'checked' : ''} aria-label="Select ${esc(p.title)}"></td><td class="l">${esc(p.kind || p.post_type || 'page')}${p.label ? `<div class="small">${esc(p.label)}</div>` : ''}</td><td class="l pb-wrap">${esc(p.title)}${p.noindex ? ' <span class="small">noindex</span>' : ''}${isHome(p) ? ' <span class="small">homepage</span>' : ''}</td><td class="l"><code>/${esc(p.slug)}/</code></td><td>${N(wordsOf(p))}</td><td>${p.checks ? checksCell(p.checks) : '<span class="small">n/a</span>'}</td><td class="l pb-lint">${lintCell(p)}</td><td>${m.n ? `${N(m.n)}${m.bad ? ` <span class="pb-red">${N(m.bad)} unresolved</span>` : ''}` : '<span class="small">none</span>'}</td><td class="l">${statusCell(d)}</td><td class="l"><div class="pb-acts"><button type="button" class="btn sm" data-a="preview">Preview</button><button type="button" class="btn sm" data-a="screen">Screen</button><button type="button" class="btn sm danger" data-a="remove">Remove</button></div></td></tr>`;
+      return `<tr class="${sel ? 'pb-sel' : ''}${st.previewSlug === p.slug || st.screenSlug === p.slug ? ' pb-cur' : ''}" data-slug="${esc(p.slug)}"><td><input type="checkbox" data-sel="${esc(p.slug)}" ${sel ? 'checked' : ''} aria-label="Select ${esc(p.title)}"></td><td class="l">${esc(p.kind || p.post_type || 'page')}${p.label ? `<div class="small">${esc(p.label)}</div>` : ''}</td><td class="l pb-wrap">${esc(p.title)}${p.noindex ? ' <span class="small">noindex</span>' : ''}${isHome(p) ? ' <span class="small">homepage</span>' : isLanding(p) ? ' <span class="small">landing page</span>' : ''}${arcKind(p) !== 'page' ? ` <span class="pill p-warn" title="${esc(`Advertising Review Committee: file within ${ARC_DAYS()} days of going live (Rule 7.04), unless exempt under Rule 7.05`)}">ARC filing</span>` : ''}</td><td class="l"><code>/${esc(p.slug)}/</code></td><td>${N(wordsOf(p))}</td><td>${p.checks ? checksCell(p.checks) : '<span class="small">n/a</span>'}</td><td class="l pb-lint">${lintCell(p)}</td><td>${m.n ? `${N(m.n)}${m.bad ? ` <span class="pb-red">${N(m.bad)} unresolved</span>` : ''}` : '<span class="small">none</span>'}</td><td class="l">${statusCell(d)}</td><td class="l"><div class="pb-acts"><button type="button" class="btn sm" data-a="preview">Preview</button><button type="button" class="btn sm" data-a="screen">Screen</button><button type="button" class="btn sm danger" data-a="remove">Remove</button></div></td></tr>`;
     }
     function renderPages() {
       const host = $('#pbPages', root); const t = T(); const led = t ? CMS.deployedFor(t.id) : {};
@@ -591,19 +591,100 @@ registerModule({
     drop.ondragover = e => { e.preventDefault(); drop.classList.add('over'); }; drop.ondragleave = () => drop.classList.remove('over');
     drop.ondrop = e => { e.preventDefault(); drop.classList.remove('over'); importFiles(e.dataTransfer.files); };
     file.onchange = e => { importFiles(e.target.files); e.target.value = ''; };
+    /* ---------- the exact HTML sent, kept for the firm's advertising records ----------
+       Each send is a standalone HTML document of the page as the adapter received it (media and placeholders already rewritten), in
+       IndexedDB (sev-publish-sent) with a small index in the store; the last 12 sends per page and target are kept. Where IndexedDB is
+       unavailable the copy lives in memory for this session and the ledger says so. */
+    const SENT_IDX = 'sev.publish.sent', SENT_DB = 'sev-publish-sent', SENT_KEEP = 12; const sentMem = new Map(); let sentDbP = null;
+    function sentDb() { if (!sentDbP) sentDbP = new Promise((res, rej) => { try { if (typeof indexedDB === 'undefined' || !indexedDB) throw new Error('IndexedDB is not available here'); const q = indexedDB.open(SENT_DB, 1); q.onupgradeneeded = () => { const db = q.result; if (!db.objectStoreNames.contains('sent')) db.createObjectStore('sent', { keyPath: 'key' }); }; q.onsuccess = () => res(q.result); q.onerror = () => rej(q.error || new Error('IndexedDB did not open')); q.onblocked = () => rej(new Error('IndexedDB is blocked')); } catch (e) { rej(e); } }); return sentDbP; }
+    async function idbDo(mode, fn) { const db = await sentDb(); return new Promise((res, rej) => { const tx = db.transaction('sent', mode); let out; const r = fn(tx.objectStore('sent')); if (r) r.onsuccess = () => { out = r.result; }; tx.oncomplete = () => res(out); tx.onerror = () => rej(tx.error); tx.onabort = () => rej(tx.error); }); }
+    const sentIdx = () => store.get(SENT_IDX, {}) || {};
+    const sentList = (target, slug) => (sentIdx()[target + '|' + slug] || []).filter(x => x.where !== 'mem' || sentMem.has(x.key));
+    async function sentPut(rec) {
+      let where = 'idb'; try { await idbDo('readwrite', os => os.put(rec)); } catch (e) { where = 'mem'; sentMem.set(rec.key, rec); }
+      const ix = sentIdx(); const k = rec.target + '|' + rec.slug; const list = (ix[k] || []).filter(x => x.where !== 'mem' || sentMem.has(x.key)).concat({ key: rec.key, at: rec.at, status: rec.status, bytes: rec.html.length, where, approvedBy: rec.approvedBy || '' });
+      const drop = list.length > SENT_KEEP ? list.splice(0, list.length - SENT_KEEP) : []; ix[k] = list; store.set(SENT_IDX, ix);
+      for (const d of drop) { try { if (d.where === 'mem') sentMem.delete(d.key); else await idbDo('readwrite', os => os.delete(d.key)); } catch (e) { } }
+      return where;
+    }
+    async function sentGet(key) { if (sentMem.has(key)) return sentMem.get(key); try { return (await idbDo('readonly', os => os.get(key))) || null; } catch (e) { return null; } }
+    const hashStr = t => { let h = 2166136261; const x = String(t || ''); for (let i = 0; i < x.length; i++) { h ^= x.charCodeAt(i); h = Math.imul(h, 16777619); } return (h >>> 0).toString(36); };
+    const pageHash = p => hashStr([p.title, p.meta_description, p.html, p.css, JSON.stringify(p.schema || null)].join('\u0001'));
+    const noDash = v => String(v == null ? '' : v).replace(/--+/g, '- ');
+    function sentDoc(p2, m) {
+      const lines = [`Sent by Severance, module 22 Publish, to ${m.targetName} (${m.target}) on ${new Date(m.at).toString()}.`, `Page: ${p2.title} at /${p2.slug}/, sent as ${m.status === 'publish' ? 'published (live)' : 'a draft'}${m.link ? ', ' + m.link : ''}.`, m.approvedBy ? `Reviewed and approved by ${m.approvedBy} on ${new Date(m.approvedAt).toString()}.` : 'Sent as a draft: no publication approval recorded.', `Compliance screen: ${m.screen}.`, `Firm: ${m.firm}. Responsible attorney: ${m.atty}.`, 'This is the markup, css, JSON-LD and SEO fields the platform received, after media uploads and placeholder removal. The platform\'s own header, footer and theme wrap it on the live site.'];
+      const note = '<!--\n  ' + lines.map(noDash).join('\n  ') + '\n-->';
+      const doc = CMS.fullHtml(p2); return /<head[^>]*>/i.test(doc) ? doc.replace(/<head([^>]*)>/i, (x) => x + '\n' + note) : note + '\n' + doc;
+    }
+    async function downloadSent(target, slug, key) {
+      const list = sentList(target, slug); const meta = key ? list.find(x => x.key === key) : list[list.length - 1];
+      if (!meta) { toast('No copy of what was sent is held for this page here: it was sent before this version of Severance, or this browser\'s site data was cleared'); return; }
+      const rec = await sentGet(meta.key); if (!rec) { toast('The copy of this send is no longer in this browser (site data cleared)'); return; }
+      const d = new Date(rec.at); const stamp = `${localDay(rec.at)}_${String(d.getHours()).padStart(2, '0')}${String(d.getMinutes()).padStart(2, '0')}`;
+      saveFile(`severance-sent_${slug}_${target}_${stamp}.html`, rec.html);
+    }
+    /* ---------- the Advertising Review Committee filing log (the Compliance Screen's store) ---------- */
+    const ARCI_KEY = 'sev.publish.arc';
+    const arcWhere = k => k === 'home' ? 'Website homepage' : k === 'landing' ? 'Other' : 'Website page (exempt)';
+    const ARC_DONE = /^(Filed|Approved|Exempt|Withdrawn|Pre approval)/;
+    function logArc(ad, page, rec, ap, hash, sentKey) {
+      const ix = store.get(ARCI_KEY, {}) || {}; const k = ad.id + '|' + page.slug; const kind = arcKind(page);
+      const e = ix[k] = ix[k] || { kind, slug: page.slug, title: page.title, target: ad.id, targetName: ad.name, firstLive: rec.at, versions: [] };
+      Object.assign(e, { kind, title: page.title, targetName: ad.name, link: rec.link || e.link || '' }); if (!e.firstLive) e.firstLive = rec.at;
+      const last = e.versions[e.versions.length - 1]; if (last && last.hash === hash) { last.republished = rec.at; store.set(ARCI_KEY, ix); return null; }   /* the same page again: not a new dissemination */
+      const day = localDay(rec.at); const days = ARC_DAYS(); const due = kind === 'page' ? '' : plusDays(day, days); const first = !e.versions.length;
+      const by = ap && ap.by ? `approved by ${ap.by} on ${when(ap.at)}` : 'no approval recorded';
+      const note = kind === 'home' ? `Homepage published live by Severance (module 22), ${by}. File it with the Advertising Review Committee within ${days} days of first dissemination: due ${fmtDate(due)} (Rule 7.04).${e.link ? ' ' + e.link : ''}`
+        : kind === 'landing' ? `Campaign landing page published live by Severance (module 22), ${by}. It is the page an ad sends people to: file it within ${days} days (due ${fmtDate(due)}, Rule 7.04), or record the Rule 7.05 exemption here if the responsible lawyer treats it as website content other than the homepage.${e.link ? ' ' + e.link : ''}`
+        : `Website content other than the homepage, exempt from filing (Rule 7.05); it must still comply with Rules 7.01 to 7.03. Published live by Severance (module 22), ${by}.${e.link ? ' ' + e.link : ''}`;
+      const row = { id: uid('arc'), what: `${page.title} (/${page.slug}/ on ${ad.name}${first ? '' : ', changed version'})`, where: arcWhere(kind), pub: day, filed: '', no: '', status: kind === 'page' ? 'Exempt (Rule 7.05)' : 'Not filed', note };
+      let log = store.get('sev.comp.arc', []); if (!Array.isArray(log)) log = []; log.push(row); store.set('sev.comp.arc', log);
+      e.versions.push({ at: rec.at, day, hash, arcId: row.id, due, approvedBy: ap ? ap.by : '', approvedAt: ap ? ap.at : '', sentKey: sentKey || '' }); e.versions = e.versions.slice(-20);
+      store.set(ARCI_KEY, ix); return row;
+    }
+    function arcRows() {
+      const ix = store.get(ARCI_KEY, {}) || {}; let log = store.get('sev.comp.arc', []); if (!Array.isArray(log)) log = []; const byId = new Map(log.map(r => [r.id, r])); const today = localDay();
+      return Object.values(ix).map(e => { const v = e.versions[e.versions.length - 1] || {}; const v0 = e.versions[0] || {}; const lr = byId.get(v.arcId) || null; const status = lr ? lr.status : (v.arcId ? 'Removed from the filing log' : 'n/a');
+        const due = e.kind === 'page' ? '' : (v.due || ''); const left = due ? Math.round((new Date(due + 'T12:00:00') - new Date(today + 'T12:00:00')) / 864e5) : null; const done = ARC_DONE.test(status);
+        return { key: e.target + '|' + e.slug, kind: e.kind, slug: e.slug, title: e.title, target: e.target, targetName: e.targetName, link: e.link || '', firstLive: e.firstLive, firstDay: v0.day || localDay(e.firstLive), version: v.day || '', versions: e.versions.length, due, left, status, done, filed: lr ? lr.filed || '' : '', no: lr ? lr.no || '' : '', approvedBy: v.approvedBy || '', approvedAt: v.approvedAt || '', sentKey: v.sentKey || '' }; })
+        .sort((a, b) => (a.kind === 'page') - (b.kind === 'page') || (a.done - b.done) || String(a.due || '9').localeCompare(String(b.due || '9')) || String(b.firstLive).localeCompare(String(a.firstLive)));
+    }
+    const kindName = k => k === 'home' ? 'Homepage' : k === 'landing' ? 'Landing page' : 'Website page';
+    function renderArc() {
+      const rows = arcRows(); const host = $('#pbArcT', root); const need = rows.filter(r => r.kind !== 'page'); const open = need.filter(r => !r.done); const over = open.filter(r => r.left != null && r.left < 0); const soon = open.filter(r => r.left != null && r.left >= 0 && r.left <= 3);
+      $('#pbArcTiles', root).innerHTML = tile('Pages published live', N(rows.length), rows.length ? `${N(rows.filter(r => r.kind === 'page').length)} exempt website pages` : 'nothing published live yet') + tile('To file', N(open.length), `${N(need.length)} homepage and landing pages in all`) + tile('Overdue', N(over.length), `${N(ARC_DAYS())} days after first publication`) + tile('Due within 3 days', N(soon.length), soon.length ? 'file now' : 'none');
+      if (!rows.length) { host.innerHTML = '<p class="small pb-empty">Nothing has been published live from here yet. The homepage and campaign landing pages are flagged before they go out (the ARC pill in the pages table), and each one lands here with its due date once it is live.</p>'; return; }
+      const stPill = r => r.kind === 'page' ? pill(r.status, 'p-ok') : r.done ? pill(r.status, 'p-ok') : r.left == null ? pill(r.status, 'p-warn') : r.left < 0 ? pill(`${N(-r.left)} day${r.left === -1 ? '' : 's'} overdue`, 'p-block') : r.left <= 3 ? pill(r.left === 0 ? 'Due today' : `Due in ${N(r.left)} day${r.left === 1 ? '' : 's'}`, 'p-warn') : pill(`Due in ${N(r.left)} days`, '');
+      host.innerHTML = `<div class="tblwrap pb-tbl pb-short"><table class="t"><thead><tr><th class="l">Page</th><th class="l">Kind</th><th class="l">Target</th><th class="l">First live</th><th class="l">Due</th><th class="l">Filing</th><th class="l">Approved</th><th class="l">Records</th></tr></thead><tbody>${rows.map(r => `<tr data-k="${esc(r.key)}"><td class="l pb-wrap">${esc(r.title)}<div class="small">/${esc(r.slug)}/${r.versions > 1 ? ` · ${N(r.versions)} versions, latest ${esc(fmtDate(r.version))}` : ''}</div></td><td class="l">${esc(kindName(r.kind))}</td><td class="l">${esc(r.targetName)}</td><td class="l">${esc(fmtDate(r.firstDay))}</td><td class="l">${r.due ? esc(fmtDate(r.due)) : '<span class="small">exempt</span>'}</td><td class="l">${stPill(r)}${r.no ? `<div class="small">ARC ${esc(r.no)}</div>` : ''}</td><td class="l small">${r.approvedBy ? `${esc(r.approvedBy)}<div>${esc(when(r.approvedAt))}</div>` : 'not recorded'}</td><td class="l"><button type="button" class="btn sm" data-arcsent="${esc(r.key)}"${r.sentKey && sentList(r.target, r.slug).some(x => x.key === r.sentKey) ? '' : ' disabled title="No copy of this send is held in this browser"'}>↓ HTML sent</button></td></tr>`).join('')}</tbody></table></div><p class="small">The status comes from the Compliance Screen's filing log (module 11), where the filing date and the ARC number are recorded. A page sent again unchanged is not a new dissemination; a changed version is logged again.</p>`;
+      $$('[data-arcsent]', host).forEach(b => b.onclick = () => { const r = rows.find(x => x.key === b.dataset.arcsent); if (r) downloadSent(r.target, r.slug, r.sentKey); });
+    }
+    function arcCSV() {
+      const rows = arcRows(); return toCSV(['target', 'slug', 'title', 'kind', 'first_published', 'latest_version', 'versions', 'filing_due', 'filing_status', 'filed', 'arc_number', 'approved_by', 'approved_at', 'link', 'rule'], rows.map(r => [r.targetName, r.slug, r.title, kindName(r.kind), r.firstDay, r.version, r.versions, r.due, r.status, r.filed, r.no, r.approvedBy, r.approvedAt, r.link, r.kind === 'page' ? 'Rule 7.05: website content other than the homepage is exempt' : `Rule 7.04: file within ${ARC_DAYS()} days of first dissemination unless exempt under Rule 7.05`]), `Severance pages published live and their Advertising Review Committee filing (Rule 7.04: within ${ARC_DAYS()} days of first dissemination, unless exempt under Rule 7.05). Statuses from the Compliance Screen filing log (sev.comp.arc). Exported ${new Date().toISOString()}.`);
+    }
+    /* ---------- the responsible lawyer's approval for publishing live ---------- */
+    const appr = { on: false, at: null, by: '' };
+    function renderApprove() {
+      const box = $('#pbApproveBox', root); if (!box) return; const live = $('#pbLive', root).checked; box.hidden = !live; if (!live) { appr.on = false; appr.at = null; box.innerHTML = ''; return; }
+      const nm = respName();
+      if (!nm) { appr.on = false; box.innerHTML = callout('', 'No responsible lawyer is named', `<p>Publishing live needs the approval of the responsible lawyer named in the firm profile (Rule 7.02(a)), and the profile names nobody yet. Name the responsible lawyer, then approve here.</p><div class="btnrow"><button type="button" class="btn sm" id="pbApproveFirm">Set up the firm</button></div>`); $('#pbApproveFirm', root).onclick = () => FIRM.panel(); return; }
+      if (appr.on && appr.by !== nm) { appr.on = false; appr.at = null; }
+      box.innerHTML = `<label class="chk pb-apl" for="pbApprove"><input type="checkbox" id="pbApprove" ${appr.on ? 'checked' : ''}> Reviewed and approved by ${esc(nm)}</label><div class="small">${appr.on ? `Approved ${esc(when(appr.at))}. ` : ''}The responsible lawyer named in the firm profile has read the selected pages and approves them for publication. The name and the time go into the ledger with every page this run publishes, and into the filing log; the box clears after each live run.</div>`;
+      $('#pbApprove', root).onchange = e => { appr.on = e.target.checked; appr.by = nm; appr.at = e.target.checked ? new Date().toISOString() : null; st.confirm.live = false; renderApprove(); updateGo(); };
+    }
     /* ---------- deploy ---------- */
     function slog(msg, reset) { const line = `${hhmm()}  ${modFix(msg)}`; st.log = reset ? [line] : st.log.concat(line).slice(-400); const h = $('#pbStatus', root); h.textContent = st.log.join('\n'); h.scrollTop = h.scrollHeight; }
     function updateGo() {
       const b = $('#pbGo', root); const t = T(); const sel = st.pages.filter(p => st.selected.has(p.slug)); const n = sel.length; const held = sel.filter(heldBy).length; if (st.running) return;
       if (!st.confirm.live) b.textContent = t ? `Deploy ${N(n)} selected to ${t.name}` : 'Deploy';
       const note = $('#pbGoNote', root);
-      note.textContent = !t ? 'Choose a target first.' : !n ? 'Tick at least one page.' : [held ? `${N(held)} of ${N(n)} held back by the screen.` : '', $('#pbLive', root).checked ? 'Live: the button asks for a second click.' : 'As drafts.'].filter(Boolean).join(' ');
+      note.textContent = !t ? 'Choose a target first.' : !n ? 'Tick at least one page.' : [held ? `${N(held)} of ${N(n)} held back by the screen.` : '', $('#pbLive', root).checked ? (respName() ? (appr.on ? `Live, approved by ${appr.by}: the button asks for a second click.` : `Live: tick Reviewed and approved by ${respName()} first, then two clicks.`) : 'Live: name the responsible lawyer in the firm profile first.') : 'As drafts.'].filter(Boolean).join(' ');
     }
     async function deploy() {
       const ad = T(); if (!ad) { toast('Choose a target first'); slog('Choose a target first: tick Use as target on a card or pick one in the Target list.'); return; }
       const pages = st.pages.filter(p => st.selected.has(p.slug)); if (!pages.length) { toast('Tick at least one page'); return; }
+      /* unsaved edits on the target card count, so they are saved before the configured check */
+      const cardEl = $(`.pb-card[data-id="${ad.id}"]`, root); if (cardEl) { if (applyMode(ad.id)) await CMS.setSettings({}); await CMS.setCfg(ad.id, readFields(cardEl)); mirror(ad.id); pills(); }
       if (CMS.status(ad.id).state === 'unconfigured') { toast(`${ad.name} is not configured: fill in its card and Save`); slog(`${ad.name} is not configured: fill in its card and Save before deploying.`); return; }
-      const cardEl = $(`.pb-card[data-id="${ad.id}"]`, root); if (cardEl) await CMS.setCfg(ad.id, readFields(cardEl));   /* unsaved edits on the target card count */
       pages.forEach(screenPage);   /* screened again: the firm profile or the copy may have changed since the page landed */
       const held = pages.filter(heldBy); const send = pages.filter(p => !heldBy(p)); const heldSet = new Set(held.map(p => p.slug));
       const live = $('#pbLive', root).checked; const b = $('#pbGo', root);
@@ -612,28 +693,64 @@ registerModule({
         slog(`Nothing sent: ${plural(held.length, 'selected page is', 'selected pages are')} held back by the compliance screen. Open Screen on a row to see the findings; fix the copy or the firm profile, or tick Send anyway on the row.`, true);
         toast('Every selected page is held back by the screen'); return;
       }
+      const nm = respName();
+      if (live && !(appr.on && appr.by && appr.by === nm)) {
+        st.confirm.live = false; renderApprove(); updateGo();
+        const msg = nm ? `Publishing live needs the responsible lawyer's approval: tick "Reviewed and approved by ${nm}" first.` : 'Publishing live needs the responsible lawyer\'s approval, and the firm profile names no responsible lawyer yet.';
+        slog(msg, true); toast(msg); const cb = $('#pbApprove', root); if (cb) { try { cb.focus(); } catch (e) { } } return;
+      }
       if (live && !st.confirm.live) { st.confirm.live = true; b.textContent = `Click again to publish ${N(send.length)} live on ${ad.name}${held.length ? ` (${N(held.length)} held)` : ''}`; setTimeout(() => { if (st.confirm.live) { st.confirm.live = false; updateGo(); } }, 6000); return; }
-      st.confirm.live = false;
+      st.confirm.live = false; const ap = live ? { by: appr.by, at: appr.at } : null;
       const notes = []; const mh = mediaHostFor(ad, notes); const onlyNew = $('#pbOnlyNew', root).checked, requireMedia = $('#pbReqMedia', root).checked;
       st.ctl = new AbortController(); st.running = true; b.disabled = true; b.textContent = 'Deploying…'; $('#pbStop', root).disabled = false; $('#pbSiteGo', root).hidden = true; st.results = []; renderResults();
       slog(`Deploying ${plural(send.length, 'page')} to ${ad.name} as ${live ? 'published' : 'drafts'}${onlyNew ? ', skipping pages already sent' : ''}${requireMedia ? ', every image required' : ''}${mh ? `, media through ${CMS.get(mh).name}` : ''}.`, true);
+      if (ap) slog(`Reviewed and approved by ${ap.by} at ${when(ap.at)}; recorded with every page this run publishes.`);
       if (held.length) slog(`Held back by the compliance screen: ${held.map(p => `/${p.slug}/ (${scrOf(p).findings.filter(f => f.sev === 'block').map(f => f.title).join('; ')})`).join(', ')}.`);
       send.filter(p => !scrOf(p).pass).forEach(p => slog(`/${p.slug}/ goes out on Send anyway with ${plural(scrOf(p).counts.block, 'blocking finding')}; the ledger records the override.`));
       notes.forEach(m => slog(m));
       if (!(ad.caps || {}).media && !mh && send.some(hasLocal)) slog(`${ad.name} cannot host uploads and no media host is set: local photos will be reported as unresolved. Pick a media host above.`);
-      let res = [];
+      const before = JSON.parse(JSON.stringify(CMS.deployedFor(ad.id)));   /* the ledger before this run: approvals and first live dates carry over */
+      const sentNow = new Map(); const own = Object.prototype.hasOwnProperty.call(ad, 'upsertPage'); const orig = ad.upsertPage;
+      /* every page the adapter accepts is captured exactly as it received it, for the advertising records */
+      if (typeof orig === 'function') ad.upsertPage = async function (c, p2, o, ctx) { const r = await orig.call(this, c, p2, o, ctx); try { sentNow.set(p2.slug, { p2: Object.assign({}, p2), r }); } catch (e) { } return r; };
+      let res = []; const arcAdded = [];
       try {
         await grant(ad); if (mh) await grant(CMS.get(mh));
         res = await CMS.deploy(ad.id, send, { publish: live, onlyNew, requireMedia, mediaHost: mh || undefined, log: m => slog(m), signal: st.ctl.signal });
-        for (const r of res) { if (r.skipped) continue; const rec = CMS.deployedFor(ad.id)[r.page.slug]; if (rec) await CMS.markDeployed(ad.id, r.page.slug, Object.assign({}, rec, { lint: lintLabel(scrOf(r.page), st.override.has(r.page.slug)) })); }
+        if (own) ad.upsertPage = orig; else delete ad.upsertPage;
+        let keptMem = 0;
+        for (const r of res) {
+          if (r.skipped) continue; const slug = r.page.slug; const rec = CMS.deployedFor(ad.id)[slug]; if (!rec) continue; const pr = before[slug] || {};
+          const extra = { lint: lintLabel(scrOf(r.page), st.override.has(slug)), approvals: Array.isArray(pr.approvals) ? pr.approvals.slice() : [] };
+          ['approvedBy', 'approvedAt', 'firstLiveAt', 'sentKey'].forEach(k => { if (pr[k] && extra[k] == null) extra[k] = pr[k]; });
+          const cap = sentNow.get(slug);
+          if (r.ok && cap) {
+            const st2 = (cap.r && cap.r.status) || (live ? 'publish' : 'draft'); const at = rec.at || new Date().toISOString(); const key = `${ad.id}|${slug}|${at}`; const F = firmInfo();
+            const html = sentDoc(cap.p2, { target: ad.id, targetName: ad.name, at, status: st2, link: rec.link || '', approvedBy: ap ? ap.by : '', approvedAt: ap ? ap.at : '', screen: lintLabel(scrOf(r.page), st.override.has(slug)), firm: F.name, atty: F.atty });
+            const where = await sentPut({ key, target: ad.id, slug, title: r.page.title, at, status: st2, approvedBy: ap ? ap.by : '', approvedAt: ap ? ap.at : '', html }); if (where === 'mem') keptMem++;
+            extra.sentKey = key; extra.sentAt = at;
+            if (live) { extra.approvedBy = ap.by; extra.approvedAt = ap.at; extra.approvals.push({ by: ap.by, at: ap.at, published: at }); extra.approvals = extra.approvals.slice(-20); if (!extra.firstLiveAt) extra.firstLiveAt = at;
+              const row = logArc(ad, r.page, Object.assign({}, rec, { at }), ap, pageHash(cap.p2), key); if (row) arcAdded.push({ kind: arcKind(r.page), slug, row }); }
+          }
+          await CMS.markDeployed(ad.id, slug, Object.assign({}, rec, extra));
+        }
+        if (keptMem) slog(`This browser has no IndexedDB here, so the copies of ${plural(keptMem, 'page')} sent are kept only for this session: download them from the ledger now if the firm's records need them.`);
         const ok = res.filter(r => r.ok && !r.skipped).length, sk = res.filter(r => r.skipped).length, bad = res.filter(r => !r.ok).length; const stopped = st.ctl.signal.aborted;
         slog(`Done: ${N(ok)} sent, ${N(sk)} skipped, ${N(bad)} failed, ${N(held.length)} held${stopped ? ' (stopped early)' : ''}.`); toast(`${ad.name}: ${N(ok)} sent, ${N(bad)} failed${held.length ? `, ${N(held.length)} held` : ''}`);
-        if (live && res.some(r => r.ok && !r.skipped && isHome(r.page))) slog('The homepage went live: file it with the State Bar Advertising Review Committee within ten days of first dissemination (Rule 7.04). Other website pages are exempt from filing (Rule 7.05).');
+        if (arcAdded.length) {
+          const fil = arcAdded.filter(x => x.kind !== 'page');
+          fil.forEach(x => slog(`${x.kind === 'home' ? 'The homepage' : 'A campaign landing page'} went live (/${x.slug}/): file it with the State Bar Advertising Review Committee within ${ARC_DAYS()} days of first dissemination, by ${fmtDate(plusDays(x.row.pub, ARC_DAYS()))} (Rule 7.04)${x.kind === 'landing' ? ', or record the Rule 7.05 exemption if the responsible lawyer decides it applies' : ''}.`));
+          const ex = arcAdded.length - fil.length; if (ex) slog(`${plural(ex, 'other website page')} logged as exempt from filing (Rule 7.05).`);
+          slog(`${plural(arcAdded.length, 'row')} added to the Compliance Screen's filing log (module 11).`);
+          try { BUS.emit('arc', { source: 'publish', rows: arcAdded.map(x => x.row) }); } catch (e) { }
+        }
+        if (live) { appr.on = false; appr.at = null; renderApprove(); if (ok) slog('The approval was used for this run; tick it again before the next live run.'); }
         if ((ad.caps || {}).publishSite && typeof ad.publishSite === 'function' && ok) { $('#pbSiteGo', root).hidden = false; slog(`${ad.name} publishes at site level: click Publish site now when the pages look right.`); }
       } catch (e) { slog('ERROR ' + errText(e)); toast(modFix(e.message || String(e))); }
       finally {
+        if (ad.upsertPage !== orig) { if (own) ad.upsertPage = orig; else delete ad.upsertPage; }
         st.results = pages.map(p => heldSet.has(p.slug) ? { page: p, ok: false, held: true } : res.find(r => r.page.slug === p.slug)).filter(Boolean);
-        st.running = false; st.ctl = null; b.disabled = false; $('#pbStop', root).disabled = true; renderResults(); renderPages(); renderLedger(); tiles(); pills(); updateGo();
+        st.running = false; st.ctl = null; b.disabled = false; $('#pbStop', root).disabled = true; renderResults(); renderPages(); renderLedger(); renderArc(); tiles(); pills(); updateGo();
       }
     }
     function renderResults() {
@@ -670,9 +787,12 @@ registerModule({
       const host = $('#pbLedgerT', root); const t = T(); if (!t) { host.innerHTML = '<p class="small pb-empty">Choose a target to see what was sent to it.</p>'; return; }
       const rows = ledgerRows(t.id); if (!rows.length) { host.innerHTML = `<p class="small pb-empty">Nothing sent to ${esc(t.name)} yet.</p>`; return; }
       const none = '<span class="small">none</span>';
-      host.innerHTML = `<div class="tblwrap pb-tbl pb-short"><table class="t"><thead><tr><th class="l">Slug</th><th class="l">Title</th><th class="l">Status</th><th class="l">Screen</th><th class="l">Link</th><th class="l">Time</th><th class="l">Notes</th></tr></thead><tbody>${rows.map(r => `<tr data-slug="${esc(r.slug)}"><td class="l"><code>/${esc(r.slug)}/</code></td><td class="l pb-wrap">${esc(r.title || '')}</td><td class="l">${pill(r.ok === false ? 'error' : (r.status || 'draft'), r.ok === false ? 'bad' : r.status === 'publish' ? 'good' : 'info')}${r.updated ? '<div class="small">updated</div>' : ''}</td><td class="l small">${esc(r.lint || 'n/a')}</td><td class="l">${r.link ? `<a href="${esc(r.link)}" target="_blank" rel="noopener" title="${esc(r.link)}">${esc(shortUrl(r.link))}</a>` : none}${r.edit ? ` · <a href="${esc(r.edit)}" target="_blank" rel="noopener">edit</a>` : ''}</td><td class="l small">${esc(when(r.at))}</td><td class="l pb-wrap small">${esc(modFix([r.error || '', r.notes || ''].filter(Boolean).join(' · '))) || 'none'}</td></tr>`).join('')}</tbody></table></div>`;
+      const ax = store.get(ARCI_KEY, {}) || {};
+      host.innerHTML = `<div class="tblwrap pb-tbl pb-short"><table class="t"><thead><tr><th class="l">Slug</th><th class="l">Title</th><th class="l">Status</th><th class="l">Approved</th><th class="l">Screen</th><th class="l">Link</th><th class="l">Time</th><th class="l">Notes</th><th class="l">Records</th></tr></thead><tbody>${rows.map(r => { const sl = sentList(t.id, r.slug); const a = ax[t.id + '|' + r.slug]; const v = a && a.versions[a.versions.length - 1];
+        return `<tr data-slug="${esc(r.slug)}"><td class="l"><code>/${esc(r.slug)}/</code></td><td class="l pb-wrap">${esc(r.title || '')}</td><td class="l">${pill(r.ok === false ? 'error' : (r.status || 'draft'), r.ok === false ? 'bad' : r.status === 'publish' ? 'good' : 'info')}${r.updated ? '<div class="small">updated</div>' : ''}${r.firstLiveAt ? `<div class="small">first live ${esc(fmtDate(localDay(r.firstLiveAt)))}</div>` : ''}</td><td class="l small">${r.approvedBy ? `${esc(r.approvedBy)}<div>${esc(when(r.approvedAt))}</div>` : r.status === 'publish' && r.ok !== false ? '<span class="pb-red">not recorded</span>' : 'not needed for a draft'}</td><td class="l small">${esc(r.lint || 'n/a')}</td><td class="l">${r.link ? `<a href="${esc(r.link)}" target="_blank" rel="noopener" title="${esc(r.link)}">${esc(shortUrl(r.link))}</a>` : none}${r.edit ? ` · <a href="${esc(r.edit)}" target="_blank" rel="noopener">edit</a>` : ''}</td><td class="l small">${esc(when(r.at))}</td><td class="l pb-wrap small">${esc(modFix([r.error || '', r.notes || ''].filter(Boolean).join(' · '))) || 'none'}${v && a.kind !== 'page' ? `<div>ARC due ${esc(fmtDate(v.due))}</div>` : ''}</td><td class="l"><button type="button" class="btn sm" data-sent="${esc(r.slug)}"${sl.length ? ` title="${esc(`${N(sl.length)} send${sl.length === 1 ? '' : 's'} held; the latest ${when(sl[sl.length - 1].at)}`)}"` : ' disabled title="No copy of what was sent is held in this browser"'}>↓ HTML sent</button></td></tr>`; }).join('')}</tbody></table></div>`;
+      $$('button[data-sent]', host).forEach(b => b.onclick = () => downloadSent(t.id, b.dataset.sent));
     }
-    function ledgerCSV(ids) { const header = ['target', 'slug', 'title', 'status', 'ok', 'screen', 'link', 'edit', 'id', 'time', 'notes', 'error']; const rows = []; ids.forEach(id => ledgerRows(id).forEach(r => rows.push([CMS.get(id) ? CMS.get(id).name : id, r.slug, r.title || '', r.ok === false ? 'error' : (r.status || ''), r.ok === false ? 'no' : 'yes', r.lint || '', r.link || '', r.edit || '', r.id == null ? '' : r.id, r.at || '', r.notes || '', r.error || '']))); return toCSV(header, rows, `Severance publish ledger (sv.cms.v1), ${plural(ids.length, 'target')}, exported ${new Date().toISOString()}`); }
+    function ledgerCSV(ids) { const header = ['target', 'slug', 'title', 'status', 'ok', 'screen', 'approved_by', 'approved_at', 'first_live', 'arc_kind', 'arc_due', 'sent_copy_held', 'link', 'edit', 'id', 'time', 'notes', 'error']; const rows = []; const ax = store.get(ARCI_KEY, {}) || {}; ids.forEach(id => ledgerRows(id).forEach(r => { const a = ax[id + '|' + r.slug]; const v = a && a.versions[a.versions.length - 1]; rows.push([CMS.get(id) ? CMS.get(id).name : id, r.slug, r.title || '', r.ok === false ? 'error' : (r.status || ''), r.ok === false ? 'no' : 'yes', r.lint || '', r.approvedBy || '', r.approvedAt || '', r.firstLiveAt || '', a ? kindName(a.kind) : '', v && a.kind !== 'page' ? v.due : '', sentList(id, r.slug).length ? 'yes' : 'no', r.link || '', r.edit || '', r.id == null ? '' : r.id, r.at || '', r.notes || '', r.error || '']); })); return toCSV(header, rows, `Severance publish ledger (sv.cms.v1), ${plural(ids.length, 'target')}, exported ${new Date().toISOString()}. approved_by is the responsible lawyer who ticked Reviewed and approved before the page went live.`); }
     /* ---------- method, judgment calls, sources ---------- */
     $('#pbMeth', root).innerHTML = [
       '<b>One portable page.</b> Whatever wrote it, a page arrives here as title, slug, meta description, language, section markup with a scoped forge stylesheet, a JSON-LD graph, media slots and internal links. The Site Forge hands its pages over with the photos assigned there; the composer and the import build the same shape.',
@@ -680,18 +800,21 @@ registerModule({
       '<b>One adapter per platform.</b> WordPress gets the compiled Elementor JSON through the FORGE bridge (with SEO fields and JSON-LD in the head); the headless route stores the blueprint on the same site and points the canonical at the Next.js front end. Everyone else receives HTML with the scoped css inline, JSON-LD in the head where the platform has a head slot (WordPress, Ghost, HubSpot) and inline in the body otherwise (Drupal, Joomla, Shopify, Duda); Wix and Webflow keep it in a text field of the item when one is configured.',
       '<b>Slug first.</b> Before writing, every adapter looks the slug up in its own model (WordPress slug, Drupal path alias, Shopify handle, Webflow item slug, Ghost slug, Joomla alias, HubSpot slug, Wix item field, Duda page path) and updates what it finds; otherwise it creates. The ledger records id, link, edit link, status and screen result per target so a second run is an update, and Skip pages already sent reads it.',
       '<b>Media before markup.</b> A local photo (a file added in the Site Forge, or a data URL) is uploaded through the target, or through the media host when the target cannot hold files (Duda, the Wix blog). A library slot is searched by name on the target. The URLs are rewritten in the markup, the JSON-LD and the og:image; a slot that stays unresolved is dropped, or stops the run when Require every image is on.',
-      '<b>Drafts by default.</b> Nothing goes live unless Publish live is ticked and confirmed with a second click. Site builders that publish at site level (Duda, Webflow) get a separate Publish site now step after the run.',
-      '<b>Site access.</b> Inside the Severance extension the browser asks once for permission to reach each of the firm\'s own sites (WordPress, Drupal, Joomla, Ghost) on the first Test or Deploy; the hosted platform APIs are permitted in the manifest. Opened from disk or inside the viewer, the browser blocks most of these calls (CORS), so the pages pack carries everything to paste or upload by hand. Credentials live in this browser (sv.cms.v1) and never leave this machine.',
+      '<b>Drafts by default; live is the lawyer\'s call.</b> Nothing goes live unless Publish live is ticked, the box Reviewed and approved by the responsible lawyer named in the firm profile is ticked, and the button is clicked twice. The name and the time are written into the ledger with each page (approvals are kept across updates, with the date the page first went live), and the box clears after the run. Site builders that publish at site level (Duda, Webflow) get a separate Publish site now step after the run.',
+      '<b>Filing and records.</b> The homepage and campaign landing pages carry an ARC pill before they go out. Each live publish of a new version adds a row to the Compliance Screen\'s filing log (module 11): the homepage and landing pages as Not filed with the due date ten days after first dissemination (Rule 7.04), other pages as exempt (Rule 7.05); the same page sent again unchanged adds nothing. The exact page each platform received is kept as a standalone HTML file per send (the last twelve per page and target, in this browser\'s IndexedDB) and downloads from the ledger and the filing panel.',
+      '<b>Site access.</b> Inside the Severance extension the browser asks once for permission to reach each of the firm\'s own sites (WordPress, Drupal, Joomla, Ghost) on the first Test or Deploy; the hosted platform APIs are permitted in the manifest. Opened from disk, a page reaches WordPress (which sends CORS headers to file pages) and a Drupal, Joomla or Ghost site only when its server allows the origin null; the hosted platforms never answer a browser page, and each card says which is which. Inside the viewer everything is blocked. The pages pack carries everything to paste or upload by hand.',
+      '<b>Credentials.</b> Each card has Remember credentials on this computer. Ticked, its settings are saved in this browser profile (sv.cms.v1: extension storage, or localStorage outside it). Not ticked, the default when the page is opened from disk or in the viewer, the password, key or token is held in memory and this tab\'s session storage only, and just the site address and user name are remembered. In Chromium browsers every page opened from disk shares one localStorage, which is why remembering is off there. Nothing is ever sent anywhere but the platform the card names.',
     ].map(x => `<li>${x}</li>`).join('');
     $('#pbJudg', root).innerHTML = [
       ['The screen is a floor, not a review', 'The compliance engine matches patterns. It catches a guarantee, a specialist claim, a contingent fee offer, a myth or a missing responsible lawyer; it cannot tell whether a true sounding statement is true for this firm, whether a result is typical, or whether a testimonial was paid. The responsible lawyer reads every page before it goes live.'],
       ['Send anyway is per page and on the record', 'An override is ticked on one page at a time, is not saved between sessions, is cleared when the page is loaded again, and is written into the ledger next to the deploy. It exists for the finding that is wrong about this page (a quoted statute, a name that trips a rule), not for copy that needs fixing.'],
-      ['The homepage is the one page to file', 'Website content other than the homepage is exempt from filing (Rule 7.05). The homepage is not: file it with the Advertising Review Committee within ten days of first dissemination, or seek pre approval thirty days ahead (Rule 7.04). The log says so when a page named home goes live.'],
+      ['The homepage, and the landing pages', 'Website content other than the homepage is exempt from filing (Rule 7.05). The homepage is not: file it with the Advertising Review Committee within ten days of first dissemination, or seek pre approval thirty days ahead (Rule 7.04). A campaign landing page is flagged as well, because it is the page an ad sends people to and is often read as part of that advertisement; the responsible lawyer files it or records the exemption in the Compliance Screen. Every live page lands in the filing log either way, so nothing goes unrecorded.'],
+      ['Approval is a record, not a signature', 'Ticking Reviewed and approved by records who approved and when, in this browser\'s ledger and the filing log. It is not an electronic signature and it does not prove the lawyer read the page; it is the firm\'s own record that the responsible lawyer took the decision the rules give to a lawyer.'],
       ['Site builders take content, not pages', 'Wix, Webflow and Duda have no endpoint that takes an arbitrary HTML page. Wix data items feed a dynamic page you design once; Webflow items render through a collection template page; Duda injects the markup into a template page you build with a data inject element. That is where the platform keeps its own header, footer and navigation, so the pages look native, and where the disclaimer block must survive: check it on the template.'],
       ['Wix and Webflow strip scripts', 'Rich text fields keep headings, paragraphs, lists, links and images and drop scripts and embeds. The JSON-LD goes into a plain text field when the collection has one, otherwise it is left out and the result says so.'],
       ['Duda content injection is marked deprecated', 'Duda\'s developer docs steer new work to the snippets API, connected data and the content library while keeping content injection available. The adapter uses injection because it is the only route that takes a whole page; watch the result notes and switch modes if Duda removes it.'],
       ['Shopify and HubSpot', 'Shopify pages are Online Store pages that render inside the theme\'s page template (a template suffix gives them their own layout). On HubSpot, site pages depend on a template the account owns; blog posts take HTML and metadata directly, so the adapter defaults to posts and offers pages as an option.'],
-      ['Credentials in this browser', 'Application passwords, API keys and tokens are stored in this browser profile (extension storage, or localStorage outside it, under sv.cms.v1) so the next session can publish without retyping. Forget credentials on each card removes them; anyone with this profile can read them until then.'],
+      ['Credentials in this browser', 'With Remember ticked, application passwords, API keys and tokens are stored in this browser profile (extension storage, or localStorage outside it, under sv.cms.v1) so the next session can publish without retyping, and anyone with this profile can read them until Forget credentials. With it off they last for this tab\'s session. Pages opened from disk share one storage in Chromium browsers, so another file opened from disk could read a remembered credential: leave it off there.'],
       ['Publishing live is the lawyer\'s call', 'The atlas can screen, preview and send, but it cannot read the site\'s navigation, redirects or launch calendar. Drafts are the default; the second click on Publish live is the point where a person takes over.'],
       ['Pages are not saved between sessions', 'A loaded page carries photo blobs and can be large, so the module keeps only the slugs it saw. Load again from the Site Forge or the file; the ledger, the credentials and the composer draft do persist.'],
     ].map(([t, x]) => `<div><b>${esc(t)}</b><p>${esc(x)}</p></div>`).join('');
@@ -729,25 +852,31 @@ registerModule({
     $('#pbStop', root).onclick = () => { if (st.ctl) { st.ctl.abort(); slog('Stop requested; the page in flight finishes, the rest are left.'); $('#pbStop', root).disabled = true; } };
     $('#pbVerify', root).onclick = verifyLinks;
     $('#pbSiteGo', root).onclick = publishSiteNow;
-    $('#pbLive', root).onchange = () => { st.confirm.live = false; updateGo(); };
+    $('#pbLive', root).onchange = () => { st.confirm.live = false; renderApprove(); updateGo(); };
     $('#pbLedCsv', root).onclick = () => { const t = T(); if (!t) { toast('Choose a target first'); return; } saveFile(`publish-ledger_${t.id}.csv`, ledgerCSV([t.id])); };
     $('#pbPack', root).onclick = pagesPack;
+    $('#pbArcCsv', root).onclick = () => { if (!arcRows().length) { toast('Nothing has been published live yet'); return; } saveFile('severance-arc-filing.csv', arcCSV()); };
+    $('#pbArcComp', root).onclick = () => goModule('compliance');
     $('#pbBridge', root).onclick = bridgeZip;
     $('#pbKit', root).onclick = kitZip;
     $('#pbLedger', root).onclick = () => { const ids = A().map(a => a.id).filter(id => Object.keys(CMS.deployedFor(id)).length); if (!ids.length) { toast('Nothing in the ledger yet'); return; } saveFile('publish-ledger.csv', ledgerCSV(ids)); };
     $('#pbForge', root).onclick = () => { if (!MODI.forge) { toast('Module 21, the Site Forge, is not loaded in this build'); return; } goModule('forge'); };
     /* ---------- hooks ---------- */
     this.receive = p => { if (!p) return; if (Array.isArray(p.pages) && p.pages.length) { const n = addPages(p.pages, p.source || 'handoff'); toast(`${plural(n, 'page')} received`); } if (p.target && CMS.get(p.target)) setTarget(p.target); };
-    this.onShow = () => { pills(); tiles(); renderFirmLine(); renderFirmCallout(); $('#pbfNote', root).textContent = $('#pbfNote', root).textContent || forgeState(); };
+    this.onShow = () => { pills(); tiles(); renderFirmLine(); renderFirmCallout(); renderApprove(); renderArc(); $('#pbfNote', root).textContent = $('#pbfNote', root).textContent || forgeState(); };
     this.pages = () => st.pages.slice();
     this.screen = s => { const p = st.pages.find(x => x.slug === s); return p ? scrOf(p) : null; };
+    this.sent = (target, slug) => sentList(target, slug).map(x => Object.assign({}, x));
+    this.sentHtml = async key => { const r = await sentGet(key); return r ? r.html : null; };
+    this.arc = () => arcRows();
+    this.remembers = id => remembers(id);
     /* the firm profile changes what every page screens as: screen again. One BUS listener for the life of the page; each mount swaps the handler */
-    self._pbFirm = () => { st.pages.forEach(screenPage); renderPages(); tiles(); updateGo(); renderFirmLine(); renderFirmCallout(); if (st.screenSlug) showScreen(st.screenSlug, true); if (st.results.length) renderResults(); };
+    self._pbFirm = () => { st.pages.forEach(screenPage); renderPages(); tiles(); renderApprove(); updateGo(); renderFirmLine(); renderFirmCallout(); if (st.screenSlug) showScreen(st.screenSlug, true); if (st.results.length) renderResults(); };
     if (!self._pbBus) { self._pbBus = true; BUS.on('firm', d => { if (typeof self._pbFirm === 'function') self._pbFirm(d); }); }
     /* ---------- boot ---------- */
-    function renderAll() { env(); renderFirmCallout(); renderTargets(); renderPages(); renderLedger(); renderSources(); tiles(); updateGo(); cCount(); }
+    function renderAll() { env(); renderFirmCallout(); renderTargets(); renderPages(); renderLedger(); renderArc(); renderApprove(); renderSources(); tiles(); updateGo(); cCount(); }
     $('#pbfNote', root).textContent = forgeState();
     renderAll();
-    CMS.ready().then(() => { const S = CMS.settings(); st.target = S.target && CMS.get(S.target) ? S.target : ''; renderAll(); }).catch(e => { toast('CMS storage did not load: ' + e.message); });
+    CMS.ready().then(() => restoreSessions()).then(() => { const S = CMS.settings(); st.target = S.target && CMS.get(S.target) ? S.target : ''; renderAll(); }).catch(e => { toast('CMS storage did not load: ' + e.message); });
   }
 });

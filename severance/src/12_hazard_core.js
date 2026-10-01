@@ -108,7 +108,7 @@ const SEV_HAZ = (function () {
     }
     const SCENARIOS = {
       fit: { key: 'fit', label: 'As fitted, 2020 to 2024', short: 'As fitted', grade: 'B', hazMult: () => 1, fileMult: () => 1,
-        desc: () => 'The hazard by years married stays at its 2020 to 2024 level. Filings move only because the married stock ages, new marriages arrive and the stock grows with the population.' },
+        desc: () => 'The hazard by years married stays at its 2020 to 2024 level; filings move only with the married stock.' },
       decline: { key: 'decline', label: 'Secular decline continues', short: 'Decline', grade: 'C',
         hazMult: (y, p) => { p = Object.assign({}, PARAMS, p || {}); return Math.pow(1 + declineRate(p.from, p.to), Math.max(0, y - p.base)); }, fileMult: () => 1,
         desc: p => { p = Object.assign({}, PARAMS, p || {}); const r = declineRate(p.from, p.to); return `The hazard falls ${Math.abs(r * 100).toFixed(1)}% a year, the log linear trend of the NCHS Texas divorce rate per 1,000 residents from ${p.from} to ${p.to}. With the married stock growing with the population, divorces per resident then follow that trend.`; } },

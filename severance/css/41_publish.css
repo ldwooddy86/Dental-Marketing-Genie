@@ -100,3 +100,18 @@ iframe.preview.pb-prev{height:640px;margin-top:10px}
   .pb-mh select{width:100%}
   .pb-firmline .btn{margin:6px 0 0}
 }
+
+/* credentials and reachability on each card */
+.pb-rem{display:flex;flex-direction:column;gap:3px;border-top:1px solid var(--line);padding-top:7px;margin-top:2px}
+.pb-rem .chk{font-size:12.5px;font-weight:600;color:var(--title)}
+.pb-rem .hint{font-size:11.5px;color:var(--ink-3);line-height:1.35}
+.pb-reach{display:flex;flex-direction:column;gap:3px;margin-top:2px}
+.pb-reach .pill{align-self:flex-start;white-space:normal}
+.pb-reach .small{line-height:1.4}
+/* the responsible lawyer's approval for publishing live */
+.pb-approve{margin:2px 0 8px;padding:9px 12px;border:1px solid var(--line-strong);border-left:4px solid var(--warning);background:var(--sunk)}
+.pb-approve .pb-apl{font-weight:700;color:var(--title);font-size:13.5px}
+.pb-approve .small{margin-top:3px;line-height:1.45}
+.pb-approve .callout{margin:0;border:0;padding:0;background:none}
+/* Advertising Review Committee filing panel */
+.pb-arct{margin-bottom:10px}

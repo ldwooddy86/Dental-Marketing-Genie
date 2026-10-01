@@ -29,7 +29,7 @@ registerModule({
     <div id="lnCards" class="lncards"></div>
     <div class="panel" style="margin:14px 0"><div class="split"><div><h3 id="lnTitle"></h3><div class="sub" id="lnSub"></div><div class="mapwrap" id="lnMap"></div></div><div id="lnPlay"></div></div></div>
     <div class="grid2"><div class="panel"><h3>Season</h3><div class="sub" id="lnSeasSub"></div><div id="lnSeas"></div></div><div class="panel"><h3>Cycle</h3><div class="sub">How this line responds to a doubling of unemployment claims, by lag, from the county panel.</div><div id="lnCycSeg"></div><div class="chart" id="lnCyc"></div><div class="small" id="lnCycNote"></div></div></div>
-    <div class="panel"><h3>Counties</h3><div id="lnTable"></div></div>`;
+    <div class="panel"><h3>Counties</h3><div id="lnTable"></div></div>${srcFoot([['Sources', `Texas Office of Court Administration court activity, ${esc(ttmSpan())} (calendar 2025 for counties without monthly reports); ACS 2020 to 2024 for the pools; the PUMS hazard model for the estimated lines; DFPS Data Book FY2025 for removals and family violence investigations.`], ['Judgment calls', 'Four lines (premarital agreements, high asset, military and gray divorce) are estimates scaled from divorce filings, and lines without their own monthly court series use the all divorce season and cycle as the proxy. Default values per matter are placeholders for the firm\'s fee history.'], ['Caveats', 'Title IV-D counts are floors (Attorney General reporting changed after 2019); law office counts include every kind of law office.']])}`;
     // nine lines are court counts and four are estimates; two groups, laid out so no card sits alone on a row
     const EST_LINES = ['prenup', 'high', 'mil', 'gray'];
     function cards() {

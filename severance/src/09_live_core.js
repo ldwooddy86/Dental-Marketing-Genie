@@ -4,7 +4,17 @@
    legal and family calendar into day by day timing per family law service line.
      LIVE.snapshot()                 the embedded picture: WARN notices per county, weekly claims, county unemployment, the season index
      LIVE.refresh({force, fetch})    live sources where reachable: TWC WARN notices (data.texas.gov, Socrata 8w53-c4f6) and FRED TXICLAIMS,
-                                     TXCCLAIMS; failures fall back to the snapshot and say why (LIVE.state.sources)
+                                     TXCCLAIMS; failures fall back to the snapshot and say why (LIVE.state.sources). Two optional sources:
+                                     county unemployment from the BLS API (series LAUCN<fips>0000000003, monthly, cached a day) and the
+                                     National Weather Service active alerts for Texas (api.weather.gov/alerts/active?area=TX), whose
+                                     hurricane, flood and winter storm warnings set the hold rule
+     LIVE.holds(o)                   the warnings in force over the scope counties: courts close, so new spend holds on every line except
+                                     protective orders for the warning window (a trigger of kind 'hold'; timing() floors the day at minus 50)
+     LIVE.outlook(o)                 per county shock outlook: divorce filings expected now, at 3 and at 12 months (the county econ fields),
+                                     enforcement and modification from the D.panel lag model, the rebound landing now from last year's claims,
+                                     and a category (dip, rebound, enf, quiet) with a plain sentence
+     LIVE.narrative(o)               the next fourteen days in plain words: any hold, then one sentence per week with its reason and source
+     LIVE.pushPlan()                 the lead line's daily multiplier for the next 42 days and the next deadline, for the toolbar popup
      LIVE.loadFile(text, name)       a downloaded WARN JSON or CSV, or a FRED CSV, used as live data (for pages where FRED blocks calls)
      LIVE.calendar(from, days, o)    the legal and family calendar: [{id, title, start, end, lines, lift, counties, action, source}]
      LIVE.triggers(o)                active and upcoming triggers for the scope counties: WARN notices, claims jumps, unemployment, calendar
@@ -15,13 +25,21 @@
    Pure helpers (also used by the tests): parseWarn, parseFred, csvRows, claimsCheck, normDate, warnKey, calendarYear, thanksgiving. */
 'use strict';
 const LIVE_HOST_ORIGINS = ['https://data.texas.gov/*', 'https://fred.stlouisfed.org/*'];   // build.mjs checks these against host_permissions
+/* the optional sources' hosts: api.weather.gov answers browser pages (CORS), api.bls.gov needs the extension's host permission; both belong
+   in manifest.json host_permissions (and then in LIVE_HOST_ORIGINS above) so the extension reaches them without a prompt */
+const LIVE_OPT_ORIGINS = ['https://api.weather.gov/*', 'https://api.bls.gov/*'];
 const LIVE = (() => {
   const SOCRATA = 'https://data.texas.gov/resource/8w53-c4f6.json';
   const WARN_PAGE = 'https://data.texas.gov/d/8w53-c4f6';
   const FRED_CSV = id => 'https://fred.stlouisfed.org/graph/fredgraph.csv?id=' + id;
   const FRED_PAGE = id => 'https://fred.stlouisfed.org/series/' + id;
+  const NWS_ALERTS = 'https://api.weather.gov/alerts/active?area=TX', NWS_PAGE = 'https://www.weather.gov/documentation/services-web-api';
+  const BLS_API = 'https://api.bls.gov/publicAPI/v2/timeseries/data/', BLS_PAGE = 'https://www.bls.gov/lau/';
+  const lausId = f => 'LAUCN' + f + '0000000003';   /* LAU + CN + the five digit county FIPS + eight zeros + measure 03, the unemployment rate */
+  /* the warnings that close courts: hurricane, flood and winter storm (ice storm and blizzard are winter storm warnings in NWS terms) */
+  const HOLD_EVENTS = /^(hurricane warning|flood warning|flash flood warning|winter storm warning|ice storm warning|blizzard warning)$/i;
   const SET_KEY = 'sev.live.settings', CACHE_KEY = 'sev.live.cache', EXT_OPT = 'sev.ext.options', EXT_ST = 'sev.ext.state';
-  const DEF = { counties: [], warnMin: 25, lagFrom: 90, lagTo: 365, wow: 20, yoy: 15, ctyYoy: 25, ctyMin: 50, urPts: 0.5, campaign: 'SEV_{KEY}_SEARCH', geo: 'county', ttl: 6, fredInPage: false, interval: 360, notifyKinds: ['warn', 'claims'] };
+  const DEF = { counties: [], warnMin: 25, lagFrom: 90, lagTo: 365, wow: 20, yoy: 15, ctyYoy: 25, ctyMin: 50, urPts: 0.5, campaign: 'SEV_{KEY}_SEARCH', geo: 'county', ttl: 6, fredInPage: false, interval: 360, notifyKinds: ['warn', 'claims'], autoRefresh: true, nws: true, nwsHold: true, bls: true, blsInPage: false, blsKey: '' };
   const DIV_LINES = ['div_k', 'div_nk', 'high', 'gray'], ORDER_LINES = ['mod', 'enf'];
   const MIL = ['48027', '48099', '48141', '48029'];   // Bell, Coryell (Fort Hood), El Paso (Fort Bliss), Bexar (Joint Base San Antonio)
   const SEAS_KEY = { div_k: 'div_k', div_nk: 'div', sapcr: 'sapcr', mod: 'mod', enf: 'enf', po: 'po', ivd: 'ivd', high: 'div', mil: 'div', gray: 'div' };
@@ -160,10 +178,10 @@ const LIVE = (() => {
   const scope = () => scopeInfo().fips;
 
   /* ---------- live state, cache, refresh ---------- */
-  const SRC = { warn: 'TWC WARN notices, data.texas.gov', icl: 'Texas initial claims, FRED TXICLAIMS', ccl: 'Texas continued claims, FRED TXCCLAIMS' };
-  const blank = () => ({ live: { warn: null, icl: null, ccl: null }, sources: { warn: { mode: 'snapshot' }, icl: { mode: 'snapshot' }, ccl: { mode: 'snapshot' } }, fetched: null, loading: false, error: null });
+  const SRC = { warn: 'TWC WARN notices, data.texas.gov', icl: 'Texas initial claims, FRED TXICLAIMS', ccl: 'Texas continued claims, FRED TXCCLAIMS', laus: 'County unemployment, BLS LAUS API', nws: 'Weather warnings, National Weather Service' };
+  const blank = () => ({ live: { warn: null, icl: null, ccl: null, laus: null, nws: null }, sources: { warn: { mode: 'snapshot' }, icl: { mode: 'snapshot' }, ccl: { mode: 'snapshot' }, laus: { mode: 'snapshot' }, nws: { mode: 'none' } }, fetched: null, loading: false, error: null });
   let state = blank();
-  try { const c = sget(CACHE_KEY, null); if (c && c.fetched && Date.now() - Date.parse(c.fetched) < 30 * 864e5) { state.live = c.live || state.live; state.sources = Object.assign(state.sources, c.sources || {}); state.fetched = c.fetched; } } catch (e) { }
+  try { const c = sget(CACHE_KEY, null); if (c && c.fetched && Date.now() - Date.parse(c.fetched) < 30 * 864e5) { state.live = Object.assign(state.live, c.live || {}); state.sources = Object.assign(state.sources, c.sources || {}); state.fetched = c.fetched; } } catch (e) { }
   const env = () => (typeof ENV !== 'undefined' ? ENV : 'file');
   const canFetch = () => !(typeof inViewer === 'function' && inViewer());
   const inPage = () => env() !== 'chrome' && env() !== 'firefox';
@@ -186,24 +204,63 @@ const LIVE = (() => {
     p.rows = p.rows.filter(r => !fipsList.length || (r.fips && keep.has(r.fips))); p.url = url; p.fallback = fallback; return p;
   }
   async function fetchFred(f, id) { const url = FRED_CSV(id); const p = parseFred(await getRes(f, url, 'csv')); p.url = url; return p; }
+  /* the National Weather Service active alerts for Texas, kept only when one of the hold events covers a county (geocode.SAME '048113',
+     or a county UGC 'TXC113'); dates are Central calendar days */
+  const ctDay = iso => { if (!iso) return null; const d = new Date(iso); if (!isFinite(d.getTime())) return normDate(iso); try { const o = {}; new Intl.DateTimeFormat('en-US', { timeZone: 'America/Chicago', year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(d).forEach(x => { o[x.type] = x.value; }); return `${o.year}-${o.month}-${o.day}`; } catch (e) { return String(iso).slice(0, 10); } };
+  function parseNws(json) {
+    if (!json || !Array.isArray(json.features)) throw new Error('The answer is not a GeoJSON list of alerts');
+    const alerts = []; let seen = 0;
+    json.features.forEach(ft => { const p = (ft && ft.properties) || {}; seen++; const ev = String(p.event || '').trim(); if (!HOLD_EVENTS.test(ev)) return; if (p.status && p.status !== 'Actual') return; if (p.messageType === 'Cancel') return;
+      const g = p.geocode || {}; const fs = new Set(); (g.SAME || []).forEach(c => { const m = String(c).match(/^0?(48\d{3})$/); if (m) fs.add(m[1]); }); (g.UGC || []).forEach(c => { const m = String(c).match(/^TXC(\d{3})$/); if (m) fs.add('48' + m[1]); });
+      const counties = [...fs].filter(hasCty).sort(); if (!counties.length) return; const start = p.onset || p.effective || p.sent || null, end = p.ends || p.expires || null;
+      alerts.push({ id: String(p.id || (ft && ft.id) || ev + ':' + start), event: ev, headline: String(p.headline || ev).slice(0, 300), severity: p.severity || '', start, end, startDay: ctDay(start) || today(), endDay: ctDay(end || start) || today(), counties, area: String(p.areaDesc || '').slice(0, 300), sender: p.senderName || '' }); });
+    return { alerts, seen };
+  }
+  async function fetchNws(f) { const p = parseNws(await getRes(f, NWS_ALERTS, 'json')); p.url = NWS_ALERTS; return p; }
+  /* BLS LAUS county unemployment rates: one POST for up to 50 series (registration key optional), the latest month and the same month a
+     year earlier; preliminary months are marked */
+  function parseBls(j) {
+    if (!j || typeof j !== 'object') throw new Error('The BLS answer is not JSON');
+    if (j.status !== 'REQUEST_SUCCEEDED') throw new Error('BLS: ' + ((j.message || []).join(' ') || j.status || 'request not processed'));
+    const counties = {};
+    ((j.Results || {}).series || []).forEach(sr => { const m = String(sr.seriesID || '').match(/^LAUCN(48\d{3})0{8}03$/); if (!m) return;
+      const pts = (sr.data || []).filter(d => /^M(0[1-9]|1[0-2])$/.test(d.period) && isFinite(parseFloat(d.value))).map(d => ({ month: `${d.year}-${String(d.period).slice(1)}`, value: parseFloat(d.value), prelim: (d.footnotes || []).some(x => x && (x.code === 'P' || /prelim/i.test(x.text || ''))) })).sort((a, b) => a.month.localeCompare(b.month));
+      if (!pts.length) return; const last = pts[pts.length - 1]; const ya = `${+last.month.slice(0, 4) - 1}-${last.month.slice(5)}`; const yago = pts.find(x => x.month === ya);
+      counties[m[1]] = { last: last.month, ur: last.value, ur_yago: yago ? yago.value : null, prelim: last.prelim, points: pts.slice(-25) }; });
+    return { counties, message: (j.message || []).filter(Boolean) };
+  }
+  async function fetchLaus(f, fipsList) {
+    const ids = fipsList.slice(0, 50).map(lausId); const y = +today().slice(0, 4); const body = { seriesid: ids, startyear: String(y - 2), endyear: String(y) }; if (SET.blsKey) body.registrationkey = String(SET.blsKey).trim();
+    const sig = (typeof AbortSignal !== 'undefined' && AbortSignal.timeout) ? AbortSignal.timeout(20000) : undefined;
+    const r = await f(BLS_API, { method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json' }, body: JSON.stringify(body), signal: sig });
+    if (!r.ok) { const e = new Error('HTTP ' + r.status); e.status = r.status; try { e.body = await r.text(); } catch (_) { } throw e; }
+    const p = parseBls(await r.json()); p.url = BLS_API + ' (' + ids.length + ' series)'; p.scopeKey = fipsList.join(','); return p;
+  }
+  /* the latest county unemployment: the live BLS answer when it is as new as the snapshot or newer, else the snapshot */
+  function lausOf(f) { const c = typeof CI !== 'undefined' ? CI[f] : null; const snapL = (c && c.laus) || {}; const L = state.live.laus && state.live.laus.counties ? state.live.laus.counties[f] : null; if (L && L.ur != null && (!snapL.last || String(L.last) >= String(snapL.last).slice(0, 7))) return Object.assign({}, snapL, { ur: L.ur, ur_yago: L.ur_yago != null ? L.ur_yago : snapL.ur_yago, last: L.last, prelim: L.prelim, live: true }); return Object.assign({ live: false }, snapL); }
   async function refresh(o) {
     o = o || {}; const f = o.fetch || (typeof fetch === 'function' ? fetch : null);
-    if (!canFetch()) { state.error = 'viewer'; Object.keys(SRC).forEach(k => { state.sources[k] = Object.assign({}, state.sources[k], { mode: state.live[k] ? 'cached' : 'snapshot', error: 'The hosted viewer blocks page network calls; the snapshot is shown.' }); }); emit(); return state; }
+    if (!canFetch()) { state.error = 'viewer'; Object.keys(SRC).forEach(k => { state.sources[k] = Object.assign({}, state.sources[k], { mode: state.live[k] ? 'cached' : (k === 'nws' ? 'none' : 'snapshot'), error: 'The hosted viewer blocks page network calls; the snapshot is shown.' }); }); emit(); return state; }
     if (!f) { state.error = 'This environment has no fetch.'; emit(); return state; }
     if (!o.force && fresh()) return state;
     state.loading = true; state.error = null; emit();
-    const sc = scope(); const at = new Date().toISOString(); const skipFred = inPage() && !SET.fredInPage && !o.fetch;
-    const jobs = [fetchWarn(f, sc), skipFred ? Promise.reject(Object.assign(new Error('skipped'), { skipped: true })) : fetchFred(f, 'TXICLAIMS'), skipFred ? Promise.reject(Object.assign(new Error('skipped'), { skipped: true })) : fetchFred(f, 'TXCCLAIMS')];
-    const res = await Promise.allSettled(jobs); const keys = ['warn', 'icl', 'ccl'];
+    const sc = scope(); const at = new Date().toISOString(); const page = inPage() && !o.fetch; const skip = why => Promise.reject(Object.assign(new Error('skipped'), { skipped: true, why }));
+    const skipFred = page && !SET.fredInPage;
+    const L = state.live.laus; const lausDue = !L || L.scopeKey !== sc.join(',') || Date.now() - Date.parse(L.at || 0) > (o.force ? 36e5 : 864e5);
+    const jobs = { warn: fetchWarn(f, sc), icl: skipFred ? skip('cors') : fetchFred(f, 'TXICLAIMS'), ccl: skipFred ? skip('cors') : fetchFred(f, 'TXCCLAIMS'),
+      laus: SET.bls === false ? skip('off') : (page && !SET.blsInPage) ? skip('cors') : !lausDue ? skip('fresh') : fetchLaus(f, sc),
+      nws: SET.nws === false ? skip('off') : fetchNws(f) };
+    const keys = Object.keys(jobs); const res = await Promise.allSettled(keys.map(k => jobs[k]));
+    const HOST = { warn: 'data.texas.gov', icl: 'fred.stlouisfed.org', ccl: 'fred.stlouisfed.org', laus: 'api.bls.gov', nws: 'api.weather.gov' };
     res.forEach((r, i) => {
-      const k = keys[i], host = k === 'warn' ? 'data.texas.gov' : 'fred.stlouisfed.org';
-      if (r.status === 'fulfilled') { const v = r.value; state.live[k] = Object.assign({ at, scope: k === 'warn' ? sc : null }, v); state.sources[k] = { mode: 'live', at, n: k === 'warn' ? v.rows.length : v.points.length, url: v.url, fallback: !!v.fallback, unknown: v.unknown || [], missing: v.missing || [], error: null }; }
-      else { const e = r.reason; state.sources[k] = Object.assign({}, state.sources[k], { mode: state.live[k] ? 'cached' : 'snapshot', error: e && e.skipped ? 'skipped' : errText(e, host), tried: at }); }
+      const k = keys[i], host = HOST[k];
+      if (r.status === 'fulfilled') { const v = r.value; state.live[k] = Object.assign({ at, scope: k === 'warn' || k === 'laus' ? sc : null }, v); const n = k === 'warn' ? v.rows.length : k === 'laus' ? Object.keys(v.counties).length : k === 'nws' ? v.alerts.length : v.points.length; state.sources[k] = { mode: 'live', at, n, url: v.url, fallback: !!v.fallback, unknown: v.unknown || [], missing: v.missing || [], seen: v.seen, message: v.message && v.message.length ? v.message.join(' ') : '', error: null }; }
+      else { const e = r.reason; if (e && e.skipped && e.why === 'fresh') return; state.sources[k] = Object.assign({}, state.sources[k], { mode: state.live[k] ? 'cached' : (k === 'nws' ? 'none' : 'snapshot'), error: e && e.skipped ? (e.why === 'off' ? 'off' : 'skipped') : errText(e, host), tried: at }); }
     });
-    state.loading = false; state.fetched = at; state.error = res.every(r => r.status === 'rejected') ? 'No live source answered; the snapshot is shown.' : null;
-    sset(CACHE_KEY, { fetched: state.fetched, live: liveForCache(), sources: state.sources }); VER++; emit(); return state;
+    state.loading = false; state.fetched = at; state.error = ['warn', 'icl', 'ccl'].every(k => res[keys.indexOf(k)].status === 'rejected') ? 'No live source answered; the snapshot is shown.' : null;
+    sset(CACHE_KEY, { fetched: state.fetched, live: liveForCache(), sources: state.sources }); VER++; emit(); pushPlan(); return state;
   }
-  const liveForCache = () => ({ warn: state.live.warn ? Object.assign({}, state.live.warn, { rows: state.live.warn.rows.slice(0, 600).map(r => Object.assign({}, r, { raw: r.raw })) }) : null, icl: state.live.icl, ccl: state.live.ccl });
+  const liveForCache = () => ({ warn: state.live.warn ? Object.assign({}, state.live.warn, { rows: state.live.warn.rows.slice(0, 600).map(r => Object.assign({}, r, { raw: r.raw })) }) : null, icl: state.live.icl, ccl: state.live.ccl, laus: state.live.laus, nws: state.live.nws });
   /* a file the user downloaded: a WARN export (JSON or CSV) or a FRED CSV */
   function loadFile(text, name) {
     const t = String(text || ''); const at = new Date().toISOString(); const head = t.replace(/^\uFEFF/, '').split(/\r?\n/, 1)[0] || '';

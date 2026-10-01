@@ -366,6 +366,8 @@ function closeModal() { const m = $('#modal'); if (m && m.classList.contains('on
 // ---- shell bits
 // the module title is the page's level one heading (one module shows at a time; hidden ones leave the accessibility tree)
 function mastHTML(o) { return `<div class="mast"><div class="eyebrow">${esc(o.eyebrow)}</div><h1 class="mh">${esc(o.title)}</h1><div class="dek">${o.dek}</div>${o.ribbon ? `<button type="button" class="ribbon" data-go="${esc(o.ribbon.go)}">${esc(o.ribbon.text)}</button><div style="height:14px"></div>` : '<div class="rule"></div>'}<div class="facts">${(o.facts || []).map(f => `<span><b>${f[0]}</b> ${f[1]}</span>`).join('')}</div></div>`; }
+// a module's sources, judgment calls and caveats, at its foot: items are [label, html] pairs (html already escaped)
+function srcFoot(items) { return `<div class="panel srcfoot" style="margin-top:14px"><h3>Sources, judgment calls and caveats</h3><ul class="srcs">${items.map(i => `<li><b>${esc(i[0])}.</b> ${i[1]}</li>`).join('')}</ul></div>`; }
 function tile(l, v, s, g) { return `<div class="tile"><div class="l"><span>${esc(l)}</span>${g ? `<span class="grade ${g}" title="Confidence grade ${g}">${g}</span>` : ''}</div><div class="v">${v}</div><div class="s">${s || ''}</div></div>`; }
 // ctl(label, inner): the label names the first select, input or textarea in inner (its id, or one given to it here)
 let CTL_N = 0;
@@ -392,6 +394,6 @@ function showModule(key, payload) {
   if (payload && m.receive) { try { m.receive(payload); } catch (e) { console.error(e); } }   // goModule('publish', {pages}) hands the payload over
   if (m.onShow) { try { m.onShow(); } catch (e) { console.error(e); } }
   // a history step per module, so Back and Forward move between them (the boot listens for hashchange)
-  store.set('sev.tab', m.key); try { const h = '#' + m.key; if (location.hash !== h) { if (MODI[(location.hash || '').slice(1).split('?')[0]]) history.pushState(null, '', h); else history.replaceState(null, '', h); } } catch (e) { }
+  store.set('sev.tab', m.key); try { const h = '#' + m.key; const cur = (location.hash || '').slice(1).split(/[/?]/)[0]; if (cur !== m.key) { if (MODI[cur]) history.pushState(null, '', h); else history.replaceState(null, '', h); } } catch (e) { }   // #atlas/hou keeps its argument
   if (window.onModuleShown) window.onModuleShown(m.key); if (!payload || !payload.keepScroll) window.scrollTo({ top: 0 });
 }

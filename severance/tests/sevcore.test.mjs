@@ -60,4 +60,34 @@ eq(run(`layerScale({ ramp: 'slate', v: c => c.rates.lawoffices || 0, f: v => N(v
 /* metro map view: inside the state map, at the state map's shape */
 const box = run(`metroBox('26420')`); const G = run('GEO.state');
 assert(box && box[2] > 0 && box[2] < G.W && Math.abs(box[2] / box[3] - G.W / G.H) < 1e-6, 'metro box keeps the map shape');
+/* Census 'not available' codes become null once, in the core: no -666666666 income prints or maps */
+eq(run(`[...ZC, ...CTY].filter(o => Object.values(o.acs || {}).some(v => typeof v === 'number' && v <= -1e8)).length`), 0, 'no ACS sentinel left in ZIPs or counties');
+eq(run(`ZI['76203'].acs.med_hh_inc`), null, '76203 Denton income is not available, not negative');
+assert(run(`DATA_FIX.sentinels`) > 300 && run(`DATA_FIX.sentinelFields['zip.acs.med_hh_inc']`) === 38, 'sentinels counted ' + run(`JSON.stringify(DATA_FIX.sentinelFields)`));
+
+/* ZIP to county by residents: the Metro Atlas block groups give the same overrides the core ships, and every county still sums to its clerk count */
+{
+  const atl = {}; const actx = { window: {} }; vm.createContext(actx);
+  for (const k of ['dfw', 'hou', 'sat', 'aus', 'elp', 'rgv']) { vm.runInContext(read(`data/atlas-${k}.js`), actx, { filename: k }); atl[k] = actx.window.__SEV_ATLAS__[k]; }
+  const ZCr = JSON.parse(run(`JSON.stringify(ZC.map(z => ({ zip: z.zip, raw: z.county_raw, pop: z.acs.pop })))`)); const RAW = {}; ZCr.forEach(z => { RAW[z.zip] = z; });
+  const ALL = run('GEO.zc_county_all'); const want = {};
+  for (const k of Object.keys(atl)) { const A = atl[k], B = A.bg; const inA = new Set(A.meta.cty.map(x => '48' + x)); const by = {};
+    for (let i = 0; i < B.id.length; i++) { const zip = B.zip[i]; if (!zip) continue; const f = B.id[i].slice(0, 5); (by[zip] = by[zip] || {})[f] = (by[zip][f] || 0) + (B.v.pop[i] || 0); }
+    for (const zip in by) { const z = RAW[zip]; if (!z) continue; const o = by[zip]; const tot = Object.values(o).reduce((a, b) => a + b, 0); if (!tot) continue; const best = Object.keys(o).sort((a, b) => o[b] - o[a])[0]; const cov = tot / (z.pop || 1); const touch = (ALL[zip] || []).filter(x => x[1] >= 0.005).map(x => x[0]);
+      if (best !== z.raw && o[best] / tot >= 0.6 && cov >= 0.8 && cov <= 1.25 && touch.every(f => inA.has(f))) want[zip] = best; } }
+  eq(JSON.stringify(Object.keys(want).sort().reduce((o, k) => (o[k] = want[k], o), {})), run(`JSON.stringify(Object.keys(ZC_POP_COUNTY).sort().reduce((o, k) => (o[k] = ZC_POP_COUNTY[k], o), {}))`), 'ZC_POP_COUNTY matches the atlas block groups');
+}
+eq(run(`ZI['79601'].county + ' ' + ZI['79601'].county_raw + ' ' + ZI['79601'].county_name`), '48441 48253 Taylor', '79601 Abilene goes to Taylor, keeps Jones as county_raw');
+eq(run(`ZI['79705'].county_name`), 'Midland', '79705 Midland goes to Midland County');
+eq(run(`DATA_FIX.moved.filter(m => CI[m.to].msa !== ZI[m.zip].msa).length`), 0, 'a move never leaves the metro');
+eq(run(`(() => { const by = {}; ZC.forEach(z => { by[z.county] = (by[z.county] || 0) + z.alloc.div; }); return Object.keys(by).filter(f => Math.abs(by[f] - CI[f].filings.ttm.div) > 0.05 * Math.max(1, ZC.filter(z => z.county === f).length)).length; })()`), 0, 'ZIP filings sum to each county clerk count');
+eq(run(`ZC.filter(z => !isN(z.paid.eff_pct) || z.paid.eff_pct <= 0 || z.paid.eff_pct > 100).length`), 0, 'efficiency percentiles ranked again');
+eq(run(`Math.abs(ZI['79601'].paid.opp - ZI['79601'].alloc.priv) < 1e-9 && Math.abs(ZI['79601'].exp_div_per_1k_married - ZI['79601'].alloc.div / ZI['79601'].acs.married * 1000) < 1e-9`), true, 'moved ZIP derived fields follow the new allocation');
+
+/* table sorts lists and text as text, numbers as numbers (never NaN) */
+eq(run(`(() => { const t = table(document.createElement('div'), { cols: [{ k: 'n', l: 'n' }, { k: 'cty', l: 'c' }], rows: [{ _id: 'a', n: 'A', cty: ['Dallas', 'Collin'] }, { _id: 'b', n: 'B', cty: ['Collin'] }, { _id: 'c', n: 'C', cty: ['Wise'] }], sort: { k: 'cty', dir: 1 } }); return t.sorted().map(r => r._id).join(''); })()`), 'bac', 'list columns sort by their text');
+
+/* diverging legends keep the layer's unit; WARN names cut off mid parenthesis are closed */
+assert(/ pts$/.test(run(`layerScale({ ramp: 'div', v: c => c.econ.ur_chg_yoy, f: v => sgn(v, 1, ' pts') }, CTY).legend.max`)), 'points legend');
+eq(run(`CO('Remington Lodging and Hospitality, LLC (Hilton Houston NASA ')`), 'Remington Lodging and Hospitality, LLC (Hilton Houston NASA…)', 'truncated company name closed');
 console.log('sevcore ok');

@@ -11,6 +11,11 @@
      a fake adapter registered with CMS.register records every call: Save, Test (pass and fail), Use as target, a draft deploy with one
        page held back, the results table and the ledger, the skip on a second run, Publish live on the second click, Publish site now,
        Verify links, the ledger CSV, the pages pack, Clear sent ledger and Forget credentials (two clicks each);
+     credential safety: Remember credentials starts off from disk (nothing in sv.cms.v1, the secret in sessionStorage, the address kept),
+       a remount restores the session card, Remember on and off move it in and out of sv.cms.v1, each card's reachability chip;
+     the law firm gates: Publish live needs "Reviewed and approved by Jane Example", the ledger keeps the name, the time and the first
+       live date, every live page lands in the Compliance filing log (sev.comp.arc, BUS arc), the homepage and a landing page are flagged
+       with the ten day due date and severance-arc-filing.csv, an unchanged republish adds no row, and the exact HTML sent downloads per row;
      the module still renders with zero adapters, with module 21 absent, and with a module 21 that fails to start or hands over pages;
      screenshots at 1440 and 390 wide, light and dark, with no horizontal page scroll at 390.
    Run: node tests/e2e/publish.smoke.mjs   (Playwright from /opt/node22/lib/node_modules/playwright, browsers under /opt/pw-browsers).
@@ -195,7 +200,27 @@ try {
   await page.waitForFunction(() => /Configured, not tested/.test(document.querySelector('#pbSt-fake').textContent), null, { timeout: 5000 });
   const saved = await page.evaluate(() => CMS.cfg('fake'));
   ok(saved.url === 'https://fake.example.com' && saved.token === 'secret-1' && saved.mode === 'a' && saved.flag === true, 'Save wrote every field kind', JSON.stringify(saved));
-  ok(await page.evaluate(() => /"fake"/.test(localStorage.getItem('sv.cms.v1') || '')), 'credentials are stored under sv.cms.v1');
+  /* opened from disk, Remember credentials starts off: nothing in sv.cms.v1, the secret in this tab's session, the address remembered */
+  ok(!(await page.$eval('#pbRem-fake', i => i.checked)), 'Remember credentials starts off on a page opened from disk');
+  ok(await page.evaluate(() => !/secret-1/.test(localStorage.getItem('sv.cms.v1') || '')), 'a session only card leaves no secret in sv.cms.v1');
+  ok(await page.evaluate(() => /secret-1/.test(sessionStorage.getItem('sv.sev.publish.session') || '')), 'the secret is held in sessionStorage for this tab');
+  ok(await page.evaluate(() => { const k = localStorage.getItem('sv.sev.publish.keep') || ''; return /fake\.example\.com/.test(k) && !/secret-1/.test(k); }), 'the site address is remembered without the secret');
+  await page.evaluate(() => { delete CMS.S.cfg.fake; });   /* a new page in the same tab: the CMS layer reloads without the card */
+  await remount(); await page.waitForSelector('#pbTargets .pb-card[data-id="fake"]', { timeout: 5000 });
+  ok(await page.evaluate(() => CMS.cfg('fake').token === 'secret-1' && !Object.getOwnPropertyDescriptor(CMS.S.cfg, 'fake').enumerable), 'a remount restores the session card from sessionStorage, still out of sv.cms.v1');
+  ok(/Configured, not tested/.test(await T('#pbSt-fake')), 'the restored card is configured');
+  ok(/storage/.test(await T('#pbEnv .callout')) && /file:\/\//.test(await T('#pbEnv .callout')), 'the file callout warns that pages opened from disk share one storage');
+  const reach = await page.evaluate(() => Object.fromEntries([...document.querySelectorAll('#pbTargets .pb-card')].map(c => [c.dataset.id, (c.querySelector('.pb-reach .pill') || {}).textContent || ''])));
+  ok(/usually reachable/.test(reach.wp_elementor) && /only with CORS/.test(reach.drupal) && /extension or export/.test(reach.wix) && /extension or export/.test(reach.shopify) && /extension or export/.test(reach.hubspot), 'each card says what a page opened from disk can reach', JSON.stringify(reach));
+  await page.check('#pbRem-fake');
+  await page.waitForFunction(() => /secret-1/.test(localStorage.getItem('sv.cms.v1') || ''), null, { timeout: 5000 });
+  ok(await page.evaluate(() => Object.getOwnPropertyDescriptor(CMS.S.cfg, 'fake').enumerable && !/secret-1/.test(sessionStorage.getItem('sv.sev.publish.session') || '')), 'Remember moves the card into sv.cms.v1 and out of the session');
+  await page.uncheck('#pbRem-fake');
+  await page.waitForFunction(() => !/secret-1/.test(localStorage.getItem('sv.cms.v1') || ''), null, { timeout: 5000 });
+  ok(await page.evaluate(() => CMS.cfg('fake').token === 'secret-1'), 'unticking keeps the card working for this session and scrubs sv.cms.v1');
+  await page.check('#pbRem-fake');
+  await page.waitForFunction(() => /"fake"/.test(localStorage.getItem('sv.cms.v1') || ''), null, { timeout: 5000 });
+  ok(true, 'remembered again for the rest of the run: credentials are stored under sv.cms.v1');
   await page.click('#pbTargets .pb-card[data-id="fake"] button[data-a="test"]');
   await page.waitForFunction(() => /Connected/.test(document.querySelector('#pbSt-fake').textContent), null, { timeout: 5000 });
   ok(/fake a flag/.test(await T('#pbSt-fake')), 'Test marks the card connected with the adapter info', await T('#pbSt-fake'));
@@ -254,9 +279,15 @@ try {
   await page.click('#pbSelUnsent');
   ok(/0 of 2 selected/.test(await T('#pbSelN')), 'only unsent deselects the sent pages');
 
-  /* ---- Publish live: two clicks, an update ---- */
+  /* ---- Publish live: the responsible lawyer's approval, then two clicks, an update ---- */
+  await page.evaluate(() => { globalThis.ARC_EV = []; BUS.on('arc', e => ARC_EV.push(e)); });
   await page.check(`#pbPages input[data-sel="${SLUG}"]`);
   await page.uncheck('#pbOnlyNew'); await page.check('#pbLive');
+  ok(!(await page.$eval('#pbApproveBox', b => b.hidden)) && /Reviewed and approved by Jane Example/.test(await T('#pbApproveBox')), 'Publish live shows Reviewed and approved by the responsible lawyer', await T('#pbApproveBox'));
+  await page.click('#pbGo');
+  ok(/approval/.test(await T('#pbStatus')) && (await page.evaluate(() => FAKE.upserts.length)) === 2, 'without the approval nothing goes live', (await T('#pbStatus')).slice(-160));
+  await page.check('#pbApprove');
+  ok(/Approved/.test(await T('#pbApproveBox')), 'the approval time is shown');
   await page.click('#pbGo');
   ok(/Click again to publish 1 live on Fake CMS/.test(await T('#pbGo')), 'Publish live arms the button on the first click');
   ok((await page.evaluate(() => FAKE.upserts.length)) === 2, 'the first click did not deploy');
@@ -264,10 +295,44 @@ try {
   await page.waitForFunction(() => /Done: 1 sent, 0 skipped, 0 failed, 0 held/.test(document.querySelector('#pbStatus').textContent), null, { timeout: 10000 });
   up = await page.evaluate(() => FAKE.upserts);
   ok(up.length === 3 && up[2].status === 'publish' && up[2].publish === true, 'the second click deployed as publish');
+  let lrec = await page.evaluate(s => CMS.deployedFor('fake')[s], SLUG);
+  ok(lrec.approvedBy === 'Jane Example' && /^\d{4}-\d{2}-\d{2}T/.test(lrec.approvedAt) && lrec.firstLiveAt && lrec.approvals.length === 1, 'the ledger record carries the approval name and time and the first live date', JSON.stringify({ by: lrec.approvedBy, at: lrec.approvedAt, first: lrec.firstLiveAt }));
+  ok(/Jane Example/.test(await T(`#pbLedgerT tr[data-slug="${SLUG}"]`)), 'the ledger table shows who approved it');
+  ok(!(await page.$eval('#pbApprove', c => c.checked)), 'the approval clears after the live run');
+  let arcLog = await page.evaluate(() => JSON.parse(localStorage.getItem('sv.sev.comp.arc') || '[]'));
+  ok(arcLog.length === 1 && arcLog[0].where === 'Website page (exempt)' && /^Exempt/.test(arcLog[0].status) && /Jane Example/.test(arcLog[0].note) && /^\d{4}-\d{2}-\d{2}$/.test(arcLog[0].pub) && arcLog[0].id, 'a live website page is logged in the Compliance filing log as exempt (Rule 7.05)', JSON.stringify(arcLog[0]));
+  ok(await page.evaluate(() => ARC_EV.length === 1 && ARC_EV[0].source === 'publish' && ARC_EV[0].rows.length === 1), 'BUS arc announced the new row');
+  const sentDl = await download(() => page.click(`#pbLedgerT button[data-sent="${SLUG}"]`));
+  const sentTxt = sentDl.buf.toString();
+  ok(new RegExp(`^severance-sent_${SLUG}_fake_\\d{4}-\\d{2}-\\d{2}_\\d{4}\\.html$`).test(sentDl.name) && /Reviewed and approved by Jane Example/.test(sentTxt) && sentTxt.includes(`<h1>${TITLE}</h1>`) && /Responsible attorney: Jane Example/.test(sentTxt) && /application\/ld\+json/.test(sentTxt), 'per row download of the exact HTML sent, with the approval in its header', sentDl.name);
+  ok(sentTxt.includes(up[2].html.slice(0, 200)), 'the download holds the markup the adapter received');
   ok(/publish/.test(await T('#pbResults tbody tr')) && /updated/.test(await T('#pbResults tbody tr')), 'results row shows publish and updated');
   await page.click('#pbSiteGo');
   await page.waitForFunction(() => /site published \(fake\)/.test(document.querySelector('#pbStatus').textContent), null, { timeout: 5000 });
   ok(await page.evaluate(() => FAKE.sitePublished === true), 'Publish site now calls adapter.publishSite');
+
+  /* ---- the homepage and a landing page: ARC flags, due dates, the filing CSV, an unchanged republish ---- */
+  const homeHtml = await page.evaluate(s => MODI.publish.pages().find(p => p.slug === s).html, SLUG);
+  await page.evaluate(h => { const p = CMS.pageFromHtml({ title: 'Example Family Law', slug: 'home', meta_description: 'Family law in Dallas County: divorce, custody and support, with a responsible attorney named on every page.', html: h }); p.kind = 'Home'; const l = CMS.pageFromHtml({ title: 'Divorce Help in Dallas', slug: 'lp-divorce-dallas', meta_description: 'Divorce help in Dallas County.', html: h }); l.kind = 'Landing'; MODI.publish.receive({ pages: [p, l] }); }, homeHtml);
+  await page.waitForSelector('#pbPages tbody tr[data-slug="home"]', { timeout: 5000 });
+  ok(/ARC filing/.test(await T('#pbPages tbody tr[data-slug="home"]')) && /ARC filing/.test(await T('#pbPages tbody tr[data-slug="lp-divorce-dallas"]')) && !/ARC filing/.test(await T(`#pbPages tbody tr[data-slug="${SLUG}"]`)), 'the homepage and the landing page carry the ARC pill before they go out');
+  await page.click('#pbSelNone'); await page.check('#pbPages input[data-sel="home"]'); await page.check('#pbPages input[data-sel="lp-divorce-dallas"]');
+  await page.check('#pbLive'); await page.check('#pbApprove'); await page.click('#pbGo'); await page.click('#pbGo');
+  await page.waitForFunction(() => /Done: 2 sent/.test(document.querySelector('#pbStatus').textContent), null, { timeout: 10000 });
+  arcLog = await page.evaluate(() => JSON.parse(localStorage.getItem('sv.sev.comp.arc') || '[]'));
+  const hRow = arcLog.find(r => r.where === 'Website homepage'), lRow = arcLog.find(r => /Divorce Help in Dallas/.test(r.what));
+  ok(hRow && hRow.status === 'Not filed' && /within 10 days/.test(hRow.note) && /Rule 7\.04/.test(hRow.note) && lRow && lRow.status === 'Not filed' && /Rule 7\.05/.test(lRow.note), 'the homepage and the landing page are logged as Not filed with the ten day rule', JSON.stringify([hRow, lRow]).slice(0, 300));
+  ok(/file it with the State Bar Advertising Review Committee within 10 days/.test(await T('#pbStatus')), 'the log names the filing deadline');
+  const arcT = await T('#pbArcT');
+  ok(/Homepage/.test(arcT) && /Landing page/.test(arcT) && /Due in 10 days/.test(arcT) && /Jane Example/.test(arcT), 'the filing panel shows both with the due date and the approval', arcT.slice(0, 200));
+  const arcCsv = await download(() => page.click('#pbArcCsv'));
+  ok(arcCsv.name === 'severance-arc-filing.csv' && /filing_due/.test(arcCsv.buf.toString()) && /Homepage/.test(arcCsv.buf.toString()) && /Not filed/.test(arcCsv.buf.toString()), 'severance-arc-filing.csv lists the pages with the due dates');
+  await page.check('#pbLive'); await page.check('#pbApprove'); await page.click('#pbGo'); await page.click('#pbGo');
+  await page.waitForFunction(() => (document.querySelector('#pbStatus').textContent.match(/Done: 2 sent/g) || []).length >= 1 && !document.querySelector('#pbGo').disabled, null, { timeout: 10000 });
+  await page.waitForTimeout(300);
+  ok((await page.evaluate(() => JSON.parse(localStorage.getItem('sv.sev.comp.arc') || '[]').length)) === arcLog.length, 'an unchanged republish is not a new dissemination: no new filing row');
+  ok((await page.evaluate(() => MODI.publish.sent('fake', 'home').length)) === 2, 'every send is kept for the records');
+  await page.uncheck('#pbLive'); await page.click('#pbSelNone'); await page.check(`#pbPages input[data-sel="${SLUG}"]`);
 
   /* ---- Verify links ---- */
   await page.evaluate(s => { MODI.publish.pages().find(p => p.slug === s).links = [{ anchor: 'custody', url: '/child-custody-plano/' }, { anchor: 'missing', url: 'https://fake.example.com/missing-page/' }]; }, SLUG);
@@ -297,7 +362,7 @@ try {
   await page.waitForFunction(() => /Not configured/.test(document.querySelector('#pbSt-fake').textContent), null, { timeout: 5000 });
   ok((await page.evaluate(() => Object.keys(CMS.cfg('fake')).length)) === 0, 'Forget credentials removes the config');
   const calls = await page.evaluate(() => FAKE.calls.map(c => c.m));
-  ok(calls.filter(c => c === 'test').length === 3 && calls.filter(c => c === 'upsertPage').length === 3 && calls.includes('publishSite') && calls.includes('listUrls'), 'the fake adapter recorded every call', calls.join(','));
+  ok(calls.filter(c => c === 'test').length === 3 && calls.filter(c => c === 'upsertPage').length === 7 && calls.includes('publishSite') && calls.includes('listUrls'), 'the fake adapter recorded every call', calls.join(','));
 
   /* ---- zero adapters ---- */
   await page.evaluate(() => { globalThis.__ORDER = CMS.ORDER.slice(); CMS.ORDER.splice(0, CMS.ORDER.length); });

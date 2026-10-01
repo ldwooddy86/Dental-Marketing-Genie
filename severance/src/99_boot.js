@@ -21,8 +21,10 @@
   const railStops = () => $$('#rail [role=tablist]').forEach(g => { const tabs = $$('[role=tab]', g); const on = tabs.find(t => t.getAttribute('aria-selected') === 'true') || tabs[0]; tabs.forEach(t => t.tabIndex = t === on ? 0 : -1); });
   $('#rail').addEventListener('keydown', e => { const t = e.target.closest && e.target.closest('[role=tab]'); if (!t) return; const tabs = $$('[role=tab]', t.parentElement); const i = tabs.indexOf(t); const j = e.key === 'ArrowRight' || e.key === 'ArrowDown' ? (i + 1) % tabs.length : e.key === 'ArrowLeft' || e.key === 'ArrowUp' ? (i - 1 + tabs.length) % tabs.length : e.key === 'Home' ? 0 : e.key === 'End' ? tabs.length - 1 : -1; if (j < 0) return; e.preventDefault(); tabs.forEach(x => x.tabIndex = -1); tabs[j].tabIndex = 0; tabs[j].focus(); });
   window.onModuleShown = key => { railStops(); const c = $('#methodTop'); if (c) { c.classList.toggle('on', key === 'method'); c.setAttribute('aria-pressed', String(key === 'method')); } const mm = MODI[key]; document.title = 'Severance · ' + (mm ? mm.title : 'Texas family law market intelligence'); const b = $('#tab-' + key); const row = b && b.parentElement; if (row && row.scrollWidth > row.clientWidth + 2) row.scrollLeft = Math.max(0, b.offsetLeft - row.offsetLeft - 16); };
-  const hash = (location.hash || '').replace('#', ''); const start = MODI[hash] ? hash : store.get('sev.tab', 'index');
-  showModule(MODI[start] ? start : 'index');
+  // a hash may carry one argument after a slash: #atlas/hou opens the Houston atlas, #others/48660 one of the other metros
+  const parseHash = () => { const m = (location.hash || '').slice(1).match(/^([a-z0-9_]+)(?:[/?]([^/?#]+))?/i); return m ? { key: m[1], arg: m[2] ? decodeURIComponent(m[2]) : null } : { key: '', arg: null }; };
+  const ph = parseHash(); const start = MODI[ph.key] ? ph.key : store.get('sev.tab', 'index');
+  showModule(MODI[start] ? start : 'index', MODI[ph.key] && ph.arg ? { arg: ph.arg } : undefined);
   // the theme button says which theme is on; the browser bar color follows the utility bar of the theme in use
   const meta = document.querySelector('meta[name="theme-color"]') || document.head.appendChild(Object.assign(document.createElement('meta'), { name: 'theme-color' }));
   const syncTheme = () => { const r = document.documentElement; const dark = r.getAttribute('data-theme') ? r.getAttribute('data-theme') === 'dark' : !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches); const b = $('#themeTop'); if (b) { b.setAttribute('aria-pressed', String(dark)); b.setAttribute('aria-label', 'Dark theme'); b.title = dark ? 'Dark theme is on. Switch to light.' : 'Light theme is on. Switch to dark.'; } meta.content = (getComputedStyle(r).getPropertyValue('--util-bg') || '').trim() || (dark ? '#0d2519' : '#e1f4e8'); };
@@ -35,5 +37,5 @@
   $('#methodTop').onclick = () => showModule('method');
   $('#backupTop').onclick = () => WORKSPACE.panel();
   // back and forward between modules, and links that carry only a hash
-  window.addEventListener('hashchange', () => { const k = (location.hash || '').slice(1).split('?')[0]; if (MODI[k] && $('#mod-' + k) && $('#mod-' + k).hidden) showModule(k); });
+  window.addEventListener('hashchange', () => { const p = parseHash(); const k = p.key; if (MODI[k] && $('#mod-' + k) && ($('#mod-' + k).hidden || p.arg)) showModule(k, p.arg ? { arg: p.arg } : undefined); });
 })();

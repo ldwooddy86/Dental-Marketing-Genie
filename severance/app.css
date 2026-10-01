@@ -12,7 +12,7 @@
   --good:#1d7a55; --warning:#b7791f; --serious:#d9602b; --critical:#c0392b;
   --grade-a:#176a49; --grade-b:#2b6ea3; --grade-c:#8a5a12; --grade-d:#c0392b; --on-bg:#1b4332; --on-ink:#ffffff; --on-hover:#1f533b; --alt-fill:#efd9a6;
   --water:#dbe7f1; --county:#516c5d; --nodata:#e2e9e5; --grid:#e3eae6;
-  --s1:#3b9b72; --s2:#c73a2e; --s3:#2b6ea3; --s4:#d8950f; --s5:#5a4ab0; --s6:#a0522d; --s7:#4fa3d1; --s8:#c2477f;
+  --s1:#3b9b72; --s2:#c73a2e; --s3:#2b6ea3; --s4:#b97f0b; --s5:#5a4ab0; --s6:#a0522d; --s7:#3a8fbf; --s8:#c2477f;
   --map-out:#e4ebe7; --road-f:rgba(10,41,26,.62); --road-h:rgba(10,41,26,.40); --road-a:rgba(10,41,26,.24); --place-line:rgba(10,41,26,.55); --isd-line:#d18f0f; --isd-ink:#7a4f00; --zip-line:#ffffff; --casing:rgba(7,22,15,.5);
   --map-hl:#8de9ae; --map-casing:rgba(7,22,15,.72); --map-warn-fill:rgba(141,233,174,.42); --map-warn-line:#07160f;
   --rp-forest-0:#e7f5ec; --rp-forest-0-ink:#11261b; --rp-forest-1:#c4e3d0; --rp-forest-1-ink:#11261b; --rp-forest-2:#a1cfb3; --rp-forest-2-ink:#11261b; --rp-forest-3:#7cb795; --rp-forest-3-ink:#11261b; --rp-forest-4:#599d77; --rp-forest-4-ink:#11261b; --rp-forest-5:#3c805b; --rp-forest-5-ink:#ffffff; --rp-forest-6:#246142; --rp-forest-6-ink:#ffffff; --rp-forest-7:#0f4129; --rp-forest-7-ink:#ffffff;
@@ -503,3 +503,5 @@ main{padding-inline:max(16px,env(safe-area-inset-left,0px)) max(16px,env(safe-ar
 /* Windows high contrast: selected states drawn with backgrounds or shadows get a system outline */
 @media (forced-colors:active){.rail button[aria-selected="true"],.tabs button.on,.tabs button[aria-pressed="true"],.seg button[aria-pressed="true"],.chip.on,.line.on,.sig button.on,.mainbar .cta.on{outline:2px solid Highlight;outline-offset:-2px}table.t tr.sel{outline:2px solid Highlight}.amap.active{outline:2px solid Highlight}}
 @media print{main{padding-inline:0}}
+/* a heading for a control group that is not a single field (segmented buttons), styled like a field label */
+.ctl .ctlh{font-family:var(--display);font-weight:700;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--judg)}

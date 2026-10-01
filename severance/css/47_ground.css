@@ -32,18 +32,22 @@
 #mod-ground .gt-tag:hover{border-color:var(--line-strong);background:var(--sel-soft)}
 #mod-ground .gt-tag span{color:var(--ink-3);font-variant-numeric:tabular-nums}
 #mod-ground .gt-hz>div{margin:6px 0}
-#mod-ground .gt-short{max-height:300px}
+#mod-ground .gt-short{max-height:420px}
+#mod-ground .tblwrap.gt-free{max-height:none}
+#mod-ground .tblwrap.gt-tall{max-height:720px}
+#mod-ground table.gt-ct td.gt-rule-c{min-width:340px;max-width:620px}
 #mod-ground .gt-say{margin-top:8px;line-height:1.55;max-width:100ch}
 #mod-ground p.gt-say{font-size:13.5px;color:var(--ink-2)}
 #mod-ground .gt-warn{border-left:3px solid var(--warning);padding:4px 8px;background:var(--sunk);margin-bottom:8px}
 #mod-ground .gt-bars{display:flex;flex-direction:column;gap:5px;margin:4px 0 8px}
-#mod-ground .gt-br{display:grid;grid-template-columns:44px minmax(0,1fr) minmax(96px,auto);gap:10px;align-items:center;font-size:13px;font-variant-numeric:tabular-nums}
+#mod-ground .gt-br{display:grid;grid-template-columns:44px minmax(0,1fr) 156px;gap:10px;align-items:center;font-size:13px;font-variant-numeric:tabular-nums}
 #mod-ground .gt-br>span:last-child{text-align:right;white-space:nowrap}
+#mod-ground .gt-bh>span:last-child{white-space:normal}
 #mod-ground .gt-bh{font-family:var(--display);font-weight:700;font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--title);border-bottom:1px solid var(--line);padding-bottom:3px}
 #mod-ground .gt-trk{position:relative;height:18px;background:var(--sunk);border:1px solid var(--line)}
 #mod-ground .gt-full{position:absolute;left:0;top:0;bottom:0;background:var(--rp-forest-2)}
 #mod-ground .gt-ytd{position:absolute;left:0;top:3px;bottom:3px;background:var(--rp-forest-5)}
-#mod-ground .gt-cur .gt-ytd{background:var(--s2)}
+#mod-ground .gt-cur .gt-ytd{background:var(--s3)}
 #mod-ground .gt-cur>span:first-child{font-weight:700;color:var(--title)}
 #mod-ground .gt-base{position:absolute;top:-3px;bottom:-3px;width:0;border-left:2px dashed var(--ink-2)}
 #mod-ground .gt-rule{margin-top:12px}
@@ -54,10 +58,34 @@
 #mod-ground table.gt-ct td.wrap,#mod-ground table.gt-inv td.wrap{min-width:180px;max-width:420px;line-height:1.45}
 #mod-ground table.gt-ct td:first-child,#mod-ground table.gt-inv td:first-child{white-space:normal;min-width:120px}
 #mod-ground .pill{white-space:normal}
+#mod-ground .gt-ph{display:none}
 #mod-ground .gt-prose{font-size:13.5px}
 #mod-ground .gt-prose p{margin:0 0 8px}
 @media (max-width:640px){
-  #mod-ground .gt-br{grid-template-columns:38px minmax(0,1fr) minmax(70px,auto);gap:6px;font-size:12px}
+  #mod-ground .gt-cards{overflow-x:visible}
+  #mod-ground .gt-cards table.t,#mod-ground .gt-cards table.t tbody,#mod-ground .gt-cards table.t tr,#mod-ground .gt-cards table.t td{display:block}
+  #mod-ground .gt-cards table.t thead{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+  #mod-ground .gt-cards table.t tr{padding:9px 10px;border-bottom:1px solid var(--line)}
+  #mod-ground .gt-cards table.t td{padding:2px 0;border:0;position:static;background:none;white-space:normal;text-align:left;min-width:0;max-width:none;line-height:1.45}
+  #mod-ground .gt-cards table.t tr:hover td{background:none}
+  #mod-ground .gt-cards table.t td[data-th]::before{content:attr(data-th);display:block;margin-top:4px;font-family:var(--display);font-weight:700;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--judg)}
+  #mod-ground .gt-cards .gt-ph{display:inline;color:var(--ink-3);font-weight:400}
+  #mod-ground .gt-cards td.gt-pc{display:none}
+  #mod-ground .gt-dt{overflow-x:visible}
+  #mod-ground .gt-dt table.t,#mod-ground .gt-dt table.t tbody{display:block}
+  #mod-ground .gt-dt table.t thead{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+  #mod-ground .gt-dt table.t tr{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:2px 8px;padding:7px 8px;border-bottom:1px solid var(--line);align-items:baseline}
+  #mod-ground .gt-dt table.t td{display:block;padding:0;border:0;position:static;background:none;min-width:0;white-space:normal;text-align:left}
+  #mod-ground .gt-dt table.t td:nth-child(1){grid-column:1;grid-row:1;min-width:0;font-weight:500;color:var(--title)}
+  #mod-ground .gt-dt table.t td:nth-child(2){grid-column:2;grid-row:1;text-align:right}
+  #mod-ground .gt-dt table.t td:nth-child(5){grid-column:3;grid-row:1}
+  #mod-ground .gt-dt table.t td:nth-child(3){grid-column:1/-1;font-size:12px;color:var(--ink-2)}
+  #mod-ground .gt-dt table.t td:nth-child(3):empty{display:none}
+  #mod-ground .gt-dt table.t td:nth-child(4){grid-column:1/-1;font-size:12px;color:var(--ink-3)}
+  #mod-ground .gt-dt table.t td:nth-child(4) .gt-vin{display:inline;margin-left:4px}
+  #mod-ground .gt-dt table.t td:nth-child(4) .gt-vin::before{content:'· '}
+  #mod-ground .gt-br{grid-template-columns:38px minmax(0,1fr) 64px;gap:6px;font-size:12px}
+  #mod-ground table.gt-ct td.gt-rule-c{min-width:240px}
   #mod-ground .gt-br .small{display:none}
   #mod-ground table.gt-ct td.wrap,#mod-ground table.gt-inv td.wrap{min-width:150px}
   #mod-ground .gt-dt td:first-child{min-width:120px}

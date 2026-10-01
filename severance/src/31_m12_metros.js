@@ -75,7 +75,9 @@ registerModule({
   mount(root) {
     const st = { code: store.get('sev.other', OTHER_MSAS[0]) }; if (!MSA[st.code] || !OTHER_MSAS.includes(st.code)) st.code = OTHER_MSAS[0];
     // the masthead first, as in every module; the metro picker sits in the toolbar
-    function go(focus) { store.set('sev.other', st.code); hideTip(); metroHTML(root, [st.code], MNAME(MSA[st.code].title), '19', { group: 'Other Metros', picker: ctl('Metropolitan area', sel('otherSel', OTHER_MSAS.map(k => [k, MNAME(MSA[k].title) + ' · ' + N(MSA[k].pop2025) + ' people']), st.code)) }); const s = $('#otherSel', root); s.onchange = e => { st.code = e.target.value; go(true); }; if (focus) s.focus(); }
+    function go(focus) { store.set('sev.other', st.code); hideTip(); try { if (/^#others\b/.test(location.hash || '')) history.replaceState(null, '', '#others/' + st.code); } catch (e) { } metroHTML(root, [st.code], MNAME(MSA[st.code].title), '19', { group: 'Other Metros', picker: ctl('Metropolitan area', sel('otherSel', OTHER_MSAS.map(k => [k, MNAME(MSA[k].title) + ' · ' + N(MSA[k].pop2025) + ' people']), st.code)) }); const s = $('#otherSel', root); s.onchange = e => { st.code = e.target.value; go(true); }; if (focus) s.focus(); }
     go();
+    // goModule('others', {code}) or the link #others/<MSA code or a city in its name>
+    this.receive = p => { if (!p) return; const q = String(p.code || p.arg || '').trim().toLowerCase(); const k = OTHER_MSAS.find(c => c === q) || OTHER_MSAS.find(c => MNAME(MSA[c].title).toLowerCase().split(' / ').some(n => n === q || n.replace(/\s+/g, '-') === q)); if (k && k !== st.code) { st.code = k; go(); } };
   }
 });

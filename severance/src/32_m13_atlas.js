@@ -64,7 +64,7 @@ registerModule({
   desc: 'Dallas Fort Worth, Houston, San Antonio, Austin, El Paso and the Rio Grande Valley at block group resolution',
   mount(root) { mountAtlas(root, store.get('sev.atlas.metro', 'dfw')); },
   // goModule('atlas', {mk} or {metro: MSA code}) opens that metro
-  receive(p) { const mk = p && (p.mk || AT_BY_CODE[p.metro]); if (mk && AT_METROS.some(m => m.key === mk) && this.mk !== mk) mountAtlas($('#mod-atlas'), mk); }
+  receive(p) { const mk = p && (p.mk || AT_BY_CODE[p.metro] || (AT_METROS.some(m => m.key === p.arg) ? p.arg : null)); if (mk && AT_METROS.some(m => m.key === mk) && this.mk !== mk) mountAtlas($('#mod-atlas'), mk); }
 });
 // open the atlas on one metro from anywhere in the suite
 function openAtlas(mk) {
@@ -77,6 +77,7 @@ function openAtlas(mk) {
 function mountAtlas(root, mk) {
   if (!AT_METROS.some(m => m.key === mk)) mk = 'dfw';
   MODI.atlas.mk = mk; store.set('sev.atlas.metro', mk);
+  try { if (/^#atlas\b/.test(location.hash || '') && location.hash !== '#atlas/' + mk) history.replaceState(null, '', '#atlas/' + mk); } catch (e) { }   // a link to this metro's atlas
   const tok = ++AT_TOK; const live = () => tok === AT_TOK;
   if (AT_RO) { try { AT_RO.disconnect(); } catch (e) { } AT_RO = null; }
   if (AT_RS) { window.removeEventListener('resize', AT_RS); AT_RS = null; }
