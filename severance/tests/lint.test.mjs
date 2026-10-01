@@ -110,6 +110,8 @@ eq(LINT.detectLang(esAd), 'es', 'detects Spanish'); eq(LINT.detectLang(SAMPLE_AD
 const es = LINT.screen(esAd, { kind: 'ad', lang: 'es', platform: 'meta', footer: false });
 ['superlative_es', 'competence_es', 'guarantee_es', 'contingent_es', 'meta_attr', 'es_staff'].forEach(id => has(es, id));
 eq(es.findings.find(f => f.id === 'meta_attr').sev, 'block', 'personal attribute blocks on Meta');
+['Resultado garantizado.', 'Somos el bufete número uno.', 'Hable con un especialista.', 'El mejor abogado de familia.'].forEach((tx, i) => has(LINT.screen(tx, { lang: 'es' }), ['guarantee_es', 'number_one', 'competence_es', 'superlative_es'][i], 'Spanish: ' + tx));
+has(LINT.screen('Texas #1 divorce firm.', {}), 'number_one', '#1 after a word'); has(LINT.screen('#1 in Plano.', {}), 'number_one', '#1 at the start'); has(LINT.screen('We have recovered millions.', {}), 'results', 'recovered millions');
 hasNot(LINT.screen('Actuamos según el mejor interés del menor.', { lang: 'es' }), 'superlative_es', 'el mejor interés del menor is the standard');
 hasNot(LINT.screen('Texas no reconoce la separación legal.', { lang: 'es' }), 'legal_separation_es', 'Spanish negation');
 const esFix = LINT.fix('Nos especializamos en custodia. Somos especialistas en divorcio.', { lang: 'es', kind: 'ad' });

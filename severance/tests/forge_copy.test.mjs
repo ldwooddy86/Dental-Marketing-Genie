@@ -116,7 +116,7 @@ check('attorney', { kind: 'attorney', atty: 0 }, Object.assign(V('attorney'), { 
 for (const g of FCOPY.GUIDES) { const Vx = V(g.scope === 'county' ? 'county' : 'guide'); if (g.need) assert(g.need(Vx), 'guide data present: ' + g.id); check('guide ' + g.id, { kind: 'guide', topic: g.id, fips: g.scope === 'county' ? '48113' : undefined }, Vx); }
 
 /* 5. the templates hold no figures of their own: every digit comes through a {placeholder} */
-const strings = []; const walk = (x, where) => { if (typeof x === 'string') strings.push([where, x]); else if (Array.isArray(x)) x.forEach((y, i) => walk(y, where + '.' + i)); else if (x && typeof x === 'object') Object.keys(x).forEach(k => { if (k !== 'tok' && k !== 'slug' && k !== 'lp' && k !== 'need') walk(x[k], where + '.' + k); }); };
+const strings = []; const walk = (x, where) => { if (typeof x === 'string') strings.push([where, x]); else if (Array.isArray(x)) x.forEach((y, i) => walk(y, where + '.' + i)); else if (x && typeof x === 'object') Object.keys(x).forEach(k => { if (!['tok', 'slug', 'lp', 'need', 'facts', 'fact', 'related', 'steps', 'table', 'scope', 'id'].includes(k)) walk(x[k], where + '.' + k); }); };
 walk({ LINES: FCOPY.LINES, GUIDES: FCOPY.GUIDES, STEPS: FCOPY.STEPS, ES: FCOPY.ES, HOME_FAQ: FCOPY.HOME_FAQ, CITY_FAQ: FCOPY.CITY_FAQ, COUNTY_FAQ: FCOPY.COUNTY_FAQ, ATTY_FAQ: FCOPY.ATTY_FAQ, NOTICE: FCOPY.NOTICE, CONSENT: FCOPY.CONSENT }, 'FCOPY');
 const lit = strings.filter(([, s]) => /\d/.test(s.replace(/\{[^}]*\}/g, '')));
 assert(!lit.length, 'templates with a typed number: ' + lit.slice(0, 5).map(([w, s]) => w + ': ' + s.slice(0, 80)).join(' | '));

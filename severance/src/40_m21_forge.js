@@ -90,8 +90,8 @@ const SFORGE = (() => {
     const F = FIRM.get(); const r = FIRM.responsible(); const o = FIRM.primary(); const cs = F.consult || {}; const lines = activeLines(cfg); const all = linesSold();
     const V = { state: 'Texas', brand: F.name || '[Firm name]', atty: r.name || '[Responsible attorney]', officeCity: o.city || '[Office city]', phone: FIRM.phone() || '[Phone]', founded: F.founded ? String(F.founded) : '' };
     V.attyBarClause = r.bar_no ? `, State Bar of Texas No. ${r.bar_no}` : '';
-    V.attyCred = r.tbls ? `Board Certified, ${r.tbls}, Texas Board of Legal Specialization` : r.bar_no ? `Attorney, State Bar of Texas No. ${r.bar_no}` : 'Attorney licensed in Texas'; V.attyBio = r.bio || '';
-    V.officeAddr = o.street ? `${o.street}, ${o.city || '[Office city]'}, Texas ${o.zip || ''}`.trim() : `${V.officeCity}, Texas`;
+    V.attyCred = r.bar_no ? `Attorney, State Bar of Texas No. ${r.bar_no}` : 'Attorney licensed in Texas'; V.attyBio = r.bio || '';
+    V.officeAddr = o.street ? `${o.street}, ${o.city || '[Office city]'}, Texas ${o.zip || ''}`.trim() : `${V.officeCity}, Texas`; V.officeLoc = o.street ? `${o.street}, ${o.city || '[Office city]'}, Texas` : `${V.officeCity}, Texas`;
     V.officeLine = o.street ? `Our primary office is at ${o.street}, ${o.city}, Texas ${o.zip || ''}.`.replace(/\s+\./, '.') : `Our primary office is in ${V.officeCity}, Texas.`;
     V.officeLineEs = o.street ? `Nuestra oficina principal está en ${o.street}, ${o.city}, Texas ${o.zip || ''}.`.replace(/\s+\./, '.') : `Nuestra oficina principal está en ${V.officeCity}, Texas.`;
     V.hours = o.hours || '';
@@ -110,9 +110,7 @@ const SFORGE = (() => {
     V.s_div = num(sum(CTY.map(c => c.filings.ttm.div || 0)));
     if (cts.length) { const t = k => sum(cts.map(c => c.filings.ttm[k] || 0));
       V.a_div = num(t('div')); V.a_divk = num(t('div_k')); V.a_divnk = num(t('div') - t('div_k')); V.a_sapcr = num(t('sapcr')); V.a_mod = num(t('mod')); V.a_enf = num(t('enf')); V.a_po = num(t('po')); V.a_ivd = num(t('ivd')); V.a_adopt = num(t('adopt')); V.a_cps = num(t('cps')); }
-    const certs = FIRM.certs(); V.certs = certs.length ? 'Board certification: ' + certs.join('; ') + '.' : '';
-    const at = (F.attorneys || []).filter(a => a.name);
-    V.attyListHTML = at.length ? '<ul>' + at.map(a => `<li><strong>${esc(a.name)}</strong>${a.bar_no ? ', State Bar of Texas No. ' + esc(a.bar_no) : ''}${a.since ? ', licensed in Texas since ' + esc(a.since) : ''}${a.tbls ? '. Board Certified, ' + esc(a.tbls) + ', Texas Board of Legal Specialization' : ''}.${a.bio ? ' ' + esc(a.bio) : ''}</li>`).join('') + '</ul>' : '';
+    const certs = FIRM.certs(); V.certs = certs.length ? certs.join('. ') + '.' : '';
     return V;
   }
   function countyVars(c, V, ms) {
@@ -130,7 +128,7 @@ const SFORGE = (() => {
       V.k_pendingLine = `At the end of ${V.through}, ${V.k_pending} divorce cases were pending in ${c.name} County, and the courts disposed of ${V.k_disposed} ${V.k_when}.`;
     } else V.k_pendingLine = '';
     V.k_married = num(c.acs && c.acs.married); V.k_offices = num(c.rates && c.rates.lawoffices);
-    const ct = COURTS[c.fips]; V.k_court = ct ? ct.n : ''; V.k_courtLine = ct ? `In ${c.name} County, family cases are heard at the ${ct.n}${ct.a ? ', ' + ct.a : ''}.` : '';
+    const ct = COURTS[c.fips]; V.k_court = ct ? ct.n : ''; V.k_courtAddr = ct ? ct.a || '' : ''; V.k_courtLine = ct ? `In ${c.name} County, family cases are heard at the ${ct.n}${ct.a ? ', ' + ct.a : ''}.` : '';
     V.k_hist = Object.keys(f.hist || {}).filter(y => f.hist[y] && f.hist[y].months === 12 && isN(f.hist[y].div)).sort().map(y => [y, N(f.hist[y].div), num(f.hist[y].div_k) || '']);
     const X = cityIndex(); const inPlan = (ms ? ms.cities : []).filter(x => x.county === c.fips);
     const top = inPlan.length ? inPlan : Object.values(X).filter(x => x.county === c.fips).sort((a, b) => b.married - a.married).slice(0, 6);
@@ -231,17 +229,7 @@ const SFORGE = (() => {
     if (F.founded) e.foundingDate = String(F.founded);
     const area = (ms ? ms.counties : []).map(c => ({ '@type': 'AdministrativeArea', name: c.name + ' County, Texas' })).concat((ms ? ms.cities : []).map(x => ({ '@type': 'City', name: x.name + ', Texas' }))); if (area.length) e.areaServed = area;
     const ks = activeLines(cfg).map(k => C.fill(C.LINES[k].nm, {})); if (ks.length) e.knowsAbout = ks;
-    const at = (F.attorneys || []).filter(a => a.name); if (at.length) e.employee = at.map(a => ({ '@id': baseUrl(cfg) + '/#attorney-' + slug(a.name) }));
     return e;
-  }
-  function attorneyNodes(cfg, ms, which) {
-    const F = FIRM.get(); const o = FIRM.primary(); const base = baseUrl(cfg); const en = entity(cfg, ms);
-    return (F.attorneys || []).map((a, i) => ({ a, i })).filter(x => x.a.name && which(x.i)).map(({ a }) => {
-      const n = { '@type': 'Attorney', '@id': base + '/#attorney-' + slug(a.name), name: a.name, url: base + '/attorney-' + slug(a.name) + '/', parentOrganization: { '@id': base + '/#organization' } };
-      if (en.telephone) n.telephone = en.telephone; if (en.address) n.address = en.address; if (en.areaServed) n.areaServed = en.areaServed; if (en.knowsAbout) n.knowsAbout = en.knowsAbout;
-      const cred = [{ '@type': 'EducationalOccupationalCredential', credentialCategory: 'license', name: 'License to practice law in Texas' + (a.bar_no ? ', State Bar of Texas No. ' + a.bar_no : ''), recognizedBy: { '@type': 'Organization', name: 'State Bar of Texas', url: 'https://www.texasbar.com/' } }];
-      if (a.tbls) cred.push({ '@type': 'EducationalOccupationalCredential', credentialCategory: 'certification', name: 'Board Certified, ' + a.tbls, recognizedBy: { '@type': 'Organization', name: 'Texas Board of Legal Specialization', url: 'https://www.tbls.org/' } });
-      n.hasCredential = cred; void o; return n; });
   }
   function testimonials(cfg) { const t = String(cfg.site.testimonials || '').trim(); if (!t) return null; const items = []; t.split(/\n+/).forEach(line => { const m = line.split('|').map(x => x.trim()); if (m[0]) items.push({ quote: m[0], name: m[1] || '', role: m[2] || '', rating: m[3] ? Number(m[3]) : undefined }); }); return items.length ? items : null; }
   function mediaSpec(p, cfg, V, assets) {
@@ -253,6 +241,7 @@ const SFORGE = (() => {
     if (p.kind !== 'guide' && p.kind !== 'faq' && p.kind !== 'attorney') m.hero = { source: a ? 'assets/' + a.file : 'library:' + q, alt, kind: 'image', priority: true };
     if (p.kind === 'attorney') { const at = (F.attorneys || [])[p.atty] || {}; const h = pick('atty:' + p.atty); m.headshot = { source: h ? 'assets/' + h.file : 'library:' + (at.name || 'attorney'), alt: C.house(`${at.name || 'Attorney'}, ${brand}`), kind: 'image', priority: true }; }
     const ri = FIRM.get().responsible || 0; const ra = FIRM.responsible(); if (ra.name && p.lang !== 'es') { const au = pick('atty:' + ri); m.author = { source: au ? 'assets/' + au.file : 'library:' + ra.name, alt: C.house(`${ra.name}, ${brand}`), kind: 'image' }; }
+    if (p.kind === 'home' || p.kind === 'about') (F.attorneys || []).forEach((at, i) => { const h = at.name && pick('atty:' + i); if (h) m['atty' + i] = { source: 'assets/' + h.file, alt: C.house(`${at.name}, ${brand}`), kind: 'image' }; });
     if (S.video_url && (p.kind === 'home' || p.kind === 'practice')) m.explainer = { source: S.video_url, alt: C.house(`${brand}, what a consultation looks like`), kind: 'video' };
     return m;
   }
@@ -261,11 +250,15 @@ const SFORGE = (() => {
       return { title: C.fill(L.nm, V), text: C.firstSentence(C.fill(L.lede, V)), url: own ? own.path : undefined, link: own ? 'Read more' : undefined }; });
   }
   function blueprint(p, cfg, pages, live, ms, assets) {
-    const V = varsFor(p, cfg, ms); const S = site(cfg); const F = FIRM.get();
-    const which = p.kind === 'attorney' ? (i => i === p.atty) : (p.kind === 'home' || p.kind === 'about') ? (() => true) : (i => i === (F.responsible || 0));
-    const ctx = { V, site: S, firm: F, lines: activeLines(cfg), internal: linksFor(p, live, '/' + p.slug + '/', cfg), crumbs: liveHas(live, '/'), media: mediaSpec(p, cfg, V, assets), entity: entity(cfg, ms),
-      extraSchema: attorneyNodes(cfg, ms, which), features: featuresFor(cfg, V, live, pages), testimonials: testimonials(cfg), today: todayISO() };
-    if (p.kind === 'attorney') { const a = (F.attorneys || [])[p.atty] || {}; ctx.author = { name: a.name, credentials: a.tbls ? `Board Certified, ${a.tbls}, Texas Board of Legal Specialization` : a.bar_no ? `Attorney, State Bar of Texas No. ${a.bar_no}` : 'Attorney licensed in Texas', bio: a.bio || '' }; }
+    const V = varsFor(p, cfg, ms); const S = site(cfg); const F = FIRM.get(); const media = mediaSpec(p, cfg, V, assets);
+    const firm = Object.assign({}, F, { county_names: FIRM.counties().map(cname), city_names: ms.cities.map(x => x.name) });
+    const attyPage = i => (pages || []).find(q => q.kind === 'attorney' && q.atty === i);
+    const cards = (F.attorneys || []).map((a, i) => { if (!a.name) return null; const ap = attyPage(i); const o = { name: a.name }; if (ap && liveHas(live, '/' + ap.slug + '/')) o.url = '/' + ap.slug + '/'; if (media['atty' + i]) o.media = 'atty' + i; return o; }).filter(Boolean);
+    let langAlt = null; if (p.kind === 'landing') { const twin = (pages || []).find(q => q.kind === 'landing' && q.line === p.line && q.city === p.city && q.fips === p.fips && q.lang !== p.lang); if (twin && liveHas(live, '/' + twin.slug + '/')) langAlt = { url: '/' + twin.slug + '/', lang: twin.lang }; }
+    const ctx = { V, site: S, firm, lines: activeLines(cfg), internal: linksFor(p, live, '/' + p.slug + '/', cfg), crumbs: liveHas(live, '/'), media, entity: entity(cfg, ms), extraSchema: [],
+      features: featuresFor(cfg, V, live, pages), testimonials: testimonials(cfg), today: todayISO(), attorneys: cards, counties: ms.counties.map(c => c.name), langAlt };
+    if (p.kind === 'attorney') { const a = (F.attorneys || [])[p.atty] || {}; const ap = attyPage(p.atty); ctx.author = { name: a.name, credentials: a.bar_no ? `Attorney, State Bar of Texas No. ${a.bar_no}` : 'Attorney licensed in Texas', bio: a.bio || '' };
+      ctx.attorney = { name: a.name, title: 'Attorney', bar_no: a.bar_no || undefined, tbls: a.tbls || undefined, since: a.since || undefined, bio: a.bio || undefined, url: ap ? '/' + ap.slug + '/' : undefined, languages: (F.languages || []).length > 1 ? undefined : undefined }; }
     const bp = C.blueprint(p, ctx); bp._v = V; return bp;
   }
 
@@ -275,12 +268,13 @@ const SFORGE = (() => {
     const lang = /^es/.test(bp.page.language || '') ? 'es' : 'en'; const txt = C.visibleText(bp);
     if (typeof LINT !== 'undefined') {
       txt.forEach(([where, t]) => { let res; try { res = LINT.screen(t, { kind: 'page', footer: false, lang }); } catch (e) { res = { findings: [] }; } (res.findings || []).forEach(f => add(f.id, f.sev, where, f.hit, f.title, f.rule, f.fix ? `${f.fix.from} to ${f.fix.to}` : f.why)); });
-      let all; try { all = LINT.screen(txt.map(x => x[1]).join('\n'), { kind: 'page', lang }); } catch (e) { all = { findings: [] }; }
-      (all.findings || []).filter(f => f.id === 'r702a' || !I.some(x => x.id === f.id)).forEach(f => add(f.id, f.sev, 'page', f.hit, f.title, f.rule, f.why));
+      /* the compiled page as Publish screens it: title, meta and the HTML, with the form, the attorney cards, the court facts and the disclaimer */
+      let all; try { all = LINT.screen((bp.page.title || '') + '\n' + (bp.page.meta_description || '') + '\n' + (r.html || ''), { kind: 'page', html: true, lang }); } catch (e) { all = { findings: [] }; }
+      (all.findings || []).filter(f => f.id === 'r702a' || !I.some(x => x.id === f.id)).forEach(f => add(f.id, f.sev, 'compiled page', f.hit, f.title, f.rule, f.why));
     } else add('LINT', 'warn', 'page', '', 'The compliance engine is not loaded; the copy was not screened', '', '');
-    const lint = r.lint || r.warnings || [];
-    lint.forEach((s, li) => { const block = /^BLOCK/.test(s); const media = /^MEDIA/.test(s); const links = /no internal links/.test(s); const msg = links ? 'No internal links yet: paste the live sitemap in step 4 and links are drawn from it' : media ? String(s).replace(/\s+[—–].*$/, '').replace(/^MEDIA: /, 'Media ') + ', resolved at deploy' : C.house(String(s).replace(/[—–]/g, ',').replace(/≤/g, 'at most '));
-      add('FORGE', block ? 'block' : (media || links) ? 'note' : 'warn', 'compiler ' + (li + 1), '', msg, '', ''); });
+    const iss = Array.isArray(r.issues) ? r.issues : (r.lint || r.warnings || []).map(msg => ({ sev: /^BLOCK/.test(msg) ? 'block' : /^MEDIA/.test(msg) ? 'note' : 'warn', msg }));
+    iss.forEach((x, li) => { const s = String(x.msg || ''); const links = /no internal links/.test(s); const media = /^MEDIA/.test(s); const msg = links ? 'No internal links yet: paste the live sitemap in step 4 and links are drawn from it' : media ? s.replace(/^MEDIA: /, 'Media ').replace(/\.\s+Resolved at deploy[\s\S]*$/i, '') + ', resolved at deploy' : s.replace(/^BLOCK: /, '');
+      add('FORGE', x.sev === 'block' ? 'block' : links || media ? 'note' : x.sev === 'info' ? 'info' : x.sev === 'note' ? 'note' : 'warn', 'compiler ' + (li + 1), '', msg, '', ''); });
     if ((bp.page.h1 || '').length > 70) add('LEN', 'warn', 'seo.h1', bp.page.h1.length + ' chars', 'H1 over 70 characters', '', 'Shorten it in the studio.');
     if ((bp.page.title || '').length > 60) add('LEN', 'warn', 'seo.title', bp.page.title.length + ' chars', 'Title over 60 characters', '', 'Shorten it in the studio.');
     if ((bp._missing || []).length) add('VARS', 'warn', 'template', bp._missing.join(', '), 'Template values without data on this page were dropped; read the page for gaps', '', 'Fill the firm profile or pick a place with the data.');
