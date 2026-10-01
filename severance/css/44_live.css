@@ -53,3 +53,16 @@
   #mod-live .toolbar .btn{flex:1 1 auto}
   #mod-live .lv-co{min-width:140px}
 }
+
+/* build 2: the next fourteen days, the shock outlook */
+#mod-live .lv-head{display:flex;justify-content:space-between;align-items:flex-start;gap:8px 16px;flex-wrap:wrap}
+#mod-live .lv-head>div:first-child{flex:1 1 320px;min-width:0}
+#mod-live .lv-n{margin:6px 0 10px}
+#mod-live .lv-n b{color:var(--title);font-weight:600}
+#mod-live .lv-n.k-hold{border-left:3px solid var(--critical);padding-left:8px;list-style:none;margin-left:-14px}
+#mod-live .lv-nw{line-height:1.4;margin-top:2px}
+#mod-live .lv-later{margin-top:10px}
+#mod-live .lv-narr2 li{margin:3px 0}
+#mod-live .lv-outc{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;margin:0 0 8px;font-size:13px;color:var(--ink-2)}
+#mod-live .lv-outs{margin-top:10px}
+#mod-live .lv-outs li{margin:4px 0}

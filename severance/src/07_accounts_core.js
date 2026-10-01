@@ -157,9 +157,29 @@ const ACCT = (() => {
     if (!r.ok) { const msg = j && (j.error && (j.error.message || j.error.error_description) || j.error_description || j.message || (Array.isArray(j) && j[0] && j[0].error && j[0].error.message) || (Array.isArray(j.Errors) && j.Errors[0] && j.Errors[0].Message)) || txt.slice(0, 200); throw new Error(`${r.status}: ${msg}`); }
     return j;
   }
-  const dstr = d => d.toISOString().slice(0, 10); const daysAgo = n => { const d = new Date(); d.setDate(d.getDate() - n); return d; };
-  const range = n => ({ since: dstr(daysAgo(n)), until: dstr(new Date()) });
+  /* ---------- dates: the firm's own calendar day ----------
+     Every range, window and month is built from local date parts in the firm's time zone: America/Chicago, or America/Denver when every
+     county in the firm profile keeps Mountain time (El Paso and Hudspeth), else the primary office's county decides. A UTC day turns over
+     at 7 pm Central, so building ranges from toISOString made a 30 day range 31 days in the evening and started month pacing a day early. */
+  const MOUNTAIN = new Set(['48141', '48229']);
+  let NOW = null;
+  function tzFirm() {
+    if (S && S.settings && S.settings.tz) return S.settings.tz;
+    try {
+      if (typeof FIRM === 'undefined' || !FIRM) return 'America/Chicago';
+      const cs = (typeof FIRM.counties === 'function' ? FIRM.counties() : []).map(String).filter(f => /^48\d{3}$/.test(f)); if (cs.length) return cs.every(f => MOUNTAIN.has(f)) ? 'America/Denver' : 'America/Chicago';
+      const p = typeof FIRM.primary === 'function' ? FIRM.primary() : null; let pc = p && /^48\d{3}$/.test(String(p.county || '')) ? String(p.county) : ''; if (!pc && p && p.zip && typeof ZI !== 'undefined' && ZI[String(p.zip).trim()]) pc = ZI[String(p.zip).trim()].county;
+      return pc && MOUNTAIN.has(pc) ? 'America/Denver' : 'America/Chicago';
+    } catch (e) { return 'America/Chicago'; }
+  }
+  function dayIn(d, tz) { try { const o = {}; new Intl.DateTimeFormat('en-US', { timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(d).forEach(x => { o[x.type] = x.value; }); if (o.year && o.month && o.day) return `${o.year}-${o.month}-${o.day}`; } catch (e) { } return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; }
+  const nowD = () => (NOW ? new Date(NOW) : new Date());
+  const dstr = d => dayIn(d, tzFirm());
+  const todayStr = () => dstr(nowD());
   const addDays = (s, n) => { const d = new Date(s + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
+  const dayAgo = n => addDays(todayStr(), -n);
+  /* n calendar days ending today, today included: range(30) is 30 days */
+  const range = n => { n = Math.max(1, Math.round(+n || 30)); const until = todayStr(); return { since: addDays(until, -(n - 1)), until }; };
   /* inclusive windows of len days: windows('2026-07-01', '2026-08-29', 30) → [{since:'2026-07-01', until:'2026-07-30'}, {since:'2026-07-31', until:'2026-08-29'}] */
   function windows(since, until, len) { const out = []; let a = since; let g = 0; while (a <= until && g++ < 400) { const b = addDays(a, len - 1); out.push({ since: a, until: b < until ? b : until }); a = addDays(b, 1); } return out; }
   /* a timestamp in an IANA zone → {date, hour}; UTC when the zone is unknown */
@@ -285,8 +305,8 @@ const ACCT = (() => {
     /* GET https://businessprofileperformance.googleapis.com/v1/locations/{id}:fetchMultiDailyMetricsTimeSeries?dailyMetrics=&dailyRange.startDate.year=... (discovery document businessprofileperformance v1) */
     try {
       const C = cfg('google'); if (C.gbpLocation) {
-        const a = await access('google'); const st = daysAgo(n), en = new Date(); const q = ['CALL_CLICKS', 'WEBSITE_CLICKS', 'BUSINESS_DIRECTION_REQUESTS', 'BUSINESS_IMPRESSIONS_MOBILE_MAPS', 'BUSINESS_IMPRESSIONS_MOBILE_SEARCH'].map(m => 'dailyMetrics=' + m).join('&');
-        const g = await J(`${String(C.gbpBase || 'https://businessprofileperformance.googleapis.com').replace(/\/+$/, '')}/v1/locations/${encodeURIComponent(String(C.gbpLocation).trim().replace(/^locations\//, ''))}:fetchMultiDailyMetricsTimeSeries?${q}&dailyRange.startDate.year=${st.getFullYear()}&dailyRange.startDate.month=${st.getMonth() + 1}&dailyRange.startDate.day=${st.getDate()}&dailyRange.endDate.year=${en.getFullYear()}&dailyRange.endDate.month=${en.getMonth() + 1}&dailyRange.endDate.day=${en.getDate()}`, { headers: { Authorization: 'Bearer ' + a } });
+        const a = await access('google'); const [sy, sm, sd] = R.since.split('-').map(Number), [ey, em, ed] = R.until.split('-').map(Number); const q = ['CALL_CLICKS', 'WEBSITE_CLICKS', 'BUSINESS_DIRECTION_REQUESTS', 'BUSINESS_IMPRESSIONS_MOBILE_MAPS', 'BUSINESS_IMPRESSIONS_MOBILE_SEARCH'].map(m => 'dailyMetrics=' + m).join('&');
+        const g = await J(`${String(C.gbpBase || 'https://businessprofileperformance.googleapis.com').replace(/\/+$/, '')}/v1/locations/${encodeURIComponent(String(C.gbpLocation).trim().replace(/^locations\//, ''))}:fetchMultiDailyMetricsTimeSeries?${q}&dailyRange.startDate.year=${sy}&dailyRange.startDate.month=${sm}&dailyRange.startDate.day=${sd}&dailyRange.endDate.year=${ey}&dailyRange.endDate.month=${em}&dailyRange.endDate.day=${ed}`, { headers: { Authorization: 'Bearer ' + a } });
         const rows3 = []; (g.multiDailyMetricTimeSeries || []).forEach(s => (s.dailyMetricTimeSeries || []).forEach(m => ((m.timeSeries && m.timeSeries.datedValues) || []).forEach(dv => { const d = dv.date; rows3.push(row({ src: 'gbp', kind: 'social', date: `${d.year}-${String(d.month).padStart(2, '0')}-${String(d.day).padStart(2, '0')}`, campaign: m.dailyMetric, calls: m.dailyMetric === 'CALL_CLICKS' ? +dv.value || 0 : 0, clicks: m.dailyMetric === 'WEBSITE_CLICKS' ? +dv.value || 0 : 0, conv: m.dailyMetric === 'BUSINESS_DIRECTION_REQUESTS' ? +dv.value || 0 : 0, imp: /IMPRESSIONS/.test(m.dailyMetric) ? +dv.value || 0 : 0 })); })));
         S.actuals.gbp = { fetched: new Date().toISOString(), range: R, rows: rows3 };
       }
@@ -383,7 +403,7 @@ const ACCT = (() => {
   const tkRow = (x, kind) => { const dm = x.dimensions || {}, m = x.metrics || {}; const ts = String((kind === 'hour' ? dm.stat_time_hour : dm.stat_time_day) || ''); return row({ src: 'tiktok', kind, date: ts.slice(0, 10), hour: kind === 'hour' ? +ts.slice(11, 13) : null, campaign: m.campaign_name || String(dm.campaign_id || ''), imp: +m.impressions || 0, clicks: +m.clicks || 0, spend: +m.spend || 0, leads: +m.conversion || 0, conv: +m.conversion || 0, note: m.cost_per_conversion != null ? `cpa ${m.cost_per_conversion} cpc ${m.cpc} ctr ${m.ctr}` : '' }); };
   async function pullTikTok(n) {
     const C = cfg('tiktok'); const t = tok('tiktok') || {}; const adv = String(C.advertiserId || (t.advertiserIds || [])[0] || '').trim(); if (!adv) throw new Error('TikTok Ads: no advertiser ID. Connect (the first authorized ad account is stored) or enter one.');
-    const R = { since: dstr(daysAgo(n - 1)), until: dstr(new Date()) }; const rows = []; const notes = []; const W = windows(R.since, R.until, 30);
+    const R = range(n); const rows = []; const notes = []; const W = windows(R.since, R.until, 30);
     for (const w of W) { (await tkReport(adv, ['campaign_id', 'stat_time_day'], w)).forEach(x => rows.push(tkRow(x, 'ads'))); try { (await tkReport(adv, ['campaign_id', 'stat_time_hour'], w)).forEach(x => rows.push(tkRow(x, 'hour'))); } catch (e) { notes.push(`hourly ${w.since} to ${w.until}: ${e.message}`); } }
     if (W.length > 1) notes.push(`${W.length} windows of 30 days`);
     S.actuals.tiktok = { fetched: new Date().toISOString(), range: R, rows, notes, ver: 'v1.3', advertiserId: adv }; await save('actuals'); return S.actuals.tiktok;
@@ -481,7 +501,7 @@ const ACCT = (() => {
     const g = (r, k) => { for (const i of (NUMK.includes(k) ? (ix[k] >= 0 ? [ix[k]] : []) : ixs[k] || [])) { const v = String(r[i] == null ? '' : r[i]).trim(); if (v !== '') return v; } return ''; };
     const src = String(srcLabel || '').trim().toLowerCase().replace(/[^a-z0-9 ]+/g, '').trim() || imp.src;
     const key = 'import:' + imp.src; const prev = S.actuals[key] || { rows: [] }; const seen = new Set(prev.rows.map(r => r.h).filter(Boolean));
-    const out = []; let dup = 0, skipped = 0; const today = dstr(new Date());
+    const out = []; let dup = 0, skipped = 0; const today = todayStr();
     rows.slice(hi + 1).forEach(r => {
       if (r.filter(x => String(x).trim()).length < 2 || /^total/i.test(String(r[0]).trim()) || (ix.campaign >= 0 && /^total/i.test(String(r[ix.campaign] || '').trim()))) return;
       const tp = tparts(g(r, 'date')); const date = tp.date || (imp.today ? today : ''); if (!date) { skipped++; return; }
@@ -517,7 +537,7 @@ const ACCT = (() => {
   /* The Google pull tags video and Local Services campaigns by channel type; once the YouTube or LSA provider has pulled its own rows, the Google copies are dropped here so nothing counts twice. */
   function rowsAll(kind) { const yt = !!(S.actuals.youtube && (S.actuals.youtube.rows || []).some(r => r.kind === 'ads' || r.kind === 'hour')); const lsa = !!(S.actuals.lsa && (S.actuals.lsa.rows || []).length); return Object.entries(S.actuals).flatMap(([k, a]) => (a.rows || []).filter(r => k !== 'google' || !((yt && r.src === 'youtube') || (lsa && r.src === 'lsa'))).map(r => Object.assign({ _src: k }, r))).filter(r => !kind || (Array.isArray(kind) ? kind.includes(r.kind) : r.kind === kind)); }
   const paidRows = () => rowsAll(['ads']);
-  const sinceOf = days => dstr(daysAgo(days || S.settings.range || 30));
+  const sinceOf = days => range(days || S.settings.range || 30).since;
   const blank = () => ({ spend: 0, imp: 0, clicks: 0, leads: 0, calls: 0, intake: 0, consults: 0, retained: 0, value: 0, tracked: 0 });
   function finish(o) { const L = Math.max(o.leads + o.calls, o.intake); o.leadsBest = L; o.cpl = L && o.spend ? o.spend / L : null; o.cpc = o.clicks ? o.spend / o.clicks : null; o.ctr = o.imp ? 100 * o.clicks / o.imp : null; o.cvr = o.clicks ? 100 * (o.leads + o.calls) / o.clicks : null; o.retainRate = o.intake ? 100 * o.retained / o.intake : (o.leads + o.calls) && o.retained ? 100 * o.retained / (o.leads + o.calls) : null; o.cpr = o.retained && o.spend ? o.spend / o.retained : null; o.roas = o.spend ? o.value / o.spend : null; return o; }
   function byLine(days) {
@@ -553,43 +573,73 @@ const ACCT = (() => {
   }
   const planBudget = () => (isN(+S.settings.plan) && +S.settings.plan > 0) ? +S.settings.plan : deskPlan().budget;
   function pacing(planB) {
-    const plan = planB != null ? planB : planBudget(); const now = new Date(); const m0 = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`; const dim = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate(); const day = now.getDate();
+    const plan = planB != null ? planB : planBudget(); const t = todayStr(); const [ty, tm, td] = t.split('-').map(Number); const m0 = `${t.slice(0, 7)}-01`; const dim = new Date(Date.UTC(ty, tm, 0)).getUTCDate(); const day = td;
     const rows = paidRows().filter(r => r.date >= m0 && r.hour == null); const spend = sum(rows.map(r => r.spend)); const bySrc = {}, byL = {}; rows.forEach(r => { bySrc[r.src] = (bySrc[r.src] || 0) + r.spend; const k = r.line || 'unmapped'; byL[k] = (byL[k] || 0) + r.spend; }); const days = [...new Set(rows.map(r => r.date))].length;
     return { spend, bySrc, byLine: byL, linePlan: deskPlan().lines, days, day, dim, rate: days ? spend / days : 0, projected: days ? spend / days * dim : 0, plan: plan || null, onPace: plan ? spend / (plan * day / dim) : null };
   }
-  function social(days) { const since = dstr(daysAgo(days || 90)); const out = {}; rowsAll('social').filter(r => r.date >= since).forEach(r => { (out[r.src] = out[r.src] || []).push(r); }); return out; }
+  function social(days) { const since = range(days || 90).since; const out = {}; rowsAll('social').filter(r => r.date >= since).forEach(r => { (out[r.src] = out[r.src] || []).push(r); }); return out; }
   /* ---------- feedback to the Campaign Desk ----------
      rates(line, days=90): observed figures for one LINE_META line (or every line when line is empty or 'all'). Each figure is null below its threshold:
        cpc     $ per click on Google and Microsoft search rows (50 clicks)
        cvr     % of those clicks that became a lead or call (50 clicks and 3 leads)
-       retain  % of intake inquiries retained (10 decided inquiries; open inquiries younger than 14 days are left out), else from generic rows that carry retained counts
+       retain  % of intake inquiries retained: at least 10 leads with an outcome (retained or lost; open inquiries younger than 14 days are
+               left out, older ones count as not retained) and at least 3 of them retained; else from generic rows that carry retained counts
+               (10 leads, 3 retained)
+       fee     the realized fee: the average value of a retained matter, from at least 3 retained matters that carry a value (intake exports
+               with a fee or value column, generic sheets with a value column)
        n       leads observed in the window (the larger of platform conversions and intake records); since, until: the dates the figures cover */
-  const MIN = { clicks: 50, leads: 3, intake: 10, youngDays: 14 };
+  const MIN = { clicks: 50, leads: 3, intake: 10, retained: 3, fees: 3, youngDays: 14 };
   function rates(line, days) {
     days = days || 90; const since = sinceOf(days); const all = !line || line === 'all'; const on = r => all || r.line === line;
     const paid = paidRows().filter(r => r.date >= since && r.hour == null && on(r)); const search = paid.filter(r => r.src === 'google' || r.src === 'microsoft');
     const sS = sum(search.map(r => r.spend)), cS = sum(search.map(r => r.clicks)), lS = sum(search.map(r => r.leads + r.calls));
-    const young = dstr(daysAgo(MIN.youngDays)); const intake = rowsAll('intake').filter(r => r.date >= since && on(r)); const decided = intake.filter(r => r.stage !== 'open' || r.date < young); const ret = decided.filter(r => r.retained).length;
+    const young = dayAgo(MIN.youngDays); const intake = rowsAll('intake').filter(r => r.date >= since && on(r)); const decided = intake.filter(r => r.stage !== 'open' || r.date < young); const ret = decided.filter(r => r.retained).length;
     const gen = paid.filter(r => r.hasRet); const gRet = sum(gen.map(r => r.retained)), gL = sum(gen.map(r => r.leads + r.calls));
     const leadRows = rowsAll('lead').filter(r => r.date >= since && on(r)); const platLeads = sum(paid.map(r => r.leads + r.calls)) + leadRows.length;
     const spend = sum(paid.map(r => r.spend)); const retained = ret + gRet; const n = Math.max(platLeads, intake.length);
     const dates = paid.concat(intake, leadRows).map(r => r.date).filter(Boolean).sort();
-    const retain = decided.length >= MIN.intake ? 100 * ret / decided.length : gL >= MIN.intake ? 100 * gRet / gL : null;
-    return { line: all ? 'all' : line, days, since: dates[0] || since, until: dates[dates.length - 1] || dstr(new Date()), cpc: cS >= MIN.clicks && sS > 0 ? sS / cS : null, cvr: cS >= MIN.clicks && lS >= MIN.leads ? 100 * lS / cS : null, retain, n: Math.round(n), clicks: cS, leads: Math.round(lS), intake: decided.length, retained, spend, cpl: n && spend ? spend / n : null, cpr: retained && spend ? spend / retained : null, value: sum(intake.filter(r => r.retained).map(r => r.value || 0)) + sum(gen.map(r => r.value || 0)) };
+    const retain = decided.length >= MIN.intake && ret >= MIN.retained ? 100 * ret / decided.length : gL >= MIN.intake && gRet >= MIN.retained ? 100 * gRet / gL : null;
+    /* the realized fee: retained matters that carry a value (an intake row is one matter; a generic row with a value spreads it over its retained count) */
+    const valued = intake.filter(r => r.retained && +r.value > 0).map(r => ({ v: +r.value, k: 1 })).concat(gen.filter(r => r.retained > 0 && +r.value > 0).map(r => ({ v: +r.value, k: +r.retained })));
+    const feeN = sum(valued.map(x => x.k)), feeV = sum(valued.map(x => x.v)); const fee = feeN >= MIN.fees ? feeV / feeN : null;
+    return { line: all ? 'all' : line, days, since: dates[0] || since, until: dates[dates.length - 1] || todayStr(), cpc: cS >= MIN.clicks && sS > 0 ? sS / cS : null, cvr: cS >= MIN.clicks && lS >= MIN.leads ? 100 * lS / cS : null, retain, fee, feeN, n: Math.round(n), clicks: cS, leads: Math.round(lS), intake: decided.length, retained, spend, cpl: n && spend ? spend / n : null, cpr: retained && spend ? spend / retained : null, value: sum(intake.filter(r => r.retained).map(r => r.value || 0)) + sum(gen.map(r => r.value || 0)) };
   }
-  /* Apply: the observed rates (above their thresholds) become the corrections the Campaign Desk reads through ACCT.applied(); Revert drops them */
+  /* Apply: the observed rates (above their thresholds) become the corrections the Campaign Desk reads through ACCT.applied(); Revert drops them.
+     The desk's own inputs from before the FIRST Apply are kept (applied.prev) through any number of later Applies, so Apply, Apply again,
+     Revert always lands on the values the desk had before the first Apply. Each Apply records exactly what changed (applied.changes):
+     every input whose value moved, from the value in force before (the last Apply's correction, else the desk's own input) to the new one. */
+  const FIELDS = ['cpc', 'cvr', 'retain', 'fee'];
+  const FIELD_NAME = { cpc: 'cost per click', cvr: 'conversion rate', retain: 'retained rate', fee: 'realized fee' };
+  const fix = (k, v) => +(+v).toFixed(k === 'cpc' ? 2 : k === 'fee' ? 0 : 1);
+  function deskFee(line, prev) { try { const f = (typeof FIRM !== 'undefined' && FIRM.get) ? (FIRM.get().fees || {}) : {}; const v = line ? f[line] : null; return isN(+v) && +v > 0 ? +v : null; } catch (e) { return null; } }
   function applyToModels() {
-    const keys = (LM() ? Object.keys(LM()) : LKEYS); const allR = rates('all'); const patch = { lines: {} }; ['cpc', 'cvr', 'retain'].forEach(k => { if (allR[k] != null) patch[k] = +allR[k].toFixed(k === 'cpc' ? 2 : 1); });
-    keys.forEach(k => { const r = rates(k); const L = {}; ['cpc', 'cvr', 'retain'].forEach(f => { if (r[f] != null) L[f] = +r[f].toFixed(f === 'cpc' ? 2 : 1); }); if (Object.keys(L).length) patch.lines[k] = Object.assign(L, { n: r.n, since: r.since }); });
-    S.settings.applied = { at: new Date().toISOString(), prev: deskPlan(), patch, since: allR.since, until: allR.until }; save('settings'); return patch;
+    const keys = (LM() ? Object.keys(LM()) : LKEYS); const allR = rates('all'); const patch = { lines: {} }; FIELDS.forEach(k => { if (allR[k] != null) patch[k] = fix(k, allR[k]); });
+    keys.forEach(k => { const r = rates(k); const L = {}; FIELDS.forEach(f => { if (r[f] != null) L[f] = fix(f, r[f]); }); if (Object.keys(L).length) patch.lines[k] = Object.assign(L, { n: r.n, since: r.since }); });
+    const before = S.settings.applied; const dp = deskPlan(); const prev = before && before.prev ? before.prev : Object.assign({}, dp, { fees: (() => { const o = {}; keys.forEach(k => { const v = deskFee(k); if (v != null) o[k] = v; }); return o; })() });
+    /* what each input was before this Apply: the last Apply's correction, else the desk's own input (overall cpc, cvr and retained rate
+       from the desk; the fee per line from the firm profile); null when the desk's own per line figure is not known here */
+    const wasApplied = (line, f) => before ? (line === 'all' ? before.patch[f] : ((before.patch.lines || {})[line] || {})[f]) : undefined;
+    const fromOf = (line, f) => { const bp = wasApplied(line, f); if (bp != null) return { v: bp, src: 'applied' }; if (line === 'all') return { v: f === 'fee' ? null : (prev[f] != null ? prev[f] : null), src: 'own' }; return { v: f === 'fee' && (prev.fees || {})[line] != null ? prev.fees[line] : null, src: 'own' }; };
+    const changes = []; const push = (line, f, to) => { const was = wasApplied(line, f); if (to == null && was == null) return; if (to != null && was != null && to === was) return; const fr = fromOf(line, f); changes.push({ line, field: f, from: fr.v, fromSrc: fr.src, to }); };
+    FIELDS.forEach(f => push('all', f, patch[f] != null ? patch[f] : null));
+    [...new Set(Object.keys(patch.lines).concat(before ? Object.keys(before.patch.lines || {}) : []))].forEach(line => FIELDS.forEach(f => push(line, f, (patch.lines[line] || {})[f] != null ? patch.lines[line][f] : null)));
+    S.settings.applied = { at: nowD().toISOString(), first: before ? before.first || before.at : nowD().toISOString(), prev, patch, changes, since: allR.since, until: allR.until, count: before ? (before.count || 1) + 1 : 1 };
+    save('settings'); Object.defineProperty(patch, 'changes', { value: changes, enumerable: false, configurable: true }); return patch;
   }
-  function revertModels() { if (!S.settings.applied) return false; S.settings.applied = null; save('settings'); return true; }
+  /* Revert: the desk goes back to its own inputs, the ones in force before the first Apply; returns them (or false when nothing was applied) */
+  function revertModels() { const a = S.settings.applied; if (!a) return false; S.settings.applied = null; save('settings'); return { prev: a.prev || null, first: a.first || a.at, patch: a.patch, count: a.count || 1 }; }
+  /* the human sentence for a list of changes: "all lines cost per click $4.10 to $3.85; Modification retained rate n/a to 22.0%" */
+  function changeText(changes, nameOf) {
+    const v = (f, x) => f === 'cpc' ? '$' + (+x).toFixed(2) : f === 'fee' ? '$' + Math.round(+x).toLocaleString('en-US') : (+x).toFixed(1) + '%';
+    const fr = c => c.from == null ? (c.fromSrc === 'applied' ? 'n/a' : 'the desk\'s own figure') : v(c.field, c.from) + (c.fromSrc === 'own' ? (c.field === 'fee' ? ' (firm profile)' : ' (desk input)') : '');
+    return (changes || []).map(c => `${c.line === 'all' ? 'all lines' : (nameOf ? nameOf(c.line) : lineName(c.line))} ${FIELD_NAME[c.field]} ${fr(c)} to ${c.to == null ? 'the desk\'s own figure' : v(c.field, c.to)}`);
+  }
   const applied = () => S.settings.applied ? S.settings.applied.patch : null;
   async function clearAll(what) { if (what === 'tokens' || !what) S.tokens = {}; if (what === 'actuals' || !what) { S.actuals = {}; S.imports = []; S.settings.applied = null; } if (what === 'cfg') S.cfg = {}; await save(what || 'all'); }
   function status(p) { const P = PROVIDERS[p]; const t = tok(p), C = cfg(p); const req = P.fields.filter(f => !(f[2] && f[2].optional)).map(f => f[0]); const configured = P.tokenOf ? req.every(k => C[k]) : P.fields.slice(0, 1).every(([k]) => C[k]); if (!configured && (!t || P.tokenOf)) return { state: 'unconfigured', label: P.tokenOf && t ? 'Enter the IDs below' : 'Not configured' }; if (!t) return { state: 'configured', label: P.tokenOf ? `Waiting for the ${PROVIDERS[P.tokenOf].name} sign in` : 'Configured, not connected' }; if (expired(t) && !t.refresh) return { state: 'expired', label: 'Token expired' }; const far = t.exp && t.exp > Date.now() + 5 * 365 * 864e5; return { state: 'connected', label: (P.tokenOf ? 'Uses the Google sign in' : t.pasted ? 'Token pasted' : t.long ? 'Connected, 60 day token' : 'Connected') + (t.exp && !far ? ' · expires ' + stamp(t.exp) : far ? ' · long lived token' : '') }; }
   const stamp = ms => { const d = new Date(ms); return (typeof dateOf === 'function' ? dateOf(d) : d.toDateString()) + ', ' + d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }); };
   async function requestHosts() { if (!RT || !RT.permissions) return false; try { return await RT.permissions.request({ origins: HOST_ORIGINS }); } catch (e) { return false; } }
   async function hostsGranted() { if (!RT || !RT.permissions) return null; try { return await RT.permissions.contains({ origins: ['https://googleads.googleapis.com/*', 'https://graph.facebook.com/*'] }); } catch (e) { return null; } }
-  return { ENV, RT, KEY, HOST_ORIGINS, PROVIDERS, PORDER, IMPORTERS, VERS, MIN, get S() { return S; }, ready: () => readyP, isReady: () => ready, cfg, tok, status, setCfg, connect, refreshToken, pasteToken, disconnect, test, pull, importCSV, templateCSV, redirectUrl, rowsAll, byLine, bySource, byHour, observedGrid, byZip, byCounty, pacing, social, rates, applied, applyToModels, applyToDesk: applyToModels, revertModels, deskPlan, planBudget, clearAll, lineOf, lineName, chanOf, stageOf, geoOf, tparts, settings: () => S.settings, setSettings: p => { Object.assign(S.settings, p); return save('settings'); }, requestHosts, hostsGranted, range, base, ver, resolveVer, windows, localParts, stamp };
+  return { ENV, RT, KEY, HOST_ORIGINS, PROVIDERS, PORDER, IMPORTERS, VERS, MIN, get S() { return S; }, ready: () => readyP, isReady: () => ready, cfg, tok, status, setCfg, connect, refreshToken, pasteToken, disconnect, test, pull, importCSV, templateCSV, redirectUrl, rowsAll, byLine, bySource, byHour, observedGrid, byZip, byCounty, pacing, social, rates, applied, applyToModels, applyToDesk: applyToModels, revertModels, changeText, FIELDS, FIELD_NAME, deskPlan, planBudget, clearAll, lineOf, lineName, chanOf, stageOf, geoOf, tparts, settings: () => S.settings, setSettings: p => { Object.assign(S.settings, p); return save('settings'); }, requestHosts, hostsGranted, range, base, ver, resolveVer, windows, localParts, stamp, tz: () => tzFirm(), today: () => todayStr(), dayIn, setClock(iso) { NOW = iso || null; } };
 })();
 globalThis.ACCT = ACCT;

@@ -24,8 +24,10 @@ runFile('src/25_m06_lines.js');
 runFile('src/07_accounts_core.js');
 const ACCT = globalThis.ACCT; await ACCT.ready();
 eq(ACCT.ENV, 'chrome', 'extension');
-const dstr = d => d.toISOString().slice(0, 10); const ago = n => { const d = new Date(); d.setDate(d.getDate() - n); return d; };
-const D3 = dstr(ago(3)), D5 = dstr(ago(5)), D8 = dstr(ago(8)), D20 = dstr(ago(20)), D40 = dstr(ago(40)), D2 = dstr(ago(2)), TODAY = dstr(new Date());
+/* the firm's own calendar days (ACCT.today()), not the UTC day */
+const addDays = (s, n) => { const d = new Date(s + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
+const TODAY = ACCT.today(); const agoS = n => addDays(TODAY, -n);
+const D3 = agoS(3), D5 = agoS(5), D8 = agoS(8), D20 = agoS(20), D40 = agoS(40), D2 = agoS(2);
 const slash = iso => { const [y, m, d] = iso.split('-'); return `${+m}/${+d}/${y}`; };
 const pick = (r, ks) => ks.map(k => r[k]);
 
@@ -120,7 +122,7 @@ const bs = ACCT.bySource(90); const bg = bs.find(o => o.src === 'google'); asser
 assert(ACCT.byZip(90).some(z => z.zip === '77005' && z.intake >= 1 && z.retained >= 1), 'byZip counts intake and retained'); const bc = ACCT.byCounty(90).find(c => c.county === '48201'); assert(bc && bc.retained >= 2 && bc.cname === 'Harris', 'byCounty: Harris');
 const hrs = ACCT.byHour(90); assert(hrs[14].calls >= 1 && hrs[18].calls >= 1 && hrs[10].calls >= 1, 'call and LSA lead hours in the hour chart');
 /* retained rate for the desk: 10 decided inquiries minimum; open inquiries younger than 14 days are left out */
-const rows = ['Created,Practice Area,Referral Source,Status']; for (let i = 0; i < 12; i++) rows.push(`${dstr(ago(30 + i))},Custody,Google Ads,${i < 3 ? 'Hired' : 'Not Hired'}`); rows.push(`${D2},Custody,Google Ads,Pending`, `${D3},Custody,Google Ads,Consultation Scheduled`, `${D40},Custody,Google Ads,Pending`);
+const rows = ['Created,Practice Area,Referral Source,Status']; for (let i = 0; i < 12; i++) rows.push(`${agoS(30 + i)},Custody,Google Ads,${i < 3 ? 'Hired' : 'Not Hired'}`); rows.push(`${D2},Custody,Google Ads,Pending`, `${D3},Custody,Google Ads,Consultation Scheduled`, `${D40},Custody,Google Ads,Pending`);
 ACCT.importCSV(rows.join('\n') + '\n', 'clio-grow');
 const rs = ACCT.rates('sapcr'); eq([rs.intake, rs.retained], [15, 4], 'decided custody inquiries: 12 new, the earlier Clio one, the consult and the old pending one; the young pending one waits; retained adds the Nextdoor sheet'); eq(rs.retain, 20, 'retained rate in percent, from intake only: 3 of 15');
 eq(ACCT.rates('prenup').retain, null, 'too few inquiries: no retained rate');
@@ -128,4 +130,29 @@ const rg = ACCT.rates('gray'); eq(rg.retain, null, 'generic rows without enough 
 const p = ACCT.applyToModels(); assert(p.lines.sapcr && p.lines.sapcr.retain === 20 && p.lines.sapcr.n >= 15, 'the custody retained rate is applied: ' + JSON.stringify(p.lines.sapcr));
 const pc = ACCT.pacing(10000); assert(pc.plan === 10000 && pc.dim >= 28 && isN(pc.spend), 'pacing'); eq([ACCT.deskPlan().budget, ACCT.deskPlan().cpc], [null, null], 'no desk, no plan'); globalThis.DESKX = { ASM0: { google: { cost: 9.87, cvr: 6, ret: 22 } } }; eq([ACCT.deskPlan().cpc, ACCT.deskPlan().cvr, ACCT.deskPlan().retain, ACCT.deskPlan().from], [9.87, 6, 22, 'the Campaign Desk defaults'], 'desk defaults');
 store.set('sev.desk', { budget: 8000, asm: { google: { cost: 11, cvr: 7, ret: 25 } } }); eq([ACCT.deskPlan().budget, ACCT.deskPlan().cpc, ACCT.deskPlan().cvr, ACCT.deskPlan().retain], [8000, 11, 7, 25], 'desk budget and assumptions from sev.desk'); BUS.emit('plan', { budget: 12000, cpc: 9.5, cvr: 6.5, retain: 20, lines: [{ key: 'div_k', budget: 5000, cpc: 9.5 }, { key: 'mod', budget: 2000 }] }); eq([ACCT.deskPlan().budget, ACCT.deskPlan().cpc, ACCT.deskPlan().lines.div_k, ACCT.deskPlan().lines.mod, ACCT.pacing().plan], [12000, 9.5, 5000, 2000, 12000], 'the BUS plan (module 10 payload shape) wins'); await ACCT.setSettings({ plan: 9000 }); eq(ACCT.pacing().plan, 9000, 'a typed plan overrides');
+
+/* the realized fee: at least 3 retained matters that carry a value */
+const fr = ['Created,Practice Area,Referral Source,Status,Retainer Amount']; fr.push(`${agoS(31)},Premarital agreement,Google Ads,Hired,2500`, `${agoS(32)},Premarital agreement,Google Ads,Hired,3500`); for (let i = 0; i < 10; i++) fr.push(`${agoS(33 + i)},Premarital agreement,Google Ads,Not Hired,`);
+ACCT.importCSV(fr.join('\n') + '\n', 'clio-grow'); let rp = ACCT.rates('prenup'); eq([rp.fee, rp.feeN, rp.retain], [null, 2, null], 'two valued matters: no realized fee; two retained: no retained rate yet');
+ACCT.importCSV(`Created,Practice Area,Referral Source,Status,Retainer Amount\n${agoS(44)},Premarital agreement,Google Ads,Hired,3000\n`, 'clio-grow'); rp = ACCT.rates('prenup'); eq([rp.fee, rp.feeN, rp.retained, rp.intake], [3000, 3, 3, 13], 'three valued matters: the realized fee is their average'); eq(Math.round(rp.retain * 10) / 10, 23.1, 'three retained of thirteen with an outcome: the retained rate clears both thresholds');
+
+/* Apply, Apply again, Revert: the inputs from before the FIRST Apply come back, and every Apply says exactly what changed */
+ACCT.revertModels(); BUS.emit('plan', { budget: 12000, cpc: 9.5, cvr: 6.5, retain: 20 });
+const a1 = ACCT.applyToModels(); const ap1 = ACCT.settings().applied; eq([ap1.count, ap1.prev.cpc, ap1.prev.cvr, ap1.prev.retain], [1, 9.5, 6.5, 20], 'the first Apply keeps the desk inputs it replaces');
+assert(a1.lines.prenup && a1.lines.prenup.fee === 3000, 'the realized fee is applied: ' + JSON.stringify(a1.lines.prenup));
+assert(a1.changes.some(c => c.line === 'sapcr' && c.field === 'retain' && c.from == null && c.to === 20) && a1.changes.some(c => c.line === 'prenup' && c.field === 'fee' && c.to === 3000), 'changes name each input: ' + JSON.stringify(a1.changes));
+const txt = ACCT.changeText(a1.changes); assert(txt.some(t => /^Custody and SAPCR retained rate the desk's own figure to 20\.0%$/.test(t) || /retained rate .* to 20\.0%$/.test(t)) && txt.some(t => /realized fee .* to \$3,000$/.test(t)), 'change text: ' + JSON.stringify(txt));
+BUS.emit('plan', { budget: 12000, cpc: 1.11, cvr: 9.9, retain: 33 });   /* the desk now announces the corrected figures */
+const a2 = ACCT.applyToModels(); const ap2 = ACCT.settings().applied; eq([ap2.count, ap2.prev.cpc, ap2.prev.cvr, ap2.prev.retain], [2, 9.5, 6.5, 20], 'Apply again keeps the first prev'); eq(a2.changes.length, 0, 'nothing changed between the two Applies');
+ACCT.importCSV(`Created,Practice Area,Referral Source,Status,Retainer Amount\n${agoS(45)},Premarital agreement,Google Ads,Hired,6000\n`, 'clio-grow'); const a3 = ACCT.applyToModels(); const c3 = a3.changes.find(c => c.line === 'prenup' && c.field === 'fee'); eq([c3.from, c3.fromSrc, c3.to], [3000, 'applied', 3750], 'a third Apply changes only what moved, from the last correction');
+const rv = ACCT.revertModels(); eq([rv.prev.cpc, rv.prev.cvr, rv.prev.retain, rv.count], [9.5, 6.5, 20, 3], 'Revert restores the values before the first Apply'); eq(ACCT.applied(), null, 'reverted'); eq(ACCT.revertModels(), false, 'nothing left to revert');
+
+/* the firm's calendar day: America/Chicago, America/Denver for El Paso and Hudspeth, from local date parts */
+eq(ACCT.tz(), 'America/Chicago', 'Central by default');
+ACCT.setClock('2026-10-02T03:30:00Z');   /* 10:30 pm Central on October 1, already October 2 in UTC */
+eq(ACCT.today(), '2026-10-01', 'the evening is still the firm\'s day'); eq(ACCT.range(30), { since: '2026-09-02', until: '2026-10-01' }, 'a 30 day range is 30 days');
+const pc1 = ACCT.pacing(31000); eq([pc1.day, pc1.dim], [1, 31], 'month pacing starts on October 1');
+globalThis.FIRM = { counties: () => ['48141', '48229'], primary: () => ({}) }; eq(ACCT.tz(), 'America/Denver', 'El Paso and Hudspeth keep Mountain time');
+ACCT.setClock('2026-10-02T05:30:00Z'); eq(ACCT.today(), '2026-10-01', '11:30 pm Mountain is still October 1'); globalThis.FIRM.counties = () => ['48141', '48201']; eq([ACCT.tz(), ACCT.today()], ['America/Chicago', '2026-10-02'], 'a firm with a Central county runs on Central time');
+globalThis.FIRM = { counties: () => [], primary: () => ({ county: '48141' }) }; eq(ACCT.tz(), 'America/Denver', 'with no counties the primary office decides'); delete globalThis.FIRM; ACCT.setClock(null);
 console.log('importers ok');

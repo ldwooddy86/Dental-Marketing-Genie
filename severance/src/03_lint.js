@@ -43,8 +43,67 @@ const LINT = (() => {
     tcpa: { label: 'Telephone Consumer Protection Act, 47 U.S.C. § 227', url: 'https://www.law.cornell.edu/uscode/text/47/227' },
     bc302: { label: 'Texas Business and Commerce Code ch. 302', url: 'https://statutes.capitol.texas.gov/Docs/BC/htm/BC.302.htm' },
     house: { label: 'Severance house style (docs/ARCHITECTURE.md, rule 8.2)', url: '' },
-    limits: { label: 'Each platform\'s published ad specifications', url: '' }
+    limits: { label: 'Each platform\'s published ad specifications', url: '' },
+    findlawyer: { label: 'State Bar of Texas, Find a Lawyer (the public license search)', url: 'https://www.texasbar.com/AM/Template.cfm?Section=Find_A_Lawyer&Template=/CustomSource/MemberDirectory/Search_Form_Client_Main.cfm' },
+    gv81: { label: 'Texas Government Code ch. 81 (the State Bar Act)', url: 'https://statutes.capitol.texas.gov/Docs/GV/htm/GV.81.htm' },
+    g_review: { label: 'Google Search Central, review snippet structured data (self serving reviews)', url: 'https://developers.google.com/search/docs/appearance/structured-data/review-snippet' },
+    trackers: { label: 'Meta Business Tools Terms and Google Ads policies on sensitive information; Texas Data Privacy and Security Act (Bus. & Com. Code ch. 541)', url: 'https://statutes.capitol.texas.gov/Docs/BC/htm/BC.541.htm' },
+    aba10457: { label: 'ABA Formal Opinion 10-457, lawyer websites and inquiries from prospective clients', url: 'https://www.americanbar.org/' },
+    safety: { label: 'Severance safety standard for family violence and CPS pages (module 21, Safety mode)', url: '' }
   };
+  const longDate = d => { const m = String(d || '').match(/^(\d{4})(?:-(\d{2})(?:-(\d{2}))?)?$/); if (!m) return String(d || ''); if (!m[2]) return m[1]; return m[3] ? `${MONTHS[+m[2] - 1]} ${+m[3]}, ${m[1]}` : `${MONTHS[+m[2] - 1]} ${m[1]}`; };
+
+  /* ---- the figures table: ONE source for the stale number rules below (stale_cap, stale_per_child, stale_arrears, the fee test) and
+     for module 11's law clock. status: live, stale, died, vetoed, repealed, adopted (in force, effect still open), none (does not exist).
+     v: ✔ already in Severance before build 2 (the rule whys, LINE_META .angle and .law, FCOPY.LAW), web: checked by web search for build 2
+     (October 2026), verify: not yet checked against the primary text. now: the live figure a stale one was replaced by. */
+  const FIGURES = [
+    { id: 'cap', topic: 'Child support', label: 'Guideline cap on monthly net resources', value: '$11,700', num: 11700, status: 'live', since: '2025-09-01', until: '2031-08-31', cite: 'Tex. Fam. Code § 154.125(a-1); Office of the Attorney General adjustment', note: 'Adjusted for inflation every six years, effective September 1 of the adjustment year; the next adjustment takes effect September 1, 2031.', v: '✔', src: 'COMP_RULES r13; LINE_META.div_k.angle and .law' },
+    { id: 'cap_2019', topic: 'Child support', label: 'Guideline cap before September 1, 2025', value: '$9,200', num: 9200, status: 'stale', since: '2019-09-01', until: '2025-08-31', now: 'cap', cite: 'Tex. Fam. Code § 154.125(a-1)', note: 'The most common stale number in Texas support copy.', v: '✔', src: 'COMP_RULES r13' },
+    { id: 'cap_2013', topic: 'Child support', label: 'Guideline cap from September 1, 2013', value: '$8,550', num: 8550, status: 'stale', since: '2013-09-01', until: '2019-08-31', now: 'cap', cite: 'Tex. Fam. Code § 154.125(a-1)', v: 'web', src: 'stale_cap rule; dates checked by web search' },
+    { id: 'cap_2007', topic: 'Child support', label: 'Guideline cap set in 2007', value: '$7,500', num: 7500, status: 'stale', since: '2007', until: '2013-08-31', now: 'cap', strict: true, cite: 'Tex. Fam. Code § 154.125', note: 'Matched only beside "net", "cap" or "monthly net": $7,500 is also a common fee.', v: 'web', src: 'stale_cap rule; year checked by web search' },
+    { id: 'cap1', topic: 'Child support', label: 'Guideline support for one child at the cap (20%)', value: '$2,340', num: 2340, status: 'live', since: '2025-09-01', cite: 'Tex. Fam. Code § 154.125', v: '✔', src: 'FCOPY.LAW.cap1' },
+    { id: 'cap1_2019', topic: 'Child support', label: 'One child at the cap before September 1, 2025', value: '$1,840', num: 1840, status: 'stale', since: '2019-09-01', until: '2025-08-31', now: 'cap1', cite: 'Tex. Fam. Code § 154.125', v: '✔', src: 'stale_per_child rule' },
+    { id: 'arrears', topic: 'Child support', label: 'Interest on unpaid child support', value: '6% simple', num: 6, status: 'live', cite: 'Tex. Fam. Code § 157.265', v: '✔', src: 'COMP_RULES r18; LINE_META.enf.angle' },
+    { id: 'arrears_3', topic: 'Child support', label: 'Arrears interest said to be 3%', value: '3%', num: 3, status: 'stale', now: 'arrears', cite: 'Tex. Fam. Code § 157.265', note: 'Never the Texas rate: the 2025 bill to change the rate died, and copy that reports 3% is wrong.', v: '✔', src: 'COMP_RULES r18' },
+    { id: 'hb4213', topic: 'Bills', label: 'HB 4213 (2025), the arrears interest rate', value: 'Died', status: 'died', since: '2025', cite: 'HB 4213, 89th Legislature; § 157.265 unchanged', v: '✔', src: 'COMP_RULES r18' },
+    { id: 'sb849', topic: 'Bills', label: 'SB 849 (2025), an equal parenting time presumption', value: 'Died', status: 'died', since: '2025', cite: 'SB 849, 89th Legislature; § 153.135 unchanged', v: '✔', src: 'COMP_RULES r16' },
+    { id: 'sb2878', topic: 'Bills', label: 'SB 2878 (2025), the omnibus courts bill', value: 'Vetoed June 22, 2025', status: 'vetoed', since: '2025-06-22', cite: 'Texas Legislative Reference Library, vetoes of the 89th Legislature', note: 'Do not cite it as law.', v: 'web', src: 'checked by web search' },
+    { id: 'ground_o', topic: 'CPS and termination', label: 'Termination ground (O), service plan noncompliance', value: 'Repealed', status: 'repealed', since: '2025-09-01', cite: 'HB 116 (2025); Tex. Fam. Code § 161.001(b)(1)', note: 'Applies to suits pending on September 1, 2025; the remaining grounds were relettered (A) to (U).', v: '✔', src: 'COMP_RULES r19; LINE_META.cps.angle' },
+    { id: 'anon', topic: 'CPS and termination', label: 'Anonymous reports to DFPS', value: 'Not accepted', status: 'repealed', since: '2023-09-01', cite: 'HB 63 (2023); Tex. Fam. Code § 261.304', v: '✔', src: 'COMP_RULES r20' },
+    { id: 'po_dur', topic: 'Protective orders', label: 'Protective order tied to a pending divorce, SAPCR or criminal case', value: 'Until 2 years after the case ends', status: 'live', since: '2025-09-01', cite: 'Tex. Fam. Code § 85.025(a-2) to (a-4); SB 1120 (2025)', note: '(a-2) a pending divorce: until the second anniversary of the final decree; (a-3) a pending SAPCR: of the final order; (a-4) a pending family violence charge: of the final disposition.', v: 'web', src: 'LINE_META.po.angle and .law; subsections checked by web search' },
+    { id: 'po_future', topic: 'Protective orders', label: 'Protective order: proof that violence is likely to recur', value: 'Removed', status: 'repealed', since: '2023', cite: 'Tex. Fam. Code ch. 85 (2023)', note: 'The applicant proves that family violence occurred.', v: '✔', src: 'LINE_META.po.angle' },
+    { id: 'espo', topic: 'Possession', label: 'Expanded standard possession order as the default within 50 miles', value: 'Since 2021', status: 'live', since: '2021-09-01', cite: 'Tex. Fam. Code § 153.3171', note: 'Not a 2025 change.', v: '✔', src: 'LINE_META.div_k.angle; effective date checked by web search' },
+    { id: 'legal_sep', topic: 'Divorce', label: 'Legal separation', value: 'Does not exist in Texas', status: 'none', cite: 'Tex. Fam. Code title 1 (no legal separation)', note: 'Temporary orders, protective orders, a SAPCR or a partition agreement are the real alternatives.', v: '✔', src: 'COMP_RULES r08' },
+    { id: 'prop15', topic: 'Constitution', label: 'Proposition 15, the parental rights amendment', value: 'Adopted; effect not yet defined', status: 'adopted', since: '2025-11', cite: 'Tex. Const. art. I, § 37', note: 'As of June 2026 the Supreme Court of Texas had not defined its effect.', v: '✔', src: 'prop15 rule' },
+    { id: 'maint', topic: 'Spousal maintenance', label: 'Court ordered maintenance cap', value: '$5,000 a month or 20% of average monthly gross income, whichever is less', num: 5000, status: 'live', cite: 'Tex. Fam. Code § 8.055', v: '✔', src: 'COMP_RULES r12; FCOPY.LAW.maint' }
+  ];
+  const FIG = {}; FIGURES.forEach(f => { FIG[f.id] = f; });
+  const figure = id => FIG[id] || null;
+  const staleOf = id => FIGURES.filter(f => f.now === id && f.status === 'stale');
+  const moneyPat = n => String(n).replace(/(\d)(?=(\d{3})+$)/g, '$1,?');
+  const NUMW = { 3: ['three', 'tres'], 6: ['six', 'seis'] };
+  const CAP = FIG.cap, CAP1 = FIG.cap1, ARR = FIG.arrears;
+  const CAP_OLD = staleOf('cap'), CAP1_OLD = staleOf('cap1'), ARR_OLD = staleOf('arrears');
+  const CAP_LOOSE = CAP_OLD.filter(f => !f.strict).map(f => moneyPat(f.num)).join('|'), CAP_STRICT = CAP_OLD.filter(f => f.strict).map(f => moneyPat(f.num)).join('|'), CAP_ALL = CAP_OLD.map(f => moneyPat(f.num)).join('|');
+  const CAP1_ALL = CAP1_OLD.map(f => moneyPat(f.num)).join('|');
+  const ARR_PCT = ARR_OLD.map(f => f.num + ' ?%').join('|'), ARR_EN = ARR_OLD.map(f => (NUMW[f.num] || [])[0]).filter(Boolean).join('|'), ARR_ES = ARR_OLD.map(f => (NUMW[f.num] || [])[1]).filter(Boolean).join('|');
+  const ARR_NEW = [ARR.num + '%', (NUMW[ARR.num] || [])[0] || String(ARR.num), (NUMW[ARR.num] || [])[1] || String(ARR.num)];
+
+  /* ---- statutory standards (module 11's law clock); every one is already cited in Severance (FCOPY.LAW, LINE_META .law, the rule
+     whys) except where v says web (checked by web search for build 2) */
+  const STANDARDS = [
+    { cite: '§ 6.301', topic: 'Divorce residency', text: 'One spouse has lived in Texas for 6 months and in the county of filing for 90 days.', v: '✔', src: 'FCOPY.LAW.res and res90' },
+    { cite: '§ 6.702', topic: 'Waiting period', text: 'No divorce is granted until 60 days after the petition is filed, except in some family violence cases.', v: '✔', src: 'FCOPY.LAW.wait; COMP_RULES r14' },
+    { cite: '§ 7.001', topic: 'Property division', text: 'The community estate is divided in a manner the court deems just and right; an even split is not required.', v: '✔', src: 'COMP_RULES r07; FCOPY.LAW.just' },
+    { cite: 'ch. 8', topic: 'Spousal maintenance', text: `Court ordered maintenance needs a statutory gate (family violence, a marriage of 10 years with inability to meet minimum reasonable needs, or disability) and is capped at ${FIG.maint.value} (§ 8.055).`, v: '✔', src: 'COMP_RULES r12; FCOPY.LAW.maint and maint10' },
+    { cite: '§ 154.125', topic: 'Child support guidelines', text: `20% of monthly net resources for one child, 25% for two, 30% for three, 35% for four, 40% for five and at least 40% for six or more, on net resources up to ${CAP.value} a month.`, v: '✔', src: 'FCOPY.LAW.pct and cap' },
+    { cite: '§§ 153.131 and 153.135', topic: 'Conservatorship', text: 'Joint managing conservatorship is presumed to be in the child\'s best interest; it does not require equal periods of possession.', v: '✔', src: 'LINE_META.div_k.law; COMP_RULES r16' },
+    { cite: '§ 153.3171', topic: 'Possession', text: 'Parents who live within 50 miles get the expanded standard possession order by default, unless the parent elects otherwise or the court finds it is not in the child\'s best interest.', v: '✔', src: 'FCOPY.LAW.espo' },
+    { cite: '§ 153.009', topic: 'Child interview', text: 'On request in a case tried without a jury, the judge must interview a child 12 or older in chambers; the child\'s wishes do not decide the case.', v: '✔', src: 'COMP_RULES r10; FCOPY.LAW.child12' },
+    { cite: 'ch. 85', topic: 'Protective orders', text: 'The court must find that family violence occurred. A final order usually runs up to 2 years; an order tied to a pending divorce, SAPCR or family violence charge runs until 2 years after that case ends (§ 85.025(a-2) to (a-4)).', v: '✔', src: 'LINE_META.po.angle and .law; FCOPY.LAW.po2 and posapcr' },
+    { cite: '§ 161.001', topic: 'Termination', text: 'Parental rights end only on clear and convincing evidence of a statutory ground and that termination is in the child\'s best interest.', v: 'web', src: 'LINE_META.adopt.law; the standard checked by web search' }
+  ];
 
   /* ---- matching helpers. Spanish patterns use Unicode letter boundaries because \b does not see accented letters. */
   const esRe = src => new RegExp('(?<![\\p{L}\\d])(?:' + src + ')(?![\\p{L}\\d])', 'giu');
@@ -161,14 +220,15 @@ const LINT = (() => {
     { id: 'alimony_myth', alias: 'r12', fam: FACT, sev: 'block', t: 'Alimony myth', rule: 'Tex. Fam. Code ch. 8', src: 'fc8', v: '✔', lang: 'en', neg: 'myth',
       re: /\b(?:no alimony in texas|texas (?:has|does) no(?:t have)? alimony|alimony is (?:standard|automatic|guaranteed))\b/gi,
       why: 'Spousal maintenance exists, is presumed unwarranted, gated (10 year marriage, family violence, disability) and capped at the lesser of $5,000 a month or 20% of average gross income.' },
-    { id: 'stale_cap', alias: 'r13', fam: STALE, sev: 'block', t: 'Stale child support cap', rule: 'Tex. Fam. Code § 154.125; OAG adjustment eff. Sept. 1, 2025', src: 'fc154', v: '✔', lang: 'any',
-      re: /\$\s?(?:9,?200|8,?550)\b|\$\s?7,?500\s*(?:net|cap|a month in net|monthly net)/gi, when: /support|net resources|\bcap(?:ped)?\b|guideline|manutenci[oó]n|pensi[oó]n/i,
-      skip: /\b(?:from|was|were|used to be|no longer|previously|formerly|old|replaced|up from|rose from|raised from|increased from|instead of)\b[^.;\n]{0,24}\$\s?(?:9,?200|8,?550|7,?500)/gi,
-      fix: h => h.replace(/\$\s?(?:9,?200|8,?550|7,?500)/, '$11,700'),
-      why: 'The guideline cap is $11,700 in monthly net resources since September 1, 2025 ($2,340 for one child at the cap). $9,200 is stale. The safe fix replaces the number; a sentence that says the cap rose from $9,200 is left alone.' },
-    { id: 'stale_per_child', fam: STALE, sev: 'block', t: 'Stale one child amount at the cap', rule: 'Tex. Fam. Code § 154.125', src: 'fc154', v: '✔', lang: 'any',
-      re: /\$\s?1,?840\b/g, when: /support|manutenci[oó]n|pensi[oó]n/i, skip: /\b(?:from|was|used to be|no longer|previously|old|up from|rose from)\b[^.;\n]{0,24}\$\s?1,?840/gi, fix: () => '$2,340',
-      why: '20% of the old $9,200 cap was $1,840. At the current $11,700 cap the guideline for one child is $2,340 a month.' },
+    /* the stale number rules read the figures table (FIGURES above): change a figure there and the rule, its fix and its reason follow */
+    { id: 'stale_cap', alias: 'r13', fam: STALE, sev: 'block', t: 'Stale child support cap', rule: `Tex. Fam. Code § 154.125; OAG adjustment eff. ${longDate(CAP.since)}`, src: 'fc154', v: '✔', lang: 'any', figs: ['cap'].concat(CAP_OLD.map(f => f.id)),
+      re: new RegExp(`\\$\\s?(?:${CAP_LOOSE})\\b` + (CAP_STRICT ? `|\\$\\s?(?:${CAP_STRICT})\\s*(?:net|cap|a month in net|monthly net)` : ''), 'gi'), when: /support|net resources|\bcap(?:ped)?\b|guideline|manutenci[oó]n|pensi[oó]n/i,
+      skip: new RegExp(`\\b(?:from|was|were|used to be|no longer|previously|formerly|old|replaced|up from|rose from|raised from|increased from|instead of)\\b[^.;\\n]{0,24}\\$\\s?(?:${CAP_ALL})`, 'gi'),
+      fix: h => h.replace(new RegExp(`\\$\\s?(?:${CAP_ALL})`), CAP.value),
+      why: `The guideline cap is ${CAP.value} in monthly net resources since ${longDate(CAP.since)} (${CAP1.value} for one child at the cap). ${CAP_OLD.map(f => f.value).join(', ')} ${CAP_OLD.length > 1 ? 'are' : 'is'} stale. The safe fix replaces the number; a sentence that says the cap rose from ${CAP_OLD[0].value} is left alone.` },
+    { id: 'stale_per_child', fam: STALE, sev: 'block', t: 'Stale one child amount at the cap', rule: 'Tex. Fam. Code § 154.125', src: 'fc154', v: '✔', lang: 'any', figs: ['cap1'].concat(CAP1_OLD.map(f => f.id)),
+      re: new RegExp(`\\$\\s?(?:${CAP1_ALL})\\b`, 'g'), when: /support|manutenci[oó]n|pensi[oó]n/i, skip: new RegExp(`\\b(?:from|was|used to be|no longer|previously|old|up from|rose from)\\b[^.;\\n]{0,24}\\$\\s?(?:${CAP1_ALL})`, 'gi'), fix: () => CAP1.value,
+      why: `20% of the old ${CAP_OLD[0].value} cap was ${CAP1_OLD.map(f => f.value).join(' or ')}. At the current ${CAP.value} cap the guideline for one child is ${CAP1.value} a month.` },
     { id: 'sixty_days', alias: 'r14', fam: FACT, sev: 'warn', t: 'Sixty days as a promise', rule: 'Tex. Fam. Code § 6.702', src: 'fc6', v: '✔', lang: 'en',
       re: /\b(?:divorced? (?:in|within|takes) (?:about |around |just |only |as little as )?(?:60|sixty) days|(?:60|sixty)[ -]day (?:divorce|turnaround)|two month divorce|divorce in two months)\b|\bdivorced?\b[^.\n]{0,30}?\b(?:done|finished|final|finali[sz]ed|complete(?:d)?|over|granted|wrapped up)\s+(?:in|within)\s+(?:about |around |just |only |as little as )?(?:60|sixty) days\b/gi,
       skip: /\bdivorced?\b[^.\n]{0,30}?\b(?:cannot|can't|can ?not|won't|will not|is not|isn't)\b[^.\n]{0,24}?(?:60|sixty) days/gi,
@@ -182,11 +242,11 @@ const LINT = (() => {
     { id: 'lay_terms', alias: 'r17', fam: FACT, sev: 'info', t: 'Lay terms without the Texas term', rule: 'Terminology', src: 'fc153', v: '✔', lang: 'en',
       re: /\b(?:full custody|sole custody|visitation)\b/gi, when: t => !/conservatorship|possession and access/i.test(t),
       why: 'Use the lay term for search but define the Texas term on the page: sole managing conservatorship, possession and access, the exclusive right to designate the primary residence. "Full custody" has no legal meaning. Copy that already uses the Texas term is not flagged.' },
-    { id: 'stale_arrears', alias: 'r18', fam: STALE, sev: 'block', t: 'Stale arrears interest', rule: '§ 157.265; HB 4213 (2025) died', src: 'fc157', v: '✔', lang: 'any',
-      re: /\b(?:3%|three percent)\s+(?:simple\s+)?(?:interest|on arrears|annual interest)\b|\b(?:arrears|arrearages?|back (?:child )?support)\b[^.\n]{0,40}?(?:3%|\bthree percent\b)|(?:3 ?%|tres por ciento) de inter[eé]s/gi,
+    { id: 'stale_arrears', alias: 'r18', fam: STALE, sev: 'block', t: 'Stale arrears interest', rule: `${ARR.cite.replace(/^Tex\. Fam\. Code /, '')}; HB 4213 (2025) died`, src: 'fc157', v: '✔', lang: 'any', figs: ['arrears', 'hb4213'].concat(ARR_OLD.map(f => f.id)),
+      re: new RegExp(`\\b(?:${ARR_OLD.map(f => f.num + '%').join('|')}|${ARR_EN} percent)\\s+(?:simple\\s+)?(?:interest|on arrears|annual interest)\\b|\\b(?:arrears|arrearages?|back (?:child )?support)\\b[^.\\n]{0,40}?(?:${ARR_OLD.map(f => f.num + '%').join('|')}|\\b(?:${ARR_EN}) percent\\b)|(?:${ARR_PCT}|(?:${ARR_ES}) por ciento) de inter[eé]s`, 'gi'),
       when: /arrear|back (?:child )?support|child support|support|atrasad|manutenci[oó]n/i,
-      fix: h => h.replace(/3 ?%/, '6%').replace(/three percent/i, 'six percent').replace(/tres por ciento/i, 'seis por ciento'),
-      why: 'Child support arrears accrue 6% simple interest. The 2025 bill to change the rate did not pass.' },
+      fix: h => h.replace(new RegExp(`(?:${ARR_PCT})`), ARR_NEW[0]).replace(new RegExp(`(?:${ARR_EN}) percent`, 'i'), ARR_NEW[1] + ' percent').replace(new RegExp(`(?:${ARR_ES}) por ciento`, 'i'), ARR_NEW[2] + ' por ciento'),
+      why: `Child support arrears accrue ${ARR.value} interest (${ARR.cite}). The 2025 bill to change the rate did not pass.` },
     { id: 'ground_o', alias: 'r19', fam: STALE, sev: 'block', t: 'Repealed termination ground', rule: 'HB 116 (2025)', src: 'fc161', v: '✔', lang: 'en', neg: 'myth',
       re: /\bground \(O\)|\bground O\b|161\.001\(b\)\(1\)\(O\)/gi, skip: /\b(?:repealed|former|formerly|old|abolished)\b[^.\n]{0,25}ground \(?O\)?/gi,
       why: 'Ground (O), service plan noncompliance, was repealed effective September 1, 2025, including for pending suits; grounds were relettered (A) to (U).' },
@@ -321,13 +381,37 @@ const LINT = (() => {
     { id: 'sms_consent', fam: CONS, sev: 'warn', t: 'Text message without opt out language', rule: 'TCPA, 47 U.S.C. § 227; Bus. & Com. Code ch. 302 as amended by SB 140 (Sep 1, 2025)', src: 'tcpa', v: '◐', lang: 'any', kinds: ['sms'], test: smsTest,
       why: 'Marketing texts need documented consent and opt out instructions ("Reply STOP to opt out").', settle: 'Is there an unchecked consent box, STOP language and a chapter 302 registration or exemption?' },
 
-    /* web tests on raw HTML */
+    /* web tests on the raw page HTML (scripts, schema and forms included). The page kind (protective order, CPS, intake) comes from the
+       title, the h1 and og:title, or from opts.sensitive ('po' | 'cps' | false) when the caller knows it (the Site Forge passes it) */
     { id: 'web_pixel', fam: WEB, sev: 'warn', t: 'Tracking pixel without a privacy notice link', rule: 'Platform terms; Texas Data Privacy and Security Act (Bus. & Com. Code ch. 541)', src: 'bc302', v: '◐', lang: 'any', html: true, test: webPixelTest,
       why: 'A page that loads the Meta pixel, Google tag manager or TikTok pixel should link a privacy notice that names the data collected and how to opt out. Family law visitors are a sensitive audience.', settle: 'Is there a privacy notice linked from every page with the tag?' },
-    { id: 'web_precheck', fam: WEB, sev: 'warn', t: 'Pre checked consent box', rule: 'TCPA; Texas SB 140', src: 'tcpa', v: '◐', lang: 'any', html: true, test: webPrecheckTest,
+    { id: 'WEB1', fam: WEB, sev: 'warn', t: 'Pixel or tag manager on an intake, protective order or CPS page', rule: 'Meta Business Tools Terms and Google Ads sensitive information policies; Bus. & Com. Code ch. 541', src: 'trackers', v: '◐', lang: 'any', html: true, test: web1Test,
+      why: 'A visitor on an intake form, a protective order page or a CPS page is telling the site something sensitive. A Meta pixel, a tag manager or a dataLayer event there can send that visit, and sometimes the form fields, to an ad platform, and someone who shares the device may see the ads that follow. Keep tags and third party scripts off these pages and count leads in the firm\'s own intake system.', settle: 'Is the tag excluded from these URLs (a trigger exception in the tag manager), and does no form field leave the site?' },
+    { id: 'WEB2', was: 'web_precheck', fam: WEB, sev: 'warn', t: 'Pre checked consent box', rule: 'TCPA, 47 U.S.C. § 227; Bus. & Com. Code ch. 302 as amended by SB 140 (2025)', src: 'tcpa', v: '◐', lang: 'any', html: true, test: webPrecheckTest,
       why: 'Consent to calls and texts must be given, not assumed: leave the box unchecked and optional.', settle: 'Leave consent unchecked and optional.' },
-    { id: 'web_rating', fam: WEB, sev: 'warn', t: 'Self served aggregateRating in schema', rule: 'Google review snippet guidelines; 16 CFR Part 465 if fabricated', src: 'ftc465', v: '◐', lang: 'any', html: true, test: webRatingTest,
-      why: 'Remove self served ratings from LegalService schema; show real reviews with a dated source instead.', settle: 'Remove the self served rating from the schema.' },
+    { id: 'WEB3', was: 'web_rating', fam: WEB, sev: 'warn', t: 'Self serving rating in LegalService or Attorney schema', rule: 'Google review snippet guidelines (self serving reviews); 16 CFR Part 465 if fabricated', src: 'g_review', v: '◐', lang: 'any', html: true, test: webRatingTest,
+      why: 'Google does not show review stars for a LocalBusiness or Organization (LegalService and Attorney are both) when the business publishes reviews of itself on its own site, and a rating that is not real or not current is a misleading claim. Remove aggregateRating and review from the firm\'s schema; show real reviews with their source and date instead.', settle: 'Remove the self served rating from the schema.' },
+    { id: 'WEBRESP', fam: WEB, sev: 'block', t: 'No responsible lawyer and office city in the page source', rule: 'Rule 7.02(a)', src: 'tdrpc', v: '✔', lang: 'any', html: true, test: webRespTest,
+      why: 'Every page of a firm\'s website is an advertisement: its source must name a lawyer responsible for the content and that lawyer\'s primary practice location. The test reads the whole source, the visible text, the schema and the footer.', settle: 'Does the template footer or the page carry the responsible lawyer and the primary office city?' },
+    { id: 'WEB5', fam: WEB, sev: 'warn', t: 'Contact form without the no attorney client relationship notice', rule: 'Rule 7.01(a); ABA Formal Opinion 10-457', src: 'aba10457', v: '◐', lang: 'any', html: true, test: web5Test,
+      why: 'A visitor who sends case details through a form can believe the firm now represents them. Say beside the form that sending it does not create an attorney client relationship and ask for no confidential details.', settle: 'Does the form, its consent text or the page say that sending it does not create an attorney client relationship?' },
+    { id: 'WEB6', fam: WEB, sev: 'warn', t: 'Protective order page without a quick exit', rule: 'Severance safety standard for family violence pages', src: 'safety', v: '✔', lang: 'any', html: true, test: web6Test,
+      why: 'Someone reading about protective orders may be watched. A "Leave this site" button, and the Escape key, that replace the page with a neutral site let the reader leave in a second and keep the page out of the back button. The Site Forge adds one when Safety mode is on.', settle: 'Is there a visible quick exit at the top of the page?' },
+
+    /* the license battery: Texas bar numbers (8 digits) in copy checked against the firm's roster (module 11, sev.comp.roster, seeded from
+       the firm profile). Nothing is fetched: a number the roster does not hold is not observable here and goes to the State Bar search */
+    { id: 'BAROK', fam: TX, sev: 'info', t: 'Bar number matches the roster', rule: 'Rule 7.01(a); State Bar Act, Gov. Code ch. 81', src: 'findlawyer', v: '◐', lang: 'any', test: barTest('BAROK'),
+      why: 'The bar number printed in the copy belongs to the lawyer the roster lists under it, with an active status. Confirm it on the State Bar of Texas Find a Lawyer search on the day the piece runs.', settle: 'A dated State Bar search result for the lawyer and number.' },
+    { id: 'BARINACT', fam: TX, sev: 'block', t: 'Bar number of a lawyer not eligible to practice', rule: 'Rule 7.01(a); Gov. Code § 81.102 (State Bar membership required to practice)', src: 'gv81', v: '◐', lang: 'any', test: barTest('BARINACT'),
+      why: 'The roster shows the lawyer under this bar number as inactive, suspended or otherwise not eligible to practice in Texas. Copy that offers that lawyer\'s services misleads the reader. Check the live State Bar search; if the roster is out of date, update it.', settle: 'What does the State Bar of Texas search show today for this number?' },
+    { id: 'BARNONE', fam: TX, sev: 'info', t: 'Bar number not in the roster (not observable here)', rule: 'Rule 7.01(a); State Bar of Texas Find a Lawyer', src: 'findlawyer', v: '◐', lang: 'any', obs: false, test: barTest('BARNONE'),
+      why: 'The copy prints a Texas bar number the firm roster does not hold. Severance fetches nothing, so it cannot say whose number it is: search it on the State Bar of Texas Find a Lawyer page and apply the null result taxonomy (module 11) before treating a blank as a finding.', settle: 'Search the number on the State Bar of Texas Find a Lawyer page and record the name, status and date.' },
+    { id: 'BARNAME', fam: TX, sev: 'warn', t: 'Lawyer name and bar number do not match', rule: 'Rule 7.01(a)', src: 'findlawyer', v: '◐', lang: 'any', self: true, test: barTest('BARNAME'),
+      why: 'The copy pairs a lawyer\'s name with a bar number the roster lists under someone else, or prints a different number for a lawyer the roster holds. A mismatched number sends readers who check to the wrong lawyer.', settle: 'Which number is right? Check the roster and the State Bar search.' },
+    { id: 'TBLSNO', fam: TX, sev: 'block', t: 'Board certification the roster does not support', rule: 'Rule 7.02(b) and 7.01(a)', src: 'tbls', v: '✔', lang: 'any', self: true, test: barTest('TBLSNO'),
+      why: 'The copy says a named lawyer is Board Certified in an area the firm roster does not list for that lawyer. Only a current Texas Board of Legal Specialization certification may be claimed, and it belongs to the lawyer who holds it.', settle: 'The TBLS search result for the lawyer named, or remove the claim.' },
+    { id: 'OFFICE2', fam: TX, sev: 'warn', t: 'Wording implies an office where the firm has none', rule: 'Rule 7.01(a); Rule 7.02(a)', src: 'tdrpc', v: '◐', lang: 'any', self: true, test: officeTest,
+      why: 'Phrases such as "our Frisco office", "office in Frisco" or "located in Frisco" tell the reader the firm has an office there. If the firm profile lists no office in that city, say "serving Frisco from our office in Plano" instead.', settle: 'Is there a staffed office in that city? Add it to the firm profile, or rewrite the phrase.' },
 
     /* placeholders and house style */
     { id: 'ph', fam: HOUSE, sev: 'block', t: 'Unfilled placeholder', rule: 'Rule 7.01(a)', src: 'house', v: '✔', lang: 'any', noComp: true, test: placeholderTest,
@@ -390,7 +474,7 @@ const LINT = (() => {
     if (F && F.ready && F.F.adFooter) h.fixTo = F.F.adFooter();
     return [h];
   }
-  const LAW_NUMS = new Set([11700, 9200, 8550, 7500, 2340, 1840, 5000]);
+  const LAW_NUMS = new Set(FIGURES.filter(f => f.num > 100).map(f => f.num));   // statutory dollar figures are never fees (the figures table)
   function feeTest(t, ctx) {
     const re = /\$\s?(\d{1,3}(?:,\d{3})+|\d{2,6})(?:\.\d\d)?(?!\d)/g; const out = []; let m;
     const fees = ctx.firm ? Object.values(ctx.firm.g.fees || {}).filter(v => v != null && v !== '').map(Number) : []; const cf = ctx.firm && ctx.firm.g.consult ? +ctx.firm.g.consult.fee : null;
@@ -426,7 +510,150 @@ const LINT = (() => {
   function smsTest(t) { return /\bSTOP\b/.test(t) ? [] : [{ at: -1, hit: '' }]; }
   function webPixelTest(t, ctx) { const h = ctx.raw; const m = h.match(/fbevents\.js|googletagmanager|gtag\(|analytics\.tiktok|clarity\.ms|snap\.licdn/i); return m && !/privacy/i.test(h) ? [{ at: -1, hit: m[0] }] : []; }
   function webPrecheckTest(t, ctx) { const m = ctx.raw.match(/<input[^>]*type=["']?checkbox[^>]*\bchecked\b[^>]*>/i); return m ? [{ at: -1, hit: m[0].slice(0, 80) }] : []; }
-  function webRatingTest(t, ctx) { const m = ctx.raw.match(/"aggregateRating"/i); return m ? [{ at: -1, hit: m[0] }] : []; }
+  /* WEB3: aggregateRating or review on the firm's own node (LegalService, Attorney, LocalBusiness, Organization) in the JSON-LD */
+  const SELF_TYPES = /^(?:LegalService|Attorney|LocalBusiness|Organization|ProfessionalService|Corporation)$/;
+  function ldBlocks(raw) { const out = []; const re = /<script\b[^>]*type\s*=\s*["']?application\/ld\+json["']?[^>]*>([\s\S]*?)<\/script\s*>/gi; let m; while ((m = re.exec(raw))) out.push(m[1]); return out; }
+  function webRatingTest(t, ctx) {
+    const hits = [];
+    ldBlocks(ctx.raw).forEach(b => {
+      let j; try { j = JSON.parse(b); } catch (e) { if (/"(?:aggregateRating|review)"\s*:/.test(b) && /LegalService|Attorney|LocalBusiness|Organization/.test(b)) hits.push('aggregateRating in a JSON-LD block that does not parse'); return; }
+      const walk = n => { if (Array.isArray(n)) { n.forEach(walk); return; } if (!n || typeof n !== 'object') return; const types = [].concat(n['@type'] || []).map(String);
+        if (types.some(x => SELF_TYPES.test(x)) && (n.aggregateRating || n.review)) hits.push(`${n.aggregateRating ? 'aggregateRating' : 'review'} on ${types.join('/')}`);
+        for (const k in n) if (n[k] && typeof n[k] === 'object') walk(n[k]); };
+      walk(j); });
+    return hits.length ? [{ at: -1, hit: [...new Set(hits)].join('; ') }] : [];
+  }
+  /* what kind of page the HTML is: protective order or family violence ('po'), CPS ('cps') from the title, h1 and og:title (or the
+     caller's opts.sensitive), a contact form, a quick exit */
+  const PO_HEAD = /\bprotective orders?\b|\bfamily violence\b|\bdomestic violence\b|\bdating violence\b|(?<![\p{L}])(?:[oó]rden(?:es)? de protecci[oó]n|violencia (?:familiar|dom[eé]stica))(?![\p{L}])/iu;
+  const CPS_HEAD = /\bCPS\b|\bDFPS\b|\bchild protective services\b|\btermination of parental rights\b|(?<![\p{L}])(?:servicios de protecci[oó]n infantil|defensa ante CPS)(?![\p{L}])/iu;
+  function headOf(raw) {
+    const out = [String(raw).split('<')[0]]; const re = /<(title|h1)\b[^>]*>([\s\S]*?)<\/\1\s*>/gi; let m; while ((m = re.exec(raw))) out.push(m[2].replace(/<[^>]+>/g, ' '));
+    const og = String(raw).match(/<meta\b[^>]*(?:property|name)\s*=\s*["']og:title["'][^>]*>/i); if (og) { const c = og[0].match(/content\s*=\s*["']([^"']*)/i); if (c) out.push(c[1]); }
+    return out.join('\n');
+  }
+  const QUICK_EXIT = /\b(?:class|id)\s*=\s*["'][^"']*\b(?:quick[-_ ]?exit|safe[-_ ]?exit|exit[-_ ](?:site|page|button|now)|leave[-_ ](?:site|page)|forge-exit)\b|\bdata-(?:forge-)?(?:quick-)?exit\b|>\s*(?:Leave this (?:site|page)|Quick exit|Exit (?:this )?(?:site|page)|Exit now|Salir de (?:este|esta) (?:sitio|p[aá]gina)|Salida r[aá]pida)\s*</i;
+  function pageClass(raw, o) {
+    raw = String(raw || ''); o = o || {};
+    let sensitive = o.sensitive === 'po' || o.sensitive === 'cps' ? o.sensitive : '';
+    if (!sensitive && o.sensitive !== false) { const head = headOf(raw); sensitive = PO_HEAD.test(head) ? 'po' : CPS_HEAD.test(head) ? 'cps' : ''; }
+    const forms = raw.match(/<form\b[\s\S]*?(?:<\/form\s*>|$)/gi) || [];
+    const contact = forms.some(f => /<textarea\b|<input\b[^>]*\btype\s*=\s*["']?(?:tel|email)\b|<input\b[^>]*\bname\s*=\s*["']?(?:name|full_?name|first_?name|phone|tel|email|message)\b/i.test(f));
+    return { sensitive, contact, forms: forms.length, quickExit: QUICK_EXIT.test(raw) };
+  }
+  /* WEB1: pixels and tag managers; on a protective order or CPS page also a dataLayer push and any third party script or frame */
+  const TRACK = /connect\.facebook\.net|fbevents\.js|\bfbq\s*\(|googletagmanager\.com|\bgtag\s*\(|google-analytics\.com|analytics\.tiktok\.com|\bttq\.(?:load|page|track)\b|clarity\.ms|snap\.licdn\.com|px\.ads\.linkedin\.com|bat\.bing\.com|static\.hotjar\.com|cdn\.segment\.com|\bdataLayer\.push\s*\(/gi;
+  function trackersIn(raw, sensitive) {
+    const out = new Set(); let m; TRACK.lastIndex = 0;
+    while ((m = TRACK.exec(raw))) { const h = m[0].replace(/\s*\($/, '').toLowerCase(); if (/datalayer/.test(h) && !sensitive) continue; out.add(/datalayer/.test(h) ? 'dataLayer.push' : h.replace(/^\\b/, '')); }
+    if (sensitive) { const re = /<(script|iframe)\b[^>]*\bsrc\s*=\s*["']?(?:https?:)?\/\/([^"'\s>\/]+)/gi; while ((m = re.exec(raw))) out.add(`${m[1].toLowerCase()} from ${m[2].toLowerCase()}`); }
+    return [...out];
+  }
+  function web1Test(t, ctx) {
+    const pc = ctx.pc || pageClass(ctx.raw, ctx.o); if (!pc.sensitive && !pc.contact) return [];
+    const hits = trackersIn(ctx.raw, !!pc.sensitive); if (!hits.length) return [];
+    const kind = pc.sensitive === 'po' ? 'This is a protective order or family violence page' : pc.sensitive === 'cps' ? 'This is a CPS page' : 'This page has an intake form';
+    return [{ at: -1, hit: hits.slice(0, 5).join(', '), why: `${kind}, and it loads ${hits.slice(0, 5).join(', ')}${hits.length > 5 ? ' and more' : ''}. ${RULE.WEB1.why}` }];
+  }
+  /* WEBRESP: the responsible lawyer and the primary office city anywhere in the page source (the footer template counts) */
+  function webRespTest(t, ctx) {
+    const o = ctx.o; if (o.footer === false || ctx.posture === 'neutral') return [];
+    const src = (ctx.raw + '\n' + t).toLowerCase();
+    if (ctx.posture === 'comp') return /responsible (?:attorney|lawyer)|abogad[oa] responsable/.test(src) ? [] : [{ at: -1, hit: '', sev: 'warn', why: 'No "responsible attorney" statement anywhere in the page source. The site may carry it on another page or in a template this copy left out; check the live page before it counts.' }];
+    const F = ctx.firm; const miss = [];
+    if (!F || !F.r.name) miss.push('the responsible lawyer (the firm profile has none yet)'); else if (!src.includes(F.r.name.toLowerCase())) miss.push(`the name ${F.r.name}`);
+    if (!F || !F.p.city) miss.push('the primary office city (the firm profile has none yet)'); else if (!src.includes(String(F.p.city).toLowerCase())) miss.push(`the primary office city, ${F.p.city}`);
+    if (!miss.length) return [];
+    const h = { at: -1, hit: '', why: `${RULE.WEBRESP.why} Missing from the source: ${miss.join(' and ')}.` }; if (F && F.ready && F.F.adFooter) h.fixTo = F.F.adFooter(); return [h];
+  }
+  /* WEB5: a contact form with no "no attorney client relationship" notice on the page */
+  const NO_ACR = /attorney[ -]client relationship|lawyer[ -]client relationship|relaci[oó]n (?:de )?abogado[ -](?:y )?cliente|abogado[ -]cliente/i;
+  function web5Test(t, ctx) { const pc = ctx.pc || pageClass(ctx.raw, ctx.o); if (!pc.contact || NO_ACR.test(t) || NO_ACR.test(ctx.raw)) return []; return [{ at: -1, hit: '<form>' }]; }
+  /* WEB6: a protective order or family violence page with no quick exit */
+  function web6Test(t, ctx) { const pc = ctx.pc || pageClass(ctx.raw, ctx.o); return pc.sensitive === 'po' && !pc.quickExit ? [{ at: -1, hit: '' }] : []; }
+
+  /* ---- OFFICE2: "our Frisco office", "office in Frisco", "located in Frisco" when the profile lists no office there */
+  const OFFICE_RE = /\b(?:our|an?|the firm'?s|the)\s+(?:new\s+|main\s+|local\s+|satellite\s+|second\s+)?((?:\p{L}[\p{L}.']*)(?:\s+\p{L}[\p{L}.']*){0,2})\s+offices?\b|\boffices?\s+(?:is\s+|are\s+)?(?:right\s+)?(?:here\s+)?(?:in|at)\s+((?:\p{L}[\p{L}.']*)(?:\s+\p{L}[\p{L}.']*){0,2})|\b(?:located|based|headquartered)\s+(?:right\s+)?(?:here\s+)?in\s+((?:\p{L}[\p{L}.']*)(?:\s+\p{L}[\p{L}.']*){0,2})|\bvisit\s+(?:us|our office)\s+in\s+((?:\p{L}[\p{L}.']*)(?:\s+\p{L}[\p{L}.']*){0,2})|(?<![\p{L}])oficinas?\s+(?:principal\s+)?(?:est[aá]\s+)?en\s+((?:\p{L}[\p{L}.']*)(?:\s+\p{L}[\p{L}.']*){0,2})/giu;
+  const NOT_PLACE = /^(?:texas|tx|the|our|your|this|that|a|an|person|downtown|town|county|state|court|courthouse|suite|primary|main|law|family|plano's)$/i;
+  function officeTest(t, ctx) {
+    if (!ctx.firm) return []; const offs = (ctx.firm.g.offices || []).map(o => String(o && o.city || '').trim().toLowerCase()).filter(Boolean); if (!offs.length) return [];
+    const out = []; OFFICE_RE.lastIndex = 0; let m;
+    while ((m = OFFICE_RE.exec(t))) {
+      if (inSpans(m.index, ctx.protect)) continue;
+      const cap = m.slice(1).find(x => x); if (!cap) continue;
+      const words = []; for (const w of cap.split(/\s+/)) { if (!/^\p{Lu}/u.test(w) || NOT_PLACE.test(w.replace(/[.,]$/, ''))) break; words.push(w.replace(/[.,']+$/, '')); }
+      if (!words.length) continue; const place = words.join(' ');
+      if (/^county$/i.test((t.slice(m.index + m[0].length).match(/^\s+(\p{L}+)/u) || [])[1] || '') && words.length === cap.split(/\s+/).length) continue;   // "office in Collin County"
+      const low = place.toLowerCase(); if (offs.some(c => c === low || c.includes(low) || low.includes(c))) continue;
+      out.push({ at: m.index, hit: m[0].trim(), why: `"${m[0].trim()}" tells the reader the firm has an office in ${place}. The firm profile lists ${offs.length > 1 ? 'offices in ' : 'an office in '}${(ctx.firm.g.offices || []).map(o => o && o.city).filter(Boolean).join(' and ')}. Say "serving ${place} from our office in ${ctx.firm.p.city || (ctx.firm.g.offices || [])[0].city}" instead, or add the office to the firm profile.` });
+    }
+    return out;
+  }
+
+  /* ---- the license battery: the roster, the bar numbers in copy and the five results ---- */
+  const ROSTER_KEY = 'sev.comp.roster';
+  const ROSTER_STOP = /\b(?:law|firm|pllc|pc|p\.c\.|llp|llc|attorneys?|lawyers?|legal|family|divorce|the|and|of|group|offices?|esq|esquire|jr|sr|ii|iii|iv)\b/g;
+  const nameTokens = s => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/&/g, ' ').replace(ROSTER_STOP, ' ').replace(/[^a-z0-9 ]/g, ' ').split(/\s+/).filter(x => x.length > 1);
+  /* names match when they share a word once law, firm, pllc, pc, llp, attorney, legal, family and divorce are set aside; an empty side matches */
+  function nameMatch(a, b) { const A = nameTokens(a), B = nameTokens(b); return !A.length || !B.length || A.some(x => B.includes(x)); }
+  const normBar = s => { const d = String(s || '').replace(/\D/g, ''); return d ? d.padStart(8, '0') : ''; };
+  const notEligible = r => /inactive|suspend|disbar|resign|deceas|revok|not eligible|ineligible|retired|non[ -]?practicing/i.test(String(r.status || '')) || /^(?:no|n|false|0|not eligible)$/i.test(String(r.eligible == null ? '' : r.eligible).trim());
+  function rosterSeed() {
+    const F = FIRM_(); if (!F) return []; let g = {}; try { g = F.get() || {}; } catch (e) { return []; } const p = (F.primary && F.primary()) || {};
+    return (g.attorneys || []).filter(a => a && String(a.name || '').trim()).map(a => ({ name: String(a.name).trim(), bar_no: normBar(a.bar_no), status: '', eligible: '', tbls: a.tbls || '', office_city: p.city || '', as_of: '', src: 'firm profile' }));
+  }
+  function rosterStored() { try { if (typeof store === 'undefined' || !store || typeof store.get !== 'function') return null; const s = store.get(ROSTER_KEY, null); return s && Array.isArray(s.rows) && s.rows.length ? s : null; } catch (e) { return null; } }
+  function roster(o) { if (o && Array.isArray(o.roster)) return o.roster; const s = rosterStored(); return s ? s.rows : rosterSeed(); }
+  const ROSTER_COLS = [[/^(?:name|lawyer|attorney|full name|nombre)$/, 'name'], [/^(?:bar ?(?:no|number|card|#)?\.?|bar_no|sbn|state bar (?:no|number)|license|licence)$/, 'bar_no'], [/^(?:status|license status|bar status)$/, 'status'], [/^(?:eligible|eligible to practice|eligibility|practice)$/, 'eligible'], [/^(?:tbls|tbls area|board certified|board certification|certification|specialty area)$/, 'tbls'], [/^(?:office|office city|city|primary office)$/, 'office_city'], [/^(?:as of|as_of|checked|date|verified)$/, 'as_of']];
+  function parseRoster(text) {
+    const rows = parseCSVText(text); const warnings = []; if (!rows.length) return { rows: [], warnings: ['Nothing to read.'] };
+    const head = rows[0].map(h => String(h).trim().toLowerCase().replace(/\s+/g, ' ')); const map = head.map(h => { for (const [re, k] of ROSTER_COLS) if (re.test(h)) return k; return null; });
+    let body = rows.slice(1), cols = map;
+    if (!map.includes('name') || !map.includes('bar_no')) { cols = ['name', 'bar_no', 'status', 'eligible', 'tbls', 'office_city', 'as_of']; body = rows; warnings.push('No header row recognized: columns read in order as name, bar number, status, eligible to practice, TBLS area, office city, as of date.'); }
+    const out = []; body.forEach((r, i) => { const o = {}; cols.forEach((k, j) => { if (k) o[k] = String(r[j] == null ? '' : r[j]).trim(); }); if (!o.name && !o.bar_no) return; o.bar_no = normBar(o.bar_no); if (o.bar_no && o.bar_no.length !== 8) warnings.push(`Row ${i + 2}: "${o.bar_no}" is not an 8 digit Texas bar number.`); out.push({ name: o.name || '', bar_no: o.bar_no, status: o.status || '', eligible: o.eligible || '', tbls: o.tbls || '', office_city: o.office_city || '', as_of: o.as_of || '', src: 'firm roster' }); });
+    return { rows: out, warnings };
+  }
+  /* an 8 digit number counts as a bar number only with bar context in the 40 characters before it */
+  const BAR_CTX = /(?:\bstate bar(?: of texas)?|\bbar(?: card)?|\bsbn|\bsbot|\btexas bar|(?<![\p{L}])(?:barra|colegiatura|matr[ií]cula))(?:[^\d\n]{0,30})$/iu;
+  function barNumbers(t) { const out = []; const re = /(?<![\d-])(\d{8})(?![\d-])/g; let m; while ((m = re.exec(t))) { if (BAR_CTX.test(t.slice(Math.max(0, m.index - 40), m.index))) out.push({ at: m.index, no: m[1], hit: m[0] }); } return out; }
+  const sentenceAround = (t, at, len) => { let s = at; while (s > 0 && !/[.!?\n]/.test(t[s - 1])) s--; let e = at + len; while (e < t.length && !/[!?\n]/.test(t[e]) && !(t[e] === '.' && /\s|$/.test(t[e + 1] || ''))) e++; return t.slice(s, e); };
+  const namedIn = (txt, rows) => { const low = txt.toLowerCase(); return rows.filter(r => r.name && (low.includes(r.name.toLowerCase()) || (() => { const tk = nameTokens(r.name); return tk.length >= 2 && low.includes(tk[tk.length - 1]) && low.includes(tk[0]); })())); };
+  function barRun(t, ctx) {
+    if (ctx._bar && ctx._bar.t === t) return ctx._bar.out;
+    const out = { BAROK: [], BARINACT: [], BARNONE: [], BARNAME: [], TBLSNO: [] }; const self = ctx.posture === 'self'; const rows = self ? roster(ctx.o) : [];
+    const byNo = {}; rows.forEach(r => { if (r.bar_no) byNo[normBar(r.bar_no)] = r; });
+    barNumbers(t).forEach(b => {
+      if (inSpans(b.at, ctx.protect)) return; const r = byNo[b.no]; const sent = sentenceAround(t, b.at, b.hit.length); const named = namedIn(sent, rows);
+      const before = (t.slice(Math.max(0, b.at - 90), b.at).match(/(\p{Lu}[\p{L}'.]+(?:\s+\p{Lu}[\p{L}'.]+){1,3})\s*,?\s*(?:Attorney,?\s*)?(?:State Bar|Texas Bar|Bar\b|SBN|SBOT)[^\d\n]{0,30}$/u) || [])[1];
+      if (!self) { out.BARNONE.push({ at: b.at, hit: b.hit, why: `${b.no}: ${RULE.BARNONE.why}` }); return; }
+      if (r) {
+        const asof = r.as_of ? ` (roster as of ${r.as_of})` : ' (roster with no as of date)';
+        const other = named.find(x => x !== r && normBar(x.bar_no) !== b.no);
+        if (other && !named.includes(r)) out.BARNAME.push({ at: b.at, hit: b.hit, why: `${b.no} is ${r.name}'s number in the roster${asof}, but the sentence names ${other.name}${other.bar_no ? ', whose number is ' + normBar(other.bar_no) : ''}.` });
+        else if (before && !nameMatch(before, r.name) && !named.includes(r)) out.BARNAME.push({ at: b.at, hit: b.hit, why: `The copy prints ${b.no} beside "${before}"; the roster lists ${b.no} under ${r.name}${asof}.` });
+        if (notEligible(r)) out.BARINACT.push({ at: b.at, hit: b.hit, why: `${b.no} belongs to ${r.name}, whose roster status is ${[r.status, r.eligible !== '' && r.eligible != null ? 'eligible to practice: ' + r.eligible : ''].filter(Boolean).join(', ') || 'not eligible'}${asof}. ${RULE.BARINACT.why}` });
+        else out.BAROK.push({ at: b.at, hit: b.hit, why: `${b.no} is ${r.name}${r.status ? ', ' + r.status : ', status not recorded in the roster'}${asof}. Confirm it on the State Bar of Texas Find a Lawyer search the day the piece runs.` });
+        return;
+      }
+      const who = named[0];
+      if (who) out.BARNAME.push({ at: b.at, hit: b.hit, why: `The copy prints ${b.no} for ${who.name}; the roster lists ${who.name} under ${who.bar_no ? normBar(who.bar_no) : 'no bar number yet'}${who.as_of ? ' (as of ' + who.as_of + ')' : ''}.` });
+      else out.BARNONE.push({ at: b.at, hit: b.hit, why: `${b.no}${before ? ' (beside "' + before + '")' : ''} is not in the firm roster. ${RULE.BARNONE.why}` });
+    });
+    if (self && rows.length) tblsClaims(t).forEach(c => {
+      const sent = sentenceAround(t, c.at, c.hit.length); const named = namedIn(sent, rows).filter(r => !areaMatch(r.tbls, c.area));
+      const holder = namedIn(sent, rows).find(r => areaMatch(r.tbls, c.area));
+      if (named.length && !holder) out.TBLSNO.push({ at: c.at, hit: c.hit, why: `The copy ties "Board Certified, ${c.area}" to ${named.map(r => r.name).join(' and ')}; the roster lists ${named.map(r => r.tbls ? `${r.name} as certified in ${r.tbls}` : `no TBLS certification for ${r.name}`).join(', ')}${named[0].as_of ? ' (as of ' + named[0].as_of + ')' : ''}.` });
+      else if (!named.length && !holder && !rows.some(r => areaMatch(r.tbls, c.area))) out.TBLSNO.push({ at: c.at, hit: c.hit, sev: 'warn', why: `No lawyer in the firm roster is listed as Board Certified in ${c.area}. Name the certified lawyer beside the claim and add the certification to the roster, or remove it.` });
+    });
+    ctx._bar = { t, out }; return out;
+  }
+  const barTest = id => (t, ctx) => barRun(t, ctx)[id];
+  /* the lookup box in module 11: by number or by name, roster only (nothing is fetched) */
+  function lookupBar(q, rows) {
+    rows = rows || roster(); const s = String(q || '').trim(); if (!s) return [];
+    const no = s.replace(/\D/g, ''); if (no.length >= 5) return rows.filter(r => normBar(r.bar_no).includes(no) || String(r.bar_no || '').includes(no));
+    return rows.filter(r => r.name && (r.name.toLowerCase().includes(s.toLowerCase()) || (nameTokens(s).length && nameTokens(s).every(x => nameTokens(r.name).includes(x)))));
+  }
   function placeholderTest(t, ctx) {
     const re = /\[(?!sic\])[^\]\n]{1,48}\](?!\()|\{\{?\s*[A-Za-z_][\w ]{0,30}\s*\}?\}|\$X{2,}|\bX{3,}\b/g; const out = []; let m;
     while ((m = re.exec(t))) { if (inSpans(m.index, ctx.protect)) continue; if (/^\[\s*[xX ]?\s*\]$/.test(m[0])) continue; out.push({ at: m.index, hit: m[0] }); }

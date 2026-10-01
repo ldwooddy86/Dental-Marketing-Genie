@@ -11,14 +11,24 @@
 <main>
   <div id="err" class="err" hidden></div>
   <div class="row3">
-    <div class="k"><div class="lbl">New notices</div><div class="v" id="kNew">n/a</div><div class="s">WARN, last 14 days</div></div>
-    <div class="k"><div class="lbl">Workers</div><div class="v" id="kWork">n/a</div><div class="s">on those notices</div></div>
-    <div class="k"><div class="lbl">TX claims</div><div class="v" id="kCl">n/a</div><div class="s" id="kClS">latest week</div></div>
+    <div class="k"><div class="lbl">New WARN</div><div class="v" id="kNew">n/a</div><div class="s" id="kNewS">notices in 30 days</div></div>
+    <div class="k"><div class="lbl">TX claims</div><div class="v" id="kCl">n/a</div><div class="s" id="kClS">last week</div></div>
+    <div class="k"><div class="lbl">Triggers</div><div class="v" id="kTr">n/a</div><div class="s" id="kTrS">active now</div></div>
   </div>
-  <section><h2>Latest triggers</h2><div id="trig"><p class="small">Waiting for the first check.</p></div></section>
-  <div class="btns">
-    <button type="button" class="p" id="open">Open the atlas</button>
-    <button type="button" id="refresh">Check now</button>
+  <section aria-labelledby="stripH">
+    <h2 id="stripH">Next 28 days</h2>
+    <div class="strip" id="strip" role="img" aria-label="Daily bid adjustment for the lead service line, the next 28 days"></div>
+    <div class="stripx"><span id="stripA"></span><span id="stripB"></span></div>
+    <div class="small" id="stripN"></div>
+  </section>
+  <section class="dl" aria-labelledby="dlH"><h2 id="dlH">Next deadline</h2><div id="dl" class="dlv">n/a</div></section>
+  <section aria-labelledby="trH"><h2 id="trH">Latest triggers</h2><div id="trig"><p class="small">Waiting for the first check.</p></div></section>
+  <div class="btns5">
+    <button type="button" class="p" id="open">Open</button>
+    <button type="button" id="goLive">Live Desk</button>
+    <button type="button" id="goDesk">Campaign Desk</button>
+    <button type="button" id="goComp">Compliance</button>
+    <button type="button" id="refresh">Refresh</button>
   </div>
   <div class="foot"><span id="upd"></span><button type="button" class="lnk" id="opts">Options</button></div>
 </main>

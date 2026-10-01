@@ -58,3 +58,8 @@
   #mod-accounts .ac-ver{margin-left:0}
   #mod-accounts .toolbar .btn{flex:1 1 auto}
 }
+/* what an Apply changed, input by input */
+#mod-accounts .ac-changes{margin-top:6px;line-height:1.5}
+#mod-accounts .ac-changes b{color:var(--title)}
+#mod-accounts .ac-changes ul{margin:4px 0 0;padding-left:18px}
+#mod-accounts .ac-changes li{margin:1px 0}

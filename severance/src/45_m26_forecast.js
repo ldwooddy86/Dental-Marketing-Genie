@@ -2,7 +2,7 @@
 /* Module 26: Filings Forecast. The family law counterpart of the Thermal Atlas Replacement Wave (chrome-app module 02): the married stock
    by years married, aged through the PUMS divorce hazard (SEV_HAZ, src/12_hazard_core.js), calibrated to the court filings, under three
    scenarios, turned into a fee pool at stated fees, with cohort waves, the case mix, a contested and complex case signal and the
-   child support modification check. Ids and classes carry the fc prefix; settings persist under sev.forecast.v1. */
+   child support modification check. Ids and classes carry the fc prefix; settings persist under sev.forecast.settings. */
 const FC_FEE_LINES = ['div_k', 'div_nk', 'sapcr', 'mod', 'enf', 'po', 'adopt', 'cps', 'ivd'];
 const FC_TRENDS = [[2000, 2019], [2010, 2019], [1990, 2019], [2000, 2023], [2010, 2023]];
 const FC_SIG = [
@@ -60,7 +60,6 @@ const FC_SUPPORT = (function () {
 registerModule({
   key: 'forecast', num: '26', title: 'Filings Forecast', desc: 'Expected divorce, modification and enforcement filings 2026 to 2035 from the married stock, three scenarios, the fee pool by ZIP, county and metro',
   mount(root) {
-    const self = this;
     const HZ = SEV_HAZ; const BASE = HZ.PARAMS.base; const YRS = Array.from({ length: 11 }, (_, i) => BASE + i); const FY = YRS.slice(1);
     // ---------- settings (saved in this browser)
     const clean = o => {
@@ -77,8 +76,8 @@ registerModule({
       d.surge = nm(o.surge, 0, 500, d.surge); d.months = Math.round(nm(o.months, 1, 24, d.months)); d.panel = o.panel === 'post2022' ? 'post2022' : 'full';
       return d;
     };
-    let st = clean(store.get('sev.forecast.v1', null)); st.sel = null;
-    const save = () => { const o = Object.assign({}, st); delete o.sel; store.set('sev.forecast.v1', o); };
+    let st = clean(store.get('sev.forecast.settings', null)); st.sel = null;
+    const save = () => { const o = Object.assign({}, st); delete o.sel; store.set('sev.forecast.settings', o); };
     const PRM = () => ({ base: BASE, from: st.from, to: st.to, surge: st.surge / 100, months: st.months, panel: st.panel, start: HZ.PARAMS.start });
     const ti = () => st.year - BASE;   // the year index of the map, table and pools
     const fcM = v => !isN(v) ? NA : Math.abs(v) >= 1e9 ? '$' + (v / 1e9).toFixed(2) + 'B' : '$' + K(v);
@@ -143,7 +142,6 @@ registerModule({
     const incAdj = inc => st.incAdj && isN(inc) && inc > 0 && isN(ST.acs.med_hh_inc) ? Math.pow(inc / ST.acs.med_hh_inc, st.incEl) : 1;
     const cAdj = k => (k === 'div_k' || k === 'div_nk') ? (1 - st.contested / 100) + st.contested / 100 * st.cmult : 1;
     const poolOf = (L, t, inc) => { let s = 0; FC_FEE_LINES.forEach(k => { if (st.inc[k] && L[k]) s += (L[k][t] || 0) * feeOf(k) * cAdj(k) * incAdj(inc); }); return s; };
-    const poolByLine = (L, t, inc) => FC_FEE_LINES.filter(k => st.inc[k] && L[k]).map(k => ({ k, v: (L[k][t] || 0) * feeOf(k) * cAdj(k) * incAdj(inc) }));
     const areaPool = (s, t, fips) => sum((fips || areaFips()).map(f => poolOf(FCC[s][f].lines, t, CI[f].acs.med_hh_inc)));
     // ---------- the contested and complex case signal: a stated percentile blend, ranked within counties or within ZIPs
     function sigMap(objs, idOf) {
@@ -346,9 +344,9 @@ registerModule({
     function drawTable() {
       const z = level() === 'zip'; const y = st.year;
       const cols = [{ k: 'name', l: z ? 'ZIP' : 'County', fmt: (v, r) => esc(z ? r._id + ' ' + (r.obj.city || '') : v), h: z ? 'ZIP and city' : 'County' }].concat(z ? [{ k: 'county', l: 'County', fmt: v => esc(v), cls: 'l' }] : []).concat([
-        { k: 'married', l: 'Married', fmt: v => N(v), h: 'Married adults (ACS)', d: 0 }, { k: 'div', l: `Filings ${y}`, fmt: v => N(v, 0), h: `Expected divorce filings ${y}`, d: 1 }, { k: 'rate', l: 'Per 1k married', fmt: v => N(v, 1), h: 'Expected divorce filings per 1,000 married', d: 2 },
-        { k: 'pool', l: `Fee pool ${y}`, fmt: v => fcM(v), h: `Fee pool ${y} ($)`, d: 0 }, { k: 'poolhh', l: 'Per married family', fmt: v => $$$(v), h: 'Fee pool per married couple family ($)', d: 0 }, { k: 'due', l: 'Mods due 2026 to 2030', fmt: v => N(v, 0), h: 'Orders with children reaching three years 2026 to 2030', d: 1 },
-        { k: 'signal', l: 'Signal', fmt: v => N(v, 0), h: 'Contested and complex case signal', d: 0 }, { k: 'sep', l: 'Separated /1k', fmt: v => N(v, 1), h: 'Separated per 1,000 married', d: 1 }]).concat(z ? [] : [{ k: 'capture', l: 'Filed / modeled', fmt: v => N(v, 2), h: 'Filed against modeled 2025', d: 3 }]);
+        { k: 'married', l: 'Married', fmt: v => N(v), h: 'Married adults (ACS)', d: 0 }, { k: 'div', l: `Filings ${y}`, fmt: v => N(v, 0), h: `Expected divorce filings ${y}`, d: 1 }, { k: 'rate', l: 'Per 1k married', tip: 'Expected divorce filings per 1,000 married adults', fmt: v => N(v, 1), h: 'Expected divorce filings per 1,000 married', d: 2 },
+        { k: 'pool', l: `Fee pool ${y}`, fmt: v => fcM(v), h: `Fee pool ${y} ($)`, d: 0 }, { k: 'poolhh', l: 'Per family', tip: 'Fee pool per married couple family', fmt: v => $$$(v), h: 'Fee pool per married couple family ($)', d: 0 }, { k: 'due', l: 'Mods due', tip: 'Modifications due 2026 to 2030: orders with children reaching three years', fmt: v => N(v, 0), h: 'Orders with children reaching three years 2026 to 2030', d: 1 },
+        { k: 'signal', l: 'Signal', tip: 'Contested and complex case signal, a percentile blend', fmt: v => N(v, 0), h: 'Contested and complex case signal', d: 0 }, { k: 'sep', l: 'Sep. /1k', tip: 'Separated adults per 1,000 married (ACS)', fmt: v => N(v, 1), h: 'Separated per 1,000 married', d: 1 }]).concat(z ? [] : [{ k: 'capture', l: 'Filed / modeled', tip: 'Divorce filings in 2025 against modeled divorces', fmt: v => N(v, 2), h: 'Filed against modeled 2025', d: 3 }]);
       $r('#fcTblH').textContent = z ? `Ranked ZIP codes, ${areaTitle()}` : `Ranked counties, ${areaTitle()}`;
       $r('#fcTblSub').textContent = `${UNITS.length} ${z ? 'ZIP codes' : UNITS.length === 1 ? 'county' : 'counties'} · ${HZ.SCENARIOS[st.scn].label} · ${y}. Sort any column; click a row to select it on the map.`;
       const prev = tbl ? tbl.sort() : { k: 'pool', dir: -1 };
@@ -514,18 +512,19 @@ registerModule({
 
     // ---------- exports and handoffs
     function exportForecast() {
-      const fs = areaFips(); const areas = [{ name: areaTitle(), fips: fs, tag: st.area }].concat(fs.length > 1 ? fs.map(f => ({ name: CI[f].name + ' County', fips: [f], tag: 'cty:' + f })) : []);
-      const rows = [];
-      areas.forEach(a => Object.values(HZ.SCENARIOS).forEach(s => {
-        const A = agg(s.key, a.fips); const B = areaBand(s.key, a.fips, a.tag + '|x');
-        const poolG = B.grad.div.map((row, t) => row.map((_, d) => FC_FEE_LINES.reduce((acc, k) => acc + (st.inc[k] && B.grad[k] ? B.grad[k][t][d] * feeOf(k) * cAdj(k) : 0), 0)));
-        const poolB = HZ.band(poolG);
-        ['div', 'div_k', 'div_nk', 'mod', 'enf', 'sapcr', 'po', 'fee_pool'].forEach(line => YRS.forEach((y, t) => {
-          const v = line === 'fee_pool' ? sum(a.fips.map(f => poolOf(FCC[s.key][f].lines, t, CI[f].acs.med_hh_inc))) : A.lines[line][t];
-          const b = line === 'fee_pool' ? (st.incAdj ? null : poolB[t]) : B[line] ? B[line][t] : null;
-          rows.push({ area: a.name, scenario: s.label, line, year: y, expected: v, lo: b ? v - b.lo : null, hi: b ? v + b.hi : null });
-        }));
-      }));
+      // one gradient run per county and scenario: the county bands come from it directly, the area band from its sum
+      const fs = areaFips(); const head = [], tail = []; const LN = ['div', 'div_k', 'div_nk', 'mod', 'enf', 'sapcr', 'po', 'fee_pool'];
+      const poolBand = G => st.incAdj ? null : HZ.band(G.div.map((row, t) => row.map((_, d) => FC_FEE_LINES.reduce((acc, k) => acc + (st.inc[k] && G[k] ? G[k][t][d] * feeOf(k) * cAdj(k) : 0), 0))));
+      const push = (out, name, label, L, G, pool) => { const B = {}; Object.keys(G).forEach(k => { B[k] = HZ.band(G[k]); }); const pb = poolBand(G);
+        LN.forEach(line => YRS.forEach((y, t) => { const v = line === 'fee_pool' ? pool[t] : L[line][t]; const b = line === 'fee_pool' ? (pb ? pb[t] : null) : B[line] ? B[line][t] : null; out.push({ area: name, scenario: label, line, year: y, expected: v, lo: b ? v - b.lo : null, hi: b ? v + b.hi : null }); })); };
+      Object.values(HZ.SCENARIOS).forEach(sc => {
+        const G = {};
+        fs.forEach(f => { const r = HZ.forecast(areaIn(f), { scenario: sc.key, params: PRM(), newMarriages: newOn(), capture: capS, kShare: kShareS, grad: true });
+          Object.keys(r.grad).forEach(k => { if (!G[k]) G[k] = r.grad[k].map(row => row.slice()); else r.grad[k].forEach((row, t) => row.forEach((v, d) => { G[k][t][d] += v; })); });
+          if (fs.length > 1) push(tail, CI[f].name + ' County', sc.label, r.lines, r.grad, YRS.map((y, t) => poolOf(r.lines, t, CI[f].acs.med_hh_inc))); });
+        push(head, areaTitle(), sc.label, agg(sc.key, fs).lines, G, YRS.map((y, t) => areaPool(sc.key, t, fs)));
+      });
+      const rows = head.concat(tail);
       const note = [`Severance module 26, Filings Forecast. Compiled ${META.compiled}; court filings through ${META.oca_through}.`, `Expected filings ${BASE + 1} to ${BASE + 10}; ${BASE} is the observed calendar year count the model is calibrated to (capture ratio, filed against modeled, per county; Texas ${capS.toFixed(3)}).`, `Bands: approximate 90% interval from the PUMS duration curve's standard errors only (delta method); blank where a line has no hazard dependence or the fee pool is income scaled.`, `Married stock: ${STOCK_NOTE[st.stock]} Decline trend: NCHS Texas divorce rate ${st.from} to ${st.to}, ${(HZ.declineRate(st.from, st.to) * 100).toFixed(2)}% a year. Recession: claims +${st.surge}% for ${st.months} months from January ${HZ.PARAMS.start}, panel ${st.panel === 'post2022' ? 'since 2022' : 'full sample'}.`, `Lines: div divorce, div_k with children, div_nk without, mod modification, enf enforcement, sapcr custody, po protective orders, fee_pool dollars at the stated fees (${FC_FEE_LINES.filter(k => st.inc[k]).map(k => k + ' $' + feeOf(k)).join(', ')}; contested ${st.contested}% at ${st.cmult}x${st.incAdj ? '; income scaled, elasticity ' + st.incEl : ''}).`];
       const text = note.map(l => '# ' + l).join('\n') + '\n' + csv(rows, [{ l: 'area', k: 'area' }, { l: 'scenario', k: 'scenario' }, { l: 'line', k: 'line' }, { l: 'year', k: 'year' }, { l: 'expected', k: 'expected', d: 1 }, { l: 'band_low', k: 'lo', d: 1 }, { l: 'band_high', k: 'hi', d: 1 }]) + '\n';
       exportText(expName('forecast', areaGeo()), text);

@@ -86,7 +86,9 @@ const SEV_HAZ = (function () {
 
     // ---- scenarios
     const ny = nchs && nchs.divorce ? Object.keys(nchs.divorce).map(Number).filter(y => fin(nchs.divorce[y]) && nchs.divorce[y] > 0).sort((a, b) => a - b) : [];
-    function declineRate(from, to) {
+    const DR_MEMO = {};
+    function declineRate(from, to) { const key = from + '|' + to; if (!(key in DR_MEMO)) DR_MEMO[key] = declineFit(from, to); return DR_MEMO[key]; }
+    function declineFit(from, to) {
       const ys = ny.filter(y => y >= from && y <= to); if (ys.length < 3) return 0;
       const Y = ys.map(y => Math.log(nchs.divorce[y])); const mx = sumA(ys) / ys.length, my = sumA(Y) / Y.length;
       const b = sumA(ys.map((x, i) => (x - mx) * (Y[i] - my))) / (sumA(ys.map(x => (x - mx) * (x - mx))) || 1);
@@ -128,10 +130,10 @@ const SEV_HAZ = (function () {
       let S = stk.slice(0, MAXD + 1); while (S.length < MAXD + 1) S.push(0);
       const out = [];
       for (let t = 0; t <= years; t++) {
-        const y = base + t; const m = t === 0 ? 1 : sc.hazMult(y, p);
-        let persons = 0; const N = new Array(MAXD + 1).fill(0);
-        for (let d = 0; d <= MAXD; d++) { const q = Math.min(1, HH[d] * m / 1000); persons += S[d] * q; N[Math.min(MAXD, d + 1)] += S[d] * (1 - q) * (1 - x); }
-        out.push({ year: y, married: sumA(S), persons, divorces: persons / 2 });
+        const y = base + t; const m = t === 0 ? 1 : opts.hm ? opts.hm[t] : sc.hazMult(y, p);
+        let persons = 0, married = 0; const N = new Array(MAXD + 1); N[0] = 0; const keep = 1 - x;
+        for (let d = 0; d <= MAXD; d++) { let q = HH[d] * m / 1000; if (q > 1) q = 1; const sd = S[d]; married += sd; persons += sd * q; if (d < MAXD) N[d + 1] = sd * (1 - q) * keep; else N[MAXD] += sd * (1 - q) * keep; }
+        out.push({ year: y, married, persons, divorces: persons / 2 });
         N[0] += inflow * Math.pow(1 + g, t + 1); S = N;
       }
       return out;
@@ -156,34 +158,40 @@ const SEV_HAZ = (function () {
       // (S0 - divorcing adults)(1 - x) + inflow = S0 (1 + g)
       const divp0 = sumA(stk.map((v, d) => v * Math.min(1, HH[d] / 1000)));
       let x = S0 - divp0 > 0 ? 1 - (S0 * (1 + g) - inflow0 * (1 + g)) / (S0 - divp0) : 0; x = Math.max(-0.1, Math.min(0.2, fin(x) ? x : 0));
-      const run = (Hh, scen) => expected(stk, years, scen, { base, params: p, inflow: opts.newMarriages === false ? 0 : inflow0, growth: g, exits: x, H: Hh });
-      const fitPath = run(HH, SCENARIOS.fit); const m0 = fitPath[0].divorces;
+      const HM = [1]; for (let t = 1; t <= years; t++) HM.push(sc.hazMult(base + t, p));   // the scenario's hazard multipliers, once
+      const run = (Hh, scen) => expected(stk, years, scen, { base, params: p, inflow: opts.newMarriages === false ? 0 : inflow0, growth: g, exits: x, H: Hh, hm: scen === sc ? HM : null });
+      const m0 = divp0 / 2;   // the base year's modeled divorces (the base year runs at the fitted hazard in every scenario)
       const obsDiv = fin(obs.div) ? obs.div : 0;
       let capture, captureSource; if (obsDiv > 0 && m0 > 0) { capture = obsDiv / m0; captureSource = 'area'; } else { capture = fin(opts.capture) ? opts.capture : 0; captureSource = 'fallback'; }
       const hist = area.hist || {}; const kShare = obsDiv > 0 && fin(obs.div_k) ? obs.div_k / obsDiv : (fin(opts.kShare) ? opts.kShare : 0);
+      // the scenario's multipliers on filings, by line and year, looked up once
+      const FM = {}; ['div', 'sapcr', 'po', 'adopt', 'cps', 'ivd', 'mod', 'enf'].forEach(k => { FM[k] = []; for (let t = 0; t <= years; t++) FM[k].push(t === 0 ? 1 : sc.fileMult(k, base + t, p)); });
+      // the observed counts and the order history are read once; lines() runs once per path (and once per duration for the band)
+      const OB = {}; ['sapcr', 'po', 'adopt', 'cps', 'ivd', 'mod', 'enf'].forEach(k => { OB[k] = fin(obs[k]) ? obs[k] : 0; });
+      const KH = {}; Object.keys(hist).forEach(y => { if (+y < base) KH[+y] = (fin(hist[y].div_k) ? hist[y].div_k : 0) + (fin(hist[y].sapcr) ? hist[y].sapcr : 0); });
+      const win = Math.max(1, Math.round(p.window)); let P0 = 0; for (let j = base - win; j < base; j++) P0 += KH[j] || 0;
       const lines = function (path, cap) {
-        const Y = path.map(r => r.year); const L = {};
-        L.div = path.map((r, t) => t === 0 ? obsDiv : r.divorces * cap * sc.fileMult('div', r.year, p));
-        L.div_k = L.div.map(v => v * kShare); L.div_nk = L.div.map((v, t) => v - L.div_k[t]);
-        ['sapcr', 'po', 'adopt', 'cps', 'ivd'].forEach(k => { const o = fin(obs[k]) ? obs[k] : 0; L[k] = Y.map((y, t) => t === 0 ? o : o * sc.fileMult(k, y, p)); });
+        const n = path.length; const L = {}; ['div', 'div_k', 'div_nk', 'sapcr', 'po', 'adopt', 'cps', 'ivd', 'mod', 'enf'].forEach(k => { L[k] = new Array(n); });
+        for (let t = 0; t < n; t++) {
+          const dv = t === 0 ? obsDiv : path[t].divorces * cap * FM.div[t]; L.div[t] = dv; L.div_k[t] = dv * kShare; L.div_nk[t] = dv - dv * kShare;
+          L.sapcr[t] = t === 0 ? OB.sapcr : OB.sapcr * FM.sapcr[t]; L.po[t] = t === 0 ? OB.po : OB.po * FM.po[t]; L.adopt[t] = t === 0 ? OB.adopt : OB.adopt * FM.adopt[t]; L.cps[t] = t === 0 ? OB.cps : OB.cps * FM.cps[t]; L.ivd[t] = t === 0 ? OB.ivd : OB.ivd * FM.ivd[t];
+        }
         // new orders involving children: observed before the base, expected from the base on (the base year is observed)
-        const K = {}; Object.keys(hist).forEach(y => { if (+y < base) K[y] = (fin(hist[y].div_k) ? hist[y].div_k : 0) + (fin(hist[y].sapcr) ? hist[y].sapcr : 0); });
-        Y.forEach((y, t) => { K[y] = L.div_k[t] + L.sapcr[t]; });
-        const win = Math.max(1, Math.round(p.window)); const pipe = y => { let s = 0; for (let j = y - win; j < y; j++) s += K[j] || 0; return s; };
-        const P0 = pipe(base);
-        ['mod', 'enf'].forEach(k => { const o = fin(obs[k]) ? obs[k] : 0; L[k] = Y.map((y, t) => t === 0 ? o : o * (P0 > 0 ? pipe(y) / P0 : 1) * sc.fileMult(k, y, p)); });
-        let due = 0; for (let y = 2023; y <= 2027; y++) due += K[y] || 0;   // orders reaching three years in 2026 to 2030
-        return { L, K, due };
+        const Kat = y => y < base ? (KH[y] || 0) : (y - base < n ? L.div_k[y - base] + L.sapcr[y - base] : 0);
+        for (let t = 0; t < n; t++) { let pipe = 0; for (let j = base + t - win; j < base + t; j++) pipe += Kat(j); const r = P0 > 0 ? pipe / P0 : 1; L.mod[t] = t === 0 ? OB.mod : OB.mod * r * FM.mod[t]; L.enf[t] = t === 0 ? OB.enf : OB.enf * r * FM.enf[t]; }
+        let due = 0; for (let y = 2023; y <= 2027; y++) due += Kat(y);   // orders reaching three years in 2026 to 2030
+        return { L, due, Kat };
       };
       const path = run(HH, sc); const c = lines(path, capture);
-      const res = { years: path.map(r => r.year), capture, captureSource, x, g, inflow: inflow0, kShare, modeled: path.map(r => r.divorces), married: path.map(r => r.married), lines: c.L, K: c.K, modsDue: c.due };
+      const K = {}; for (let y = Math.min(base, ...Object.keys(KH).map(Number)); y <= base + years; y++) K[y] = c.Kat(y);
+      const res = { years: path.map(r => r.year), capture, captureSource, x, g, inflow: inflow0, kShare, modeled: path.map(r => r.divorces), married: path.map(r => r.married), lines: c.L, K, modsDue: c.due };
       if (opts.grad) {
         // the gradient of every line by the hazard at each duration, numerically (the capture is refitted each time, as the calibration
         // would be); the band then combines it with the curve's standard errors
         const grad = {}; Object.keys(c.L).forEach(k => { grad[k] = c.L[k].map(() => new Array(MAXD + 1).fill(0)); }); grad.modsDue = [new Array(MAXD + 1).fill(0)];
         for (let d = 0; d <= MAXD; d++) {
           const eps = Math.max(1e-3, HH[d] * 1e-3); const Hp = HH.slice(); Hp[d] += eps;
-          const fp = run(Hp, SCENARIOS.fit)[0].divorces; const capP = captureSource === 'area' && fp > 0 ? obsDiv / fp : capture;
+          const fp = m0 + stk[d] * (Math.min(1, Hp[d] / 1000) - Math.min(1, HH[d] / 1000)) / 2; const capP = captureSource === 'area' && fp > 0 ? obsDiv / fp : capture;
           const cp = lines(run(Hp, sc), capP);
           Object.keys(c.L).forEach(k => { c.L[k].forEach((v, t) => { grad[k][t][d] = (cp.L[k][t] - v) / eps; }); });
           grad.modsDue[0][d] = (cp.due - c.due) / eps;

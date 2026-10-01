@@ -435,6 +435,8 @@ const LIVE = (() => {
   }
   const OUT_CAT = { dip: 'Dip now', rebound: 'Rebound watch', enf: 'Enforcement lift', quiet: 'Quiet' };
   const p1 = v => (Math.round(Math.abs(v) * 10) / 10).toFixed(1) + '%';
+  const ab = v => `${p1(v)} ${v >= 0 ? 'above' : 'below'}`;
+  const andList = a => a.length <= 1 ? a.join('') : a.slice(0, -1).join(', ') + ' and ' + a[a.length - 1];
   const r1 = v => v == null || !isFinite(v) ? null : Math.round(v * 10) / 10;
   function outlook(o) {
     o = o || {}; const sc = o.counties || scope(); const d = o.date || today(); const T = trig(d, sc); const T1 = 1;
@@ -451,9 +453,11 @@ const LIVE = (() => {
       const ratio = e.claims_vs_yago; const rTxt = isFinite(ratio) && ratio > 0 ? (ratio >= 1 ? `${p1((ratio - 1) * 100)} above` : `${p1((1 - ratio) * 100)} below`) + ' a year earlier' : 'not comparable with a year earlier';
       const ago = dl12 != null ? `${p1((Math.exp(dl12) - 1) * 100)} ${dl12 >= 0 ? 'above' : 'below'} the year before` : '';
       let sentence;
-      if (cat === 'dip') sentence = `${c.name}: weekly claims are ${rTxt}, so divorce filings run about ${p1(div.now)} below what they otherwise would this month and about ${p1(div.m12 || 0)} ${div.m12 >= 0 ? 'above' : 'below'} in twelve months, when the rebound lands. Hold divorce bids level now and let modification and enforcement lead.`;
+      if (cat === 'dip') sentence = `${c.name}: weekly claims are ${rTxt}, so divorce filings run about ${p1(div.now)} below what they otherwise would this month and about ${ab(div.m12 || 0)} in twelve months, when the rebound lands. Hold divorce bids level now and let modification and enforcement lead.`;
       else if (cat === 'rebound') sentence = `${c.name}: a year ago weekly claims ran ${ago}, and the twelve month rebound in divorce filings is landing now (about ${p1(landing.div)} above what they otherwise would be). Lift divorce bids where the account confirms the volume.`;
-      else if (cat === 'enf') sentence = `${c.name}: ${warnOpen ? `${warnOpen} WARN notice window${warnOpen === 1 ? ' is' : 's are'} open, ` : ''}support and possession disputes follow job losses: modification about ${p1(Math.max(mod.m12 || 0, landing.mod || 0))} and enforcement about ${p1(Math.max(enf.m12 || 0, landing.enf || 0))} above what they otherwise would be within the year. Weight modification and enforcement over new divorce copy.`;
+      else if (cat === 'enf') { const mm = Math.max(mod.m3 || -1e9, mod.m12 || -1e9, landing.mod || -1e9), ee = Math.max(enf.m3 || -1e9, enf.m12 || -1e9, landing.enf || -1e9);
+        sentence = warnOpen ? `${c.name}: ${warnOpen} WARN notice window${warnOpen === 1 ? ' is' : 's are'} open (3 to 12 months after the notice), so the layoff rule lifts modification and enforcement there now; support and possession orders come under strain after a layoff. Weight modification and enforcement over new divorce copy.`
+          : `${c.name}: the claims change points to more support and possession disputes within the year: modification about ${ab(mm)} and enforcement about ${ab(ee)} what they otherwise would be. Weight modification and enforcement over new divorce copy.`; }
       else sentence = `${c.name}: weekly claims are ${rTxt} and no WARN window is open, so the economy moves no line by 1% or more; the season and the calendar set the plan.`;
       if (held.length) sentence += ` A ${held[0].event.toLowerCase()} holds new spend until ${fmtD(held[0].endDay)}.`;
       return { fips: f, name: c.name, ratio: isFinite(ratio) ? ratio : null, dl: dl != null ? Math.round(dl * 1000) / 1000 : null, dl12: dl12 != null ? Math.round(dl12 * 1000) / 1000 : null, div, mod, enf, landing, warnOpen, hold: held.length ? held[0].event : '', cat, label: OUT_CAT[cat], sentence,
@@ -480,8 +484,9 @@ const LIVE = (() => {
       const starts = calendar(a, 7, { counties: sc }).filter(it => it.start >= a && it.start <= b);
       const why = lead && lead.top ? lead.top.p : null; const head = `${w === 0 ? 'This week' : 'Next week'} (${shortD(a)} to ${shortD(b)})`;
       const st = starts.length ? `; ${starts.map(it => it.short || it.title).join(' and ')} ${starts.length === 1 ? 'starts' : 'start'} ${shortD(starts[0].start)}` : '';
-      const text = movers.length ? `${head}: bid ${movers.slice(0, 3).map(r => `${lineShort(r.k)} ${r.avg > 0 ? 'up' : 'down'} ${Math.abs(r.avg)}%`).join(', ')}${movers.length > 3 ? ` and ${movers.length - 3} more line${movers.length - 3 === 1 ? '' : 's'}` : ''}, driven mainly by ${KWORD[why ? why.kind : 'season'] || 'the season'}${st}.`
-        : `${head}: every line stays within 10% of its base${lead && lead.avg ? ` (the largest move is ${lineShort(lead.k)} ${lead.avg > 0 ? 'up' : 'down'} ${Math.abs(lead.avg)}%)` : ''}${st}.`;
+      const mv = movers.slice(0, 3).map(r => `${lineName(r.k).toLowerCase()} ${r.avg > 0 ? 'up' : 'down'} ${Math.abs(r.avg)}%`); if (movers.length > 3) mv.push(`${movers.length - 3} more line${movers.length - 3 === 1 ? '' : 's'}`);
+      const text = movers.length ? `${head}: bid ${andList(mv)}, driven mainly by ${KWORD[why ? why.kind : 'season'] || 'the season'}${st}.`
+        : `${head}: every line stays within 10% of its base${lead && lead.avg ? ` (the largest move is ${lineName(lead.k).toLowerCase()} ${lead.avg > 0 ? 'up' : 'down'} ${Math.abs(lead.avg)}%)` : ''}${st}.`;
       out.push({ kind: 'week', from: a, to: b, line: lead ? lead.k : null, moves: movers.map(r => ({ line: r.k, adj: r.avg })), text, reason: why ? why.label.replace(/\s*\([+−]?\d+%\)\s*$/, '') : 'No factor moves any line: the season index sits near its average', source: why ? why.src : 'Statewide season index, OCA monthly filings 2022 to 2025', grade: why && why.kind === 'season' ? 'A' : why && why.kind === 'calendar' ? 'B' : 'C' });
     }
     return out;
@@ -633,7 +638,7 @@ const LIVE = (() => {
      written to extension storage ('sev.ext.plan') whenever the desk recomputes inside the extension */
   let PPLAN = '';
   async function pushPlan(o) {
-    o = o || {}; const R = rt(); if (!R) return false;
+    o = o || {}; const R = o.storage ? { storage: { local: o.storage } } : rt(); if (!R) return false;
     try {
       const d0 = today(); const fl = firmLines(); const line = o.line && lineKeys().includes(o.line) ? o.line : fl[0] || 'div_k';
       const days = series(line, null, d0, 42).map(t => ({ date: t.date, adj: t.adj, mult: Math.round(t.mult * 1000) / 1000, why: String(t.reasons[0] || '').slice(0, 140), hold: !!t.hold }));

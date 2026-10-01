@@ -8,6 +8,7 @@ import { fileURLToPath } from 'node:url';
 import { assert, eq } from './lib/mock.mjs';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const read = f => fs.readFileSync(path.join(ROOT, f), 'utf8');
+const dashT = t => /[\u2010-\u2015]|\s-\s|[A-Za-z]-[A-Za-z]/.test(String(t || ''));   /* house style: no hyphens or dashes in prose */
 
 /* ---------------- the core in a page-like context ---------------- */
 function pageContext() {
@@ -140,6 +141,56 @@ const edObs = LIVE.editorCSV({ lines: ['mod'] }).trim().split('\n'); const block
 eq(blocks.length, 42, 'six hour blocks a day for seven days'); assert(blocks.some(l => l.includes('(Monday)[00:00-06:00]')) && blocks.some(l => l.includes('[21:00-24:00]')), 'blocks cover the day');
 await LIVE.setUseObserved(false); eq(LIVE.editorCSV({ lines: ['mod'] }).split('\n').filter(l => /\[00:00-24:00\]/.test(l)).length, 7, 'whole days again with the switch off');
 P.run('delete globalThis.ACCT'); LIVE.invalidate();
+
+/* ---------------- optional sources: the Weather Service hold and BLS county unemployment ---------------- */
+const nwsFix = { type: 'FeatureCollection', features: [
+  { id: 'urn:a1', properties: { id: 'urn:a1', event: 'Flood Warning', status: 'Actual', messageType: 'Alert', severity: 'Severe', headline: 'Flood Warning issued October 1 by NWS Houston', areaDesc: 'Harris, TX', onset: '2026-10-01T06:00:00-05:00', ends: '2026-10-03T18:00:00-05:00', expires: '2026-10-02T06:00:00-05:00', geocode: { SAME: ['048201'], UGC: ['TXZ213'] } } },
+  { id: 'urn:a2', properties: { id: 'urn:a2', event: 'Winter Storm Warning', status: 'Actual', messageType: 'Update', headline: 'Winter Storm Warning', areaDesc: 'Bell; Coryell', onset: '2026-10-05T00:00:00-05:00', ends: '2026-10-06T12:00:00-05:00', geocode: { UGC: ['TXC027', 'TXC099'] } } },
+  { id: 'urn:a3', properties: { id: 'urn:a3', event: 'Heat Advisory', status: 'Actual', messageType: 'Alert', onset: '2026-10-01T10:00:00-05:00', ends: '2026-10-01T20:00:00-05:00', geocode: { SAME: ['048201'] } } },
+  { id: 'urn:a4', properties: { id: 'urn:a4', event: 'Flood Warning', status: 'Actual', messageType: 'Cancel', onset: '2026-10-01T06:00:00-05:00', ends: '2026-10-03T18:00:00-05:00', geocode: { SAME: ['048113'] } } },
+  { id: 'urn:a5', properties: { id: 'urn:a5', event: 'Hurricane Warning', status: 'Test', messageType: 'Alert', onset: '2026-10-01T06:00:00-05:00', ends: '2026-10-03T18:00:00-05:00', geocode: { SAME: ['048201'] } } }] };
+const pn = LIVE.parseNws(nwsFix); eq(pn.seen, 5, 'every alert read'); eq(pn.alerts.map(a => [a.event, a.counties.join(' '), a.startDay, a.endDay]), [['Flood Warning', '48201', '2026-10-01', '2026-10-03'], ['Winter Storm Warning', '48027 48099', '2026-10-05', '2026-10-06']], 'hold events by SAME and county UGC; advisories, cancellations and tests dropped; ends over expires');
+threw = null; try { LIVE.parseNws({ error: 'x' }); } catch (e) { threw = e; } assert(threw, 'a non GeoJSON answer is refused');
+eq(LIVE.lausId('48201'), 'LAUCN482010000000003', 'LAUS county unemployment rate series id');
+const blsFix = { status: 'REQUEST_SUCCEEDED', responseTime: 120, message: [], Results: { series: [
+  { seriesID: 'LAUCN482010000000003', data: [{ year: '2026', period: 'M13', periodName: 'Annual', value: '4.8', footnotes: [{}] }, { year: '2026', period: 'M08', periodName: 'August', latest: 'true', value: '5.9', footnotes: [{ code: 'P', text: 'Preliminary.' }] }, { year: '2026', period: 'M07', periodName: 'July', value: '5.6', footnotes: [{}] }, { year: '2025', period: 'M08', periodName: 'August', value: '4.6', footnotes: [{}] }, { year: '2025', period: 'M07', periodName: 'July', value: '-', footnotes: [{ code: 'N', text: 'Not available.' }] }] },
+  { seriesID: 'LAUCN480270000000003', data: [{ year: '2026', period: 'M08', value: '4.0', footnotes: [{}] }, { year: '2025', period: 'M08', value: '4.1', footnotes: [{}] }] }] } };
+const pb = LIVE.parseBls(blsFix); eq([pb.counties['48201'].last, pb.counties['48201'].ur, pb.counties['48201'].ur_yago, pb.counties['48201'].prelim], ['2026-08', 5.9, 4.6, true], 'BLS latest month, a year earlier, preliminary flag; M13 and dashes ignored');
+threw = null; try { LIVE.parseBls({ status: 'REQUEST_NOT_PROCESSED', message: ['daily threshold reached'] }); } catch (e) { threw = e; } assert(threw && /daily threshold/.test(threw.message), 'a refused BLS request explains itself');
+const posts = [];
+const fake2 = async (url, init) => { if (url.startsWith(LIVE.NWS_ALERTS)) return resp(200, nwsFix); if (url.startsWith(LIVE.BLS_API)) { posts.push({ url, init }); return resp(200, blsFix); } return fake(url); };
+await LIVE.refresh({ force: true, fetch: fake2 }); s = LIVE.state.sources;
+eq([s.nws.mode, s.nws.n, s.laus.mode, s.laus.n], ['live', 2, 'live', 2], 'both optional sources live');
+const body = JSON.parse(posts[0].init.body); eq([posts[0].init.method, body.seriesid], ['POST', ['LAUCN482010000000003', 'LAUCN480270000000003']], 'one BLS request for the scope counties');
+const la = LIVE.lausOf('48201'); eq([la.live, la.ur, la.ur_yago, la.last], [true, 5.9, 4.6, '2026-08'], 'live county unemployment replaces the snapshot month');
+const unT = LIVE.triggers().find(t => t.kind === 'unemp' && t.fips === '48201'); assert(unT && /live/.test(unT.source) && /5\.9%/.test(unT.title), 'the unemployment rule reads the live month: ' + (unT && unT.title));
+posts.length = 0; await LIVE.refresh({ force: true, fetch: fake2 }); eq(posts.length, 0, 'BLS is not asked again within the hour');
+const hs = LIVE.holds(); eq(hs.map(a => [a.event, a.inScope.join(' ')]), [['Flood Warning', '48201'], ['Winter Storm Warning', '48027']], 'warnings over the scope counties');
+const tH = LIVE.timing('div_k', '2026-10-02', '48201'); assert(tH.adj === -50 && tH.countyAdj === -50 && tH.hold && tH.hold.event === 'Flood Warning' && tH.parts.some(x => x.kind === 'hold'), 'a warned county holds new spend: ' + JSON.stringify([tH.adj, tH.hold]));
+const tHpo = LIVE.timing('po', '2026-10-02', '48201'); assert(!tHpo.hold && !tHpo.parts.some(x => x.kind === 'hold'), 'protective orders are never held');
+assert(!LIVE.timing('div_k', '2026-10-04', '48201').hold, 'the hold ends with the warning'); assert(!LIVE.timing('div_k', '2026-10-02').hold, 'campaign level holds only when every scope county is warned');
+assert(LIVE.timing('mod', '2026-10-05', '48027').hold && !LIVE.timing('mod', '2026-10-05', '48201').hold, 'the Bell warning holds Bell only');
+const tr2 = LIVE.triggers(); eq(tr2[0].kind, 'hold', 'an active hold leads the trigger list'); assert(/hold new spend in Harris County/.test(tr2[0].title) && /except protective orders/.test(tr2[0].action) && !dashT(tr2[0].action), 'hold trigger reads plainly');
+assert(tr2.some(t => t.kind === 'hold' && t.status === 'upcoming' && /Bell County/.test(t.title)), 'the Bell warning is upcoming');
+const dc2 = LIVE.dailyCSV('div_k', '48201'); assert(dc2.split('\n').some(l => l.startsWith('2026-10-02,') && /,-50,/.test(l) && /Hold: Flood Warning/.test(l)), 'the daily plan carries the hold');
+LIVE.setSettings({ nwsHold: false }); assert(!LIVE.timing('div_k', '2026-10-02', '48201').hold && !LIVE.triggers().some(t => t.kind === 'hold'), 'the hold rule can be switched off'); LIVE.setSettings({ nwsHold: true });
+/* the next fourteen days in plain words */
+const nar = LIVE.narrative(); eq(nar[0].kind, 'hold', 'a hold leads the fourteen days'); eq(nar.filter(x => x.kind === 'week').length, 2, 'one sentence per week for two weeks');
+for (const x of nar) assert(x.text && x.reason && x.source && /^[A-Z]/.test(x.text) && /\.$/.test(x.text) && !dashT(x.text) && !dashT(x.reason), 'plain sentence with a reason and a source: ' + x.text);
+const wks = nar.filter(x => x.kind === 'week'); assert(/^This week \(Oct 1 to Oct 7\)/.test(wks[0].text) && /^Next week \(Oct 8 to Oct 14\)/.test(wks[1].text), 'weeks named by their dates'); eq(nar.filter(x => x.kind === 'hold').length, 2, 'both warnings inside the fourteen days lead');
+/* the shock outlook */
+const ol = LIVE.outlook(); eq(ol.map(r => r.fips), ['48201', '48027'], 'one row per scope county');
+for (const r of ol) { const c = CI[r.fips]; eq(r.div.now, Math.round(c.econ.expected.now_pct * 10) / 10, 'divorce now from the econ fields: ' + r.name); assert(Math.abs(LIVE.pastDlog(c, 0) - c.econ.expected.dlog_claims) < 0.005, 'the weekly series reproduces the econ log change: ' + r.name); assert(LIVE.OUT_CAT[r.cat] === r.label && r.sentence.startsWith(r.name + ':') && !dashT(r.sentence), 'category and sentence: ' + r.sentence); }
+const pe = P.run("D.panel['lenf|claims_0_12'].coefs.lclaims_l12.coef"); const dlH = CI['48201'].econ.expected.dlog_claims; eq(ol[0].enf.m12, Math.round((Math.exp(pe * dlH) - 1) * 1000) / 10, 'enforcement at twelve months from the panel');
+const ex0 = JSON.parse(JSON.stringify(CI['48201'].econ.expected)); CI['48201'].econ.expected.now_pct = -2.4; CI['48201'].econ.expected.m12_pct = 1.6; LIVE.invalidate();
+let o2 = LIVE.outlook().find(r => r.fips === '48201'); eq(o2.cat, 'dip', 'filings 1% or more below now is Dip now'); assert(/2\.4% below/.test(o2.sentence) && /1\.6% above in twelve months/.test(o2.sentence), 'the dip sentence: ' + o2.sentence);
+Object.assign(CI['48201'].econ.expected, ex0); LIVE.invalidate();
+assert(/^# Shock outlook/.test(LIVE.outlookCSV()) && LIVE.outlookCSV().includes('Harris,48201,'), 'outlook CSV');
+/* the popup's plan */
+const ext = {}; const okp = await LIVE.pushPlan({ storage: { async set(o) { Object.assign(ext, o); } }, force: true }); const plan = ext[LIVE.EXT_PLAN];
+assert(okp && plan && plan.days.length === 42 && plan.days[0].date === TODAY && plan.line === LIVE.firmLines()[0] && plan.deadline && plan.deadline.date === '2027-04-01' && plan.holds.length === 2, 'the plan for the popup: 42 days of the lead line, the next deadline, the holds');
+P.run('LIVE.state.live.nws = null; LIVE.state.live.laus = null; LIVE.invalidate();');
+eq(LIVE.holds().length, 0, 'no warnings held once cleared');
 
 /* ---------------- calendar dates ---------------- */
 eq(LIVE.thanksgiving(2026), '2026-11-26', 'Thanksgiving 2026'); eq(LIVE.thanksgiving(2027), '2027-11-25', 'Thanksgiving 2027'); eq(LIVE.thanksgiving(2030), '2030-11-28', 'Thanksgiving 2030');
