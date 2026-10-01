@@ -9,8 +9,8 @@
      previewPage(bp, media) → a standalone preview document · validateSchema(schema) → [messages] · defaultForm(bp) → {fields, consent, button}
      tblsLine(area) → 'Board Certified, <area>, Texas Board of Legal Specialization' (the only specialty wording Rule 7.02(b) allows)
    Blueprint: {forge, site:{url, name, cms, brand:{name, primary, accent, dark, font_heading, font_body, logo_url, globals}, firm}, page, media, sections}
-     site.firm  the firm profile in the FIRM.get() shape; optional resolved names county_names, city_names, practice_areas (else CI and
-                LINE_META are read when the app has them). It feeds the LegalService node, the attorney cards, the disclaimer and the form.
+     site.firm  the firm profile in the FIRM.get() shape (FIRM.get() itself when the blueprint has none and the app has FIRM); optional
+                resolved names county_names, city_names, practice_areas (else CI and LINE_META are read when the app has them). It feeds the LegalService node, the attorney cards, the disclaimer and the form.
      page       archetype (home, about, service, practice, location, landing, article, guide, attorney, contact), slug, title, h1,
                 meta_description, language (en-US or es-US), template, breadcrumbs, summary, entity (merged into the LegalService node),
                 dates {published, modified, reviewed}, cta, conversion {sticky_mobile_bar, trust, form}, internal_links, schema_extra, author,
@@ -206,11 +206,12 @@ const FORGE_COMPILE = (() => {
   class Forge {
     constructor(bp, media) {
       this.bp = bp || {}; this.media = media || {}; this.page = this.bp.page || {}; this.site = this.bp.site || {}; this.brand = this.site.brand || {};
-      this.primary = this.brand.primary || '#1b4332'; this.accent = this.brand.accent || '#307a4f'; this.dark = this.brand.dark || '#0a291a';
+      const firm = this.site.firm || (typeof FIRM !== 'undefined' && FIRM && typeof FIRM.get === 'function' ? FIRM.get() : null); const fc = (firm && firm.colors) || {};
+      this.primary = this.brand.primary || fc.primary || '#1b4332'; this.accent = this.brand.accent || fc.accent || '#307a4f'; this.dark = this.brand.dark || fc.dark || '#0a291a';
       this.tint = hexmix(this.primary, 0.9); this.cta = this.page.cta || {}; this.warnings = []; this.infos = []; this.use_globals = this.brand.globals !== false;
       this.lang = /^es/i.test(this.page.language || '') ? 'es' : 'en'; this.T = STR[this.lang];
       this.base = String(this.site.url || '').replace(/\/+$/, ''); this.url = this.page.canonical || `${this.base}/${String(this.page.slug || '').replace(/^\/+|\/+$/g, '')}/`;
-      this.firm = firmModel(this.site.firm); this.used = new Set(); this.autoDisclaimer = false;
+      this.firm = firmModel(firm); this.used = new Set(); this.autoDisclaimer = false;
       this.S = this.normSections();
     }
     warn(msg) { if (!this.warnings.includes(msg)) this.warnings.push(msg); }
@@ -634,8 +635,9 @@ const FORGE_COMPILE = (() => {
       const text = visibleText(html);
       const ph = text.match(/\[(Firm name|Responsible attorney|Office city|City|County|Phone|Fee|Base)\]/); if (ph) w.push(`BLOCK: ${ph[0]} is still a placeholder on the page; fill the firm profile (Rule 7.01(a))`);
       const F = this.firm; const rn = F.responsible && F.responsible.name, city = F.primary && String(F.primary.city || '').trim();
-      if (!S.some(s => s.type === 'disclaimer' || s.id === 'notice' || s.id === 'disclaimer')) w.push('BLOCK: no disclaimer on the page; Rule 7.02(a) needs the responsible attorney and the primary practice location on every page');
-      else if (rn && city && !(text.includes(rn) && text.includes(city))) w.push('BLOCK: the page does not name the responsible attorney and the primary practice location (Rule 7.02(a)); keep the disclaimer section');
+      const notes = S.filter(s => s.type === 'disclaimer' || s.id === 'notice' || s.id === 'disclaimer');
+      if (!notes.length) w.push('BLOCK: no disclaimer on the page; Rule 7.02(a) needs the responsible attorney and the primary practice location on every page');
+      else if (rn && city) { const nt = notes.map(s => visibleText(this.secBody(s) || '')).join(' '); if (!(nt.includes(rn) && nt.includes(city))) w.push('BLOCK: the disclaimer does not name the responsible attorney and the primary practice location (Rule 7.02(a)); use the disclaimer section'); }
       const sc = text.replace(TBLS_ALL, '').match(SPECIAL); if (sc) w.push(`Rule 7.02(b): "${sc[0]}" claims special competence; only "Board Certified, [area], Texas Board of Legal Specialization" may be said`);
       const dm = text.match(DASH); if (dm) w.push(`house style: a hyphen or dash ("${dm[0]}") in the visible text; write ranges as "2 to 4" and drop the dash`);
       if (S.some(s => s.type === 'form') && !this.formSpec().shortcode && !/attorney client|abogado y cliente/i.test(this.formSpec().consent)) w.push('form consent does not say that submitting does not create an attorney client relationship');

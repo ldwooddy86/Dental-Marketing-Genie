@@ -119,7 +119,7 @@ call it; an ad or page that does not pass is not exported as ready (it is export
 ## 4. Site Forge (04 to 06, module 21) and Publish (module 22)
 
 Same contract as the Thermal Atlas: the forge writes blueprints (`{site, page, sections[], media, seo, schema}`), `FORGE_COMPILE.compile(bp, media)`
-returns `{elementor_data, page_settings, html, schema, seo, warnings}`, and once module 21 is mounted it exposes
+returns `{elementor_data, page_settings, html, schema, seo, warnings, issues:[{sev, msg}], portable}` (`portable` is the blueprint lowered to the section types the headless kit renders; build CMS pages with `FORGE_COMPILE.pageFor(bp, r, media, extra)`, which uses it). Law firm section types: `attorneys` (TBLS line only in the exact Rule 7.02(b) form), `disclaimer` (added automatically when absent), `court_facts`, `lang_toggle`, `process`; `FORGE_COMPILE.defaultForm(bp)` is the intake form (county and matter type selects, no confidential details, no attorney client relationship); `validateSchema(schema)` checks property names. Once module 21 is mounted it exposes
 `MODI.forge.publishPages()` (PortablePage list, `CMS.pageFromForge`), `MODI.forge.publishAssets()` and `MODI.forge.publishSite()`.
 Module 22 mounts module 21 silently when it needs pages: `if (!MODI.forge.mounted) { MODI.forge.mounted = true; MODI.forge.mount($('#mod-forge')); }`.
 Schema for a firm is `LegalService` plus `Attorney` (with `areaServed`, `knowsAbout`, `address`, `telephone`), `FAQPage`, `BreadcrumbList`.

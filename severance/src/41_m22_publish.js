@@ -484,7 +484,7 @@ registerModule({
     function fromJson(o, name, depth) {
       depth = depth || 0; if (depth > 3) return []; if (Array.isArray(o)) return o.flatMap(x => fromJson(x, name, depth + 1)); if (!o || typeof o !== 'object') return [];
       if (o.content_html != null || (o.elementor_data && o.slug)) { const p = CMS.pageFromBundle(o); p.kind = 'bundle'; p.label = name; p.links = (((o.blueprint || {}).page || {}).internal_links) || []; p.words = CMS.words(p.html); return [p]; }
-      if (o.page && Array.isArray(o.sections)) { if (typeof FORGE_COMPILE === 'undefined') throw new Error('the blueprint compiler is not loaded'); const r = FORGE_COMPILE.compile(o, {}); const p = CMS.pageFromForge(o, r, mediaFromBp(o), { label: name, kind: 'blueprint' }); p.checks = checksFromLint(r.lint || []); p.words = CMS.words(p.html); return [p]; }
+      if (o.page && Array.isArray(o.sections)) { if (typeof FORGE_COMPILE === 'undefined') throw new Error('the blueprint compiler is not loaded'); const r = FORGE_COMPILE.compile(o, {}); const p = (FORGE_COMPILE.pageFor || CMS.pageFromForge)(FORGE_COMPILE.pageFor ? o : (r.portable || o), r, mediaFromBp(o), { label: name, kind: 'blueprint' }); p.checks = checksFromLint(r.lint || []); p.words = CMS.words(p.html); return [p]; }
       if (Array.isArray(o.pages)) return fromJson(o.pages, name, depth + 1); if (o.bundle && typeof o.bundle === 'object') return fromJson(o.bundle, name, depth + 1); if (o.blueprint && o.blueprint.page && Array.isArray(o.blueprint.sections)) return fromJson(o.blueprint, name, depth + 1);
       return [];
     }
