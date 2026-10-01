@@ -39,6 +39,10 @@ severance/
   src/09_live_core.js      LIVE: triggers from the embedded data, the live sources, the legal calendar, ad timing
   src/12_hazard_core.js    SEV_HAZ: divorce hazard by duration, stock ageing, scenarios (module 26)
   src/13_stats_core.js     SEV_STATS: correlation, OLS with robust errors, Shapley R squared, Moran's I and LISA, survival (module 27)
+  src/14_model_core.js     SEV_MODEL: one store of the paid and service line assumptions ('sev.model', grade D defaults, actuals from
+                           Accounts win when newer; emits BUS 'model'), read by Paid, Service Lines and the Campaign Desk; FLM.compute(metro):
+                           per ZIP and per line economics (matter mass, fee value index, competition, click cost, priority, six bid bands,
+                           quiet auctions, tiers A plus to E), daypart templates and the writers; FL_ANGLES: 11 ZIP triggered angles
   src/cms/*.js             the CMS layer, identical to ../chrome-app/src/cms except the storage key (sv.cms.v1) and one WordPress hint
   src/20..39_m*.js         modules 01 to 20 (01 to 11 statewide, 12 to 19 metro areas, 20 method)
   src/40..44_m*.js         modules 21 to 25: Site Forge, Publish, Accounts, Competitor Watch, Live Desk

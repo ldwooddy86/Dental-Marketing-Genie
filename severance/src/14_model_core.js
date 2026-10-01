@@ -111,7 +111,7 @@ const SEV_MODEL = (() => {
     if (!patch || typeof patch !== 'object') return; const now = Date.now(); let n = 0;
     const put = (sc, id, k, v) => { const F = FIELDS[sc][k]; if (!F) return; const p = pathOf(sc, id, k); const box = sc === 'line' ? (U.lines[id] = U.lines[id] || {}) : sc === 'rate' ? U.rates : U.g;
       if (v === null || v === '') { if (k in box) { delete box[k]; delete U.at[p]; n++; } return; }
-      v = +v; if (!isNum(v)) return; box[k] = clamp(v, F.min, F.max); U.at[p] = now; n++; };
+      v = +v; if (!isNum(v)) return; v = clamp(v, F.min, F.max); if (box[k] === v) return; box[k] = v; U.at[p] = now; n++; };   // an unchanged value is not news
     Object.keys(GF).forEach(k => { if (k in patch) put('g', null, k, patch[k]); });
     if (patch.rates) Object.keys(patch.rates).forEach(k => put('rate', null, k, patch.rates[k]));
     if (patch.lines) Object.keys(patch.lines).forEach(id => { if (IDS.includes(id) && patch.lines[id]) Object.keys(patch.lines[id]).forEach(k => put('line', id, k, patch.lines[id][k])); });
