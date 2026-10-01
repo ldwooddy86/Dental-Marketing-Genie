@@ -171,6 +171,15 @@ const fc = X.flightCSV(M, fl); eq(fc.header, ['month', 'days', 'season_index', '
 /* ---- the build 1 exports, kept */
 eq(X.kwCSV(M).header, ['Campaign', 'Ad Group', 'Keyword', 'Match Type'], 'keywords CSV header (build 1)'); assert(X.negText(M).split('\n').includes('pro bono') && X.negText(M).split('\n').includes('gratis'), 'negatives text');
 eq(X.planCSV(M).header.slice(0, 9), ['geography', 'line', 'expected_matters', 'value_per_matter', 'share_pct', 'budget_month', 'leads_month', 'retained_month', 'revenue_month'], 'plan CSV header (build 1 columns first)');
+{ const MS2 = model(X, { lines: M.lines.map(l => Object.assign({}, l, { seas, shift: 1 })) }); const pc = X.planCSV(MS2); const mi = pc.header.indexOf('Oct 2026 usd');
+  assert(mi > 0 && pc.header[mi + 11] === 'Sep 2027 usd', 'plan CSV carries the twelve month plan from the flight start month');
+  const tot = pc.rows[pc.rows.length - 1]; eq(tot[1], 'Total', 'plan CSV total row'); assert(Math.abs(+tot[mi] - pc.rows.slice(0, -1).reduce((a, r) => a + +r[mi], 0)) <= 2, 'total row sums the lines for the month');
+  assert(Math.abs(pc.rows.slice(0, -1).reduce((a, r) => a + pc.header.slice(mi, mi + 12).reduce((b, h) => b + +r[pc.header.indexOf(h)], 0), 0) - 3 * 1000 * 12) < 12, 'each line plans twelve monthly budgets'); }
+/* export names: severance_desk_<geo slug>_<start>_<what>.<ext> */
+eq(files.google.name, 'severance_desk_dallas-fort-worth_2026-10-15_google-ads-editor.csv', 'Google file name'); eq(X.fname(model(X, { geo: { code: 'HARRISCO', title: 'Harris County' } }), 'plan', 'json'), 'severance_desk_harris-county_2026-10-15_plan.json', 'plan file name');
+X.PLATS.forEach(p => assert(/^severance_desk_dallas-fort-worth_2026-10-15_[a-z-]+\.csv$/.test(files[p].name), p + ' file name pattern: ' + files[p].name));
+/* a CPC of 0 leaves Max CPC empty instead of inventing one */
+{ const z = X.google(model(X, { lines: M.lines.map(l => Object.assign({}, l, { cpc: 0, cpcMs: 0 })) })); const zc2 = h => z.header.indexOf(h); assert(z.rows.filter(r => r[zc2('Ad Group Type')] === 'Standard').every(r => r[zc2('Max CPC')] === ''), 'CPC 0: Max CPC blank'); }
 eq(X.creativeCSV(M).header, ['platform', 'line', 'language', 'ad', 'field', 'text', 'chars', 'limit', 'review status', 'review notes'], 'creative library header');
 
 /* ---- the line mix */

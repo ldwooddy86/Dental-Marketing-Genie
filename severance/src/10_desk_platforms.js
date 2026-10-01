@@ -280,6 +280,9 @@ const DESKX = (() => {
   /* ---- names and URLs */
   const ymd = iso => String(iso || '').replace(/-/g, '');
   const LANGN = { en: 'English', es: 'Spanish' };
+  /* export names: severance_desk_<geography slug>_<flight start yyyy-mm-dd>_<what>.<ext> */
+  const geoSlug = M => String((M.geo && (M.geo.slug || M.geo.title)) || 'texas').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60) || 'texas';
+  const fname = (M, what, ext) => `severance_desk_${geoSlug(M)}_${M.start}_${what}.${ext}`;
   function campName(M, line, plat, lang) { return [M.geo && M.geo.code || 'TX', String(line).toUpperCase(), String(plat).toUpperCase(), String(lang || 'en').toUpperCase(), ymd(M.start)].join('_'); }
   function landing(M, line, src, camp, medium) { const base = (M.firm && M.firm.url || '').replace(/\/+$/, ''); if (!base) return ''; const pg = (LIB[line] && LIB[line].page) || ''; return `${base}${pg}?utm_source=${encodeURIComponent(src)}&utm_medium=${medium || 'cpc'}&utm_campaign=${encodeURIComponent(camp)}&utm_content=${encodeURIComponent(line)}`; }
   const spendOf = (M, p) => (M.plat && M.plat[p] && M.plat[p].spend) || 0;
@@ -313,7 +316,7 @@ const DESKX = (() => {
       const snip = (M.lines || []).map(x => fill(lang === 'es' ? LIB[x.key].es.h[0] : LIB[x.key].sl, ctx, limit(p, 'snippet') || 25)).filter(Boolean); if (snip.length >= 3) rows.push({ 'Campaign': c, 'Header': S.snippet, 'Snippet values': snip.slice(0, 10).join(';'), 'Status': 'Enabled' });
       const cities = [...new Set((M.markets || []).map(m => m.city).filter(x => x && x.length <= 25))]; if (cities.length >= 3) rows.push({ 'Campaign': c, 'Header': S.cities, 'Snippet values': cities.slice(0, 10).join(';'), 'Status': 'Enabled' });
       if (M.firm && M.firm.phone) rows.push({ 'Campaign': c, 'Phone number': M.firm.phone, 'Country code': 'US', 'Status': 'Enabled' });
-      const maxcpc = (+(p === 'google' ? li.cpc : li.cpcMs) || 1).toFixed(2); const kws = keywords(M, line, lang); const z0 = (M.markets || [])[0];
+      const cpcv = +(p === 'google' ? li.cpc : li.cpcMs); const maxcpc = cpcv > 0 ? cpcv.toFixed(2) : ''; const kws = keywords(M, line, lang); const z0 = (M.markets || [])[0];
       ['Core', 'Questions', 'Local'].forEach(gn => {
         const ks = kws.filter(k => k.group === gn); if (!ks.length) return; const ag = `${li.short || line} ${gn}`;
         rows.push({ 'Campaign': c, 'Ad Group': ag, 'Ad Group Type': 'Standard', 'Max CPC': maxcpc, 'Ad Group Status': 'Enabled' });
@@ -326,8 +329,8 @@ const DESKX = (() => {
     }));
     return rows;
   }
-  const google = M => out(`google-ads-editor_${M.geo && M.geo.code}_${M.start}.csv`, GH, searchRows(M, 'google'));
-  const microsoft = M => out(`microsoft-ads-import_${M.geo && M.geo.code}_${M.start}.csv`, GH, searchRows(M, 'microsoft'));
+  const google = M => out(fname(M, 'google-ads-editor', 'csv'), GH, searchRows(M, 'google'));
+  const microsoft = M => out(fname(M, 'microsoft-ads-import', 'csv'), GH, searchRows(M, 'microsoft'));
 
   /* ---- Local Services Ads build sheet */
   const LSA_H = ['Field', 'Value', 'Notes'];
@@ -350,7 +353,7 @@ const DESKX = (() => {
       { Field: 'Bio', Value: bio, Notes: `${bio.length} of ${limit('lsa', 'bio')} characters` }
     ].concat(LSA_CHECK.map((x, i) => ({ Field: 'Google Screened checklist ' + (i + 1), Value: x, Notes: 'Confirm in the console' })))
       .concat([{ Field: 'Status', Value: 'Paused', Notes: 'Turn on after review' }, { Field: 'Review status', Value: sc.status, Notes: sc.notes }]);
-    return out(`lsa-build-sheet_${M.geo && M.geo.code}_${M.start}.csv`, LSA_H, rows);
+    return out(fname(M, 'lsa-build-sheet', 'csv'), LSA_H, rows);
   }
 
   /* ---- YouTube and Demand Gen build sheet */
@@ -364,7 +367,7 @@ const DESKX = (() => {
       [1, 2, 3, 4, 5].forEach(i => { o['Headline ' + i] = s.fields['headline' + i] || ''; o['Description ' + i] = s.fields['description' + i] || ''; });
       rows.push(o);
     }));
-    return out(`youtube-demand-gen-build-sheet_${M.geo && M.geo.code}_${M.start}.csv`, DG_H, rows);
+    return out(fname(M, 'youtube-demand-gen', 'csv'), DG_H, rows);
   }
 
   /* ---- Meta Ads Manager import */
@@ -377,7 +380,7 @@ const DESKX = (() => {
       const s = social(M, 'meta', li.key, lang, (M.markets || [])[0]); const sc = screen('meta', s.fields, lang, urlNote(M).concat(lpNote(s.lp))); const as = campName(M, li.key, 'meta', lang);
       rows.push({ 'Campaign Name': c, 'Campaign Status': 'PAUSED', 'Campaign Objective': 'Outcome Leads', 'Special Ad Categories': '', 'Ad Set Name': as, 'Ad Set Run Status': 'PAUSED', 'Ad Set Daily Budget': daily(spend * (li.share || 0) * langSplit(M, lang)), 'Ad Set Time Start': M.start, 'Ad Set Time Stop': M.end, 'Zip': radius || !zips.length ? '' : zips.map(z => 'US:' + z).join(', '), 'Radius': radius || !zips.length ? metaRadius(M) : '', 'Age Min': 18, 'Ad Name': `${li.short || li.key} ${lang.toUpperCase()}`, 'Ad Status': 'PAUSED', 'Title': s.fields.headline, 'Body': s.fields.primary, 'Description': s.fields.description, 'Link': landing(M, li.key, 'meta', c, 'paid_social'), 'Call to Action': 'CONTACT_US', 'Review status': sc.status, 'Review notes': sc.notes });
     }); });
-    return out(`meta-ads-import_${M.geo && M.geo.code}_${M.start}.csv`, META_H, rows);
+    return out(fname(M, 'meta-ads-import', 'csv'), META_H, rows);
   }
 
   /* ---- LinkedIn: recruiting and referral partner campaigns */
@@ -385,7 +388,7 @@ const DESKX = (() => {
   function linkedin(M) {
     const use = (M.plan && M.plan.li) || 'both'; const kinds = use === 'both' ? ['recruit', 'referral'] : [use]; const spend = spendOf(M, 'linkedin'); const locName = (M.geo && M.geo.title) || 'Texas';
     const rows = kinds.map(k => { const a = recruitAd(M, k); const sc = screen('linkedin', a.fields, 'en', lpNote(a.lp)); return { 'Campaign Group': k === 'referral' ? 'Referral partners' : 'Recruiting', 'Campaign': campName(M, k === 'referral' ? 'REFERRAL' : 'RECRUIT', 'linkedin', 'en'), 'Objective': k === 'referral' ? 'Website visits' : 'Job applicants', 'Locations': locName + ' Area', 'Job titles': a.titles.join('; '), 'Daily budget': daily(spend / kinds.length), 'Start date': M.start, 'End date': M.end, 'Intro text': a.fields.intro, 'Headline': a.fields.headline, 'Status': 'Paused', 'Review status': sc.status, 'Review notes': sc.notes }; });
-    return out(`linkedin-build-sheet_${M.geo && M.geo.code}_${M.start}.csv`, LI_H, rows);
+    return out(fname(M, 'linkedin', 'csv'), LI_H, rows);
   }
 
   /* ---- Yelp, Nextdoor, TikTok build sheets */
@@ -393,19 +396,19 @@ const DESKX = (() => {
   function yelp(M) {
     const spend = spendOf(M, 'yelp'); const area = M.scope === 'counties' ? (M.counties || []).map(k => k.name + ' County').join('; ') : [...new Set((M.markets || []).map(m => m.city))].join('; ') + ' (' + (M.markets || []).map(m => m.zip).join(' ') + ')';
     const rows = (M.lines || []).map(li => { const s = social(M, 'yelp', li.key, 'en', (M.markets || [])[0]); const sc = screen('yelp', s.fields, 'en', urlNote(M).concat(lpNote(s.lp))); return { 'Business name': (M.firm && M.firm.name) || PH.firm, 'Category': 'Divorce and Family Law', 'Service area': area, 'Monthly budget': Math.round(spend * (li.share || 0)), 'Ad name': li.short || li.key, 'Headline': s.fields.headline, 'Body': s.fields.body, 'Call to action': 'Request a consultation', 'Landing URL': landing(M, li.key, 'yelp', campName(M, li.key, 'yelp', 'en')), 'Status': 'Paused', 'Review status': sc.status, 'Review notes': sc.notes }; });
-    return out(`yelp-build-sheet_${M.geo && M.geo.code}_${M.start}.csv`, YELP_H, rows);
+    return out(fname(M, 'yelp', 'csv'), YELP_H, rows);
   }
   const ND_H = ['Campaign Name', 'Objective', 'Ad Group Name', 'ZIP codes', 'Daily budget', 'Start date', 'End date', 'Ad Name', 'Headline', 'Body', 'Call to action', 'Link', 'Status', 'Review status', 'Review notes'];
   function nextdoor(M) {
     const spend = spendOf(M, 'nextdoor'); const zips = M.scope === 'counties' ? (M.countyZips || []) : (M.markets || []).map(m => m.zip);
     const rows = (M.lines || []).map(li => { const c = campName(M, li.key, 'nextdoor', 'en'); const s = social(M, 'nextdoor', li.key, 'en', (M.markets || [])[0]); const sc = screen('nextdoor', s.fields, 'en', urlNote(M).concat(lpNote(s.lp))); return { 'Campaign Name': c, 'Objective': 'Website clicks', 'Ad Group Name': li.short || li.key, 'ZIP codes': zips.join(' '), 'Daily budget': daily(spend * (li.share || 0)), 'Start date': M.start, 'End date': M.end, 'Ad Name': (li.short || li.key) + ' ad', 'Headline': s.fields.headline, 'Body': s.fields.body, 'Call to action': 'Learn more', 'Link': landing(M, li.key, 'nextdoor', c, 'paid_social'), 'Status': 'Paused', 'Review status': sc.status, 'Review notes': sc.notes }; });
-    return out(`nextdoor-build-sheet_${M.geo && M.geo.code}_${M.start}.csv`, ND_H, rows);
+    return out(fname(M, 'nextdoor', 'csv'), ND_H, rows);
   }
   const TT_H = ['Campaign name', 'Objective', 'Budget mode', 'Ad group name', 'Location', 'ZIP codes', 'Age', 'Daily budget', 'Schedule start', 'Schedule end', 'Ad name', 'Display name', 'Ad text', 'Call to action', 'Destination URL', 'Status', 'Review status', 'Review notes'];
   function tiktok(M) {
     const spend = spendOf(M, 'tiktok'); const zips = M.scope === 'counties' ? (M.countyZips || []) : (M.markets || []).map(m => m.zip); const cities = M.scope === 'counties' ? (M.counties || []).map(k => k.name + ' County, TX') : [...new Set((M.markets || []).map(m => m.city + ', TX'))];
     const rows = []; (M.langs || ['en']).forEach(lang => (M.lines || []).forEach(li => { const c = campName(M, li.key, 'tiktok', lang); const s = social(M, 'tiktok', li.key, lang, (M.markets || [])[0]); const sc = screen('tiktok', s.fields, lang, urlNote(M).concat(lpNote(s.lp))); rows.push({ 'Campaign name': c, 'Objective': 'Lead generation', 'Budget mode': 'Daily', 'Ad group name': `${li.short || li.key} ${lang.toUpperCase()}`, 'Location': cities.slice(0, 20).join('; '), 'ZIP codes': zips.join(' '), 'Age': '18+', 'Daily budget': daily(spend * (li.share || 0) * langSplit(M, lang)), 'Schedule start': M.start, 'Schedule end': M.end, 'Ad name': `${li.short || li.key} ${lang.toUpperCase()} ad`, 'Display name': s.fields.display_name, 'Ad text': s.fields.text, 'Call to action': lang === 'es' ? 'Contáctanos' : 'Contact us', 'Destination URL': landing(M, li.key, 'tiktok', c, 'paid_social'), 'Status': 'Paused', 'Review status': sc.status, 'Review notes': sc.notes }); }));
-    return out(`tiktok-build-sheet_${M.geo && M.geo.code}_${M.start}.csv`, TT_H, rows);
+    return out(fname(M, 'tiktok', 'csv'), TT_H, rows);
   }
 
   /* ---- every ad in the files, screened (the Screen all creative panel, the creative library export, module 11's feed) */
@@ -421,7 +424,7 @@ const DESKX = (() => {
     return all;
   }
   const CR_H = ['platform', 'line', 'language', 'ad', 'field', 'text', 'chars', 'limit', 'review status', 'review notes'];
-  function creativeCSV(M) { const rows = []; creative(M).forEach(a => Object.keys(a.fields).forEach(k => rows.push({ platform: PLAB[a.platform], line: a.line, language: a.lang, ad: a.label, field: k, text: a.fields[k], chars: String(a.fields[k] || '').length, limit: limit(a.platform, k.replace(/\d+$/, '')) || '', 'review status': a.review.status, 'review notes': a.review.notes }))); return out(`creative-library_${M.geo && M.geo.code}_${M.start}.csv`, CR_H, rows); }
+  function creativeCSV(M) { const rows = []; creative(M).forEach(a => Object.keys(a.fields).forEach(k => rows.push({ platform: PLAB[a.platform], line: a.line, language: a.lang, ad: a.label, field: k, text: a.fields[k], chars: String(a.fields[k] || '').length, limit: limit(a.platform, k.replace(/\d+$/, '')) || '', 'review status': a.review.status, 'review notes': a.review.notes }))); return out(fname(M, 'creative-library', 'csv'), CR_H, rows); }
 
   /* ---- pacing. The flight runs from the start date for weeks*7 days; each day carries the line's season (shifted a month ahead for
      the consultation, none for protective orders) times the live timing multiplier when LIVE is present. */
@@ -451,18 +454,27 @@ const DESKX = (() => {
     return out;
   }
   const FL_H = ['month', 'days', 'season_index', 'live_multiplier', 'media_usd', 'live_reasons'];
-  const flightCSV = (M, months) => out(`flight-pacing_${M.geo && M.geo.code}_${M.start}.csv`, FL_H, months.map(x => ({ month: x.label, days: x.days, season_index: x.idx.toFixed(1), live_multiplier: x.mult.toFixed(3), media_usd: Math.round(x.spend), live_reasons: x.reasons.map(r => `${r.text} (${r.days} d)`).join('; ') })));
+  const flightCSV = (M, months) => out(fname(M, 'flight-pacing', 'csv'), FL_H, months.map(x => ({ month: x.label, days: x.days, season_index: x.idx.toFixed(1), live_multiplier: x.mult.toFixed(3), media_usd: Math.round(x.spend), live_reasons: x.reasons.map(r => `${r.text} (${r.days} d)`).join('; ') })));
   /* the build 1 exports, kept: keywords, negatives, ZIP targets, plan */
   const KW_H = ['Campaign', 'Ad Group', 'Keyword', 'Match Type'];
-  const kwCSV = M => out(`severance_keywords_${M.geo && M.geo.code}.csv`, KW_H, (M.langs || ['en']).flatMap(lang => (M.lines || []).flatMap(li => keywords(M, li.key, lang).map(k => ({ 'Campaign': campName(M, li.key, 'google', lang), 'Ad Group': `${li.short || li.key} ${k.group}`, 'Keyword': k.kw, 'Match Type': k.match })))));
+  const kwCSV = M => out(fname(M, 'keywords', 'csv'), KW_H, (M.langs || ['en']).flatMap(lang => (M.lines || []).flatMap(li => keywords(M, li.key, lang).map(k => ({ 'Campaign': campName(M, li.key, 'google', lang), 'Ad Group': `${li.short || li.key} ${k.group}`, 'Keyword': k.kw, 'Match Type': k.match })))));
   const negText = M => NEG.concat((M.langs || []).includes('es') ? NEG_ES : []).join('\n') + '\n';
   const ZIP_H = ['Location', 'ID', 'Type', 'Bid adjustment', 'City', 'County'];
-  const zipCSV = M => out(`severance_zip_targets_${M.geo && M.geo.code}.csv`, ZIP_H, M.scope === 'counties' ? (M.counties || []).map(k => ({ Location: k.name + ' County, Texas, United States', ID: k.gt || '', Type: 'County', 'Bid adjustment': bidStr(k.bid || 0), City: '', County: k.name })) : (M.markets || []).map(m => ({ Location: m.zip + ', Texas, United States', ID: m.gt || '', Type: 'Postal Code', 'Bid adjustment': bidStr(m.bid || 0), City: m.city, County: m.county_name })));
+  const zipCSV = M => out(fname(M, 'zip-targets', 'csv'), ZIP_H, M.scope === 'counties' ? (M.counties || []).map(k => ({ Location: k.name + ' County, Texas, United States', ID: k.gt || '', Type: 'County', 'Bid adjustment': bidStr(k.bid || 0), City: '', County: k.name })) : (M.markets || []).map(m => ({ Location: m.zip + ', Texas, United States', ID: m.gt || '', Type: 'Postal Code', 'Bid adjustment': bidStr(m.bid || 0), City: m.city, County: m.county_name })));
   const PLAN_H = ['geography', 'line', 'expected_matters', 'value_per_matter', 'share_pct', 'budget_month', 'leads_month', 'retained_month', 'revenue_month', 'cpc', 'conversion_pct', 'retained_pct', 'rates_source'];
-  const planCSV = M => out(`severance_plan_${M.geo && M.geo.code}_${M.start}.csv`, PLAN_H, (M.lines || []).map(r => ({ geography: M.geo && M.geo.title, line: r.name, expected_matters: Math.round(r.n || 0), value_per_matter: r.fee, share_pct: ((r.share || 0) * 100).toFixed(1), budget_month: Math.round(r.budget || 0), leads_month: (r.leads || 0).toFixed(1), retained_month: (r.ret || 0).toFixed(2), revenue_month: Math.round(r.rev || 0), cpc: (+r.cpc || 0).toFixed(2), conversion_pct: (+r.cvr || 0).toFixed(2), retained_pct: (+r.retain || 0).toFixed(1), rates_source: r.src || 'assumption' })));
+  /* one row per line with its twelve month plan (from the flight start month) in the trailing columns, and a total row */
+  function planCSV(M) {
+    const lines = M.lines || []; const per = lines.map(r => monthPlan({ start: M.start, lines: [{ budget: r.budget, seas: r.seas, shift: r.shift }] }));
+    const mcols = (per[0] || monthPlan({ start: M.start, lines: [] })).map(x => x.label + ' usd'); const head = PLAN_H.concat(mcols);
+    const fx = (v, d) => isFinite(+v) ? (+v).toFixed(d) : '';
+    const rows = lines.map((r, i) => { const o = { geography: M.geo && M.geo.title, line: r.name, expected_matters: Math.round(r.n || 0), value_per_matter: r.fee, share_pct: fx((r.share || 0) * 100, 1), budget_month: Math.round(r.budget || 0), leads_month: fx(r.leads || 0, 1), retained_month: fx(r.ret || 0, 2), revenue_month: Math.round(r.rev || 0), cpc: r.cpc > 0 ? fx(r.cpc, 2) : '', conversion_pct: fx(r.cvr, 2), retained_pct: fx(r.retain, 1), rates_source: r.src || 'assumption' }; per[i].forEach((x, j) => o[mcols[j]] = Math.round(x.spend)); return o; });
+    if (lines.length) { const t = { geography: M.geo && M.geo.title, line: 'Total', expected_matters: Math.round(lines.reduce((a, r) => a + (r.n || 0), 0)), share_pct: '100.0', budget_month: Math.round(lines.reduce((a, r) => a + (r.budget || 0), 0)), leads_month: fx(lines.reduce((a, r) => a + (r.leads || 0), 0), 1), retained_month: fx(lines.reduce((a, r) => a + (r.ret || 0), 0), 2), revenue_month: Math.round(lines.reduce((a, r) => a + (r.rev || 0), 0)), rates_source: '' }; mcols.forEach((c, j) => t[c] = Math.round(per.reduce((a, p) => a + p[j].spend, 0))); rows.push(t); }
+    return out(fname(M, 'plan', 'csv'), head, rows);
+  }
 
   return { PLATS, PLAB, ASM0, MIX0, MIX_BASE, PBOOK, LIB, SHARED, RECRUIT, REFERRAL, NEG, NEG_ES, NEG_RECRUIT, LSA_CHECK, SCHED, BASES,
     HEAD: { google: GH, microsoft: GH, lsa: LSA_H, dg: DG_H, meta: META_H, linkedin: LI_H, yelp: YELP_H, nextdoor: ND_H, tiktok: TT_H, creative: CR_H, flight: FL_H, keywords: KW_H, zips: ZIP_H, plan: PLAN_H },
+    fname,
     limit, house, fill, footer, ctxFor, lineMix, rsa, social, recruitAd, lsaBio, screen, csv, csvQ, keywords, campName, landing, endDate, isoOf, dateOfISO, schedString,
     google, microsoft, lsa, dg, meta, linkedin, yelp, nextdoor, tiktok, creative, creativeCSV, flightMonths, monthPlan, flightCSV, kwCSV, negText, zipCSV, planCSV };
 })();

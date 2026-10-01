@@ -288,7 +288,7 @@ const SFORGE = (() => {
 registerModule({
   key: 'forge', num: '21', title: 'Site Forge', desc: 'Practice area, county, city, landing, guide and attorney pages written from the court and Census data, screened by the compliance engine and compiled for WordPress and every other CMS',
   mount(root) {
-    const E = SFORGE, C = FCOPY; const FC = typeof FORGE_COMPILE !== 'undefined' ? FORGE_COMPILE : null; const self = this;
+    const E = SFORGE, C = FCOPY, KL = FCOPY.KL, LAW = FCOPY.LAW; const FC = typeof FORGE_COMPILE !== 'undefined' ? FORGE_COMPILE : null; const self = this;
     const merge = (a, b) => { for (const k in b) { if (b[k] && typeof b[k] === 'object' && !Array.isArray(b[k]) && a[k] && typeof a[k] === 'object' && !Array.isArray(a[k])) merge(a[k], b[k]); else if (b[k] !== undefined) a[k] = b[k]; } return a; };
     let CFG = merge(E.defaultCfg(), store.get('sev.forge.cfg', {}) || {});
     let LIVE = E.parseLive(CFG.site.live, E.site(CFG).url);

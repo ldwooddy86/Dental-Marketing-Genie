@@ -17,7 +17,7 @@ function dkSanitize(o) {
   P.v = 2; P.geo = geoOk(o.geo) ? o.geo : d.geo; P.scope = ['top', 'metro', 'counties', 'picks'].includes(o.scope) ? o.scope : d.scope;
   P.counties = Array.isArray(o.counties) ? o.counties.filter(f => CI[f]) : []; P.picks = Array.isArray(o.picks) ? o.picks.map(String).filter(z => ZI[z]) : [];
   P.n = Math.round(num(o.n, 1, 300, d.n)); P.minhh = num(o.minhh, 0, 100000, 0); P.alpha = num(o.alpha, 0.5, 2.5, d.alpha);
-  P.lines = Array.isArray(o.lines) ? o.lines.filter(k => LINE_META[k]) : d.lines; if (!P.lines.length) P.lines = d.lines;
+  P.lines = Array.isArray(o.lines) ? o.lines.filter(k => LINE_META[k]) : d.lines;   // an empty list is allowed (the desk shows an empty state)
   P.shares = o.shares && typeof o.shares === 'object' ? Object.fromEntries(Object.entries(o.shares).filter(([k, v]) => LINE_META[k] && isFinite(+v)).map(([k, v]) => [k, clamp(+v, 0, 100)])) : null;
   P.values = o.values && typeof o.values === 'object' ? Object.fromEntries(Object.entries(o.values).filter(([k, v]) => LINE_META[k] && +v > 0).map(([k, v]) => [k, +v])) : {};
   P.budget = num(o.budget, 0, 10000000, d.budget); P.start = /^\d{4}-\d{2}-\d{2}$/.test(String(o.start || '')) ? o.start : d.start; P.weeks = Math.round(num(o.weeks, 1, 52, d.weeks));
@@ -122,20 +122,21 @@ registerModule({
       rows.forEach(r => { r.share0 = P.shares && P.shares[r.key] != null ? P.shares[r.key] : r.n * r.fee / tot * 100; }); const ss = sum(rows.map(r => r.share0)) || 1; rows.forEach(r => { r.share = r.share0 / ss; });
       const mix = P.mix || DESKX.lineMix(rows); const mt = sum(DESKX.PLATS.map(p => mix[p] || 0)) || 1;
       const plat = {}; DESKX.PLATS.forEach(p => plat[p] = { spend: P.budget * (mix[p] || 0) / mt, clicks: 0, leads: 0, ret: 0 });
-      const G = A.google, MS = A.microsoft;
+      const G = A.google, MS = A.microsoft; const zero = new Set();
       rows.forEach(r => {
         const act = usesAct(r.key) ? actualFor(r.key) : null; const R = { cpc: (act && act.cpc) || G.cost, cvr: (act && act.cvr) || G.cvr, retain: (act && act.retain) || G.ret };
-        r.cpc = R.cpc; r.cvr = R.cvr; r.retain = R.retain; r.src = act ? 'actuals' + (act.since ? ' since ' + act.since : '') : 'assumption'; r.cpcMs = MS.cost * R.cpc / (G.cost || 1);
+        r.cpc = R.cpc; r.cvr = R.cvr; r.retain = R.retain; r.seas = ST.seas[DK_SEAS(r.key)] || null; r.shift = r.key === 'po' ? 0 : 1; r.src = act ? 'actuals' + (act.since ? ' since ' + act.since : '') : 'assumption'; r.cpcMs = MS.cost * R.cpc / (G.cost || 1);
         r.budget = 0; r.clicks = 0; r.leads = 0; r.ret = 0;
         DESKX.PLATS.filter(p => p !== 'linkedin').forEach(p => {
           const sp = plat[p].spend * r.share; if (!sp) return; const a = A[p]; let cpc = a.cost, cvr = a.cvr, ret = a.ret, clicks = 0, leads = 0;
           if (p === 'google') { cpc = R.cpc; cvr = R.cvr; ret = R.retain; } else if (p === 'microsoft') { cpc = r.cpcMs; cvr = a.cvr * R.cvr / (G.cvr || 1); ret = a.ret * R.retain / (G.ret || 1); }
-          if (a.basis === 'CPC') { clicks = sp / Math.max(0.01, cpc); leads = clicks * cvr / 100; } else if (a.basis === 'CPM') { clicks = sp / Math.max(0.01, a.cost) * 1000 * a.ctr / 100; leads = clicks * cvr / 100; } else { leads = sp / Math.max(0.01, a.cost); clicks = leads; }
+          if (!((a.basis === 'CPC' ? cpc : a.cost) > 0)) { zero.add(p); return; }   // a cost of 0 cannot turn spend into clicks; the platform counts nothing and the tiles say n/a
+          if (a.basis === 'CPC') { clicks = sp / cpc; leads = clicks * cvr / 100; } else if (a.basis === 'CPM') { clicks = sp / a.cost * 1000 * a.ctr / 100; leads = clicks * cvr / 100; } else { leads = sp / a.cost; clicks = leads; }
           const rt = leads * ret / 100; r.budget += sp; r.clicks += clicks; r.leads += leads; r.ret += rt; plat[p].clicks += clicks; plat[p].leads += leads; plat[p].ret += rt;
         });
         r.rev = r.ret * r.fee;
       });
-      { const a = A.linkedin, sp = plat.linkedin.spend; plat.linkedin.clicks = sp / Math.max(0.01, a.cost); plat.linkedin.leads = plat.linkedin.clicks * a.cvr / 100; }
+      { const a = A.linkedin, sp = plat.linkedin.spend; if (a.cost > 0) { plat.linkedin.clicks = sp / a.cost; plat.linkedin.leads = plat.linkedin.clicks * a.cvr / 100; } else if (sp) zero.add('linkedin'); }
       // markets
       const pool = g.zips.filter(z => cset.has(z.county) && (z.acs ? (z.acs.hh || 0) : 0) >= P.minhh && z.paid && isN(z.paid.eff_pct));
       let zs = []; if (P.scope === 'top') zs = pool.slice().sort((a, b) => b.paid.eff_pct - a.paid.eff_pct).slice(0, P.n); else if (P.scope === 'metro') zs = pool.slice().sort((a, b) => b.paid.eff_pct - a.paid.eff_pct); else if (P.scope === 'picks') zs = P.picks.map(z => ZI[z]).filter(Boolean);
@@ -153,7 +154,7 @@ registerModule({
       const langs = P.es ? ['en', 'es'] : ['en'];
       const lineInfo = {}; lines.forEach(l => lineInfo[l] = { kw: LINE_META[l].kw });
       const scope = P.scope === 'counties' || markets.length ? P.scope : 'counties';   // never export a campaign with no location: no ZIPs means county targets
-      const M = { plan: P, geo: { code: g.code, title: g.title, county: ctys[0] ? ctys[0].name : '', fips0: ctys[0] ? ctys[0].fips : '' }, g, scope, fellBack: scope !== P.scope, markets, counties, countyZips, lines: rows, lineInfo, plat, langs, esShare: P.esShare / 100, firm, start: P.start, end: DESKX.endDate(P.start, P.weeks), geoMods, cities: topCities, serve: ctys.slice(0, 6).map(c => c.name), asm: A, mix, ctys, act };
+      const M = { plan: P, geo: { code: g.code, title: g.title, slug: slug(g.title), county: ctys[0] ? ctys[0].name : '', fips0: ctys[0] ? ctys[0].fips : '' }, g, scope, fellBack: scope !== P.scope, markets, counties, countyZips, lines: rows, lineInfo, plat, langs, esShare: P.esShare / 100, firm, start: P.start, end: DESKX.endDate(P.start, P.weeks), geoMods, cities: topCities, serve: ctys.slice(0, 6).map(c => c.name), asm: A, mix, ctys, act, zero };
       return M;
     }
     /* LIVE.timing(line, 'YYYY-MM-DD') multiplies the season by the calendar, claims and observed day factors; the desk applies its own season,
@@ -183,18 +184,22 @@ registerModule({
     }
     function asmUI() {
       const A = asmOf();
-      $r('#dkAsm').innerHTML = `<div class="tblwrap"><table class="t"><thead><tr><th>Platform</th><th>Basis</th><th>Cost $</th><th>CTR %</th><th>Lead conv. %</th><th>Lead to retained %</th><th>Min $ a day</th><th>Grade</th><th class="l">Source</th></tr></thead><tbody>${DESKX.PLATS.map(p => { const a = A[p]; const inp = (k, st) => `<input type="number" step="${st}" min="0" data-p="${p}" data-k="${k}" value="${a[k]}" aria-label="${esc(DESKX.PLAB[p])} ${k}" class="dk-num">`; return `<tr><td>${esc(DESKX.PLAB[p])}</td><td>${a.basis}</td><td>${inp('cost', '0.01')}</td><td>${a.basis === 'CPM' ? inp('ctr', '0.1') : '<span class="small">n/a</span>'}</td><td>${a.basis === 'CPL' ? '<span class="small">n/a</span>' : inp('cvr', '0.1')}</td><td>${inp('ret', '1')}</td><td>${inp('min', '1')}</td><td><span class="grade ${a.g}">${a.g}</span></td><td class="l dk-src">${esc(a.src)}</td></tr>`; }).join('')}</tbody></table></div><div class="btnrow"><button type="button" class="btn sm" id="dkAsmReset">Reset to benchmarks</button><span class="small">CPC is per click, CPM per thousand impressions, CPL per lead. The Google row sets every line's search rates unless actuals replace them.</span></div>`;
-      $$r('#dkAsm input').forEach(i => i.onchange = () => { const A2 = asmOf(); A2[i.dataset.p][i.dataset.k] = Math.max(0, +i.value || 0); P.asm = A2; rebuild(); });
+      $r('#dkAsm').innerHTML = `<div class="tblwrap"><table class="t"><thead><tr><th>Platform</th><th>Basis</th><th>Cost $</th><th>CTR %</th><th>Lead conv. %</th><th>Lead to retained %</th><th>Min $ a day</th><th>Grade</th><th class="l">Source</th></tr></thead><tbody>${DESKX.PLATS.map(p => { const a = A[p]; const inp = (k, st) => `<input type="number" step="${st}" min="0" data-p="${p}" data-k="${k}" value="${a[k]}" aria-label="${esc(DESKX.PLAB[p])} ${k}" class="dk-num">`; return `<tr><td>${esc(DESKX.PLAB[p])}</td><td>${a.basis}</td><td>${inp('cost', '0.01')}</td><td>${a.basis === 'CPM' ? inp('ctr', '0.1') : '<span class="small">n/a</span>'}</td><td>${a.basis === 'CPL' ? '<span class="small">n/a</span>' : inp('cvr', '0.1')}</td><td>${inp('ret', '1')}</td><td>${inp('min', '1')}</td><td><span class="grade ${a.g}">${a.g}</span></td><td class="l dk-src">${esc(a.src)}</td></tr>`; }).join('')}</tbody></table></div><div class="btnrow"><button type="button" class="btn sm" id="dkAsmReset">Reset to benchmarks</button><span class="small">CPC is per click, CPM per thousand impressions, CPL per lead. The Google row sets every line's search rates unless actuals replace them.</span></div><div id="dkZeroNote"></div>`;
+      const setAsm = i => { if (i.value === '' || !isFinite(+i.value)) return false; const A2 = asmOf(); A2[i.dataset.p][i.dataset.k] = Math.max(0, +i.value); P.asm = A2; return true; };
+      $$r('#dkAsm input').forEach(i => { const d = debounce(() => { if (setAsm(i)) rebuild(); }, 250); i.oninput = d; i.onchange = () => { if (!setAsm(i)) i.value = asmOf()[i.dataset.p][i.dataset.k]; if (+i.value < 0) i.value = 0; rebuild(); }; });
       $r('#dkAsmReset').onclick = () => { P.asm = null; asmUI(); rebuild(); };
     }
 
     // ---------- render ----------
     function rebuild(light) {
+      const fa = document.activeElement; const fk = fa && root.contains(fa) && fa.tagName === 'INPUT' ? (fa.id ? '#' + fa.id : fa.dataset.l ? `#dkAlloc input[data-l="${fa.dataset.l}"]` : fa.dataset.v ? `#dkAlloc input[data-v="${fa.dataset.v}"]` : '') : '';
       M = model(); CR = null; FLT = DESKX.flightMonths({ start: P.start, weeks: P.weeks, budget: clientBudget(), lines: flightLines(M), timing: liveTiming() }); save();
       if (!light) mixUI(); else { const tot = sum(DESKX.PLATS.map(p => M.mix[p] || 0)) || 1; $$r('#dkMix .m').forEach(row => { const i = row.querySelector('input'); row.querySelector('.usd').textContent = $$$(P.budget * (M.mix[i.dataset.p] || 0) / tot); }); $r('#dkMixNote').textContent = mixNote(tot); }
       firmNote(); tiles(); actuals(); drawMarketMap(); tab(); alloc(); zipTable(); builder(); keys(); kwDesk(); months(); screenPanel(); meas(); liveOut();
-      emitPlan();
+      zeroNote(); emitPlan();
+      if (fk) { const el2 = $r(fk); if (el2 && el2 !== document.activeElement) { try { el2.focus({ preventScroll: true }); } catch (e) { } } }
     }
+    function zeroNote() { const z = [...M.zero]; const h = $r('#dkZeroNote'); if (h) h.innerHTML = z.length ? callout('judg', 'A cost of 0', `<p>${esc(z.map(p => DESKX.PLAB[p]).join(', '))} ${z.length > 1 ? 'have' : 'has'} a cost of 0, which cannot turn spend into clicks or leads, so ${z.length > 1 ? 'they count' : 'it counts'} nothing and the tiles show n/a where a rate cannot be computed. Enter a cost above 0.</p>`) : ''; }
     const mixRebuild = debounce(() => rebuild(true), 120);
     const emitPlan = debounce(() => { try { BUS.emit('plan', self.plan()); } catch (e) { } }, 400);
     function firmNote() {
@@ -213,8 +218,8 @@ registerModule({
         + tile('Clicks / month', N(T.clicks, 0), 'search clicks plus social and video clicks', 'D')
         + tile('Leads / month', N(T.leads, 1), 'calls, forms and Local Services leads', 'D')
         + tile('Retained / month', N(T.ret, 1), 'leads times each platform\'s lead to retained rate', 'D')
-        + tile('Cost per retained matter', $$$(clientBudget() / Math.max(1e-9, T.ret)), `${$$$(clientBudget() / Math.max(1e-9, T.leads))} per lead`, 'D')
-        + tile('Revenue / month', $$$(T.rev), N(T.rev / (P.budget || 1), 1) + '× the budget', 'D')
+        + tile('Cost per retained matter', T.ret > 0 ? $$$(clientBudget() / T.ret) : NA, T.leads > 0 ? `${$$$(clientBudget() / T.leads)} per lead` : (P.budget > 0 ? 'no leads at these rates: check a cost or conversion of 0' : 'no budget set'), 'D')
+        + tile('Revenue / month', $$$(T.rev), P.budget > 0 ? N(T.rev / P.budget, 1) + '× the budget' : 'no budget set', 'D')
         + tile('Share of market', DK_PCT(T.ret * 12 / Math.max(T.n, 1), 1), 'retained a year against expected matters')
         + tile('Shock index', N(mean(M.ctys.map(c => c.esi)), 0), 'population unweighted average; lead with modification and enforcement where high')
         + tile('Campaign objects', N(objs.total), `${objs.camps} campaigns · ${objs.groups} ad groups or sets · ${objs.ads} ads`)
@@ -257,16 +262,20 @@ registerModule({
         const b = $r('#dkGoWatch'); if (b) b.onclick = () => goModule('watch');
       } else { const o = countObjects(); host.innerHTML = `<p style="font-size:13.5px">${o.camps} campaigns, ${o.groups} ad groups or ad sets and ${o.ads} ads across ${DESKX.PLATS.filter(p => M.plat[p].spend > 0).length} platforms. Search runs one campaign per line and language with three ad groups (Core in exact and phrase, Questions in phrase, Local with the city and county forms in exact), each with one responsive search ad of up to 15 headlines and 4 descriptions. Meta runs one campaign per language with an ad set per line; Demand Gen and TikTok one campaign per line and language; Yelp and Nextdoor one campaign with an ad per line; Local Services one profile.</p>`; }
     }
+    /* editing one line's share pins it and scales the other lines to 100 minus it, so the typed number stays */
+    function pinShare(key, v) { v = clamp(+v || 0, 0, 100); const cur = Object.fromEntries(M.lines.map(r => [r.key, r.share * 100])); const others = M.lines.filter(r => r.key !== key); const So = sum(others.map(r => cur[r.key])); const out = {}; out[key] = others.length ? v : 100; others.forEach(r => { out[r.key] = So > 0 ? cur[r.key] * (100 - v) / So : (100 - v) / others.length; }); P.shares = out; }
     function alloc() {
-      $r('#dkAlloc').innerHTML = `<div class="tblwrap"><table class="t"><thead><tr><th>Line</th><th>Matters/yr</th><th>Value $</th><th>Share %</th><th>Budget/mo</th><th>CPC</th><th>Conv.</th><th>Retained</th><th>Leads/mo</th><th>Retained/mo</th><th>Revenue/mo</th></tr></thead><tbody>${M.lines.map(r => `<tr><td>${esc(r.name)}</td><td>${N(r.n, 0)}</td><td><input type="number" class="dk-num" data-v="${r.key}" value="${r.fee}" step="500" min="0" aria-label="Value per matter, ${esc(r.name)}"></td><td><input type="number" class="dk-num" data-l="${r.key}" value="${(r.share * 100).toFixed(0)}" min="0" max="100" aria-label="Budget share, ${esc(r.name)}"></td><td>${$$$(r.budget)}</td><td title="${esc(r.src)}">${$$$(r.cpc, 2)}</td><td>${P1(r.cvr, 1)}</td><td>${P1(r.retain, 0)}${r.src !== 'assumption' ? ' <span class="pill p-ok">actual</span>' : ''}</td><td>${N(r.leads, 1)}</td><td>${N(r.ret, 2)}</td><td>${$$$(r.rev)}</td></tr>`).join('')}</tbody></table></div><p class="small">Values default to module 06 (grade D); the search rates are the Google row of the benchmarks unless actuals replace them. Budget per line excludes LinkedIn.</p>`;
-      $$r('#dkAlloc input[data-l]').forEach(i => i.onchange = () => { P.shares = Object.fromEntries(M.lines.map(r => [r.key, r.share * 100])); P.shares[i.dataset.l] = clamp(+i.value || 0, 0, 100); rebuild(); });
-      $$r('#dkAlloc input[data-v]').forEach(i => i.onchange = () => { const v = +i.value; if (v > 0) P.values[i.dataset.v] = v; else delete P.values[i.dataset.v]; rebuild(); });
+      if (!M.lines.length) { $r('#dkAlloc').innerHTML = '<p class="small">No service line is checked. Pick at least one line in the plan above; until then the desk allocates nothing and the files carry no campaigns.</p>'; return; }
+      const th = ['Line', 'Matters/yr', 'Value $', 'Share %', 'Budget/mo', 'CPC', 'Conv.', 'Retained', 'Leads/mo', 'Retained/mo', 'Revenue/mo'];
+      $r('#dkAlloc').innerHTML = `<div class="tblwrap"><table class="t dk-alloc"><thead><tr>${th.map(h => `<th>${h}</th>`).join('')}</tr></thead><tbody>${M.lines.map(r => { const c = [esc(r.name), N(r.n, 0), `<input type="number" class="dk-num" data-v="${r.key}" value="${r.fee}" step="500" min="0" aria-label="Value per matter, ${esc(r.name)}">`, `<input type="number" class="dk-num" data-l="${r.key}" value="${(r.share * 100).toFixed(0)}" min="0" max="100" step="1" aria-label="Budget share, ${esc(r.name)}"${M.lines.length < 2 ? ' disabled' : ''}>`, $$$(r.budget), r.cpc > 0 ? $$$(r.cpc, 2) : NA, P1(r.cvr, 1), P1(r.retain, 0) + (r.src !== 'assumption' ? ' <span class="pill p-ok">actual</span>' : ''), N(r.leads, 1), N(r.ret, 2), $$$(r.rev)]; return `<tr>${c.map((x, i) => `<td data-th="${th[i]}"${i === 5 ? ` title="${esc(r.src)}"` : ''}>${x}</td>`).join('')}</tr>`; }).join('')}</tbody></table></div><p class="small">Values default to module 06 (grade D); the search rates are the Google row of the benchmarks unless actuals replace them. Budget per line excludes LinkedIn.${M.lines.some(r => !(r.cpc > 0)) ? ' A CPC of 0 counts no clicks (n/a).' : ''}</p>`;
+      $$r('#dkAlloc input[data-l]').forEach(i => { const go = () => { if (i.value === '' || !isFinite(+i.value)) return; pinShare(i.dataset.l, +i.value); rebuild(); }; i.oninput = debounce(go, 300); i.onchange = go; });
+      $$r('#dkAlloc input[data-v]').forEach(i => { const go = () => { if (i.value === '') return; const v = +i.value; if (v > 0) P.values[i.dataset.v] = v; else delete P.values[i.dataset.v]; rebuild(); }; i.oninput = debounce(go, 300); i.onchange = go; });
     }
     function zipTable() {
       if (M.scope === 'counties') { $r('#dkZipH').textContent = 'County targets'; $r('#dkZipSub').textContent = `${M.fellBack ? 'No ZIPs in the buy for this scope, so the files target the counties instead. ' : ''}${M.counties.length} counties targeted by Google criterion ID; Meta, Nextdoor and TikTok get the ${N(M.countyZips.length)} ZIPs inside them.`; $r('#dkZips').innerHTML = `<div class="tblwrap" style="max-height:300px"><table class="t"><thead><tr><th>County</th><th>Criterion</th><th>Population</th><th>Divorce filings/yr</th>${M.act ? '<th>Rival ads logged</th><th>Bid</th>' : ''}</tr></thead><tbody>${M.counties.map(k => { const c = CI[k.fips]; return `<tr><td>${esc(c.name)}</td><td>${esc(c.gt || NA)}</td><td>${N(c.pop2025)}</td><td>${N(c.filings.ttm.div)}</td>${M.act ? `<td>${N(k.rivals)}</td><td>${DK_BID(k.bid)}</td>` : ''}</tr>`; }).join('')}</tbody></table></div>`; return; }
       $r('#dkZipH').textContent = 'ZIP targets'; const zs = M.markets; const allDiv = sum(M.g.zips.map(z => (z.alloc || {}).div || 0));
-      $r('#dkZipSub').textContent = zs.length ? `${zs.length} ZIPs (${{ top: 'top by efficiency', metro: 'every ZIP in scope', picks: 'hand picked' }[P.scope]}); ${N(sum(zs.map(z => z.div || 0)), 0)} expected divorce filings a year inside them (${DK_PCT(sum(zs.map(z => z.div || 0)) / Math.max(1, allDiv), 0)} of the geography).` : '';
-      $r('#dkZips').innerHTML = zs.length ? `<div class="tblwrap" style="max-height:300px"><table class="t"><thead><tr><th>ZIP</th><th class="l">City</th><th>Eff</th><th>Div/yr</th><th>Offices</th>${M.act ? '<th>Rival ads</th>' : ''}<th>Bid</th><th>$/mo</th><th>Criterion</th></tr></thead><tbody>${zs.map(z => `<tr><td>${z.zip}</td><td class="l">${esc(z.city)}</td><td>${N(z.eff, 0)}</td><td>${N(z.div, 0)}</td><td>${N(z.offices)}</td>${M.act ? `<td>${N(z.rivals)}</td>` : ''}<td>${DK_BID(z.bid)}</td><td>${$$$(z.spend)}</td><td>${esc(z.gt || 'by name')}</td></tr>`).join('')}</tbody></table></div>` : `<div class="small">${M.g.zips.length ? 'No ZIPs in the buy: pick some, widen the scope or lower the household minimum.' : 'No ZIP geometry outside the metros; switch the scope to counties.'}</div>`;
+      $r('#dkZipSub').textContent = zs.length ? `${zs.length} ZIPs (${{ top: 'top by efficiency', metro: 'every ZIP in scope', picks: 'hand picked' }[P.scope]}); ${N(sum(zs.map(z => z.div || 0)), 0)} expected divorce filings a year inside them (${DK_PCT(sum(zs.map(z => z.div || 0)) / Math.max(1, allDiv), 0)} of the geography). Efficiency is expected filings per law office in the ZIP, so the top ZIPs often have no local office at all: demand without a competitor next door, not a cheaper auction.` : '';
+      $r('#dkZips').innerHTML = zs.length ? `<div class="tblwrap" style="max-height:300px"><table class="t"><thead><tr><th>ZIP</th><th class="l">City</th><th>Eff</th><th>Div/yr</th><th>Offices</th>${M.act ? '<th>Rival ads</th>' : ''}<th>Bid</th><th>$/mo</th><th>Criterion</th></tr></thead><tbody>${zs.map(z => `<tr><td>${z.zip}</td><td class="l">${esc(z.city)}</td><td>${N(z.eff, 0)}</td><td>${N(z.div, 0)}</td><td>${N(z.offices)}${z.offices === 0 ? ' <span class="pill">no local office</span>' : ''}</td>${M.act ? `<td>${N(z.rivals)}</td>` : ''}<td>${DK_BID(z.bid)}</td><td>${$$$(z.spend)}</td><td>${esc(z.gt || 'by name')}</td></tr>`).join('')}</tbody></table></div>` : `<div class="small">${M.g.zips.length ? 'No ZIPs in the buy: pick some, widen the scope or lower the household minimum.' : 'No ZIP geometry outside the metros; switch the scope to counties.'}</div>`;
     }
     // ---------- platform builders ----------
     const cnt = (v, max) => `<span class="cnt${max && v.length > max ? ' over' : ''}">${v.length}${max ? '/' + max : ''}</span>`;
@@ -291,7 +300,7 @@ registerModule({
     }
     // ---------- keywords ----------
     function keys() {
-      $r('#dkKeys').innerHTML = M.lines.map(r => { const L = LINE_META[r.key]; const kws = DESKX.keywords(M, r.key, 'en'); const rs = DESKX.rsa(M, r.key, M.markets[0] || null, 'en'); return `<div class="dk-line"><b>${esc(L.name)}</b> <span class="small">${kws.length} keywords${M.langs.includes('es') ? ` plus ${DESKX.keywords(M, r.key, 'es').length} in Spanish` : ''} · seeds: ${L.kw.map(k => `<code>${esc(k)}</code>`).join(' ')}</span><div class="small" style="margin:4px 0">Modifiers: ${M.geoMods.map(m => esc(m)).join(', ') || NA}</div><div class="dk-pills">${rs.h.slice(0, 5).map(h => `<span class="pill">${esc(h)}</span>`).join('')}<span class="pill">${esc(rs.d[0] || '')}</span></div><div class="small" style="margin-top:4px">${esc(L.angle)}</div></div>`; }).join('') || '<p class="small">Pick at least one service line.</p>';
+      $r('#dkKeys').innerHTML = (M.lines.length ? `<p class="small"><b>Local modifiers for every line:</b> ${M.geoMods.map(m => esc(m)).join(', ') || NA}</p>` : '') + M.lines.map(r => { const L = LINE_META[r.key]; const kws = DESKX.keywords(M, r.key, 'en'); const rs = DESKX.rsa(M, r.key, M.markets[0] || null, 'en'); return `<div class="dk-line"><b>${esc(L.name)}</b> <span class="small">${kws.length} keywords${M.langs.includes('es') ? ` plus ${DESKX.keywords(M, r.key, 'es').length} in Spanish` : ''} · seeds: ${L.kw.map(k => `<code>${esc(k)}</code>`).join(' ')}</span><div class="dk-pills">${rs.h.slice(0, 5).map(h => `<span class="pill">${esc(h)}</span>`).join('')}<span class="pill">${esc(rs.d[0] || '')}</span></div><div class="small" style="margin-top:4px">${esc(L.angle)}</div></div>`; }).join('') || '<p class="small">Pick at least one service line.</p>';
     }
     function kwDesk() {
       const ls = M.lines.map(r => r.key); if (!ls.includes(UI.kwLine)) UI.kwLine = ls[0]; $r('#dkKwLine').innerHTML = M.lines.map(r => `<option value="${r.key}"${r.key === UI.kwLine ? ' selected' : ''}>${esc(r.name)}</option>`).join('');
@@ -303,6 +312,7 @@ registerModule({
       $r('#dkKwCopy').onclick = () => copyText(kws.map(fmt).join('\n')); $r('#dkNegCopy').onclick = () => copyText(neg.join('\n'));
     }
     function months() {
+      if (!M.lines.length) { $r('#dkMonthsSub').textContent = 'Pick at least one service line to plan the months.'; $r('#dkMonths').innerHTML = ''; return; }
       const mp = DESKX.monthPlan({ start: P.start, lines: flightLines(M) }); const yr = sum(mp.map(x => x.spend)) || 1;
       $r('#dkMonthsSub').textContent = `Client media by month for the year from ${MOL[mp[0].m]} ${mp[0].y} (the flight start month), weighted by each line's filing season one month ahead (module 09); protective orders follow their own month. LinkedIn is not in it.`;
       $r('#dkMonths').innerHTML = `<div class="cal">${mp.map(r => `<div><span class="small">${r.label}</span><b>${$$$(r.spend)}</b><span class="small">${DK_PCT(r.spend / yr, 1)} of year</span></div>`).join('')}</div>`;
@@ -336,29 +346,30 @@ registerModule({
       $r('#dkJudg').innerHTML = [['Market cities say "Serving", never "Office in"', 'A headline that names a city where the firm has no office can imply an office there (Rule 7.01). Only the primary office city appears as an office.'], ['The Rule 7.02(a) line is automatic', 'The desk pins the responsible lawyer and the primary office to description 1 of every search ad rather than trusting the rotation, and appends them to social copy where they fit.'], ['No audiences on family difficulties', 'Google treats marital and family difficulties as a personal hardship; Meta forbids implying personal attributes. The desk targets by place and keyword only and exports no remarketing lists.'], ['No outcome or specialty claims', 'The library avoids superlatives, guarantees and "expert" or "specialist"; Board certification appears only in the exact form the Texas Board of Legal Specialization allows.'], ['Spanish is additive', 'Spanish campaigns run alongside English ones, at the share you set, and only make sense when the firm has Spanish speaking staff.'], ['Benchmarks are national', 'The CPC and conversion defaults are national legal medians; Texas metro auctions for divorce terms often run higher. Replace them with actuals after 60 to 90 days.'], ['Values are module 06 defaults', 'Value per matter is a planning figure, not a fee quote; set your own per line.'], ['LinkedIn is not client advertising', 'It funds attorney and paralegal recruiting and referral partner campaigns; its leads are applications and contacts.'], ['Paused exports', 'Every exported campaign and ad is paused so nothing spends before a lawyer reviews it and the filing is made.']].map(([t, d]) => `<div class="dk-j"><b>${esc(t)}</b><div class="small">${esc(d)}</div></div>`).join('');
     }
     // ---------- exports ----------
-    function exportFile(p) { const f = DESKX[p](M); saveFile(f.name, f.text); }
+    const needLines = () => { if (M.lines.length) return true; toast('Pick at least one service line first'); return false; };
+    function exportFile(p) { if (!needLines()) return; const f = DESKX[p](M); saveFile(f.name, f.text); }
     function allFiles() {
       const files = DESKX.PLATS.map(p => DESKX[p](M)).concat([DESKX.planCSV(M), DESKX.kwCSV(M), DESKX.zipCSV(M), DESKX.creativeCSV(M), DESKX.flightCSV(M, FLT)]).map(f => ({ name: f.name, data: f.text }));
-      files.push({ name: 'negatives.txt', data: DESKX.negText(M) }, { name: 'campaign-desk-plan.json', data: planJSON() }, { name: 'README.txt', data: readme() });
+      files.push({ name: DESKX.fname(M, 'negatives', 'txt'), data: DESKX.negText(M) }, { name: DESKX.fname(M, 'plan', 'json'), data: planJSON() }, { name: 'README.txt', data: readme() });
       return files;
     }
     const planJSON = () => JSON.stringify({ severance_desk: 2, saved: todayISO(), plan: P }, null, 1);
     const readme = () => [`Severance Campaign Desk export, ${fmtDate(todayISO())}`, `Geography: ${M.geo.title}. Flight: ${fmtDate(P.start)} to ${fmtDate(M.end)}, ${P.weeks} weeks. Monthly media: ${$$$(P.budget)}.`, '', ...FILES.map(f => `${DESKX.PLAB[f[1]]}: ${DESKX.PBOOK[f[1]].bulk}`), '', 'Every campaign, ad set and ad is paused. Ads with a block finding carry the label "needs review" and the findings in the Review notes column.', 'Rule 7.04: file non exempt ads with the State Bar of Texas Advertising Review Committee within ten days of first dissemination.'].join('\n');
     function findingsCSV() { const rows = []; creative().forEach(a => (a.review.findings.length ? a.review.findings : [{ sev: '', title: '', rule: '', hit: '' }]).forEach(f => rows.push([DESKX.PLAB[a.platform], a.line, a.lang, a.label, a.review.status, f.sev, f.title, f.rule, f.hit || '']))); return DESKX.csv(['platform', 'line', 'language', 'ad', 'status', 'severity', 'finding', 'rule', 'hit'], rows); }
     FILES.forEach(f => { $r('#' + f[0]).onclick = () => exportFile(f[1]); });
-    $r('#dkAll').onclick = () => saveFile(`campaign-desk_${M.geo.code}_${P.start}.zip`, zipBlob(allFiles()));
-    $r('#dkPlanX').onclick = () => { const f = DESKX.planCSV(M); saveFile(f.name, f.text); };
-    $r('#dkKw').onclick = () => { const f = DESKX.kwCSV(M); saveFile(f.name, f.text); };
-    $r('#dkNeg').onclick = () => saveFile('severance_negatives.txt', DESKX.negText(M));
+    $r('#dkAll').onclick = () => { if (needLines()) saveFile(DESKX.fname(M, 'all-files', 'zip'), zipBlob(allFiles())); };
+    $r('#dkPlanX').onclick = () => { if (!needLines()) return; const f = DESKX.planCSV(M); saveFile(f.name, f.text); };
+    $r('#dkKw').onclick = () => { if (!needLines()) return; const f = DESKX.kwCSV(M); saveFile(f.name, f.text); };
+    $r('#dkNeg').onclick = () => saveFile(DESKX.fname(M, 'negatives', 'txt'), DESKX.negText(M));
     $r('#dkZip').onclick = () => { const f = DESKX.zipCSV(M); saveFile(f.name, f.text); };
     $r('#dkFl').onclick = () => { const f = DESKX.flightCSV(M, FLT); saveFile(f.name, f.text); };
-    $r('#dkCr').onclick = () => { const f = DESKX.creativeCSV(M); saveFile(f.name, f.text); };
-    $r('#dkScrCsv').onclick = () => saveFile(`creative-findings_${M.geo.code}_${P.start}.csv`, findingsCSV());
-    $r('#dkSave').onclick = () => saveFile('campaign-desk-plan.json', planJSON());
+    $r('#dkCr').onclick = () => { if (!needLines()) return; const f = DESKX.creativeCSV(M); saveFile(f.name, f.text); };
+    $r('#dkScrCsv').onclick = () => saveFile(DESKX.fname(M, 'creative-findings', 'csv'), findingsCSV());
+    $r('#dkSave').onclick = () => saveFile(DESKX.fname(M, 'plan', 'json'), planJSON());
     $r('#dkLoad').onclick = async () => { const [file] = await pickFiles('.json,application/json'); if (!file) return; try { const j = JSON.parse(await readText(file)); const o = j && (j.plan || j); if (!o || typeof o !== 'object' || !(o.geo || o.lines || o.budget)) throw new Error('not a plan'); P = dkSanitize(o); syncUI(); asmUI(); rebuild(); toast('Plan loaded'); } catch (e) { toast('That file is not a desk plan'); } };
 
     // ---------- wiring ----------
-    const num = (id, k, a, b) => { $r('#' + id).onchange = e => { const v = +e.target.value; if (isFinite(v) && e.target.value !== '') P[k] = clamp(v, a, b); e.target.value = P[k]; rebuild(); }; };
+    const num = (id, k, a, b) => { const i = $r('#' + id); i.oninput = debounce(() => { const v = +i.value; if (i.value !== '' && isFinite(v)) { P[k] = clamp(v, a, b); rebuild(); } }, 300); i.onchange = () => { const v = +i.value; if (i.value !== '' && isFinite(v)) P[k] = clamp(v, a, b); i.value = P[k]; rebuild(); }; };
     $r('#dkGeo').onchange = e => { P.geo = e.target.value; P.counties = []; P.shares = null; if (P.scope === 'picks') P.scope = 'top'; syncUI(); rebuild(); };
     $r('#dkScope').onchange = e => { P.scope = e.target.value; rebuild(); };
     $r('#dkCounties').onchange = e => { P.counties = [...e.target.selectedOptions].map(o => o.value); P.shares = null; rebuild(); };
@@ -368,12 +379,12 @@ registerModule({
     $r('#dkAlpha').oninput = e => { P.alpha = +e.target.value; $r('#dkAlphaV').textContent = N(P.alpha, 1); }; $r('#dkAlpha').onchange = () => rebuild();
     $r('#dkStart').onchange = e => { if (/^\d{4}-\d{2}-\d{2}$/.test(e.target.value)) P.start = e.target.value; else e.target.value = P.start; syncUI(); rebuild(); };
     [['dkSched', 'sched'], ['dkMetaGeo', 'metaGeo'], ['dkLiUse', 'li']].forEach(([id, k]) => $r('#' + id).onchange = e => { P[k] = e.target.value; rebuild(); });
-    $r('#dkPay').onchange = e => { P.pay = e.target.value.slice(0, 80); rebuild(); };
+    { const i = $r('#dkPay'); const go = () => { P.pay = i.value.slice(0, 80); rebuild(); }; i.oninput = debounce(go, 400); i.onchange = go; }
     $r('#dkEs').onchange = e => { P.es = e.target.checked; rebuild(); };
     $r('#dkLive').onchange = e => { P.live = e.target.checked; rebuild(); };
     $r('#dkWatchBid').onchange = e => { P.watchBid = e.target.checked; rebuild(); };
-    $$r('#dkLines input').forEach(i => i.onchange = () => { const ls = $$r('#dkLines input').filter(x => x.checked).map(x => x.dataset.l); if (!ls.length) { i.checked = true; toast('Keep at least one line'); return; } P.lines = ls; P.shares = null; rebuild(); });
-    $$r('[data-ov]').forEach(i => i.onchange = () => { P.ov[i.dataset.ov] = i.value.trim().slice(0, 120); rebuild(); });
+    $$r('#dkLines input').forEach(i => i.onchange = () => { P.lines = $$r('#dkLines input').filter(x => x.checked).map(x => x.dataset.l); P.shares = null; rebuild(); });
+    $$r('[data-ov]').forEach(i => { const go = () => { P.ov[i.dataset.ov] = i.value.trim().slice(0, 120); rebuild(); }; i.oninput = debounce(go, 400); i.onchange = go; });
     $r('#dkMixReset').onclick = () => { P.mix = null; rebuild(); };
     $$r('#dkTabs button').forEach(b => b.onclick = () => { UI.tab = b.dataset.v; tab(); });
     $$r('#dkPTabs button').forEach(b => b.onclick = () => { UI.plat = b.dataset.v; builder(); });
