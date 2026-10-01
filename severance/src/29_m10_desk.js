@@ -4,10 +4,10 @@
    build sheet for nine ad platforms, written by DESKX (src/10_desk_platforms.js). Creative is screened with LINT before it leaves; the
    firm comes from FIRM; Accounts actuals (ACCT) and Live Desk timing (LIVE) correct the assumptions when those layers are present.
    Only the plan's inputs are saved ('sev.desk'); everything derived is rebuilt on render. */
-const DK_KEYS = ['geo', 'scope', 'counties', 'picks', 'n', 'minhh', 'alpha', 'lines', 'shares', 'values', 'budget', 'start', 'weeks', 'sched', 'es', 'esShare', 'metaGeo', 'radius', 'li', 'pay', 'mix', 'asm', 'ov', 'useAct', 'live', 'bids'];
+const DK_KEYS = ['geo', 'scope', 'counties', 'picks', 'n', 'minhh', 'alpha', 'lines', 'shares', 'values', 'budget', 'start', 'weeks', 'sched', 'es', 'esShare', 'metaGeo', 'radius', 'li', 'pay', 'mix', 'asm', 'ov', 'useAct', 'live', 'watchBid', 'bids'];
 function dkDefaults() {
   const F = FIRM.get(); const fl = FIRM.lines().filter(k => LINE_META[k]);
-  return { v: 2, geo: 'msa:19100', scope: 'top', counties: [], picks: [], n: 30, minhh: 0, alpha: 1, lines: fl.length ? fl : ['div_k', 'div_nk', 'sapcr', 'mod'], shares: null, values: {}, budget: 12000, start: todayISO(), weeks: 13, sched: 'extended', es: (F.languages || []).includes('es'), esShare: 25, metaGeo: 'zips', radius: 15, li: 'both', pay: '', mix: null, asm: null, ov: { name: '', atty: '', city: '', phone: '', url: '' }, useAct: {}, live: true, bids: null };
+  return { v: 2, geo: 'msa:19100', scope: 'top', counties: [], picks: [], n: 30, minhh: 0, alpha: 1, lines: fl.length ? fl : ['div_k', 'div_nk', 'sapcr', 'mod'], shares: null, values: {}, budget: 12000, start: todayISO(), weeks: 13, sched: 'extended', es: (F.languages || []).includes('es'), esShare: 25, metaGeo: 'zips', radius: 15, li: 'both', pay: '', mix: null, asm: null, ov: { name: '', atty: '', city: '', phone: '', url: '' }, useAct: {}, live: true, watchBid: false, bids: null };
 }
 /* keep only the inputs, with their types; anything else in a saved or loaded plan (build 1 kept _kw, _plan and _zips) is dropped */
 function dkSanitize(o) {
@@ -27,12 +27,13 @@ function dkSanitize(o) {
   P.asm = o.asm && typeof o.asm === 'object' ? Object.fromEntries(DESKX.PLATS.map(p => { const a = Object.assign({}, DESKX.ASM0[p]), s = o.asm[p] || {}; ['cost', 'ctr', 'cvr', 'ret', 'min'].forEach(k => { if (isFinite(+s[k]) && s[k] !== '' && s[k] != null) a[k] = Math.max(0, +s[k]); }); return [p, a]; })) : null;
   P.ov = Object.assign({}, d.ov); if (o.ov && typeof o.ov === 'object') Object.keys(P.ov).forEach(k => { if (typeof o.ov[k] === 'string') P.ov[k] = o.ov[k].slice(0, 120); });
   P.useAct = o.useAct && typeof o.useAct === 'object' ? Object.fromEntries(Object.entries(o.useAct).filter(([k, v]) => LINE_META[k] && typeof v === 'boolean')) : {};   // true or false by choice; absent follows Accounts' Apply
-  P.live = o.live !== false; P.bids = o.bids && typeof o.bids === 'object' ? Object.fromEntries(Object.entries(o.bids).filter(([z, v]) => ZI[z] && isFinite(+v)).map(([z, v]) => [z, clamp(+v, -90, 900)])) : null;
+  P.live = o.live !== false; P.watchBid = o.watchBid === true; P.bids = o.bids && typeof o.bids === 'object' ? Object.fromEntries(Object.entries(o.bids).filter(([z, v]) => ZI[z] && isFinite(+v)).map(([z, v]) => [z, clamp(+v, -90, 900)])) : null;
   return P;
 }
 const DK_SEAS = l => ({ div_k: 'div_k', div_nk: 'div', sapcr: 'sapcr', po: 'po', mod: 'mod', enf: 'enf', ivd: 'ivd' }[l] || 'div');
 const DK_ALLOC = l => ({ div_k: 'div_k', div_nk: 'div', sapcr: 'sapcr', po: 'po', mod: 'mod', enf: 'enf', ivd: 'ivd' }[l] || 'div');
 const DK_PCT = (v, d) => P(v, d);   // the global percent formatter; mount() shadows P with the plan
+const DK_BID = v => (v > 0 ? '+' : v < 0 ? '\u2212' : '') + Math.abs(Math.round(v || 0)) + '%';
 const DK_TAB = { '19100': 'DFW', '26420': 'HOU', '41700': 'SAT', '12420': 'AUS', '21340': 'ELP', '32580': 'RGV', '15180': 'RGV' };
 registerModule({
   key: 'desk', num: '10', title: 'Campaign Desk', desc: 'Budgets, ZIP targets, keywords, creative and a bulk file or build sheet for nine ad platforms, screened against the Texas advertising rules',
@@ -44,6 +45,9 @@ registerModule({
     const asmOf = () => P.asm || JSON.parse(JSON.stringify(DESKX.ASM0));
     const hasACCT = () => typeof ACCT !== 'undefined' && ACCT && typeof ACCT.rates === 'function';
     const hasLIVE = () => typeof LIVE !== 'undefined' && LIVE && typeof LIVE.timing === 'function';
+    const hasWATCH = () => typeof WATCH !== 'undefined' && WATCH && typeof WATCH.activity === 'function';
+    /* Competitor Watch: live rival ads the firm has logged in the last 120 days, by county and line ({fips: {_all, line: n}}) */
+    const watchAct = () => { if (!hasWATCH()) return null; try { return WATCH.activity() || {}; } catch (e) { return null; } };
     const nZipIds = ZC.filter(z => z.gt).length;
     const geoOpts = Object.keys(MSA).sort((a, b) => MSA[b].pop2025 - MSA[a].pop2025).map(k => ['msa:' + k, 'Metro: ' + MNAME(MSA[k].title)]).concat(CTY.slice().sort((a, b) => b.pop2025 - a.pop2025).map(c => ['cty:' + c.fips, c.name + ' County']));
     const FILES = [['dkG', 'google', 'Google Ads'], ['dkL', 'lsa', 'Local Services'], ['dkDg', 'dg', 'YouTube, Demand Gen'], ['dkM', 'meta', 'Meta'], ['dkMs', 'microsoft', 'Microsoft'], ['dkLi', 'linkedin', 'LinkedIn'], ['dkY', 'yelp', 'Yelp'], ['dkNd', 'nextdoor', 'Nextdoor'], ['dkTt', 'tiktok', 'TikTok']];
@@ -71,7 +75,7 @@ registerModule({
         <div class="ctl"><label for="dkPay">Recruiting pay range</label><input type="text" id="dkPay" placeholder="$70,000 to $95,000"><span class="hint">Optional; posted in the recruiting ad when it fits.</span></div>
         <div class="ctl"><label for="dkEsShare">Spanish share of each budget (%)</label><input type="number" id="dkEsShare" min="5" max="60" step="5"></div>
       </div>
-      <div class="btnrow"><label class="chk"><input type="checkbox" id="dkEs"> Spanish campaigns alongside the English ones</label><label class="chk"><input type="checkbox" id="dkLive"> Weight the flight by the Live Desk timing when it is present</label></div>
+      <div class="btnrow"><label class="chk"><input type="checkbox" id="dkEs"> Spanish campaigns alongside the English ones</label><label class="chk"><input type="checkbox" id="dkLive"> Weight the flight by the Live Desk timing when it is present</label><label class="chk"><input type="checkbox" id="dkWatchBid"> Lower bid steps where Competitor Watch logs rival ads for these lines</label></div>
       <div class="dk-sec">Service lines</div><div class="btnrow" id="dkLines">${Object.keys(LINE_META).map(k => `<label class="chk"><input type="checkbox" data-l="${k}"> ${esc(LINE_META[k].short)}</label>`).join('')}</div>
       <div class="dk-sec">Firm overrides <span class="dk-mute">(empty fields read the firm profile; overrides change this desk's copy only)</span></div>
       <div class="formgrid">${[['name', 'Firm name in ads', 'name'], ['atty', 'Responsible attorney', 'atty'], ['city', 'Primary office city', 'city'], ['phone', 'Call asset phone', 'phone'], ['url', 'Landing site URL', 'url']].map(f => `<div class="ctl"><label for="dkOv_${f[0]}">${f[1]}</label><input type="text" id="dkOv_${f[0]}" data-ov="${f[0]}"></div>`).join('')}</div>
@@ -81,7 +85,7 @@ registerModule({
     <div id="dkAct"></div>
     <div class="tiles" id="dkTiles"></div>
     <div class="grid2"><div class="panel"><h3>Markets in the buy</h3><div class="sub" id="dkMapSub"></div><div class="mapwrap" id="dkMap"></div></div>
-      <div class="panel"><h3>Plan summary</h3><div class="tabs" id="dkTabs"><button type="button" data-v="platforms" class="on">Platforms</button><button type="button" data-v="flight">Flight and pacing</button><button type="button" data-v="objects">Campaign objects</button></div><div id="dkTab"></div></div></div>
+      <div class="panel"><h3>Plan summary</h3><div class="tabs" id="dkTabs"><button type="button" data-v="platforms" class="on">Platforms</button><button type="button" data-v="flight">Flight and pacing</button><button type="button" data-v="objects">Campaign objects</button><button type="button" data-v="rivals">Competitors</button></div><div id="dkTab"></div></div></div>
     <div class="grid2"><div class="panel"><h3>Budget by line</h3><div class="sub">Share follows expected matters times value per matter; edit a share or a value to override.</div><div id="dkAlloc"></div></div><div class="panel"><h3 id="dkZipH">ZIP targets</h3><div class="sub" id="dkZipSub"></div><div id="dkZips"></div></div></div>
     <div class="panel" style="margin-bottom:14px"><h3>Platform builders: what each file creates</h3><div class="sub">Structure, targeting and the rules that bind the buy, with the creative for one line, character counts against the platform's limits and the compliance screen.</div>
       <div class="tabs" id="dkPTabs">${DESKX.PLATS.map((p, i) => `<button type="button" data-v="${p}" class="${i ? '' : 'on'}">${esc(DESKX.PLAB[p])}</button>`).join('')}</div>
@@ -137,9 +141,11 @@ registerModule({
       let zs = []; if (P.scope === 'top') zs = pool.slice().sort((a, b) => b.paid.eff_pct - a.paid.eff_pct).slice(0, P.n); else if (P.scope === 'metro') zs = pool.slice().sort((a, b) => b.paid.eff_pct - a.paid.eff_pct); else if (P.scope === 'picks') zs = P.picks.map(z => ZI[z]).filter(Boolean);
       const expZ = z => sum(rows.map(r => r.share * ((z.alloc || {})[DK_ALLOC(r.key)] || 0))) + 0.1;
       const w = zs.map(z => Math.pow(expZ(z), P.alpha)); const W = sum(w) || 1;
-      const step = z => (P.bids && isN(P.bids[z.zip])) ? P.bids[z.zip] : (z.paid && z.paid.eff_pct >= 80 ? 20 : z.paid && z.paid.eff_pct >= 60 ? 10 : 0);
-      const markets = zs.map((z, i) => ({ zip: z.zip, city: z.city || '', county: z.county, county_name: z.county_name || cname(z.county), gt: z.gt || '', eff: z.paid ? z.paid.eff_pct : null, div: (z.alloc || {}).div, offices: z.lawoffices, bid: step(z), spend: P.budget * w[i] / W, share: w[i] / W }));
-      const counties = ctys.map(c => ({ fips: c.fips, name: c.name, gt: c.gt || '', bid: 0 }));
+      const act = watchAct(); const LK = Object.keys(LINE_META); const rivalsOf = f => { const a = act && act[f]; if (!a) return act ? 0 : null; const lined = sum(LK.map(k => a[k] || 0)); return sum(lines.map(l => a[l] || 0)) + Math.max(0, (a._all || 0) - lined); };
+      const rivalAdj = f => { const n = rivalsOf(f); return P.watchBid && n ? (n >= 5 ? -20 : n >= 2 ? -10 : 0) : 0; };
+      const step = z => (P.bids && isN(P.bids[z.zip])) ? P.bids[z.zip] : (z.paid && z.paid.eff_pct >= 80 ? 20 : z.paid && z.paid.eff_pct >= 60 ? 10 : 0) + rivalAdj(z.county);
+      const markets = zs.map((z, i) => ({ zip: z.zip, city: z.city || '', county: z.county, county_name: z.county_name || cname(z.county), gt: z.gt || '', eff: z.paid ? z.paid.eff_pct : null, div: (z.alloc || {}).div, offices: z.lawoffices, rivals: rivalsOf(z.county), bid: step(z), spend: P.budget * w[i] / W, share: w[i] / W }));
+      const counties = ctys.map(c => ({ fips: c.fips, name: c.name, gt: c.gt || '', rivals: rivalsOf(c.fips), bid: rivalAdj(c.fips) }));
       const countyZips = ZC.filter(z => cset.has(z.county)).map(z => z.zip);
       const cities = {}; (markets.length ? markets : g.zips.filter(z => cset.has(z.county)).map(z => ({ city: z.city, div: (z.alloc || {}).div }))).forEach(m => { if (m.city) cities[m.city] = (cities[m.city] || 0) + (m.div || 0); });
       const topCities = Object.keys(cities).sort((a, b) => cities[b] - cities[a]).slice(0, 8);
@@ -147,7 +153,7 @@ registerModule({
       const langs = P.es ? ['en', 'es'] : ['en'];
       const lineInfo = {}; lines.forEach(l => lineInfo[l] = { kw: LINE_META[l].kw });
       const scope = P.scope === 'counties' || markets.length ? P.scope : 'counties';   // never export a campaign with no location: no ZIPs means county targets
-      const M = { plan: P, geo: { code: g.code, title: g.title, county: ctys[0] ? ctys[0].name : '', fips0: ctys[0] ? ctys[0].fips : '' }, g, scope, fellBack: scope !== P.scope, markets, counties, countyZips, lines: rows, lineInfo, plat, langs, esShare: P.esShare / 100, firm, start: P.start, end: DESKX.endDate(P.start, P.weeks), geoMods, cities: topCities, serve: ctys.slice(0, 6).map(c => c.name), asm: A, mix, ctys };
+      const M = { plan: P, geo: { code: g.code, title: g.title, county: ctys[0] ? ctys[0].name : '', fips0: ctys[0] ? ctys[0].fips : '' }, g, scope, fellBack: scope !== P.scope, markets, counties, countyZips, lines: rows, lineInfo, plat, langs, esShare: P.esShare / 100, firm, start: P.start, end: DESKX.endDate(P.start, P.weeks), geoMods, cities: topCities, serve: ctys.slice(0, 6).map(c => c.name), asm: A, mix, ctys, act };
       return M;
     }
     /* LIVE.timing(line, 'YYYY-MM-DD') multiplies the season by the calendar, claims and observed day factors; the desk applies its own season,
@@ -161,7 +167,7 @@ registerModule({
     // ---------- UI sync ----------
     function syncUI() {
       $r('#dkGeo').value = P.geo; $r('#dkScope').value = P.scope; $r('#dkPicks').value = P.picks.join(', '); $r('#dkN').value = P.n; $r('#dkMin').value = String(P.minhh); $r('#dkAlpha').value = P.alpha; $r('#dkAlphaV').textContent = N(P.alpha, 1);
-      $r('#dkBudget').value = P.budget; $r('#dkStart').value = P.start; $r('#dkWeeks').value = P.weeks; $r('#dkSched').value = P.sched; $r('#dkMetaGeo').value = P.metaGeo; $r('#dkRadius').value = P.radius; $r('#dkLiUse').value = P.li; $r('#dkPay').value = P.pay; $r('#dkEsShare').value = P.esShare; $r('#dkEs').checked = P.es; $r('#dkLive').checked = P.live;
+      $r('#dkBudget').value = P.budget; $r('#dkStart').value = P.start; $r('#dkWeeks').value = P.weeks; $r('#dkSched').value = P.sched; $r('#dkMetaGeo').value = P.metaGeo; $r('#dkRadius').value = P.radius; $r('#dkLiUse').value = P.li; $r('#dkPay').value = P.pay; $r('#dkEsShare').value = P.esShare; $r('#dkEs').checked = P.es; $r('#dkLive').checked = P.live; $r('#dkWatchBid').checked = P.watchBid; $r('#dkWatchBid').disabled = !hasWATCH();
       $$r('#dkLines input').forEach(i => i.checked = P.lines.includes(i.dataset.l));
       const FF = FIRM.get(); const base = { name: FF.name, atty: FIRM.responsible().name, city: FIRM.primary().city, phone: FIRM.phone(), url: FF.url };
       $$r('[data-ov]').forEach(i => { const k = i.dataset.ov; i.value = P.ov[k] || ''; i.placeholder = base[k] ? 'Profile: ' + base[k] : 'Not in the firm profile'; });
@@ -229,7 +235,7 @@ registerModule({
       if (g.metro && GEO.metros[g.metro]) {
         const G = GEO.metros[g.metro]; const inBuy = {}; M.markets.forEach(m => inBuy[m.zip] = m); const cset = new Set(M.ctys.map(c => c.fips)); const mx = Math.max(1e-9, ...M.markets.map(m => m.spend));
         const val = id => { if (M.scope === 'counties') { const z = ZI[id]; return z && cset.has(z.county) ? 1 : null; } return inBuy[id] ? inBuy[id].spend / mx : null; };
-        drawMap(host, { W: G.W, H: G.H, paths: G.zcta, value: val, color: v => rampColor('forest', 0.25 + 0.75 * v), label: id => { const z = ZI[id]; const m = inBuy[id]; return `<b>${esc(id)}${z && z.city ? ' · ' + esc(z.city) : ''}</b>${m ? `<div class="row"><span>Monthly allocation</span><span>${$$$(m.spend)}</span></div><div class="row"><span>Bid step</span><span>${m.bid >= 0 ? '+' : '−'}${Math.abs(m.bid)}%</span></div>` : `<div class="row"><span>${M.scope === 'counties' ? 'County target' : 'Not in the buy'}</span><span>${M.scope === 'counties' ? '' : 'click to add'}</span></div>`}${z && z.paid ? `<div class="row"><span>Efficiency</span><span>${N(z.paid.eff_pct, 0)}</span></div>` : ''}`; }, onSelect: id => { if (M.scope === 'counties' || !ZI[id]) return; const cur = new Set(M.markets.map(m => m.zip)); if (cur.has(id)) cur.delete(id); else cur.add(id); P.scope = 'picks'; P.picks = [...cur]; syncUI(); rebuild(); }, counties: G.county, cent: G.ccent, labels: Object.keys(G.county), labelText: id => CI[id] ? CI[id].name : id, legend: { title: M.scope === 'counties' ? 'County target' : 'Monthly allocation', min: M.scope === 'counties' ? '' : $$$(Math.min(...M.markets.map(m => m.spend).concat([mx]))), max: M.scope === 'counties' ? '' : $$$(mx), css: rampCSS('forest') }, noDataLabel: 'not bought' });
+        drawMap(host, { W: G.W, H: G.H, paths: G.zcta, value: val, color: v => rampColor('forest', 0.25 + 0.75 * v), label: id => { const z = ZI[id]; const m = inBuy[id]; return `<b>${esc(id)}${z && z.city ? ' · ' + esc(z.city) : ''}</b>${m ? `<div class="row"><span>Monthly allocation</span><span>${$$$(m.spend)}</span></div><div class="row"><span>Bid step</span><span>${DK_BID(m.bid)}</span></div>` : `<div class="row"><span>${M.scope === 'counties' ? 'County target' : 'Not in the buy'}</span><span>${M.scope === 'counties' ? '' : 'click to add'}</span></div>`}${z && z.paid ? `<div class="row"><span>Efficiency</span><span>${N(z.paid.eff_pct, 0)}</span></div>` : ''}`; }, onSelect: id => { if (M.scope === 'counties' || !ZI[id]) return; const cur = new Set(M.markets.map(m => m.zip)); if (cur.has(id)) cur.delete(id); else cur.add(id); P.scope = 'picks'; P.picks = [...cur]; syncUI(); rebuild(); }, counties: G.county, cent: G.ccent, labels: Object.keys(G.county), labelText: id => CI[id] ? CI[id].name : id, legend: { title: M.scope === 'counties' ? 'County target' : 'Monthly allocation', min: M.scope === 'counties' ? '' : $$$(Math.min(...M.markets.map(m => m.spend).concat([mx]))), max: M.scope === 'counties' ? '' : $$$(mx), css: rampCSS('forest') }, noDataLabel: 'not bought' });
         $r('#dkMapSub').textContent = M.scope === 'counties' ? 'Shaded ZIPs fall in the targeted counties.' : 'Shaded by monthly allocation (expected filings to the power α). Click a ZIP to add or drop it; the scope switches to hand picked.';
       } else {
         drawMap(host, { W: GEO.state.W, H: GEO.state.H, paths: GEO.state.county, value: id => M.ctys.some(c => c.fips === id) ? 1 : null, color: () => rampColor('forest', 0.8), label: id => `<b>${esc(cname(id))} County</b>`, outline: GEO.state.outline, noDataLabel: 'not targeted' });
@@ -244,6 +250,11 @@ registerModule({
       } else if (UI.tab === 'flight') {
         const tot = sum(FLT.map(x => x.spend)); const live = !!liveTiming();
         host.innerHTML = `<div class="tblwrap"><table class="t"><thead><tr><th>Month</th><th>Days</th><th>Season index</th><th>Live ×</th><th>Media</th></tr></thead><tbody>${FLT.map(x => `<tr><td>${x.label}</td><td>${x.days}</td><td>${N(x.idx, 0)}</td><td>${live ? N(x.mult, 2) : NA}</td><td>${$$$(x.spend)}</td></tr>`).join('')}</tbody></table></div><p class="small">The flight spends ${$$$(tot)} on client platforms over ${P.weeks} weeks from ${esc(fmtDate(P.start))}, each day weighted by its line's statewide filing season one month ahead (the consultation precedes the petition; protective orders are not shifted)${live ? ', times the Live Desk multiplier for that day' : ''}. LinkedIn runs flat.</p>`;
+      } else if (UI.tab === 'rivals') {
+        if (!M.act) { host.innerHTML = `<p class="small">Competitor Watch is not loaded in this build, so the plan carries no competitor pressure.</p>`; return; }
+        const rows = M.counties.filter(k => k.rivals).sort((a, b) => b.rivals - a.rivals);
+        host.innerHTML = `<p class="small">Live rival ads for these lines that the firm has logged in Competitor Watch in the last 120 days, by county. It reflects only what the firm has logged, not the whole auction: a county with none may simply be unwatched.${P.watchBid ? ' Bid steps are lowered 10 points where 2 to 4 rival ads are logged and 20 points at 5 or more (an assumption, grade D: their auctions cost more per lead).' : ' Tick the box in the plan to lower bid steps where rivals are logged.'}</p>${rows.length ? `<div class="tblwrap"><table class="t"><thead><tr><th>County</th><th>Rival ads</th><th>Bid change</th></tr></thead><tbody>${rows.map(k => `<tr><td>${esc(k.name)}</td><td>${N(k.rivals)}</td><td>${P.watchBid ? (k.bid ? '\u2212' + Math.abs(k.bid) + '%' : '0%') : NA}</td></tr>`).join('')}</tbody></table></div>` : '<p class="small">No rival ads logged for these lines in the plan\'s counties.</p>'}${MODI.watch ? '<div class="btnrow"><button type="button" class="btn sm" id="dkGoWatch">Open Competitor Watch</button></div>' : ''}`;
+        const b = $r('#dkGoWatch'); if (b) b.onclick = () => goModule('watch');
       } else { const o = countObjects(); host.innerHTML = `<p style="font-size:13.5px">${o.camps} campaigns, ${o.groups} ad groups or ad sets and ${o.ads} ads across ${DESKX.PLATS.filter(p => M.plat[p].spend > 0).length} platforms. Search runs one campaign per line and language with three ad groups (Core in exact and phrase, Questions in phrase, Local with the city and county forms in exact), each with one responsive search ad of up to 15 headlines and 4 descriptions. Meta runs one campaign per language with an ad set per line; Demand Gen and TikTok one campaign per line and language; Yelp and Nextdoor one campaign with an ad per line; Local Services one profile.</p>`; }
     }
     function alloc() {
@@ -252,10 +263,10 @@ registerModule({
       $$r('#dkAlloc input[data-v]').forEach(i => i.onchange = () => { const v = +i.value; if (v > 0) P.values[i.dataset.v] = v; else delete P.values[i.dataset.v]; rebuild(); });
     }
     function zipTable() {
-      if (M.scope === 'counties') { $r('#dkZipH').textContent = 'County targets'; $r('#dkZipSub').textContent = `${M.fellBack ? 'No ZIPs in the buy for this scope, so the files target the counties instead. ' : ''}${M.counties.length} counties targeted by Google criterion ID; Meta, Nextdoor and TikTok get the ${N(M.countyZips.length)} ZIPs inside them.`; $r('#dkZips').innerHTML = `<div class="tblwrap" style="max-height:300px"><table class="t"><thead><tr><th>County</th><th>Criterion</th><th>Population</th><th>Divorce filings/yr</th></tr></thead><tbody>${M.ctys.map(c => `<tr><td>${esc(c.name)}</td><td>${esc(c.gt || NA)}</td><td>${N(c.pop2025)}</td><td>${N(c.filings.ttm.div)}</td></tr>`).join('')}</tbody></table></div>`; return; }
+      if (M.scope === 'counties') { $r('#dkZipH').textContent = 'County targets'; $r('#dkZipSub').textContent = `${M.fellBack ? 'No ZIPs in the buy for this scope, so the files target the counties instead. ' : ''}${M.counties.length} counties targeted by Google criterion ID; Meta, Nextdoor and TikTok get the ${N(M.countyZips.length)} ZIPs inside them.`; $r('#dkZips').innerHTML = `<div class="tblwrap" style="max-height:300px"><table class="t"><thead><tr><th>County</th><th>Criterion</th><th>Population</th><th>Divorce filings/yr</th>${M.act ? '<th>Rival ads logged</th><th>Bid</th>' : ''}</tr></thead><tbody>${M.counties.map(k => { const c = CI[k.fips]; return `<tr><td>${esc(c.name)}</td><td>${esc(c.gt || NA)}</td><td>${N(c.pop2025)}</td><td>${N(c.filings.ttm.div)}</td>${M.act ? `<td>${N(k.rivals)}</td><td>${DK_BID(k.bid)}</td>` : ''}</tr>`; }).join('')}</tbody></table></div>`; return; }
       $r('#dkZipH').textContent = 'ZIP targets'; const zs = M.markets; const allDiv = sum(M.g.zips.map(z => (z.alloc || {}).div || 0));
       $r('#dkZipSub').textContent = zs.length ? `${zs.length} ZIPs (${{ top: 'top by efficiency', metro: 'every ZIP in scope', picks: 'hand picked' }[P.scope]}); ${N(sum(zs.map(z => z.div || 0)), 0)} expected divorce filings a year inside them (${DK_PCT(sum(zs.map(z => z.div || 0)) / Math.max(1, allDiv), 0)} of the geography).` : '';
-      $r('#dkZips').innerHTML = zs.length ? `<div class="tblwrap" style="max-height:300px"><table class="t"><thead><tr><th>ZIP</th><th class="l">City</th><th>Eff</th><th>Div/yr</th><th>Offices</th><th>Bid</th><th>$/mo</th><th>Criterion</th></tr></thead><tbody>${zs.map(z => `<tr><td>${z.zip}</td><td class="l">${esc(z.city)}</td><td>${N(z.eff, 0)}</td><td>${N(z.div, 0)}</td><td>${N(z.offices)}</td><td>${z.bid >= 0 ? '+' : '−'}${Math.abs(z.bid)}%</td><td>${$$$(z.spend)}</td><td>${esc(z.gt || 'by name')}</td></tr>`).join('')}</tbody></table></div>` : `<div class="small">${M.g.zips.length ? 'No ZIPs in the buy: pick some, widen the scope or lower the household minimum.' : 'No ZIP geometry outside the metros; switch the scope to counties.'}</div>`;
+      $r('#dkZips').innerHTML = zs.length ? `<div class="tblwrap" style="max-height:300px"><table class="t"><thead><tr><th>ZIP</th><th class="l">City</th><th>Eff</th><th>Div/yr</th><th>Offices</th>${M.act ? '<th>Rival ads</th>' : ''}<th>Bid</th><th>$/mo</th><th>Criterion</th></tr></thead><tbody>${zs.map(z => `<tr><td>${z.zip}</td><td class="l">${esc(z.city)}</td><td>${N(z.eff, 0)}</td><td>${N(z.div, 0)}</td><td>${N(z.offices)}</td>${M.act ? `<td>${N(z.rivals)}</td>` : ''}<td>${DK_BID(z.bid)}</td><td>${$$$(z.spend)}</td><td>${esc(z.gt || 'by name')}</td></tr>`).join('')}</tbody></table></div>` : `<div class="small">${M.g.zips.length ? 'No ZIPs in the buy: pick some, widen the scope or lower the household minimum.' : 'No ZIP geometry outside the metros; switch the scope to counties.'}</div>`;
     }
     // ---------- platform builders ----------
     const cnt = (v, max) => `<span class="cnt${max && v.length > max ? ' over' : ''}">${v.length}${max ? '/' + max : ''}</span>`;
@@ -360,6 +371,7 @@ registerModule({
     $r('#dkPay').onchange = e => { P.pay = e.target.value.slice(0, 80); rebuild(); };
     $r('#dkEs').onchange = e => { P.es = e.target.checked; rebuild(); };
     $r('#dkLive').onchange = e => { P.live = e.target.checked; rebuild(); };
+    $r('#dkWatchBid').onchange = e => { P.watchBid = e.target.checked; rebuild(); };
     $$r('#dkLines input').forEach(i => i.onchange = () => { const ls = $$r('#dkLines input').filter(x => x.checked).map(x => x.dataset.l); if (!ls.length) { i.checked = true; toast('Keep at least one line'); return; } P.lines = ls; P.shares = null; rebuild(); });
     $$r('[data-ov]').forEach(i => i.onchange = () => { P.ov[i.dataset.ov] = i.value.trim().slice(0, 120); rebuild(); });
     $r('#dkMixReset').onclick = () => { P.mix = null; rebuild(); };
@@ -373,7 +385,7 @@ registerModule({
     this.receive = p => { if (!p || typeof p !== 'object') return; const o = Object.assign({}, P); if (p.geo) o.geo = p.geo; if (Array.isArray(p.counties)) o.counties = p.counties; if (Array.isArray(p.zips) && p.zips.length) { o.scope = 'picks'; o.picks = p.zips; o.bids = p.bids || null; } if (p.line && LINE_META[p.line]) o.lines = [p.line]; if (Array.isArray(p.lines) && p.lines.length) o.lines = p.lines; P = dkSanitize(o); syncUI(); rebuild(); toast(p.zips && p.zips.length ? `${P.picks.length} ZIPs received` : 'Plan updated'); };
     this.plan = () => ({ inputs: JSON.parse(JSON.stringify(P)), geo: M.geo, start: P.start, end: M.end, weeks: P.weeks, budget: P.budget, cpc: M.asm.google.cost, cvr: M.asm.google.cvr, retain: M.asm.google.ret, lines: M.lines.map(r => ({ key: r.key, share: r.share, budget: r.budget, cpc: r.cpc, cvr: r.cvr, retain: r.retain, src: r.src })), mix: M.mix, zips: M.markets.map(m => m.zip), counties: M.counties.map(c => c.fips), flight: FLT });
     this.feed = () => creative().map(a => ({ label: a.label + (a.lang === 'es' ? ' · Spanish' : ''), text: Object.values(a.fields).filter(Boolean).join('\n'), platform: a.platform, kind: 'ad', lang: a.lang, line: a.line, review: a.review }));
-    if (!this._bus) { this._bus = true; ['firm', 'actuals', 'live'].forEach(ev => BUS.on(ev, () => { if (self.mounted && self._render) self._render(); })); }
+    if (!this._bus) { this._bus = true; ['firm', 'actuals', 'live', 'watch'].forEach(ev => BUS.on(ev, () => { if (self.mounted && self._render) self._render(); })); }
     this._render = () => { syncUI(); rebuild(); };
     syncUI(); asmUI(); comp(); how(); rebuild();
   }

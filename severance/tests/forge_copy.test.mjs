@@ -1,7 +1,9 @@
 /* FCOPY, the Site Forge copy writer: writes a practice area page, a county page and a Spanish landing page from data passed in, and
    every page's visible text passes LINT.screen with a filled firm, carries no hyphen or dash, and prints no number that is not in the
    data passed to the writer (the values V, the firm profile, the statute table FCOPY.LAW and the source lines FCOPY.SRC).
-   Loads src/03_lint.js and src/06_forge_copy.js in a vm context with a stub FIRM; no DOM is needed. `node tests/run.mjs forge_copy` */
+   Loads src/03_lint.js, src/04_forge_compile.js and src/06_forge_copy.js in a vm context with a stub FIRM; no DOM is needed. Each page is
+   screened twice: the blueprint's visible fields (what the forge's ledger shows per field) and the compiled page as Publish screens it
+   (title, meta and the HTML the compiler writes, with the form, the attorney cards, the court facts and the disclaimer). `node tests/run.mjs forge_copy` */
 import fs from 'node:fs';
 import path from 'node:path';
 import vm from 'node:vm';
@@ -21,32 +23,33 @@ const FIRM = { get: () => firm, responsible: () => firm.attorneys[firm.responsib
 
 /* ---- the vm context: what 03_lint.js and 06_forge_copy.js may touch ---- */
 const store = { get: (k, d) => d, set() { } };
-const ctx = vm.createContext({ console, FIRM, store, BUS: { on() { }, emit() { } }, Intl, Math, JSON, Date, RegExp, Object, Array, String, Number, Set, Map, isFinite, parseInt, parseFloat, encodeURIComponent, decodeURIComponent });
-for (const f of ['src/03_lint.js', 'src/06_forge_copy.js']) vm.runInContext(fs.readFileSync(path.join(ROOT, f), 'utf8'), ctx, { filename: f });
-const LINT = vm.runInContext('LINT', ctx), FCOPY = vm.runInContext('FCOPY', ctx);
-assert(LINT && typeof LINT.screen === 'function', 'LINT loaded'); assert(FCOPY && typeof FCOPY.blueprint === 'function', 'FCOPY loaded');
+const ctx = vm.createContext({ console, FIRM, store, URL, BUS: { on() { }, emit() { } }, Intl, Math, JSON, Date, RegExp, Object, Array, String, Number, Set, Map, isFinite, parseInt, parseFloat, encodeURIComponent, decodeURIComponent });
+for (const f of ['src/03_lint.js', 'src/04_forge_compile.js', 'src/06_forge_copy.js']) vm.runInContext(fs.readFileSync(path.join(ROOT, f), 'utf8'), ctx, { filename: f });
+const LINT = vm.runInContext('LINT', ctx), FCOPY = vm.runInContext('FCOPY', ctx), FC = vm.runInContext('FORGE_COMPILE', ctx);
+assert(LINT && typeof LINT.screen === 'function', 'LINT loaded'); assert(FCOPY && typeof FCOPY.blueprint === 'function', 'FCOPY loaded'); assert(FC && typeof FC.compile === 'function', 'FORGE_COMPILE loaded');
 
 /* ---- the values a page is written from (module 21 computes them from FIRM and the data; here they are the data passed in) ---- */
 const base = {
-  state: 'Texas', brand: firm.name, atty: 'Elena Ramirez', officeCity: 'Plano', phone: firm.phone, founded: '2011', attyBarClause: ', State Bar of Texas No. 24051234', attyCred: 'Board Certified, Family Law, Texas Board of Legal Specialization', attyBio: '',
-  officeAddr: '5800 Granite Pkwy, Suite 600, Plano, Texas 75024', officeLine: 'Our primary office is at 5800 Granite Pkwy, Suite 600, Plano, Texas 75024.', officeLineEs: 'Nuestra oficina principal está en 5800 Granite Pkwy, Suite 600, Plano, Texas 75024.', hours: 'Monday to Friday, 8 am to 6 pm',
+  state: 'Texas', brand: firm.name, atty: 'Elena Ramirez', officeCity: 'Plano', phone: firm.phone, founded: '2011', attyBarClause: ', State Bar of Texas No. 24051234', attyCred: 'Attorney, State Bar of Texas No. 24051234', attyBio: '',
+  officeAddr: '5800 Granite Pkwy, Suite 600, Plano, Texas 75024', officeLoc: '5800 Granite Pkwy, Suite 600, Plano, Texas', officeLine: 'Our primary office is at 5800 Granite Pkwy, Suite 600, Plano, Texas 75024.', officeLineEs: 'Nuestra oficina principal está en 5800 Granite Pkwy, Suite 600, Plano, Texas 75024.', hours: 'Monday to Friday, 8 am to 6 pm',
   consultShort: 'Consultation $150', consultLine: 'The consultation fee is $150.', consultShortEs: 'Consulta $150', consultLineEs: 'La consulta cuesta $150.', virtualLine: 'Consultations are available by video or in person.', paymentLine: 'Payment options: Credit cards and payment plans.',
   lineList: 'divorce with and without children, child custody and paternity, order modifications, order enforcement, protective orders and child support', lineListCap: 'Divorce with and without children, child custody and paternity, order modifications, order enforcement, protective orders and child support',
   areaCounties: 'Collin and Dallas counties', areaLine: 'Clients across Collin and Dallas counties, including Plano, Dallas and Frisco, from our office in Plano.', through: 'August 2026', throughEs: 'agosto de 2026', period: 'the 12 months through August 2026', s_div: '76,904',
   a_div: '11,712', a_divk: '4,488', a_divnk: '7,224', a_sapcr: '2,066', a_mod: '2,312', a_enf: '640', a_po: '1,724', a_ivd: '10,350', a_adopt: '1,005', a_cps: '688',
-  certs: 'Board certification: Elena Ramirez, Board Certified, Family Law, Texas Board of Legal Specialization.', attyListHTML: '<ul><li><strong>Elena Ramirez</strong>, State Bar of Texas No. 24051234, licensed in Texas since 2006. Board Certified, Family Law, Texas Board of Legal Specialization.</li></ul>'
+  certs: 'Elena Ramirez, Board Certified, Family Law, Texas Board of Legal Specialization.'
 };
 const county = {
   county: 'Dallas', k_div: '8,489', k_divk: '3,142', k_divnk: '5,347', k_sapcr: '1,579', k_po: '1,378', k_mod: '1,652', k_enf: '451', k_modenf: '2,103', k_ivd: '8,015', k_cps: '592', k_adopt: '753', k_priv: '15,664',
   k_div_prev: '8,662', k_sapcr_prev: '1,843', k_mod_prev: '1,782', k_enf_prev: '410', k_po_prev: '1,367', k_change: 'down 2%', k_when: 'in the 12 months through August 2026', k_whenEs: 'los 12 meses hasta agosto de 2026', k_whenShort: '12 months to Aug 2026',
   k_pending: '7,522', k_disposed: '8,251', k_pendingLine: 'At the end of August 2026, 7,522 divorce cases were pending in Dallas County, and the courts disposed of 8,251 in the 12 months through August 2026.',
-  k_married: '855,751', k_offices: '2,200', k_court: 'George L. Allen Sr. Courts Building', k_courtLine: 'In Dallas County, family cases are heard at the George L. Allen Sr. Courts Building, 600 Commerce St, Dallas.',
+  k_married: '855,751', k_offices: '2,200', k_court: 'George L. Allen Sr. Courts Building', k_courtAddr: '600 Commerce St, Dallas', k_courtLine: 'In Dallas County, family cases are heard at the George L. Allen Sr. Courts Building, 600 Commerce St, Dallas.',
   k_hist: [['2019', '11,152', '4,194'], ['2020', '10,075', '3,826'], ['2021', '10,252', '3,825'], ['2022', '8,817', '3,332'], ['2023', '8,865', '3,306'], ['2024', '8,839', '3,286'], ['2025', '8,700', '3,258']],
   countyCities: 'Dallas, Garland and Irving', k_cities: [['Dallas', '3,867', '432,393', '42']]
 };
 const city = { city: 'Dallas', cityFull: 'Dallas, TX', c_div: '3,867', c_married: '432,393', c_sapcr: '867', c_po: '611', c_pop: '1,339,268', c_zips: '75201, 75202, 75203, 75204, 75205, 75206, 75207 and 35 others', c_zipCount: '42', nearby: 'Garland, Irving and Mesquite', officeWhere: 'our office in Plano' };
 const V = page => Object.assign({}, base, page === 'county' || page === 'city' || page === 'landing' ? county : {}, page === 'city' || page === 'landing' ? city : {});
-const ctxFor = (Vx, extra) => Object.assign({ V: Vx, site: { url: firm.url, trust: 'Responsible attorney {atty} | Office in {officeCity}, Texas | {consultShort}' }, firm, lines: firm.lines, internal: [], crumbs: false, media: {}, today: '2026-10-01' }, extra || {});
+const ctxFor = (Vx, extra) => Object.assign({ V: Vx, site: { url: firm.url, trust: 'Responsible attorney {atty} | Office in {officeCity}, Texas | {consultShort}' }, firm, lines: firm.lines, internal: [], crumbs: false, media: {}, today: '2026-10-01',
+  attorneys: firm.attorneys.map(a => ({ name: a.name })), counties: ['Collin', 'Dallas'], entity: { '@type': 'LegalService', name: firm.name } }, extra || {});
 
 /* ---- checks shared by every page ---- */
 const DASH = /[‐-―−]|(?<=\w)-(?=\w)|\s-\s/;
@@ -71,7 +74,16 @@ function check(label, p, Vx, opts) {
   assert(!bad.length, `${label}: numbers not in the data passed in: ${bad.slice(0, 8).join('; ')}`);
   assert(text.includes('Elena Ramirez') && text.includes('Plano'), `${label}: responsible lawyer and primary office on the page (Rule 7.02(a))`);
   (bp._facts || []).forEach(f => assert(f.source && f.value, `${label}: fact ${f.key} has a value and a source`));
-  return { bp, text, res };
+  /* the compiled page, screened the way Publish screens it */
+  const r = FC.compile(JSON.parse(JSON.stringify(Object.assign({}, bp, { _facts: undefined, _missing: undefined }))), {});
+  const blk = r.lint.filter(l => /^BLOCK/.test(l)); assert(!blk.length, `${label}: compiler blocks: ${blk.join(' | ')}`);
+  const cres = LINT.screen(bp.page.title + '\n' + bp.page.meta_description + '\n' + r.html, { kind: 'page', html: true, lang });
+  assert(cres.pass, `${label}: the compiled page passes LINT.screen, blocks: ${JSON.stringify(cres.findings.filter(f => f.sev === 'block').map(f => [f.id, f.hit]))}`);
+  const cw = cres.findings.filter(f => f.sev === 'warn' || f.sev === 'fix'); assert(!cw.length, `${label}: compiled page review findings: ${JSON.stringify(cw.map(f => [f.id, f.hit]))}`);
+  const ctext = FC.visibleText(r.html); const cm = ctext.match(DASH); assert(!cm, `${label}: hyphen or dash in the compiled page: …${ctext.slice(Math.max(0, (cm || {}).index - 40), ((cm || {}).index || 0) + 40)}…`);
+  const cbad = numsIn(ctext).filter(n => !ok.has(n)); assert(!cbad.length, `${label}: numbers in the compiled page not in the data passed in: ${[...new Set(cbad)].slice(0, 8).join(', ')}`);
+  assert(ctext.includes('Elena Ramirez') && ctext.includes('Plano'), `${label}: the compiled page names the responsible lawyer and the primary office`);
+  return { bp, text, res, r, ctext };
 }
 
 /* 1. a practice area page (divorce with children) */
@@ -85,7 +97,8 @@ assert(!/50\s*\/\s*50|legal(ly)? separat|equal time|guarantee|specialist|expert/
 /* 2. a county page (Dallas County) */
 const co = check('county Dallas', { kind: 'county', fips: '48113' }, V('county'));
 assert(co.text.includes('8,489') && co.text.includes('George L. Allen Sr. Courts Building') && co.text.includes('7,522'), 'county page prints filings, the courthouse and the pending docket from the data');
-const tbl = co.bp.sections.find(s => s.type === 'table' && /Family cases filed/.test(s.heading)); assert(tbl && tbl.rows.length >= 6 && tbl.rows[0][1] === '8,489' && tbl.rows[0][2] === '8,662', 'county case table from the data');
+const cf = co.bp.sections.find(s => s.type === 'court_facts'); assert(cf && cf.items.length >= 8 && cf.items[0].value === '8,489 (8,662 the year before)' && cf.courts[0].name === 'George L. Allen Sr. Courts Building' && cf.courts[0].address === '600 Commerce St, Dallas', 'county court facts from the data');
+assert(co.ctext.includes('600 Commerce St') && /attorney advertising/i.test(co.ctext), 'the compiled county page shows the courthouse address and the disclaimer');
 assert(co.bp.page.archetype === 'location' && /Dallas County/.test(JSON.stringify(co.bp.page.service)), 'county blueprint is a location page serving the county');
 
 /* 3. a Spanish landing page (protective orders, Dallas) */

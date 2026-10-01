@@ -103,6 +103,11 @@ ads.forEach(r => {
 assert(ads.some(r => v(r, 'Headline 1') === 'Orden de Protección'), 'Spanish creative in Spanish campaigns');
 assert(!ads.some(r => [...Array(15)].map((_, i) => v(r, 'Headline ' + (i + 1))).some(h => /^Office in (Frisco|Dallas)/.test(h))), 'market cities never appear as an office');
 
+/* ---- military bases by county: Bell and Coryell carry Fort Hood (renamed from Fort Cavazos in 2025) */
+const bell = X.rsa(M, 'mil', { zip: '76542', city: 'Killeen', county: '48027', county_name: 'Bell', gt: '' }, 'en');
+assert(bell.h.includes('Military Divorce, Fort Hood') && !bell.h.some(h => /Cavazos/.test(h)), 'Bell County military headline names Fort Hood');
+assert(X.rsa(M, 'mil', { zip: '79936', city: 'El Paso', county: '48141', county_name: 'El Paso', gt: '' }, 'en').h.includes('Military Divorce, Fort Bliss'), 'El Paso names Fort Bliss');
+assert(!X.rsa(M, 'mil', M.markets[0], 'en').h.some(h => /Fort|JBSA/.test(h)), 'no base headline away from a base county');
 /* ---- the 15 and 4 caps hold even with a long candidate list */
 const many = X.rsa(model(X, { firm: Object.assign({}, FIRM_FULL, { consult: { free: true, fee: 0, virtual: true } }), langs: ['en', 'es'] }), 'div_k', M.markets[0], 'en');
 assert(many.h.length === 15, 'RSA caps at 15 headlines when more are available'); assert(many.d.length === 4, 'RSA caps at 4 descriptions');

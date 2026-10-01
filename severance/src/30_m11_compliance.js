@@ -5,9 +5,13 @@
    findings by severity with the hit marked in context, dispositions and the controls gate, safe fixes with what changed, the report
    exports, the Advertising Review Committee filing log (Rule 7.04) and the register of dated Texas changes that copy must reflect.
    SAMPLE_AD and COMP_RULES live in src/03_lint.js. Storage: sev.comp.text, sev.comp.opts, sev.comp.ctrl, sev.comp.ovr, sev.comp.arc.
-   receive(p): {text, label, kind, platform, lang} | {items:[...]} | {posture:'comp', target, domain} (from Competitor Watch). */
+   receive(p): {text, label, kind, platform, lang, source} | {items:[...]} | {text, posture:'comp', source:'watch', name} (Competitor
+   Watch: "Screen their copy"). The text goes into the screen box, the screen runs and the page scrolls to the findings; in competitor
+   posture they read as positioning notes, not findings against a lawyer. */
 registerModule({
   key: 'compliance', num: '11', title: 'Compliance Screen', desc: 'Ads, pages, posts and the firm profile screened against Texas Rules 7.01 to 7.06, the family law facts and the ad platform policies, with safe fixes, the filing log and the dated changes register',
+  receive(p) { if (this._recv) this._recv(p); else this._pending = p; },
+  onShow() { if (this._show) this._show(); },
   mount(root) {
     const self = this;
     const PLAB = LINT.PLATFORMS;
@@ -89,7 +93,7 @@ registerModule({
       <div class="tiles" id="cpTiles"></div>
       <div class="panel" id="cpItemsP" style="margin-bottom:14px"><h3>Items</h3><div class="sub" id="cpItemsSub">Pass means no open block. Click an item for its findings and its corrected copy.</div><div id="cpItems"></div></div>
       <div class="grid2">
-        <div class="panel" id="cpFindP"><h3>Findings</h3><div class="sub" id="cpFindSub"></div>
+        <div class="panel" id="cpFindP"><h3 id="cpFindH">Findings</h3><div class="callout judg" id="cpCompNote" hidden><div class="h">Competitor posture: positioning notes</div><p>These notes say where a competitor's copy sits against the Texas rules, the family law facts and the platform policies, and so where your own copy can stand apart. They are not findings against a lawyer: the copy may be filed, approved, out of date or carried elsewhere (an extension, a landing page). Our firm profile and house style are left out.</p></div><div class="sub" id="cpFindSub"></div>
           <div class="controls">${ctl('Scope', segHTML('cpScope', [['item', 'This item'], ['all', 'All items']], 'item'))}${ctl('Severity', segHTML('cpSev', [['', 'All'], ['block', 'Blocks'], ['fix', 'Fix'], ['warn', 'Review'], ['info', 'Info']], ''))}${fieldHTML({ k: 'fam', id: 'cpFam', l: 'Family', t: 'select', opts: [['', 'All']] }, '')}${fieldHTML({ k: 'disp', id: 'cpDisp', l: 'Disposition', t: 'select', opts: [['', 'All']].concat(DISPS.map(d => [d, DLAB(d)])) }, '')}</div>
           <div id="cpMarkedW"><div class="minihd">The copy with every hit marked</div><div class="cp-marked" id="cpMarked"></div></div>
           <div id="cpFind"></div></div>
@@ -202,7 +206,8 @@ registerModule({
     }
     const openBlocks = it => it.res.findings.filter(f => f.sev === 'block' && disp(it, f).s !== 'CLEARED');
     const status = it => openBlocks(it).length ? 'needs review' : 'pass';
-    const statusPill = it => status(it) === 'pass' ? pill('Pass', 'p-ok') : pill('Needs review', 'p-block');
+    const COMP = () => st.posture === 'comp';
+    const statusPill = it => status(it) === 'pass' ? pill(COMP() ? 'No flags' : 'Pass', 'p-ok') : pill(COMP() ? 'Flagged' : 'Needs review', 'p-block');
     const curItem = () => ITEMS.find(x => x.id === SEL) || ITEMS[0] || null;
     function answer() {
       if (!ITEMS.length) return 'n/a';
@@ -219,7 +224,8 @@ registerModule({
     function renderTiles() {
       const n = ITEMS.length, pass = ITEMS.filter(it => status(it) === 'pass').length; const ob = ITEMS.reduce((t, it) => t + openBlocks(it).length, 0);
       const fixes = ITEMS.reduce((t, it) => t + it.res.findings.filter(f => f.fix).length, 0); const rev = ITEMS.reduce((t, it) => t + it.res.findings.filter(f => (f.sev === 'warn' || f.sev === 'fix') && disp(it, f).s !== 'CLEARED').length, 0);
-      $('#cpTiles', root).innerHTML = tile('Items screened', N(n), LAST.src ? esc(LAST.src) : 'nothing run yet') + tile('Pass', N(pass), 'no open block') + tile('Needs review', N(n - pass), 'at least one open block') + tile('Open blocks', N(ob), 'must change before it runs') + tile('To review', N(rev), 'a person decides') + tile('Safe fixes', N(fixes), 'findings with a deterministic correction') + tile('Answer', esc(answer()), esc((QS.find(q => q[0] === st.q) || QS[0])[1]));
+      $('#cpFindH', root).textContent = COMP() ? 'Positioning notes' : 'Findings'; $('#cpCompNote', root).hidden = !COMP();
+      $('#cpTiles', root).innerHTML = tile('Items screened', N(n), LAST.src ? esc(LAST.src) : 'nothing run yet') + tile(COMP() ? 'No flags' : 'Pass', N(pass), 'no open block') + tile(COMP() ? 'Flagged' : 'Needs review', N(n - pass), 'at least one open block') + tile(COMP() ? 'Rule level notes' : 'Open blocks', N(ob), COMP() ? 'where their copy breaks a rule as written' : 'must change before it runs') + tile(COMP() ? 'Open questions' : 'To review', N(rev), 'a person decides') + tile('Safe fixes', N(fixes), 'findings with a deterministic correction') + tile('Answer', esc(answer()), esc((QS.find(q => q[0] === st.q) || QS[0])[1]));
     }
     function renderItems() {
       const host = $('#cpItems', root);
@@ -239,9 +245,9 @@ registerModule({
         <div class="cp-rule">${f.url ? `<a href="${esc(f.url)}" target="_blank" rel="noopener">${esc(f.rule)}</a>` : esc(f.rule)} · ${esc(f.fam || '')} · ${f.v === '✔' ? 'cited from the primary text' : 'verify the live text'}${f.n > 1 ? ` · ${N(f.n)} hits` : ''}${f.line ? ` · line ${N(f.line)}` : ''}${f.src_at != null ? ` · source position ${N(f.src_at)}` : f.at >= 0 ? ` · position ${N(f.at)}` : ''}</div>
         ${ctxHTML}<p class="cp-why">${esc(f.why)}</p>
         ${f.fix ? `<div class="cp-fixline">Safe fix: ${f.fix.from ? `<del>${esc(f.fix.from)}</del>` : '<i>add</i>'} → ${f.fix.to ? `<ins>${esc(f.fix.to)}</ins>` : '<i>removed</i>'}</div>` : ''}
-        <details class="cp-more"><summary>${st.posture === 'comp' ? 'Where it goes, what would settle it' : 'What would settle it'}, move by hand</summary>
+        <details class="cp-more"><summary>${st.posture === 'comp' ? 'What would settle it, where it could go' : 'What would settle it'}, move by hand</summary>
           ${d.moved ? `<p class="small">${esc(d.moved)}.</p>` : ''}<p class="small"><b>What would settle it.</b> ${esc(f.settle || 'Write the open question and the evidence that would close it.')}</p>
-          ${st.posture === 'comp' ? `<p class="small"><b>Route.</b> ${esc(routeFor(f))} Evidence bar: a dated screenshot or saved source of each instance and the URL or ad ID.</p>` : ''}
+          ${st.posture === 'comp' ? `<p class="small"><b>If it ever goes outside the firm.</b> ${esc(routeFor(f))} Evidence bar: a dated screenshot or saved source of each instance and the URL or ad ID. Most notes stay in house as positioning.</p>` : ''}
           <div class="btnrow">${DISPS.map(s => `<button type="button" class="btn sm${d.s === s ? ' primary' : ''}" data-mv="${s}" aria-pressed="${d.s === s}">${DLAB(s)}</button>`).join('')}<button type="button" class="btn sm" data-mv="">Reset</button></div></details></div>`;
     }
     function renderFindings() {
@@ -426,20 +432,30 @@ registerModule({
     $('#cpSrcList', root).innerHTML = Object.keys(LINT.SOURCES).map(k => { const s = LINT.SOURCES[k]; return `<li>${s.url ? `<a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.label)}</a>` : esc(s.label)}</li>`; }).join('');
 
     /* ---------- hooks ---------- */
-    self.receive = p => {
-      if (!p) return;
+    const SRCNAME = { watch: 'Competitor Watch', publish: 'Publish', desk: 'Campaign Desk', forge: 'Site Forge', live: 'Live Desk', accounts: 'Accounts' };
+    const toFindings = () => { const el = $('#cpFindP', root); if (el && el.scrollIntoView) setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60); };
+    self._recv = p => {
+      if (!p || typeof p !== 'object') return;
       if (p.posture) { st.posture = p.posture === 'comp' ? 'comp' : 'self'; $$('#cpPos button', root).forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === st.posture))); }
-      if (p.target != null) { st.target = String(p.target); $('#cpTarget', root).value = st.target; }
+      const tgt = p.target != null ? p.target : p.name; if (tgt != null) { st.target = String(tgt); $('#cpTarget', root).value = st.target; }
       if (p.domain != null) { st.domain = String(p.domain); $('#cpDomain', root).value = st.domain; }
       saveOpts();
-      if (Array.isArray(p.items) && p.items.length) { setSrc('paste'); runItems(p.items, p.src || 'Handed over', p.label || `${p.items.length} items`); return; }
-      if (p.text || p.fields) { setSrc('paste'); if (p.text) { $('#cpText', root).value = p.text; } runItems([p], p.src || 'Handed over', p.label || 'one item'); return; }
+      const src = SRCNAME[p.source] || (p.source ? String(p.source) : p.src || 'Handed over');
+      if (Array.isArray(p.items) && p.items.length) { setSrc('paste'); runItems(p.items, src, p.label || `${p.items.length} items`); toFindings(); return; }
+      if (p.text || p.fields) {
+        setSrc('paste'); const label = p.label || (st.posture === 'comp' && st.target ? st.target + ' copy' : src + ' copy');
+        if (p.text) { $('#cpText', root).value = String(p.text); store.set('sev.comp.text', String(p.text)); } $('#cpLabel', root).value = label;
+        runItems([Object.assign({}, p, { label, platform: p.platform || p.plat, html: p.html === true || (p.html == null && LINT.looksHTML(String(p.text || ''))) || undefined })], src, st.posture === 'comp' ? `${st.target || 'a competitor'}, positioning notes` : label);
+        toFindings(); return;
+      }
       if (st.posture === 'comp') { setSrc('paste'); note(`Target set to ${st.target || 'the competitor'}. Paste the page source from ${st.domain || 'its site'} or its ad copy and screen it.`); }
       rerun();
     };
+    self._show = () => { renderArc(); };
     self.screenItems = (items, src) => { runItems(items || [], src || 'Handed over', `${(items || []).length} items`); return ITEMS.map(it => ({ label: it.label, pass: status(it) === 'pass', counts: it.res.counts })); };
     BUS.on('firm', () => { if (root.isConnected && ITEMS.length) rerun(); });
 
-    renderCtrl(); renderArc(); renderReg(); renderBook(); runPaste();
+    renderCtrl(); renderArc(); renderReg(); renderBook();
+    if (self._pending) { const p = self._pending; self._pending = null; self._recv(p); } else runPaste();
   }
 });

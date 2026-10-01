@@ -198,12 +198,12 @@ const FCOPY = (() => {
         { q: 'Can I get spousal maintenance?', a: 'Court ordered maintenance is limited. The usual route needs a marriage of {law.maint10} or more and proof that the spouse cannot meet minimum reasonable needs, and the amount is capped at {law.maint} a month or {law.maintpct} of average monthly gross income, whichever is less. Spouses can also agree to contractual payments.' },
         { q: 'Do we both need lawyers?', a: 'A lawyer can represent only one spouse. The other spouse can hire a lawyer or represent themselves, and an agreed decree can still be signed.' },
         { q: 'Where do I file?', a: 'In a county where you or your spouse has lived for at least {law.res90}, after at least {law.res} in Texas.' }],
-      related: ['high', 'gray', 'prenup'], band: 'Talk with a lawyer about your divorce.',
+      related: ['high', 'gray', 'prenup'], band: 'Talk with a lawyer about a Texas divorce.',
       tok: ['divorce', 'uncontested', 'agreed', 'property'],
       es: { h: 'Abogado de divorcio en {city}', e: 'Divorcio · {city}', d: 'Divorcio en Texas, de mutuo acuerdo o con disputa. Hable con un abogado sobre los bienes, las deudas y el proceso.', d2: 'Cuéntenos lo básico. Le llamamos para fijar la consulta.',
-        aq: '¿Cómo funciona un divorcio en Texas?', answer: 'Uno de los cónyuges debe haber vivido en Texas {law.res.es} y en el condado {law.res90.es} antes de presentar la petición. El juez no puede conceder el divorcio antes de {law.wait.es} después de presentarla. Texas divide los bienes gananciales de manera justa y equitativa, lo que no exige partes iguales, y los bienes propios no se dividen.',
+        aq: '¿Cómo funciona un divorcio en Texas?', answer: 'Uno de los cónyuges debe haber vivido en Texas {law.res.es} y en el condado {law.res90.es} antes de presentar la petición. El juez no puede conceder el divorcio antes de {law.wait.es} después de presentarla. Texas divide los bienes gananciales de manera justa y equitativa, y la división puede ser desigual; los bienes propios no se dividen.',
         fact: 'k_div', factL: 'peticiones de divorcio presentadas en el condado de {county} en {k_whenEs}',
-        faq: [{ q: '¿Cuánto tarda un divorcio en Texas?', a: 'El juez no puede conceder el divorcio antes de {law.wait.es} después de presentar la petición. Un divorcio de mutuo acuerdo suele tardar {law.agreed.es}.' }, { q: '¿Se dividen los bienes en partes iguales?', a: 'No necesariamente. El tribunal divide los bienes gananciales de manera justa y equitativa, y los bienes propios no se dividen.' }, { q: '¿Necesitamos un abogado cada uno?', a: 'Un abogado solo puede representar a uno de los cónyuges. El otro puede contratar su propio abogado.' }] } },
+        faq: [{ q: '¿Cuánto tarda un divorcio en Texas?', a: 'El juez no puede conceder el divorcio antes de {law.wait.es} después de presentar la petición. Un divorcio de mutuo acuerdo suele tardar {law.agreed.es}.' }, { q: '¿Cómo se dividen los bienes?', a: 'El tribunal divide los bienes gananciales de manera justa y equitativa, y la división puede ser desigual. Los bienes propios no se dividen.' }, { q: '¿Necesitamos un abogado cada uno?', a: 'Un abogado solo puede representar a uno de los cónyuges. El otro puede contratar su propio abogado.' }] } },
 
     sapcr: { nm: 'Child custody and paternity', short: 'Child custody', slug: 'child-custody-lawyer', lp: 'custody',
       h1n: 'Child Custody and Paternity in Texas', h1: 'Child Custody Lawyer in {city}', eyebrow: 'Custody, paternity and SAPCR',
@@ -231,7 +231,7 @@ const FCOPY = (() => {
       h1n: 'Modifying a Custody or Child Support Order in Texas', h1: 'Order Modification Lawyer in {city}', eyebrow: 'Modification · custody, possession and support',
       lede: 'Jobs change, children grow and parents move. A Texas order can be changed when the legal test is met; {brand} explains what that test is and what it takes to meet it.',
       aq: 'When can a Texas custody or support order be changed?',
-      answer: 'Conservatorship and possession can be modified when circumstances have materially and substantially changed since the last order and the change is in the child\'s best interest. Child support can also be modified when {law.mod3} have passed and guideline support differs from the current amount by {law.mod3pct} or {law.mod3amt} a month. Until a court signs a new order, the old one still applies.',
+      answer: 'Conservatorship and possession can be modified when circumstances have materially and substantially changed since the last order and the change is in the child\'s best interest. Child support can also be modified when {law.mod3} have passed and guideline support differs from the ordered support by {law.mod3pct} or {law.mod3amt} a month. Until a court signs a new order, the old one still applies.',
       areaFact: 'In {areaCounties}, {a_mod} modification suits were filed in {period}.',
       facts: ['a_mod', 'law.mod3', 'law.modcust', 'law.cap'],
       what: '<p>Common modifications:</p><ul><li><strong>Support after a change in income:</strong> a job loss, a new job or a raise.</li><li><strong>The primary residence:</strong> which parent the child primarily lives with.</li><li><strong>Relocation:</strong> a move outside the geographic restriction.</li><li><strong>The possession schedule:</strong> a schedule that no longer fits the child\'s age or the parents\' work.</li><li><strong>Agreed modifications:</strong> parents who agree can ask the court to sign a new order.</li></ul>',
@@ -240,12 +240,12 @@ const FCOPY = (() => {
       faq: [
         { q: 'Can I lower child support after losing my job?', a: 'You can ask the court. A material and substantial change in income can support a modification, and a change usually reaches back only to when the other parent was served with the suit, so file promptly.' },
         { q: 'Does an agreement with the other parent change the order?', a: 'Not until a court signs it. Until then, the existing order is the one a court enforces.' },
-        { q: 'When can child support be reviewed without a big change?', a: 'When {law.mod3} have passed since the last order and guideline support differs from the current amount by {law.mod3pct} or {law.mod3amt} a month.' },
+        { q: 'When can child support be reviewed without a big change?', a: 'When {law.mod3} have passed since the last order and guideline support differs from the ordered support by {law.mod3pct} or {law.mod3amt} a month.' },
         { q: 'Can the primary residence change?', a: 'Yes, when circumstances have materially and substantially changed and the change is in the child\'s best interest.' }],
       related: ['sapcr', 'enf', 'ivd'], band: 'Talk with a lawyer about changing your order.',
       tok: ['modification', 'modify', 'change', 'relocation'],
       es: { h: 'Modificación de órdenes de custodia en {city}', e: 'Modificación · {city}', d: 'Cambie una orden de custodia o de manutención de menores en Texas cuando su situación cambia. Hable con un abogado.', d2: 'Cuéntenos lo básico. Le llamamos para fijar la consulta.',
-        aq: '¿Cuándo se puede cambiar una orden en Texas?', answer: 'Una orden de custodia o de manutención de menores se puede modificar cuando las circunstancias cambian de manera material y sustancial y el cambio conviene al niño. La manutención también se puede revisar después de {law.mod3.es} si el monto de las guías difiere en {law.mod3pct} o {law.mod3amt} al mes. Hasta que el tribunal firme una nueva orden, la anterior sigue vigente.',
+        aq: '¿Cuándo se puede cambiar una orden en Texas?', answer: 'Una orden de custodia o de manutención de menores se puede modificar cuando las circunstancias cambian de manera material y sustancial y el cambio conviene al niño. La manutención también se puede revisar después de {law.mod3.es} si la manutención según las guías difiere de la ordenada en {law.mod3pct} o {law.mod3amt} al mes. Hasta que el tribunal firme una nueva orden, la anterior sigue vigente.',
         fact: 'k_mod', factL: 'demandas de modificación presentadas en el condado de {county} en {k_whenEs}',
         faq: [{ q: '¿Puedo bajar la manutención de menores si perdí el trabajo?', a: 'Puede pedirlo al tribunal. Presente la demanda pronto, porque el cambio suele aplicarse desde la notificación al otro padre.' }, { q: '¿Un acuerdo con el otro padre cambia la orden?', a: 'No hasta que el tribunal lo firme.' }, { q: '¿Se puede cambiar con quién vive el niño?', a: 'Sí, cuando hay un cambio material y sustancial y el cambio conviene al niño.' }] } },
 
@@ -399,7 +399,7 @@ const FCOPY = (() => {
       es: { h: 'Divorcio con bienes de alto valor en {city}', e: 'Divorcio con bienes de alto valor · {city}', d: 'Negocios, acciones y bienes propios en un divorcio en Texas. Hable con un abogado.', d2: 'Cuéntenos lo básico. Le llamamos para fijar la consulta.',
         aq: '¿Qué tiene de distinto un divorcio con bienes de alto valor?', answer: 'El trabajo está en clasificar y valorar los bienes: qué es propio y qué es ganancial, cuánto vale un negocio y si un patrimonio debe reembolsar a otro. Los bienes al final del matrimonio se presumen gananciales, y los bienes propios se prueban con evidencia clara y convincente.',
         fact: 'k_div', factL: 'peticiones de divorcio presentadas en el condado de {county} en {k_whenEs}',
-        faq: [{ q: '¿Un negocio anterior al matrimonio es propio?', a: 'El negocio puede ser propio, pero sus ingresos durante el matrimonio suelen ser gananciales.' }, { q: '¿Cómo se prueban los bienes propios?', a: 'Con evidencia clara y convincente, por lo general rastreando su origen.' }, { q: '¿Se dividen en partes iguales?', a: 'No necesariamente. El tribunal divide de manera justa y equitativa.' }] } },
+        faq: [{ q: '¿Un negocio anterior al matrimonio es propio?', a: 'El negocio puede ser propio, pero sus ingresos durante el matrimonio suelen ser gananciales.' }, { q: '¿Cómo se prueban los bienes propios?', a: 'Con evidencia clara y convincente, por lo general rastreando su origen.' }, { q: '¿Cómo se dividen los bienes?', a: 'De manera justa y equitativa; la división puede ser desigual.' }] } },
 
     mil: { nm: 'Military divorce', short: 'Military divorce', slug: 'military-divorce-lawyer', lp: 'military-divorce',
       h1n: 'Military Divorce in Texas', h1: 'Military Divorce Lawyer in {city}', eyebrow: 'Service members and military spouses',
@@ -558,9 +558,9 @@ const FCOPY = (() => {
     { id: 'modify', scope: 'state', label: 'Changing an order',
       h1: 'Changing a Texas Custody or Child Support Order', title: 'Changing a Texas Custody or Support Order',
       meta: 'A Texas custody or support order can be modified after a material and substantial change, and support after {law.mod3} when guidelines differ by {law.mod3pct} or {law.mod3amt}.',
-      answer: 'Conservatorship and possession can be modified after a material and substantial change in circumstances when the change is in the child\'s best interest. Child support can also be modified when {law.mod3} have passed and guideline support differs from the current amount by {law.mod3pct} or {law.mod3amt} a month. Until a court signs a new order, the old one applies.',
+      answer: 'Conservatorship and possession can be modified after a material and substantial change in circumstances when the change is in the child\'s best interest. Child support can also be modified when {law.mod3} have passed and guideline support differs from the ordered support by {law.mod3pct} or {law.mod3amt} a month. Until a court signs a new order, the old one applies.',
       facts: ['law.mod3', 'law.modcust', 'law.indep', 'law.cap'],
-      body: ['<p>Two tests open a modification. For custody and possession, a material and substantial change since the last order plus the child\'s best interest. For support, either such a change or the passage of {law.mod3} with a gap of {law.mod3pct} or {law.mod3amt} a month from guideline support.</p>',
+      body: ['<p>Two tests open a modification. For custody and possession, a material and substantial change since the last order plus the child\'s best interest. For support, either such a change or the passage of {law.mod3} with a support gap of {law.mod3pct} or {law.mod3amt} a month from the guidelines.</p>',
         '<p>Timing matters: a change in support usually reaches back only to when the other parent was served. And because support and possession are independent duties, the existing order has to be followed while the modification is pending.</p>',
         '<p>Bring the current order and proof of what has changed. If the other parent agrees, an agreed order the court signs is the fastest route.</p>'],
       faq: [
@@ -578,12 +578,12 @@ const FCOPY = (() => {
     features: [{ title: 'Abogado responsable', text: '{atty}, con oficina principal en {officeCity}, Texas.' }, { title: 'La consulta', text: '{consultLineEs}' }, { title: 'Atención en español', text: 'Personal de la firma que habla español.' }],
     faq: [{ q: '¿Hablan español?', a: 'Sí. Personal de la firma atiende en español.' }, { q: '¿Dónde está la oficina?', a: '{officeLineEs}' }, { q: '¿Cuánto cuesta la consulta?', a: '{consultLineEs}' }],
     formHead: 'Pida una consulta', band: { heading: '¿Necesita un abogado de familia en {city}? Llámenos.', text: '{consultLineEs}' },
-    notice: 'Publicidad de abogados. {brand}. Abogado responsable: {atty}. Oficina principal: {officeCity}, Texas. Esta página ofrece información general sobre la ley de Texas, no asesoría legal para su caso. Contactar a la firma no crea una relación de abogado y cliente.',
+    notice: 'Esta página es publicidad de abogados. Abogado responsable: {atty}, {brand}. Oficina principal: {officeAddr}. La información de esta página es información general sobre la ley de Texas, no asesoría legal para su caso. Contactar a la firma no crea una relación de abogado y cliente.',
     breadcrumbs: 'Inicio', more: 'Más información', facts: { wait: 'como mínimo entre la petición y el decreto de divorcio', consult: 'consulta con un abogado', src: 'Código de Familia de Texas' }
   };
   const CONSENT = 'By submitting, you agree that the firm may contact you by phone, text or email about your request. Message and data rates may apply. Reply STOP to opt out of texts. Sending this form does not create an attorney client relationship; please do not include confidential details.';
   const FORM_FIELDS = [{ id: 'name', label: 'Full name', type: 'text', required: true }, { id: 'phone', label: 'Phone', type: 'tel', required: true }, { id: 'email', label: 'Email', type: 'email', required: false }, { id: 'county', label: 'County where the case is or will be filed', type: 'text', required: false }, { id: 'message', label: 'What is happening (no confidential details)', type: 'textarea', required: false }];
-  const NOTICE = 'Attorney advertising. {brand}. Responsible attorney: {atty}{attyBarClause}. Primary office: {officeAddr}. This page gives general information about Texas law, not legal advice for your situation, and contacting the firm does not create an attorney client relationship.';
+  const NOTICE = 'This page is attorney advertising. Responsible attorney: {atty}, {brand}{attyBarClause}. Primary practice location: {officeAddr}. The information on this page is general information about Texas law, not legal advice for your situation, and contacting the firm does not create an attorney client relationship.';
   const KL = { home: 'Home', about: 'About', attorney: 'Attorney', practice: 'Practice area', county: 'County', city: 'City', landing: 'Landing', guide: 'Guide', faq: 'FAQ' };
 
   /* ---------- facts: value, label and the public source printed beside it; the grade stays in the forge ---------- */
@@ -644,7 +644,21 @@ const FCOPY = (() => {
     if (x && typeof x === 'object') { const o = {}; for (const k in x) o[k] = (k === 'url' || k === 'media' || k === 'id' || k === 'type') ? x[k] : cleanDeep(x[k], k); return o; }
     return x;
   }
-  /* ctx: { V, site, firm, lines, internal, crumbs, media, entity, extraSchema, features, testimonials, today, author } */
+  /* Spanish matter names for the intake form */
+  const ESN = { div_k: 'Divorcio con hijos', div_nk: 'Divorcio', sapcr: 'Custodia y paternidad', mod: 'Modificación de órdenes', enf: 'Hacer cumplir órdenes', po: 'Órdenes de protección', ivd: 'Manutención de menores y paternidad', adopt: 'Adopción', cps: 'Defensa ante CPS', prenup: 'Acuerdos prematrimoniales', high: 'Divorcio con bienes de alto valor', mil: 'Divorcio militar', gray: 'Divorcio después de los {law.gray50}' };
+  const TOGGLE = { es: 'Lea esta página en español', en: 'Read this page in English' };
+  /* the firm as the compiler reads it (site.firm, the FIRM.get() shape): public fields only, no logo data, notes or review counts */
+  function publicFirm(F, lineNames) {
+    F = F || {}; const pick = (o, ks) => { const r = {}; ks.forEach(k => { if (o && o[k] != null && o[k] !== '') r[k] = o[k]; }); return r; };
+    const out = pick(F, ['name', 'legal_name', 'url', 'phone', 'founded', 'responsible', 'counties', 'county_names', 'city_names', 'lines', 'languages', 'payment', 'colors', 'social']);
+    out.attorneys = (F.attorneys || []).map(a => pick(a, ['name', 'bar_no', 'tbls', 'since', 'bio', 'title', 'languages']));
+    out.offices = (F.offices || []).map(o => pick(o, ['label', 'street', 'city', 'zip', 'county', 'phone', 'hours', 'primary']));
+    const fees = {}; Object.entries(F.fees || {}).forEach(([k, v]) => { if (v != null && v !== '' && +v > 0) fees[k] = +v; }); out.fees = fees;
+    if (lineNames) out.line_names = lineNames;
+    return out;
+  }
+  const tblsLine = a => a && a.tbls ? `Board Certified, ${a.tbls}, Texas Board of Legal Specialization` : '';
+  /* ctx: { V, site, firm, lines, internal, crumbs, media, entity, extraSchema, features, testimonials, today, author, attorneys, counties, langAlt } */
   function blueprint(p, ctx) {
     ctx = ctx || {}; const V = ctx.V || {}; const S = ctx.site || {}; const F0 = ctx.firm || {}; const missing = []; const es = p.lang === 'es';
     const L = p.line ? LINES[p.line] : null; const brand = V.brand || ''; const desc = { title: p.title, h1: p.h1, meta: p.meta, slug: p.slug };
@@ -656,31 +670,43 @@ const FCOPY = (() => {
     const crumbs = ctx.crumbs && p.kind !== 'home' && p.kind !== 'landing' ? [{ name: es ? ES.breadcrumbs : 'Home', url: '/' }] : [];
     const trustSrc = es ? ES.trust : String(S.trust || 'Responsible attorney {atty} | Office in {officeCity}, Texas | {consultShort}').split('|');
     const trust = trustSrc.map(x => F(String(x).trim())).filter(Boolean).slice(0, 3);
-    const form = { provider: S.form_provider || 'html', button: es ? ES.form.button : (S.form_button || 'Request a consultation'), consent: es ? ES.form.consent : CONSENT, fields: es ? ES.form.fields : FORM_FIELDS };
+    /* the intake form: the compiler writes the fields (county and matter selects) and the consent; the forge gives the options */
+    const cn = (ctx.counties || []).filter(Boolean);
+    const form = { provider: S.form_provider || 'html', button: es ? ES.form.button : (S.form_button || 'Request a consultation'), counties: cn.map(n => es ? `Condado de ${n}` : `${n} County`), matters: (lineKeys.length ? lineKeys : LINE_KEYS.slice(0, 6)).map(k => fill(es ? ESN[k] : LINES[k].nm, V)) };
+    if (!form.counties.length) delete form.counties;
     if (S.form_shortcode) form.shortcode = S.form_shortcode; if (S.form_action) form.action = S.form_action; if (S.email || F0.intake_email) form.email_to = S.email || F0.intake_email;
     const cta = { primary: { label: es ? ES.cta.label : (S.cta_label || 'Request a consultation'), url: S.cta_url || '#contact' }, secondary: { label: es ? 'Cómo funciona' : 'How it works', url: '#how-it-works' } };
     if (V.phone && !/^\[/.test(V.phone)) { cta.primary.phone = V.phone; cta.primary.phone_label = es ? fill(ES.cta.phone_label, V) : 'Call ' + V.phone; }
-    const archetype = { home: 'home', about: 'about', attorney: 'about', practice: 'practice', county: 'location', city: 'location', landing: 'landing', guide: 'article', faq: 'faq' }[p.kind];
+    const archetype = { home: 'home', about: 'about', attorney: 'attorney', practice: 'practice', county: 'location', city: 'location', landing: 'landing', guide: 'guide', faq: 'about' }[p.kind];
     const page = { archetype, post_type: p.kind === 'guide' && S.guides_as_posts ? 'post' : 'page', slug: desc.slug, title: desc.title, h1: desc.h1, meta_description: desc.meta, language: es ? 'es-US' : 'en-US',
       template: p.kind === 'landing' ? (!S.template || S.template === 'default' ? 'elementor_canvas' : S.template) : (S.template || 'default'),
       breadcrumbs: crumbs, summary: '', entity: ctx.entity || { '@type': 'LegalService', name: brand }, dates: { published: today, modified: today }, cta, conversion: { sticky_mobile_bar: S.sticky !== false, trust, form }, internal_links: internal, schema_extra: (ctx.extraSchema || []).slice() };
+    if (p.line) page.line = p.line;
     const au = ctx.author || (V.atty && !/^\[/.test(V.atty) ? { name: V.atty, credentials: V.attyCred || 'Attorney licensed in Texas', bio: V.attyBio || '' } : null);
     if (au) page.author = Object.assign({}, au, media.author ? { media: 'author' } : {});
+    if (p.kind === 'attorney' && ctx.attorney) page.attorney = Object.assign({}, ctx.attorney, media.headshot ? { media: 'headshot' } : {});
+    if (ctx.langAlt && ctx.langAlt.url) page.alternates = [{ lang: ctx.langAlt.lang === 'es' ? 'es-US' : 'en-US', url: ctx.langAlt.url }];
     if (p.kind === 'landing' && S.noindex_landing !== false) page.noindex = true;
     if (['practice', 'city', 'county'].includes(p.kind)) page.service = { '@type': 'Service', serviceType: L ? F(L.nm) : 'Family law', areaServed: p.kind === 'city' ? { '@type': 'City', name: V.cityFull || V.city } : p.kind === 'county' ? { '@type': 'AdministrativeArea', name: (V.county || '') + ' County, TX' } : 'Texas' };
     const sec = [];
-    const hero = o => sec.push(Object.assign({ type: 'hero', media: media.hero ? 'hero' : undefined, layout: media.hero ? 'split' : 'center', cta: ['primary'], trust: true }, o));
+    const hero = o => { sec.push(Object.assign({ type: 'hero', media: media.hero ? 'hero' : undefined, layout: media.hero ? 'split' : 'center', cta: ['primary'], trust: true }, o)); if (ctx.langAlt && ctx.langAlt.url) sec.push({ type: 'lang_toggle', url: ctx.langAlt.url, lang: ctx.langAlt.lang, label: TOGGLE[ctx.langAlt.lang] || TOGGLE.es }); };
     const links = () => { if (internal.length) sec.push({ type: 'links', heading: es ? ES.more : 'Related', items: internal }); };
-    const notice = () => { const certs = (V.certs && !es) ? ' ' + V.certs : ''; sec.push({ type: 'rich_text', id: 'notice', heading: '', html: `<p><small>${escH(F(es ? ES.notice : NOTICE) + certs)}</small></p>`, width: 'narrow' }); };
+    const notice = () => sec.push({ type: 'disclaimer', id: 'disclaimer', attorney: house(V.atty), firm: house(brand), city: house(V.officeCity), location: house(V.officeLoc || `${V.officeCity}, Texas`), extra: !es && V.certs ? [house(V.certs)] : [] });
     const formSec = (h, t) => sec.push({ type: 'form', id: 'contact', heading: h, text: t });
     const testi = h => { if (tst && !es) sec.push({ type: 'testimonials', heading: h || 'What clients say', items: tst.slice(0, 3) }); };
     const authors = () => { if (page.author && !es) sec.push({ type: 'authors', heading: 'Responsible attorney' }); };
+    const lawyers = (h, t, only) => { const items = (ctx.attorneys || []).filter(a => a && a.name && (only == null || a.name === only)); if (items.length) sec.push({ type: 'attorneys', heading: h, text: t, items: items.map(a => Object.assign({}, a)) }); };
     const video = h => { if (media.explainer && !es) sec.push({ type: 'video', media: 'explainer', heading: h || F('What a consultation with {brand} looks like'), description: page.meta_description }); };
     const band = (h, t) => sec.push({ type: 'cta_band', heading: h, text: t });
+    const steps = (h, list) => { const st = FD(list); sec.push({ type: st.some(x => x.when) ? 'process' : 'steps', id: 'how-it-works', heading: h, steps: st }); };
     const faqs = items => FD(items.filter(it => !it.need || has(V, ...String(it.need).split(' ')))).filter(it => it.q && it.a).map(it => ({ q: it.q, a: it.a }));
     const features = () => (ctx.features && ctx.features.length ? ctx.features : lineKeys.map(k => ({ title: F(LINES[k].nm), text: firstSentence(F(LINES[k].lede)) }))).slice(0, 9);
     const FORM_H = 'Request a consultation', FORM_T = 'Two minutes. We call back to set a time. Please leave out confidential details.';
     const consultBand = V.consultLine || '';
+    const courtFacts = () => { if (!has(V, 'k_div')) return; const it = (label, a, b) => has(V, a) ? { label, value: V[a] + (b && has(V, b) ? ` (${V[b]} the year before)` : '') } : null;
+      const items = [it('Divorce petitions', 'k_div', 'k_div_prev'), it('Divorce petitions involving children', 'k_divk'), it('Custody suits outside a divorce (SAPCR)', 'k_sapcr', 'k_sapcr_prev'), it('Modifications', 'k_mod', 'k_mod_prev'), it('Enforcements', 'k_enf', 'k_enf_prev'), it('Protective order cases', 'k_po', 'k_po_prev'), it('Child support and paternity cases', 'k_ivd'), it('Adoptions', 'k_adopt'), it('CPS cases', 'k_cps')].filter(Boolean);
+      if (has(V, 'k_pending')) items.push({ label: F('Divorce cases pending at the end of {through}'), value: V.k_pending }); if (has(V, 'k_disposed')) items.push({ label: 'Divorce cases disposed of', value: V.k_disposed });
+      sec.push({ type: 'court_facts', heading: F('{county} County courts and filings'), county: V.county, text: F('Family cases filed {k_when}, from the clerk reports to the Texas Office of Court Administration.'), items, courts: has(V, 'k_court') ? [{ name: V.k_court, address: V.k_courtAddr || '' }] : [], source: SRC(V).oca }); };
     switch (p.kind) {
       case 'home': {
         page.summary = F('{brand}: Texas family law based in {officeCity}. Responsible attorney {atty}.');
@@ -688,7 +714,7 @@ const FCOPY = (() => {
         sec.push({ type: 'answer', heading: F('Who {brand} is'), body: S.about ? F(S.about) : F('{brand} is a family law firm based in {officeCity}, Texas. The firm handles {lineList} for clients in {areaCounties}. {atty} is the attorney responsible for the firm\'s advertising, and every matter starts with a consultation and a written fee agreement.') });
         const st = facts(['a_div', 'a_divk', 'a_po', 'law.cap']); if (st.length) sec.push({ type: 'stats', heading: F('Family law in {areaCounties} by the numbers'), items: st.map(f => ({ value: f.value, label: f.label })) });
         sec.push({ type: 'features', id: 'practice', heading: 'Practice areas', text: 'Every case starts with a consultation and a written fee agreement.', items: features() });
-        sec.push({ type: 'steps', id: 'how-it-works', heading: 'How a consultation works', steps: FD(STEPS.consult) }); video(); testi();
+        lawyers('Our attorneys'); steps('How a consultation works', STEPS.consult); video(); testi();
         sec.push({ type: 'faq', heading: 'Questions people ask before they call', items: faqs(HOME_FAQ) }); authors();
         band('Talk with a Texas family lawyer.', consultBand); formSec(FORM_H, FORM_T); notice(); links(); break; }
       case 'about': {
@@ -698,17 +724,16 @@ const FCOPY = (() => {
         const kf = [{ value: V.atty, label: 'responsible attorney for this website', source: `${LAW.r702.c}, ${LAW.r702.v}` }, { value: V.officeCity, label: 'primary office', source: brand }];
         if (V.founded) kf.push({ value: V.founded, label: 'year the firm was founded', source: brand }); if (V.consultShort) kf.push({ value: V.consultShort, label: 'consultations', source: brand });
         sec.push({ type: 'key_facts', heading: 'At a glance', items: kf });
-        if (V.attyListHTML) sec.push({ type: 'rich_text', heading: 'Our lawyers', html: V.attyListHTML });
+        lawyers('Our lawyers');
         sec.push({ type: 'rich_text', heading: 'How we work', html: '<p>Every matter starts with a consultation and, if you hire the firm, a written fee agreement that says what the representation covers. We explain the Texas law that applies, the options and the likely steps, and we tell you each court date as it is set and what it means.</p>' });
         sec.push({ type: 'rich_text', heading: 'Advertising and consumer information', html: F('<p>This website is attorney advertising. {atty} is responsible for its content, and the firm\'s primary office is in {officeCity}, Texas. You can confirm any Texas lawyer\'s license with the <a href="https://www.texasbar.com/">State Bar of Texas</a>. The information here is general and is not legal advice for your situation.</p>') });
         sec.push({ type: 'faq', heading: 'Questions clients ask', items: faqs(HOME_FAQ).slice(0, 4) }); authors();
         band('Talk with a Texas family lawyer.', consultBand); formSec(FORM_H, FORM_T); notice(); links(); break; }
       case 'attorney': {
-        page.summary = F('{at_name}, family lawyer at {brand}.'); page.archetype = 'about';
+        page.summary = F('{at_name}, family lawyer at {brand}.');
         hero({ eyebrow: F('Attorney · {brand}'), lede: F('{at_name} is a family lawyer at {brand} in {officeCity}, Texas.'), media: media.headshot ? 'headshot' : undefined, layout: media.headshot ? 'split' : 'center' });
         sec.push({ type: 'answer', heading: F('About {at_name}'), body: V.at_bio ? F(V.at_bio) : F('{at_name} practices family law with {brand} in {officeCity}, Texas, handling {lineList}.{at_sinceSentence}') });
-        const kf = []; if (V.at_bar) kf.push({ value: V.at_bar, label: 'State Bar of Texas number', source: SRC(V).bar }); if (V.at_since) kf.push({ value: V.at_since, label: 'year first licensed in Texas', source: SRC(V).bar }); if (V.at_cert) kf.push({ value: 'Board Certified', label: V.at_cert, source: SRC(V).tbls });
-        if (kf.length) sec.push({ type: 'key_facts', heading: 'License', items: kf });
+        lawyers('License', '', V.at_name);
         sec.push({ type: 'features', heading: F('Cases {at_name} handles'), items: features() });
         sec.push({ type: 'faq', heading: F('Questions about {at_name}'), items: faqs(ATTY_FAQ) });
         band(F('Book a consultation with {at_name}.'), consultBand); formSec(FORM_H, FORM_T); notice(); links(); break; }
@@ -720,7 +745,7 @@ const FCOPY = (() => {
         sec.push({ type: 'key_facts', heading: 'The numbers and the law behind it', items: kf });
         sec.push({ type: 'rich_text', heading: 'What the case involves', html: F(L.what) });
         sec.push({ type: 'rich_text', heading: 'Before the consultation', html: F(L.who) });
-        sec.push({ type: 'steps', id: 'how-it-works', heading: 'How it works', steps: FD(STEPS[L.steps] || STEPS.consult) }); video(); testi();
+        steps('How it works', STEPS[L.steps] || STEPS.consult); video(); testi();
         sec.push({ type: 'faq', heading: F(`${L.short} questions people ask`), items: faqs(L.faq) }); authors();
         band(F(L.band), consultBand); formSec(FORM_H, FORM_T); notice(); links(); break; }
       case 'county': {
@@ -729,13 +754,11 @@ const FCOPY = (() => {
         if (has(V, 'k_div')) {
           sec.push({ type: 'answer', heading: F('How many divorces are filed in {county} County?'), body: F('{k_div} divorce petitions were filed in {county} County {k_when}, {k_divk} of them involving children, according to the Texas Office of Court Administration. The county also recorded {k_sapcr} custody suits outside a divorce, {k_modenf} modifications and enforcements, and {k_po} protective order cases.') + (has(V, 'k_change') ? ' ' + F('Divorce filings were {k_change} from the year before.') : '') });
           sec.push({ type: 'key_facts', heading: F('{county} County by the numbers'), items: facts(['k_div', 'k_divk', 'k_sapcr', 'k_po']) });
-          const row = (label, a, b) => has(V, a) ? [label, V[a], b && has(V, b) ? V[b] : ''] : null;
-          const rows = [row('Divorce', 'k_div', 'k_div_prev'), row('Divorce with children', 'k_divk'), row('Custody suits (SAPCR)', 'k_sapcr', 'k_sapcr_prev'), row('Modifications', 'k_mod', 'k_mod_prev'), row('Enforcements', 'k_enf', 'k_enf_prev'), row('Protective orders', 'k_po', 'k_po_prev'), row('Child support and paternity', 'k_ivd'), row('Adoptions', 'k_adopt'), row('CPS cases', 'k_cps')].filter(Boolean);
-          sec.push({ type: 'table', heading: F('Family cases filed in {county} County'), columns: ['Case type', has(V, 'k_whenShort') ? V.k_whenShort : 'Latest year', 'Year before'], rows });
+          courtFacts();
         } else sec.push({ type: 'answer', heading: F('Who handles family law cases in {county} County?'), body: F('{brand} represents clients in {lineList} across {county} County, from our office in {officeCity}.') });
         sec.push({ type: 'rich_text', heading: 'What the county numbers mean', html: '<p>' + [has(V, 'k_courtLine') ? F('{k_courtLine}') : '', has(V, 'k_pendingLine') ? F('{k_pendingLine}') : ''].filter(Boolean).join(' ') + (has(V, 'k_courtLine') || has(V, 'k_pendingLine') ? '</p><p>' : '') + F('No divorce can be granted until {law.wait} after filing, and many Texas counties have standing orders that apply to both parties as soon as a case is filed. Ask about {county} County\'s local rules at the consultation.') + '</p>' });
         if (Array.isArray(V.k_cities) && V.k_cities.length) sec.push({ type: 'table', heading: F('Cities in {county} County'), columns: ['City', 'Estimated divorce petitions a year', 'Married adults', 'ZIP codes'], rows: V.k_cities.map(r => r.map(String)) });
-        sec.push({ type: 'steps', id: 'how-it-works', heading: 'How a divorce case works', steps: FD(STEPS.divorce) }); testi();
+        steps('How a divorce case works', STEPS.divorce); testi();
         sec.push({ type: 'faq', heading: F('Questions {county} County families ask'), items: faqs(COUNTY_FAQ) }); authors();
         band(F('Talk with a family lawyer in {county} County.'), consultBand); formSec(FORM_H, FORM_T); notice(); links(); break; }
       case 'city': {
@@ -745,7 +768,7 @@ const FCOPY = (() => {
         sec.push({ type: 'key_facts', heading: F('{city} by the numbers'), items: facts(['c_div', 'c_married', 'k_div', 'law.wait']) });
         sec.push({ type: 'rich_text', heading: F('The {city} picture'), html: '<p>' + [has(V, 'c_zips', 'c_married') ? F('{city} covers the ZIP codes {c_zips}, home to about {c_married} married adults.') : '', has(V, 'k_div') ? F('{county} County recorded {k_div} divorce petitions {k_when}, {k_divk} with children, plus {k_sapcr} custody suits and {k_po} protective order cases.') : '', has(V, 'k_change') ? F('Divorce filings in the county were {k_change} from the year before.') : '', has(V, 'k_courtLine') ? F('{k_courtLine}') : ''].filter(Boolean).join(' ') + '</p>' });
         sec.push({ type: 'features', id: 'practice', heading: F('Practice areas for {city} clients'), items: features() });
-        sec.push({ type: 'steps', id: 'how-it-works', heading: 'How a consultation works', steps: FD(STEPS.consult) }); testi(F('What {city} clients say'));
+        steps('How a consultation works', STEPS.consult); testi(F('What {city} clients say'));
         sec.push({ type: 'faq', heading: F('Questions {city} families ask'), items: faqs(CITY_FAQ) }); authors();
         band(F('Talk with a family lawyer about your {city} case.'), consultBand); formSec(FORM_H, FORM_T); notice(); links(); break; }
       case 'landing': {
@@ -794,37 +817,42 @@ const FCOPY = (() => {
         sec.push({ type: 'faq', heading: 'Questions and answers', items: items.slice(0, 24) }); authors();
         band('Talk with a Texas family lawyer.', consultBand); formSec(FORM_H, FORM_T); notice(); links(); break; }
     }
-    const site = { url: S.url || 'https://www.example.com', name: brand, cms: S.cms || undefined, brand: { name: brand, primary: S.primary || (F0.colors || {}).primary, accent: S.accent || (F0.colors || {}).accent, dark: S.dark || (F0.colors || {}).dark, font_heading: S.font_heading || undefined, font_body: S.font_body || undefined, logo_url: S.logo_url || undefined, globals: S.globals !== false } };
+    const lineNames = {}; LINE_KEYS.forEach(k => { lineNames[k] = fill(LINES[k].nm, V); });
+    const site = { url: S.url || 'https://www.example.com', name: brand, cms: S.cms || undefined, brand: { name: brand, primary: S.primary || (F0.colors || {}).primary, accent: S.accent || (F0.colors || {}).accent, dark: S.dark || (F0.colors || {}).dark, font_heading: S.font_heading || undefined, font_body: S.font_body || undefined, logo_url: S.logo_url || undefined, globals: S.globals !== false }, firm: publicFirm(F0, lineNames) };
     const mspec = {}; for (const k in media) if (media[k]) mspec[k] = media[k];
     const bp = { forge: '1', site, page, media: mspec, sections: cleanDeep(sec) };
     bp.page.summary = house(bp.page.summary); bp.page.conversion.trust = trust.map(house);
     bp.page.internal_links = internal.map(l => ({ anchor: house(l.anchor), url: l.url }));
-    if (bp.page.author) { bp.page.author = cleanDeep(bp.page.author, ''); if (bp.page.author.name) bp.page.author.name = house(bp.page.author.name); if (bp.page.author.credentials) bp.page.author.credentials = house(bp.page.author.credentials); if (bp.page.author.bio) bp.page.author.bio = house(bp.page.author.bio); }
+    ['author', 'attorney'].forEach(k => { const a = bp.page[k]; if (!a) return; ['name', 'credentials', 'bio', 'title'].forEach(f => { if (a[f]) a[f] = house(a[f]); }); });
     bp.page.cta = cleanDeep(bp.page.cta, ''); ['label', 'phone_label'].forEach(k => { ['primary', 'secondary'].forEach(c => { if (bp.page.cta[c] && bp.page.cta[c][k]) bp.page.cta[c][k] = house(bp.page.cta[c][k]); }); });
-    bp.page.conversion.form = Object.assign({}, form, { consent: house(form.consent), button: house(form.button), fields: form.fields.map(f => Object.assign({}, f, { label: house(f.label) })) });
+    bp.page.conversion.form = Object.assign({}, form, { button: house(form.button), counties: form.counties ? form.counties.map(house) : undefined, matters: form.matters.map(house) });
     bp._facts = used.filter((f, i, a) => a.findIndex(x => x.key === f.key) === i); bp._missing = missing.filter((x, i, arr) => arr.indexOf(x) === i);
     return bp;
   }
 
-  /* ---------- the visible text of a blueprint, field by field (what LINT screens) ---------- */
+  /* ---------- the visible text of a blueprint, field by field (what LINT screens; the compiled page adds the form and the disclaimer wording) ---------- */
   function visibleText(bp) {
-    const out = []; const pg = bp.page || {};
+    const out = []; const pg = bp.page || {}; const firm = (bp.site || {}).firm || {}; const es = /^es/.test(pg.language || '');
+    const byName = n => (firm.attorneys || []).find(a => a && a.name && a.name.toLowerCase() === String(n || '').toLowerCase()) || {};
     out.push(['seo.title', pg.title || ''], ['seo.h1', pg.h1 || ''], ['seo.meta', pg.meta_description || '']);
     ((pg.conversion || {}).trust || []).forEach((t, i) => out.push(['hero.trust' + i, t]));
     const c = pg.cta || {}; ['primary', 'secondary'].forEach(k => { if (c[k] && c[k].label) out.push(['cta.' + k, c[k].label]); if (c[k] && c[k].phone_label) out.push(['cta.' + k + '.phone', c[k].phone_label]); });
     for (const s of bp.sections || []) {
-      const tag = s.id === 'notice' ? 'notice' : s.type;
-      ['eyebrow', 'lede', 'body', 'text', 'html', 'heading', 'caption'].forEach(k => { if (s[k]) out.push([tag + '.' + k, strip(s[k])]); });
-      (s.items || []).forEach((it, i) => { ['q', 'a', 'text', 'label', 'title', 'value', 'source', 'quote', 'anchor', 'name', 'role'].forEach(k => { if (it[k]) out.push([tag + '.' + k + i, String(it[k])]); }); });
-      (s.steps || []).forEach((st, i) => { out.push([tag + '.s' + i, st.title + '. ' + st.text]); });
+      const tag = s.type;
+      ['eyebrow', 'lede', 'body', 'text', 'html', 'heading', 'caption', 'label', 'note', 'source'].forEach(k => { if (s[k] && typeof s[k] === 'string') out.push([tag + '.' + k, strip(s[k])]); });
+      (s.items || []).forEach((it, i) => { ['q', 'a', 'text', 'label', 'title', 'value', 'source', 'quote', 'anchor', 'name', 'role'].forEach(k => { if (it[k]) out.push([tag + '.' + k + i, String(it[k])]); });
+        if (s.type === 'attorneys') { const a = Object.assign({}, byName(it.name), it); [tblsLine(a), a.bar_no ? 'State Bar of Texas No. ' + a.bar_no : '', a.since ? 'Licensed in Texas since ' + a.since : '', a.bio].filter(Boolean).forEach((x, j) => out.push([tag + '.card' + i + '.' + j, x])); } });
+      (s.steps || []).forEach((st, i) => { out.push([tag + '.s' + i, (st.when ? st.when + ': ' : '') + st.title + '. ' + st.text]); });
+      (s.courts || []).forEach((ct, i) => out.push([tag + '.court' + i, [ct.name, ct.address].filter(Boolean).join(', ')]));
       if (s.columns) out.push([tag + '.cols', s.columns.join(' · ')]);
       (s.rows || []).forEach((r, i) => out.push([tag + '.r' + i, r.join(' ')]));
-      if (s.type === 'authors' && pg.author) out.push(['authors.person', [pg.author.name, pg.author.credentials, pg.author.bio].filter(Boolean).join(', ')]);
-      if (s.type === 'form') { const f = (pg.conversion || {}).form || {}; if (!f.shortcode) { (f.fields || []).forEach((x, i) => out.push(['form.field' + i, x.label])); if (f.consent) out.push(['form.consent', f.consent]); if (f.button) out.push(['form.button', f.button]); } }
+      if (s.type === 'authors' && pg.author) { const a = Object.assign({}, byName(pg.author.name), pg.author); out.push(['authors.person', [a.name, a.credentials, tblsLine(a), a.bio].filter(Boolean).join(', ')]); }
+      if (s.type === 'disclaimer') { const V0 = { brand: s.firm, atty: s.attorney, attyBarClause: '', officeAddr: s.location }; out.push(['disclaimer', fill(es ? ES.notice : NOTICE, Object.assign(V0, { officeCity: s.city }))]); (s.extra || []).forEach((x, i) => out.push(['disclaimer.extra' + i, x])); }
+      if (s.type === 'form') { const f = (pg.conversion || {}).form || {}; if (!f.shortcode) { (f.counties || []).concat(f.matters || []).forEach((x, i) => out.push(['form.option' + i, x])); if (f.button) out.push(['form.button', f.button]); } }
     }
     return out.filter(x => x[1] && String(x[1]).trim());
   }
   const wordCount = bp => visibleText(bp).filter(([w]) => !w.startsWith('seo.')).reduce((t, [, s]) => t + words(s), 0);
 
-  return { LAW, SRC, LINES, LINE_KEYS, STEPS, GUIDES, ES, HOME_FAQ, CITY_FAQ, COUNTY_FAQ, ATTY_FAQ, CONSENT, NOTICE, FORM_FIELDS, KL, fill, fillDeep, has, house, listAnd, slugify, firstSentence, strip, factItem, describe, blueprint, visibleText, wordCount, cleanDeep, fitTitle, fitMeta };
+  return { LAW, SRC, LINES, LINE_KEYS, ESN, STEPS, GUIDES, ES, HOME_FAQ, CITY_FAQ, COUNTY_FAQ, ATTY_FAQ, CONSENT, NOTICE, FORM_FIELDS, KL, TOGGLE, publicFirm, tblsLine, fill, fillDeep, has, house, listAnd, slugify, firstSentence, strip, factItem, describe, blueprint, visibleText, wordCount, cleanDeep, fitTitle, fitMeta };
 })();
