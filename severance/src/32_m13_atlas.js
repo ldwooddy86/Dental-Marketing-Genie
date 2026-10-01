@@ -62,7 +62,9 @@ let AT_TOK = 0, AT_RO = null, AT_RS = null;
 registerModule({
   key: 'atlas', num: '13', title: 'Metro Atlas', metro: true,
   desc: 'Dallas Fort Worth, Houston, San Antonio, Austin, El Paso and the Rio Grande Valley at block group resolution',
-  mount(root) { mountAtlas(root, store.get('sev.atlas.metro', 'dfw')); }
+  mount(root) { mountAtlas(root, store.get('sev.atlas.metro', 'dfw')); },
+  // goModule('atlas', {mk} or {metro: MSA code}) opens that metro
+  receive(p) { const mk = p && (p.mk || AT_BY_CODE[p.metro]); if (mk && AT_METROS.some(m => m.key === mk) && this.mk !== mk) mountAtlas($('#mod-atlas'), mk); }
 });
 // open the atlas on one metro from anywhere in the suite
 function openAtlas(mk) {
@@ -145,18 +147,18 @@ function mountAtlas(root, mk) {
   <div class="panel" style="margin-top:14px">
     <div class="atlas-ctl">
       ${ctl('Map layer', `<select id="atLayer">${[...new Set(ATL.map(l => l.g))].map(g => `<optgroup label="${esc(g)}">${ATL.filter(l => l.g === g).map(l => `<option value="${l.k}" ${l.k === st.layer ? 'selected' : ''}>${esc(l.t)}</option>`).join('')}</optgroup>`).join('')}</select>`)}
-      ${ctl('Find a city, ZIP or school district', `<input type="text" id="atFind" list="atList" placeholder="${esc(`${topCity.n}, ${topZip} or ${topIsd.n}`)}" autocomplete="off"><datalist id="atList"></datalist>`)}
+      ${ctl('Find a city, ZIP or school district', `<input type="text" id="atFind" list="atList" placeholder="${esc(`${topCity.n}, ${topZip} or ${topIsd.n}`)}" autocomplete="off" aria-describedby="atFindMsg"><datalist id="atList"></datalist><span class="small" id="atFindMsg" role="status" aria-live="polite"></span>`)}
       <div class="presets" id="atPresets">${A.presets.map(p => `<button type="button" class="btn" data-k="${p.k}">${esc(p.t)}</button>`).join('')}</div>
     </div>
     <div class="chips" id="atOv">${AT_OV.map(o => `<label class="chip ${st.ov[o[0]] ? 'on' : ''}"><input type="checkbox" data-k="${o[0]}" ${st.ov[o[0]] ? 'checked' : ''}>${esc(o[1])}</label>`).join('')}</div>
     <div class="atlas-grid">
       <div>
-        <div class="amap" id="atMap" tabindex="0" aria-label="${esc(MN)} map. Drag to move, hold Ctrl and scroll or pinch to zoom.">
+        <div class="amap" id="atMap" tabindex="0" role="application" aria-roledescription="map" aria-describedby="atHint" aria-label="${esc(MN)} block group map. Drag to move; hold Ctrl or Cmd and scroll, or pinch, to zoom. With the map focused the arrow keys move it and plus and minus zoom.">
           <svg id="atWorld" class="world" preserveAspectRatio="none"></svg>
           <svg id="atOvl" class="ovl"><g id="atOvG"></g></svg>
           <div class="zoomctl"><button type="button" id="atZin" aria-label="Zoom in"><svg viewBox="0 0 16 16"><path d="M8 3v10M3 8h10"/></svg></button><button type="button" id="atZout" aria-label="Zoom out"><svg viewBox="0 0 16 16"><path d="M3 8h10"/></svg></button><button type="button" id="atZhome" aria-label="Back to the metro view"><svg viewBox="0 0 16 16"><path d="M2.5 8.5L8 3l5.5 5.5M4.5 7v6h7V7"/></svg></button></div>
           <div class="scalebar" id="atScale"></div>
-          <div class="maphint" id="atHint">Click the map or hold Ctrl to zoom with the scroll wheel</div>
+          <div class="maphint" id="atHint">Click the map, or hold Ctrl or Cmd, to zoom with the scroll wheel</div>
         </div>
         <div class="amap-legend" id="atLegend"></div>
         <div class="fitw" id="atFitW"></div>
@@ -271,19 +273,22 @@ function mountAtlas(root, mk) {
     }
     const vals = []; for (let i = 0; i < nB; i++) { const v = val(L.k, i); if (B.ok[i] && isN(v)) vals.push(v); }
     vals.sort((a, b) => a - b);
+    if (!vals.length) { paths.forEach(p => { p.style.fill = ''; p.classList.add('nd'); }); $('#atLegend').innerHTML = `<div class="legend"><span>${esc(L.t)}</span><span class="small">no block group has a value</span></div>`; return; }
     const q = p => vals[clamp(Math.floor(p * (vals.length - 1)), 0, vals.length - 1)];
-    breaks = [1, 2, 3, 4, 5, 6, 7].map(j => q(j / 8));
-    const cls = v => { let c = 0; while (c < 7 && v > breaks[c]) c++; return L.rev ? 7 - c : c; };
-    const R = RAMPS[L.ramp];
+    // up to eight classes with about equal numbers of block groups; tied values (many zeros) share a class instead of leaving empty ones
+    breaks = [...new Set([1, 2, 3, 4, 5, 6, 7].map(j => q(j / 8)))].filter(b => b < q(1));
+    const nc = breaks.length + 1; const R0 = RAMPS[L.ramp]; const R = nc === 1 ? [R0[4]] : Array.from({ length: nc }, (x, j) => R0[Math.round(j * 7 / (nc - 1))]);
+    const cls = v => { let c = 0; while (c < nc - 1 && v > breaks[c]) c++; return L.rev ? nc - 1 - c : c; };
     paths.forEach((p, i) => { const v = val(L.k, i); const okv = B.ok[i] && isN(v); p.style.fill = okv ? R[cls(v)] : ''; p.classList.toggle('nd', !okv); });
-    const lo = q(0), hi = q(1);
+    const lo = q(0), hi = q(1); const edge = j => j === 0 ? lo : breaks[j - 1], top = j => j === nc - 1 ? hi : breaks[j];
     const sw = (L.rev ? R.slice().reverse() : R);
-    $('#atLegend').innerHTML = `<div class="legend"><span>${esc(L.t)}</span><span class="steps">${sw.map((c, j) => `<i style="background:${c}" title="${j === 0 ? esc(L.f(lo)) + ' to ' + esc(L.f(breaks[0])) : j === 7 ? esc(L.f(breaks[6])) + ' to ' + esc(L.f(hi)) : esc(L.f(breaks[j - 1])) + ' to ' + esc(L.f(breaks[j]))}"></i>`).join('')}</span><span class="num">${esc(L.f(L.rev ? hi : lo))}</span><span class="small">to</span><span class="num">${esc(L.f(L.rev ? lo : hi))}</span><span class="nd"></span><span class="small">few residents or group quarters</span></div><div class="small">Eight classes with equal numbers of block groups. ${st.layer === 'fit' ? 'Market Fit blends the three weights below; move them and the map reranks.' : ''}</div>`;
+    $('#atLegend').innerHTML = `<div class="legend"><span>${esc(L.t)}</span><span class="steps">${sw.map((c, j) => { const jj = L.rev ? nc - 1 - j : j; return `<i style="background:${c}" title="${esc(L.f(edge(jj)))} to ${esc(L.f(top(jj)))}"></i>`; }).join('')}</span><span class="num">${esc(L.f(L.rev ? hi : lo))}</span><span class="small">to</span><span class="num">${esc(L.f(L.rev ? lo : hi))}</span><span class="nd"></span><span class="small">few residents or group quarters</span></div><div class="small">${nc === 8 ? 'Eight classes' : nc === 1 ? 'One class' : atNum(nc).replace(/^./, ch => ch.toUpperCase()) + ' classes (tied values share a class)'} with about equal numbers of block groups. ${st.layer === 'fit' ? 'Market Fit blends the three weights below; move them and the map reranks.' : ''} On a touch screen, tap the map once to pan it with a finger; pinch to zoom.</div>`;
   }
   function fitWeights() {
     const lab = { vol: 'Volume: expected filings within a mile', val: 'Case value: income, $150,000 households, home values', comp: 'Less competition: filings per nearby law office' };
-    $('#atFitW').innerHTML = st.layer !== 'fit' ? '' : `<div class="fitgrid">${Object.keys(lab).map(k => `<label><span>${esc(lab[k])}</span><input type="range" min="0" max="100" step="5" value="${st.w[k]}" data-k="${k}"><b>${st.w[k]}</b></label>`).join('')}</div>`;
-    $$('#atFitW input').forEach(inp => inp.oninput = () => { st.w[inp.dataset.k] = +inp.value; inp.nextElementSibling.textContent = inp.value; store.set('sev.atlas.fitw', st.w); computeFit(); colorize(); topTable(); if (st.sel >= 0) sideBG(st.sel); });
+    $('#atFitW').innerHTML = st.layer !== 'fit' ? '' : `<div class="fitgrid">${Object.keys(lab).map(k => `<label><span>${esc(lab[k])}</span><input type="range" min="0" max="100" step="5" value="${st.w[k]}" data-k="${k}"><b>${st.w[k]}</b></label>`).join('')}<p class="small" id="atFitMsg" role="status" aria-live="polite" style="grid-column:1/-1;margin:0"></p></div>`;
+    // Market Fit needs at least one weight above zero: the last one standing stops at 5
+    $$('#atFitW input').forEach(inp => inp.oninput = () => { let v = +inp.value; const others = Object.keys(st.w).filter(k => k !== inp.dataset.k).reduce((a, k) => a + (+st.w[k] || 0), 0); const note = $('#atFitMsg'); if (!others && v <= 0) { v = 5; inp.value = 5; if (note) note.textContent = 'At least one weight stays above zero, or Market Fit has nothing to blend.'; } else if (note) note.textContent = ''; st.w[inp.dataset.k] = v; inp.nextElementSibling.textContent = v; store.set('sev.atlas.fitw', st.w); computeFit(); colorize(); topTable(); if (st.sel >= 0) sideBG(st.sel); });
   }
   // ---------- tooltips and selection
   const placeOf = i => B.pl[i] >= 0 ? PL[B.pl[i]].n : 'Unincorporated area';
@@ -310,7 +315,7 @@ function mountAtlas(root, mk) {
     if (i >= 0) { sideBG(i); if (zoom) { const cx = B.cx[i], cy = B.cy[i]; const w = Math.max(MINW * 2.5, view.w < 3 * MI_U * 2 ? view.w : 3 * MI_U * 2); fitBB([cx - w / 2, cy - w / 3, cx + w / 2, cy + w / 3], 0); } }
   }
   function highlight(d) { $('#atHl').innerHTML = d ? `<path class="c" d="${d}"></path><path d="${d}"></path>` : ''; }
-  const toMap = () => mapEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  const toMap = () => mapEl.scrollIntoView({ behavior: window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'center' });
   // ---------- side panel
   function kv(rows) { return `<dl class="kv">${rows.map(r => `<dt>${esc(r[0])}</dt><dd>${r[1]}</dd>`).join('')}</dl>`; }
   function venueLine(f) { const c = courtBy[f]; return c ? `${esc(c.n)}, ${esc(c.a.split(', ').pop())}` : `${esc(cName(f))} County district courts${A.meta.seat[f] ? ', ' + esc(A.meta.seat[f]) : ''}`; }
@@ -339,7 +344,7 @@ function mountAtlas(root, mk) {
       <div class="part" style="margin-top:8px"><b>Venue</b><span>${venueLine(f)}${isN(V.mic[i]) ? ` · ${N(V.mic[i], 1)} miles` : ''}</span></div>
       <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap"><button type="button" class="btn" id="atBack">Back to ${esc(MN)}</button><button type="button" class="btn" id="atCopyPin">Copy pin (${N(V.lat[i], 4)}, ${N(V.lon[i], 4)})</button></div>`;
     $('#atBack').onclick = () => { select(-1); highlight(''); sideMetro(); };
-    $('#atCopyPin').onclick = () => { const t = `${V.lat[i]}, ${V.lon[i]}`; const fail = () => { $('#atCopyPin').textContent = 'Copy blocked: ' + t; }; if (!(navigator.clipboard && navigator.clipboard.writeText)) { fail(); return; } try { navigator.clipboard.writeText(t).then(() => { $('#atCopyPin').textContent = 'Copied'; }, fail); } catch (e) { } };
+    $('#atCopyPin').onclick = () => { const t = `${V.lat[i]}, ${V.lon[i]}`; const b = $('#atCopyPin'); const done = ok => { b.textContent = ok ? 'Copied ' + t : 'Select and copy: ' + t; }; const fall = () => { let ok = false; try { const ta = document.createElement('textarea'); ta.value = t; ta.setAttribute('readonly', ''); ta.style.position = 'fixed'; ta.style.opacity = '0'; document.body.appendChild(ta); ta.select(); ok = !!(document.execCommand && document.execCommand('copy')); ta.remove(); } catch (e) { ok = false; } done(ok); }; try { if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(() => done(true)).catch(fall); else fall(); } catch (e) { fall(); } };
   }
   // ---------- areas: counties, cities, ZIP codes
   function bgAgg(ix) {
@@ -349,6 +354,7 @@ function mountAtlas(root, mk) {
     return { pop: s('pop'), married: mar, xd: s('xd'), xk: s('xk'), xs: s('xs'), xm: s('xm'), rate: mar ? s('xd') / mar * 1000 : null, sep: wavg('sep'), inc: wavg('inc'), i150: wavg('i150'), kids: wavg('kids'), own: wavg('own'), val: wavg('val'), pipe: wavg('pipe'), value: wavg('value') };
   }
   const zipAgg = z => bgAgg(ZIPS[z]);
+  if (!A.agg._derived) { A.agg._derived = true; const have = new Set(A.agg.cities.map(c => c.n)); PL.forEach((p, i) => { if ((p.p || 0) < 2500 || have.has(p.n) || !(PLBG[i] || []).length) return; const o = bgAgg(PLBG[i]); const ct = [...new Set(PLBG[i].map(j => CN[B.c[j]]))]; const row = Object.assign({ n: p.n, bgs: PLBG[i].length, cty: ct, derived: true }, o); A.agg.cities.push(row); ct.forEach(cn => { const f = CC[CN.indexOf(cn)]; if (A.agg.bycounty[f]) A.agg.bycounty[f].push(Object.assign({}, row, { part: ct.length > 1 })); }); }); }
   const zipCity = z => { const t = {}; (ZIPS[z] || []).forEach(i => { const n = placeOf(i); t[n] = (t[n] || 0) + (V.pop[i] || 0); }); return Object.keys(t).sort((a, b) => t[b] - t[a])[0] || ''; };
   const ctyExtra = f => `<div class="part"><b>Venue</b><span>${venueLine(f)}</span></div>` + (gapCty.includes(f) ? `<div class="small" style="margin-top:8px">The clerk reports for ${esc(cName(f))} County show no family cases in the last twelve months, so these figures read zero.</div>` : '');
   function goCounty(f, scroll) {
@@ -360,7 +366,7 @@ function mountAtlas(root, mk) {
   function goCity(id, scroll = true) {
     const i = plIdx[id]; if (i === undefined) return;
     fitBB(PL[i].bb); highlight(PL[i].d); select(-1);
-    const o = cityAgg(id); sideArea(o || bgAgg(PLBG[i]), id, o ? 'City' : 'City (block groups mostly inside its limits)');
+    const o = cityAgg(id); sideArea(o || bgAgg(PLBG[i]), id, o && !o.derived ? 'City' : 'City (block groups mostly inside its limits)');
     if (scroll) toMap();
   }
   function goZip(id, scroll = true) {
@@ -393,21 +399,21 @@ function mountAtlas(root, mk) {
   const endPtr = e => {
     if (!ptrs.has(e.pointerId)) return; ptrs.delete(e.pointerId); mapEl.classList.remove('drag');
     if (ptrs.size < 2) pinch = null;
-    if (ptrs.size === 0) { if (!moved && e.type === 'pointerup') { const el = document.elementFromPoint(e.clientX, e.clientY); const p = el && el.closest && el.closest('path.bg'); if (p) select(+p.dataset.i); } drag = null; }
+    if (ptrs.size === 0) { if (!moved && e.type === 'pointerup') { const el = document.elementFromPoint(e.clientX, e.clientY); const p = el && el.closest && el.closest('path.bg'); if (p) { highlight(''); select(+p.dataset.i); } } drag = null; }
   };
   mapEl.addEventListener('pointerup', endPtr); mapEl.addEventListener('pointercancel', endPtr);
-  mapEl.addEventListener('pointerleave', () => { if (!ptrs.size) hideTip(); });
+  mapEl.addEventListener('pointerleave', e => { if (!ptrs.size) hideTip(); if (e.pointerType === 'mouse') mapEl.classList.remove('active'); });   // the wheel zooms only until the mouse leaves
   let hintT = 0;
   mapEl.addEventListener('wheel', e => {
     if (!(e.ctrlKey || e.metaKey || mapEl.classList.contains('active'))) { const h = $('#atHint'); h.classList.add('on'); clearTimeout(hintT); hintT = setTimeout(() => h.classList.remove('on'), 1200); return; }
     e.preventDefault(); zoomAt(e.clientX, e.clientY, Math.exp(clamp(e.deltaY, -120, 120) * 0.0022));
   }, { passive: false });
   mapEl.addEventListener('dblclick', e => { e.preventDefault(); zoomAt(e.clientX, e.clientY, 0.5); });
-  mapEl.addEventListener('focus', () => mapEl.classList.add('active')); mapEl.addEventListener('blur', () => mapEl.classList.remove('active'));
+  mapEl.addEventListener('focus', () => mapEl.classList.add('active')); mapEl.addEventListener('blur', () => mapEl.classList.remove('active')); mapEl.addEventListener('pointerdown', () => mapEl.classList.add('active'));
   mapEl.addEventListener('keydown', e => { const { cw } = size(); const k = cw / view.w; const step = 80 / k; if (e.key === '+' || e.key === '=') zoomAt(size().r.left + cw / 2, size().r.top + size().ch / 2, 0.7); else if (e.key === '-' || e.key === '_') zoomAt(size().r.left + cw / 2, size().r.top + size().ch / 2, 1.4); else if (e.key.startsWith('Arrow')) { e.preventDefault(); view.x += e.key === 'ArrowLeft' ? -step : e.key === 'ArrowRight' ? step : 0; view.y += e.key === 'ArrowUp' ? -step : e.key === 'ArrowDown' ? step : 0; schedule(); } });
   const center = f => { const { r, cw, ch } = size(); zoomAt(r.left + cw / 2, r.top + ch / 2, f); };
   $('#atZin').onclick = () => center(0.6); $('#atZout').onclick = () => center(1.6);
-  $('#atZhome').onclick = () => { fitBB(A.presets[0].bb); highlight(''); };
+  $('#atZhome').onclick = () => { fitBB(A.presets[0].bb); highlight(''); select(-1); sideMetro(); };
   $$('#atPresets button').forEach(b => b.onclick = () => {
     const p = A.presets.find(x => x.k === b.dataset.k); if (!p) return;
     fitBB(p.bb);
@@ -429,16 +435,21 @@ function mountAtlas(root, mk) {
   A.zcta.forEach(z => finds.push({ t: z.z, kind: 'ZIP' }));
   A.counties.forEach(c => finds.push({ t: c.n + ' County', kind: 'County', f: c.f }));
   $('#atList').innerHTML = finds.map(f => `<option value="${esc(f.t)}">${esc(f.kind)}</option>`).join('');
+  let findLast = '', findT = 0;
   const doFind = () => {
-    const q = $('#atFind').value.trim().toLowerCase(); if (!q) return;
+    const raw = $('#atFind').value.trim(); const q = raw.toLowerCase(); const msg = $('#atFindMsg'); if (!q) { msg.textContent = ''; $('#atFind').removeAttribute('aria-invalid'); return; }
+    if (q === findLast && performance.now() - findT < 500) return; findLast = q; findT = performance.now();   // Enter fires keydown and change: run once
     const f = finds.find(x => x.t.toLowerCase() === q) || finds.find(x => x.t.toLowerCase().startsWith(q)) || finds.find(x => x.t.toLowerCase().includes(q));
-    if (!f) return;
+    $('#atFind').setAttribute('aria-invalid', String(!f));
+    if (!f) { msg.textContent = `No city, ZIP, school district or county in ${MN} matches "${raw}".`; return; }
+    msg.textContent = `Showing ${f.t} (${f.kind.toLowerCase().replace('zip', 'ZIP')}).`;
     if (f.kind === 'City') goCity(f.t, false);
     else if (f.kind === 'ZIP') goZip(f.t, false);
     else if (f.kind === 'County') goCounty(f.f, false);
     else { fitBB(f.bb); highlight(f.d); select(-1); sideArea(A.agg.isd.find(c => c.n === f.t), f.t, 'School district'); }
   };
-  $('#atFind').addEventListener('change', doFind); $('#atFind').addEventListener('keydown', e => { if (e.key === 'Enter') doFind(); });
+  $('#atFind').addEventListener('change', doFind); $('#atFind').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); doFind(); } });
+  $('#atFind').addEventListener('input', () => { const q = $('#atFind').value.trim().toLowerCase(); if (q && finds.some(x => x.t.toLowerCase() === q)) doFind(); });   // a datalist pick navigates at once
   // ---------- tables below the map
   function focusBlock() {
     const card = c => `<div class="tile" data-f="${c.f}" role="button" tabindex="0" data-kbd><span class="vh">Zoom the map to this county: </span><div class="l"><span>${esc(c.n)}</span></div><div class="v">${N(c.xd, 0)}</div><div class="s">divorce filings in the last 12 months · ${N(c.xk, 0)} with children<br>${N(c.married)} married adults · ${$$$(c.inc)} median income<br>Files in ${venueLine(c.f)}</div></div>`;
@@ -465,19 +476,21 @@ function mountAtlas(root, mk) {
   const pinOrder = () => topTbl ? topTbl.sorted().map(r => +r._id) : topRows;
   $('#atCsvPin').onclick = () => exportText(expName('atlas_pins', areaName()), csv(pinOrder().map(i => ({ rank: topRows.indexOf(i) + 1, name: `${placeLabel(i)} ${B.zip[i] || ''} ${B.id[i].slice(5)}`.trim(), lat: V.lat[i], lon: V.lon[i], radius: 1, unit: 'mi', place: placeOf(i), zip: B.zip[i], county: CN[B.c[i]], xd: V.xd[i], x1: V.x1[i], inc: V.inc[i], fit: isN(fit[i]) ? Math.round(fit[i]) : '' })), [{ k: 'rank', l: 'Rank' }, { k: 'name', l: 'Target name' }, { k: 'lat', l: 'Latitude', d: 5 }, { k: 'lon', l: 'Longitude', d: 5 }, { k: 'radius', l: 'Radius' }, { k: 'unit', l: 'Unit' }, { k: 'place', l: 'City' }, { k: 'zip', l: 'ZIP' }, { k: 'county', l: 'County' }, { k: 'xd', l: 'Expected divorce filings a year', d: 1 }, { k: 'x1', l: 'Expected divorce filings within one mile a year', d: 0 }, { k: 'inc', l: 'Median household income ($)', d: 0 }, { k: 'fit', l: 'Market Fit (0 to 100)', d: 0 }]));
   $('#atCsvZip').onclick = () => {
-    const z = {}; for (let i = 0; i < nB; i++) { if (!B.ok[i] || !B.zip[i] || !inArea(i)) continue; const o = z[B.zip[i]] = z[B.zip[i]] || { zip: B.zip[i], xd: 0, xk: 0, married: 0, fw: 0, bgs: 0 }; o.xd += V.xd[i]; o.xk += V.xk[i]; o.married += V.married[i] || 0; o.fw += (fit[i] || 0) * (V.married[i] || 0); o.bgs++; }
-    const rows = Object.values(z).map(o => ({ zip: o.zip, xd: Math.round(o.xd * 10) / 10, xk: Math.round(o.xk * 10) / 10, married: o.married, fit: o.married ? Math.round(o.fw / o.married) : '', bgs: o.bgs })).sort((a, b) => (b.fit || 0) - (a.fit || 0));
-    exportText(expName('atlas_zips', areaName()), csv(rows, [{ k: 'zip', l: 'ZIP' }, { k: 'fit', l: 'Market Fit (married weighted)' }, { k: 'xd', l: 'Expected divorce filings a year' }, { k: 'xk', l: 'With children' }, { k: 'married', l: 'Married adults' }, { k: 'bgs', l: 'Block groups' }]));
+    // filings add every block group in the ZIP (the same sums as the ZIP table); Market Fit averages the scored ones, married weighted
+    const z = {}; for (let i = 0; i < nB; i++) { if (!B.zip[i] || !inArea(i)) continue; const o = z[B.zip[i]] = z[B.zip[i]] || { zip: B.zip[i], xd: 0, xk: 0, married: 0, fw: 0, fm: 0, bgs: 0, sc: 0, cty: {} }; o.xd += V.xd[i] || 0; o.xk += V.xk[i] || 0; o.married += V.married[i] || 0; o.bgs++; const cn = CN[B.c[i]]; o.cty[cn] = (o.cty[cn] || 0) + (V.pop[i] || 0); if (B.ok[i] && isN(fit[i])) { o.fw += fit[i] * (V.married[i] || 0); o.fm += V.married[i] || 0; o.sc++; } }
+    const rows = Object.values(z).map(o => ({ zip: o.zip, city: postal(o.zip) || zipCity(o.zip), county: Object.keys(o.cty).sort((a, b) => o.cty[b] - o.cty[a])[0] || '', xd: o.xd, xk: o.xk, married: o.married, fit: o.fm ? o.fw / o.fm : null, bgs: o.bgs, sc: o.sc })).sort((a, b) => (b.fit || 0) - (a.fit || 0));
+    exportText(expName('atlas_zips', areaName()), csv(rows, [{ k: 'zip', l: 'ZIP' }, { k: 'city', l: 'City' }, { k: 'county', l: 'County (most residents)' }, { k: 'fit', l: 'Market Fit (married weighted, scored block groups)', d: 0 }, { k: 'xd', l: 'Expected divorce filings a year', d: 1 }, { k: 'xk', l: 'With children', d: 1 }, { k: 'married', l: 'Married adults', d: 0 }, { k: 'bgs', l: 'Block groups' }, { k: 'sc', l: 'Block groups scored' }]));
   };
   $('#atCsvBg').onclick = () => {
     const rows = []; for (let i = 0; i < nB; i++) rows.push(i);
     // each layer at the precision the map shows it: shares as percents, money in whole dollars
     const AX = { kids: [0, 1], i150: [0, 1], own: [0, 1], mort: [0, 1], rent: [0, 1], snap: [1, 1], unemp: [1, 1], ba: [0, 1], c45: [0, 1], xd: [1], xden: [1], xk: [1], xs: [1], xm: [1], rate: [1], haz: [1], age: [1] };
-    const cols = [{ k: i => B.id[i], l: 'Block group GEOID' }, { k: i => CN[B.c[i]], l: 'County' }, { k: i => placeOf(i), l: 'City' }, { k: i => B.zip[i], l: 'ZIP' }, { k: i => isdOf(i), l: 'School district' }, { k: i => V.lat[i], l: 'Latitude', d: 5 }, { k: i => V.lon[i], l: 'Longitude', d: 5 }, { k: i => B.ok[i] ? 'yes' : 'no', l: 'Scored' }]
+    const vv = (k, i) => V[k] && isN(V[k][i]) ? V[k][i] : '';
+    const cols = [{ k: i => B.id[i], l: 'Block group GEOID' }, { k: i => CN[B.c[i]], l: 'County' }, { k: i => placeOf(i), l: 'City' }, { k: i => B.zip[i], l: 'ZIP' }, { k: i => isdOf(i), l: 'School district' }, { k: i => V.lat[i], l: 'Latitude', d: 5 }, { k: i => V.lon[i], l: 'Longitude', d: 5 }, { k: i => B.ok[i] ? 'yes' : 'no', l: 'Scored' }, { k: i => vv('pop', i), l: 'Residents', d: 0 }, { k: i => vv('gq', i), l: 'Group quarters share (%)', d: 0, pct: true }, { k: i => { const f = CC[B.c[i]]; const c = courtBy[f]; return c ? c.n + ', ' + c.a.split(', ').pop() : cName(f) + ' County district courts' + (A.meta.seat[f] ? ', ' + A.meta.seat[f] : ''); }, l: 'Filing venue' }, { k: i => vv('mic', i), l: 'Miles to the courthouse', d: 1 }, { k: i => vv('x3', i), l: 'Expected divorce filings within three miles a year', d: 0 }, { k: i => vv('sepraw', i), l: 'Separated per 1,000 married (raw survey)', d: 0 }]
       .concat(ATL.filter(l => !l.cat).map(l => { const x = AX[l.k] || [0]; return { k: i => { const v = val(l.k, i); return isN(v) ? v : ''; }, l: l.t + (x[1] ? ' (%)' : ['inc', 'val'].includes(l.k) ? ' ($)' : ''), d: x[0], pct: !!x[1] }; }));
     exportText(expName('atlas_block_groups', MN), csv(rows, cols));
   };
-  $('#atGoMetro').onclick = () => showModule(mk); $('#atGoDesk').onclick = () => showModule('desk');
+  $('#atGoMetro').onclick = () => showModule(mk); $('#atGoDesk').onclick = () => goModule('desk', { geo: 'msa:' + A.meta.codes[0] });
   const cityCols = [{ k: 'n', l: 'City' }, { k: 'xd', l: 'Divorces a yr', fmt: v => N(v, 0) }, { k: 'xk', l: 'With kids', fmt: v => N(v, 0) }, { k: 'xs', l: 'Custody suits', fmt: v => N(v, 0) }, { k: 'xm', l: 'Mod + enf', fmt: v => N(v, 0) }, { k: 'rate', l: 'Per 1k married', fmt: v => N(v, 1) }, { k: 'sep', l: 'Separated per 1k', fmt: v => N(v, 0) }, { k: 'inc', l: 'Median income', fmt: v => $$$(v) }, { k: 'i150', l: '$150k+', fmt: v => P(v, 0) }, { k: 'kids', l: 'Raising kids', fmt: v => P(v, 0) }];
   const cityRow = o => Object.assign({ _id: o.n }, o);
   function byCounty() {
@@ -488,9 +501,9 @@ function mountAtlas(root, mk) {
     table($('#atByCty'), { cols: cityCols.map(c => c.k === 'n' ? Object.assign({}, c, { fmt: (v, r) => esc(v) + (r.part ? ` <span class="small">(${esc(nm)} part)</span>` : '') }) : c), rows: A.agg.bycounty[f].map(cityRow), sort: { k: 'xd', dir: -1 }, onRow: goCity });
   }
   if ($('#atByCtySel')) $('#atByCtySel').onchange = e => { st.byc = e.target.value; byCounty(); };
-  table($('#atCities'), { cols: cityCols.concat([{ k: 'cty', l: 'Counties', cls: 'l', fmt: v => esc((v || []).join(', ')) }]), rows: A.agg.cities.map(cityRow), sort: { k: 'xd', dir: -1 }, onRow: goCity, limit: 60 });
+  table($('#atCities'), { cols: cityCols.map(c => c.k === 'n' ? Object.assign({}, c, { fmt: (v, r) => esc(v) + (r.derived ? ' <span class="small">(from its block groups)</span>' : '') }) : c).concat([{ k: 'cty', l: 'Counties', cls: 'l', fmt: v => esc((v || []).join(', ')) }]), rows: A.agg.cities.map(cityRow), sort: { k: 'xd', dir: -1 }, onRow: goCity, limit: 60 });
   table($('#atIsd'), { cols: [{ k: 'n', l: 'District' }, { k: 'xd', l: 'Divorces a yr', fmt: v => N(v, 0) }, { k: 'xk', l: 'With kids', fmt: v => N(v, 0) }, { k: 'kids', l: 'Raising kids', fmt: v => P(v, 0) }, { k: 'inc', l: 'Median income', fmt: v => $$$(v) }], rows: A.agg.isd.map(cityRow), sort: { k: 'xk', dir: -1 }, limit: 40, onRow: id => { const z = A.isd.find(q => q.n === id); if (z) { fitBB(z.bb); highlight(z.d); select(-1); sideArea(A.agg.isd.find(c => c.n === id), id, 'School district'); toMap(); } } });
-  table($('#atCounties'), { cols: [{ k: 'n', l: 'County' }, { k: 'xd', l: 'Divorces, 12 mo', fmt: v => N(v, 0) }, { k: 'xk', l: 'With kids', fmt: v => N(v, 0) }, { k: 'married', l: 'Married', fmt: v => N(v) }, { k: 'rate', l: 'Per 1k married', fmt: v => N(v, 1) }, { k: 'inc', l: 'Median income', fmt: v => $$$(v) }, { k: 'f', l: 'Family courts', cls: 'l', fmt: v => venueLine(v) }], rows: A.agg.counties.map(o => Object.assign({ _id: o.f }, o)), sort: { k: 'xd', dir: -1 }, onRow: id => goCounty(id, true) });
+  table($('#atCounties'), { cols: [{ k: 'n', l: 'County' }, { k: 'xd', l: 'Divorces, 12 mo', fmt: v => N(v, 0) }, { k: 'xk', l: 'With kids', fmt: v => N(v, 0) }, { k: 'married', l: 'Married', fmt: v => N(v) }, { k: 'rate', l: 'Per 1k married', fmt: v => N(v, 1) }, { k: 'inc', l: 'Median income', fmt: v => $$$(v) }, { k: 'court', l: 'Family courts', cls: 'l', fmt: (v, r) => venueLine(r.f) }], rows: A.agg.counties.map(o => Object.assign({ _id: o.f, court: courtBy[o.f] ? courtBy[o.f].n : cName(o.f) + ' County district courts' }, o)), sort: { k: 'xd', dir: -1 }, onRow: id => goCounty(id, true) });
   // ---------- first paint
   overlays(); colorize(); fitWeights(); focusBlock(); topTable(); byCounty(); sideMetro();
   const saved = store.get('sev.atlas.view.' + mk, null);

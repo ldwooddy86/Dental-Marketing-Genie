@@ -133,3 +133,26 @@
   #mod-watch .cw-bars div{grid-template-columns:110px minmax(0,1fr) 26px}
   #mod-watch table.cw-t td.cw-wrap,#mod-watch table.cw-cmp td.cw-wrap{min-width:160px}
 }
+
+/* ads by week against the filing season (drawn here, not with lineChart: stacked bars, a second axis and calendar marks) */
+#mod-watch .cw-wkc{margin-bottom:6px}
+#mod-watch .cw-wk svg{width:100%;height:auto;display:block;overflow:visible}
+#mod-watch .cw-wk .cw-wk-meta{fill:var(--s3)}
+#mod-watch .cw-wk .cw-wk-google{fill:var(--s1)}
+#mod-watch .cw-wk .cw-wk-other{fill:var(--ink-3)}
+#mod-watch .cw-wk .cw-wks{fill:none;stroke:var(--s4);stroke-width:2.2;stroke-linejoin:round}
+#mod-watch .cw-wk .cw-wk100{stroke:var(--s4);stroke-dasharray:2 3;opacity:.55}
+#mod-watch .cw-wk .cw-wks-ax{fill:var(--s4)}
+#mod-watch .cw-wk .cw-wkb{fill:var(--sunk-2);opacity:.75}
+#mod-watch .cw-wk .cw-wkm{stroke:var(--warning);stroke-width:1.6;stroke-dasharray:4 3}
+#mod-watch .cw-wk .cw-wkh{fill:transparent}
+#mod-watch .cw-wk .cw-wkl{font-size:10.5px;fill:var(--ink-2)}
+#mod-watch .cw-wk .legendc i{display:inline-block;width:10px;height:10px;margin-right:5px;vertical-align:-1px}
+#mod-watch .cw-li-meta{background:var(--s3)}
+#mod-watch .cw-li-google{background:var(--s1)}
+#mod-watch .cw-li-other{background:var(--ink-3)}
+#mod-watch .cw-li-seas{background:var(--s4);height:3px!important;vertical-align:3px!important}
+#mod-watch .cw-li-band{background:var(--sunk-2);border:1px solid var(--line-strong)}
+#mod-watch .cw-hand{margin:6px 0 10px}
+#mod-watch .cw-hand .btnrow{margin-bottom:0}
+#mod-watch .cw-nolink{color:var(--ink-3);overflow-wrap:anywhere}

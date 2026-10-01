@@ -153,4 +153,24 @@ W.reload(); eq(W.state.comps.length, snap.comps, 'reload from storage keeps the 
 W.remove(b.key); assert(!W.get(b.key) && !W.obs.some(o => o.comp === b.key), 'remove deletes the competitor and its observations');
 const sw = W.sweepCSV(); assert(sw.split('\n').filter(l => l && !l.startsWith('#')).length === W.list().length + 1, 'sweep checklist rows');
 const cc = W.compareCSV([a.key]); assert(/^# Competitor comparison/.test(cc) && cc.includes('Test Firm'), 'compare CSV');
+
+/* ---------- safety: links, duplicates, the CSV formula guard ---------- */
+eq(W.safeUrl('javascript:alert(1)'), '', 'javascript: is never a link'); eq(W.safeUrl('data:text/html,<b>x</b>'), '', 'data: is never a link'); eq(W.safeUrl('file:///etc/passwd'), '', 'file: is never a link');
+eq(W.safeUrl('example.com/divorce'), 'https://example.com/divorce', 'a bare domain becomes https'); eq(W.safeUrl('http://example.com'), 'http://example.com/', 'http kept'); eq(W.safeUrl('  '), '', 'blank'); eq(W.safeUrl('not a url'), '', 'text is not a link');
+const evil = W.observe(a.key, { kind: 'ad', platform: 'meta', text: 'Free consultation', snapshot: 'javascript:alert(1)', url: 'javascript:alert(2)' }); eq(evil.snapshot, '', 'an unsafe snapshot is dropped when the observation is stored'); W.obsRemove(evil.id);
+const n0 = W.obs.length;
+const batch = [{ comp: a.key, kind: 'ad', platform: 'meta', ids: { lib: '9090909090' }, first: '2026-09-01', last: '2026-09-10', status: 'active', text: 'Alpha ad' }, { comp: a.key, kind: 'ad', platform: 'meta', ids: { lib: '9090909090' }, first: '2026-09-01', last: '2026-09-20', status: 'active', text: 'Alpha ad, a later capture' }, { comp: a.key, kind: 'ad', platform: 'google', ids: { adv: 'AR77', cr: 'CR88' }, first: '2026-09-02', text: 'Bravo ad' }, { comp: a.key, kind: 'ad', platform: 'google', ids: { adv: 'ar77', cr: 'cr88' }, first: '2026-09-02', text: 'same creative, ids in lower case' }, { comp: a.key, kind: 'offer', platform: 'site', first: '2026-09-03', text: 'Flat fee divorce $1,999' }, { comp: a.key, kind: 'offer', platform: 'site', first: '2026-09-03', text: 'Flat  fee divorce $1,999' }];
+const added1 = W.obsAddMany(batch); eq([added1.length, added1.skipped, added1.extended], [3, 3, 1], 'duplicates inside a batch: library id, advertiser plus creative, text hash plus first seen');
+eq(W.obs.find(o => o.ids.lib === '9090909090').last, '2026-09-20', 'a duplicate moves the last seen date forward');
+const added2 = W.obsAddMany(batch); eq([added2.length, added2.skipped], [0, 6], 'importing the same batch again adds nothing'); eq(W.obs.length, n0 + 3, 'ledger grew by three');
+eq(W.obsKey({ comp: 'x', platform: 'meta', kind: 'rank', rank: { query: 'divorce lawyer', where: 'maps' }, first: '2026-09-01' }) !== W.obsKey({ comp: 'x', platform: 'meta', kind: 'rank', rank: { query: 'custody lawyer', where: 'maps' }, first: '2026-09-01' }), true, 'two rank checks on one day are two observations');
+const bk = JSON.parse(W.json()); bk.obs.forEach(o => { o.id = o.id + '-copy'; }); const mg = W.importBackup(bk, 'merge'); eq([mg.obs, mg.skipped], [0, bk.obs.length], 'merging a backup with new ids still skips every duplicate');
+const formula = W.observe(a.key, { kind: 'note', platform: 'other', text: '=HYPERLINK("http://evil.example","click")', notes: '+1 214 555 0100', first: '2026-09-05' });
+const gcsv = W.csv(); assert(gcsv.includes(`"'=HYPERLINK(""http://evil.example"",""click"")"`) && gcsv.includes("'+1 214 555 0100"), 'ledger CSV: formula cells start with an apostrophe');
+assert(!/(^|,)=HYPERLINK/m.test(gcsv), 'no cell starts with = in the ledger CSV');
+const back2 = W.importText(gcsv); const fr = back2.obs.find(o => /HYPERLINK/.test(o.text)); assert(fr && fr.text === '=HYPERLINK("http://evil.example","click")' && fr.notes === '+1 214 555 0100', 'the importer takes the apostrophe off again');
+W.obsRemove(formula.id);
+W.update(a.key, { notes: '@mention and -minus' }); const rcsv = W.rosterCSV(); assert(rcsv.includes("'@mention and -minus"), 'roster CSV guarded'); eq(W.parseRosterText(rcsv).comps.find(c => c.key === a.key || c.name === W.get(a.key).name).notes, '@mention and -minus', 'roster CSV round trip unguards');
+const swc = W.sweepCSV(); assert(/^competitor,competitor_key,domain/m.test(swc) && swc.includes(',' + a.key + ','), 'sweep rows carry the competitor key');
+eq(W.csvGuard(-5), -5, 'numbers are left alone'); eq(W.csvGuard('-5'), "'-5", 'a text cell starting with a minus is guarded'); eq(W.unguard("'=1+1"), '=1+1', 'unguard');
 console.log('watch ok');

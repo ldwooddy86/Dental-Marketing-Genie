@@ -6,8 +6,20 @@
    html:true}) and a page with a blocking finding is held back unless the user ticks Send anyway for that page; the results table and the
    ledger carry the screen status. The composer prefills from FIRM (name, phone, responsible lawyer, primary office in a disclaimer block,
    a LegalService JSON-LD). Renders with zero adapters, with module 21 absent or failing, and in every environment (extension, file, viewer).
-   Public hooks on MODI.publish: receive({pages, source, target}), onShow(), pages(), screen(slug). Nothing runs at load time beyond
-   registerModule; every id carries the pb prefix. */
+   Public hooks on MODI.publish: receive({pages, source, target}), onShow(), pages(), screen(slug), sent(target, slug), arc(). Nothing runs
+   at load time beyond registerModule; every id carries the pb prefix.
+   Law firm gates on top of the Thermal Atlas flow:
+     Publish live needs the box "Reviewed and approved by <FIRM.responsible().name>" ticked; the name and the time go into the ledger record
+       of every page published live (approvedBy, approvedAt, approvals[]), with firstLiveAt kept across updates. The box clears after each run.
+     The homepage and campaign landing pages are flagged for the Advertising Review Committee (Rule 7.04: within ten days of first
+       dissemination, unless exempt under Rule 7.05). Every live publish of a new version writes a row into the Compliance Screen's filing
+       log (store 'sev.comp.arc', the module 11 row shape {id, what, where, pub, filed, no, status, note}) and emits BUS 'arc'; the index of
+       what was logged is 'sev.publish.arc'; severance-arc-filing.csv lists it.
+     The exact page each adapter received (after media and placeholder rewriting) is kept as a standalone HTML document per send, in
+       IndexedDB 'sev-publish-sent' (metadata in 'sev.publish.sent'), and downloads per ledger row for the firm's advertising records.
+     Credentials: each card has "Remember credentials on this computer". Off (the default when the page is opened from disk or in the
+       viewer) keeps the card's settings out of sv.cms.v1: in memory and in this tab's sessionStorage, with the non secret fields (site
+       address, user name) remembered in 'sev.publish.keep'. In a page opened from disk each card says which routes can be called from there. */
 registerModule({
   key: 'publish', num: '22', title: 'Publish',
   desc: 'Send the pages the Site Forge wrote, or your own, to WordPress (Elementor or headless), Drupal, Wix, Duda, Webflow, Shopify, HubSpot, Joomla or Ghost, screened against the Texas advertising rules first',
@@ -33,6 +45,13 @@ registerModule({
     const blockedEnv = ENV === 'file' || ENV === 'viewer';
     const errText = e => { let s = (e && (e.message || String(e))) + (e && e.hint ? ' · ' + e.hint : ''); if (e && e.network && blockedEnv) s += ENV === 'viewer' ? ' · the hosted viewer blocks calls to other sites; download the pages pack or use the Severance extension' : ' · the browser blocked the call: a page opened from disk only reaches a CMS that allows this origin (CORS); use the Severance extension, or download the pages pack'; return modFix(s); };
     const isHome = p => /^(home|homepage|index|inicio)$/.test(String(p.slug || '')) || /^home/i.test(String(p.kind || ''));
+    const isLanding = p => /^landing/i.test(String(p.kind || '')) || /^lp-/.test(String(p.slug || '')) || /^(spanish )?landing\b/i.test(String(p.label || ''));
+    const arcKind = p => isHome(p) ? 'home' : isLanding(p) ? 'landing' : 'page';
+    const ARC_DAYS = () => (typeof LINT !== 'undefined' && LINT.FILING && LINT.FILING.days) || 10;
+    const ymdOf = d => isNaN(d) ? '' : `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    const localDay = iso => ymdOf(iso ? new Date(iso) : new Date());
+    const plusDays = (ymd, n) => { const m = String(ymd || '').match(/^(\d{4})-(\d{2})-(\d{2})$/); return m ? ymdOf(new Date(+m[1], +m[2] - 1, +m[3] + n)) : ''; };
+    const respName = () => { try { return String((FIRM.responsible() || {}).name || '').trim(); } catch (e) { return ''; } };
 
     /* ---------- the firm, as the starter, the disclaimer and the JSON-LD use it ---------- */
     function firmInfo() {
@@ -87,7 +106,7 @@ registerModule({
     function screenPage(p) {
       let r;
       if (typeof LINT === 'undefined' || typeof LINT.screen !== 'function') r = failScreen('nolint', 'Compliance engine not loaded', 'src/03_lint.js did not load, so the page could not be screened. It is held back until the engine loads, or until you tick Send anyway.');
-      else { try { r = LINT.screen(screenHtml(p), { kind: 'page', html: true, lang: /^es/i.test(p.language || '') ? 'es' : 'en' }); } catch (e) { r = failScreen('linterr', 'The screen failed on this page', e.message); } }
+      else { try { r = LINT.screen(screenHtml(p), { kind: 'page', html: true, homepage: isHome(p), lang: /^es/i.test(p.language || '') ? 'es' : 'en' }); } catch (e) { r = failScreen('linterr', 'The screen failed on this page', e.message); } }
       r = Object.assign({ at: new Date().toISOString() }, r); r.findings = r.findings || []; r.counts = Object.assign({ block: 0, fix: 0, warn: 0, info: 0 }, r.counts || {}); r.pass = !r.counts.block;
       st.scr.set(p.slug, r); return r;
     }
@@ -100,7 +119,7 @@ registerModule({
     root.innerHTML = mastHTML({
       eyebrow: 'Module 22 · Publish · every CMS the firm site can live on', title: 'Publish',
       dek: 'The Site Forge writes the pages; this module sends them. One portable page goes to whichever platform the firm\'s site lives on: WordPress with Elementor or as a headless CMS behind the Next.js kit, Drupal, Wix, Duda, Webflow, Shopify, HubSpot, Joomla or Ghost. Each target is a card built from what that platform needs. Every page is screened against the Texas advertising rules before it leaves, lands as a draft unless you say otherwise, and is written into a ledger so a second run updates instead of duplicating.',
-      facts: [[N(A().length), 'publishing targets loaded'], ['Drafts', 'by default; live takes a second click'], ['Rule 7.02(a)', 'every page names the responsible lawyer and the primary office'], ['sv.cms.v1', 'credentials and the ledger stay in this browser']]
+      facts: [[N(A().length), 'publishing targets loaded'], ['Drafts', 'by default; live takes the responsible lawyer\'s approval and a second click'], ['Rule 7.02(a)', 'every page names the responsible lawyer and the primary office'], ['sv.cms.v1', 'credentials and the ledger stay in this browser']]
     }) + toolbarHTML('Publish', 'Targets, pages, screen, deploy, ledger', [
       { id: 'pbPack', label: '↓ Pages pack', title: 'Every page as a standalone HTML file, the paste in body, the portable JSON and the screen results, in one zip' },
       { id: 'pbBridge', label: '↓ Bridge plugin', title: 'forge-bridge.zip: the WordPress plugin that writes Elementor data, SEO fields and JSON-LD' },
@@ -108,7 +127,7 @@ registerModule({
       { id: 'pbLedger', label: '↓ Ledger CSV', title: 'Everything sent, every target' },
       { id: 'pbForge', label: 'Site Forge ↗', primary: true }]) + `
     <div id="pbEnv"></div>
-    <div class="callout"><div class="h">Read this first: what Publish does and does not do</div><p>It sends the pages you approve to the CMS the firm's site runs on, as drafts unless you choose otherwise, after screening each one with the compliance engine (the same rule set as module 11: Texas Disciplinary Rules of Professional Conduct 7.01 to 7.06, the family law myths, stale numbers, unfilled placeholders and the house style). A page with a blocking finding stays here unless you tick <b>Send anyway</b> for that page, and the ledger records the override.</p><p>It does not write the pages (module 21 and the composer do), cannot judge whether a statement is true for this firm, does not file anything with the Advertising Review Committee, and does not touch the site's navigation, redirects or theme. The responsible lawyer reviews every page before it goes live.</p></div>
+    <div class="callout"><div class="h">Read this first: what Publish does and does not do</div><p>It sends the pages you approve to the CMS the firm's site runs on, as drafts unless you choose otherwise, after screening each one with the compliance engine (the same rule set as module 11: Texas Disciplinary Rules of Professional Conduct 7.01 to 7.06, the family law myths, stale numbers, unfilled placeholders and the house style). A page with a blocking finding stays here unless you tick <b>Send anyway</b> for that page, and the ledger records the override.</p><p>Nothing goes live until the box <b>Reviewed and approved by</b> the responsible lawyer named in the firm profile is ticked; the name and the time are written into the ledger with each page. The homepage and campaign landing pages are flagged for the Advertising Review Committee with the due date (Rule 7.04: within ten days of first dissemination, unless exempt under Rule 7.05), every live page is written into the Compliance Screen's filing log, and the exact HTML each platform received is kept for the firm's advertising records.</p><p>It does not write the pages (module 21 and the composer do), cannot judge whether a statement is true for this firm, does not file anything with the Committee itself, and does not touch the site's navigation, redirects or theme.</p></div>
     <div id="pbFirm"></div>
     <div class="tiles pb-tiles" id="pbTiles"></div>
 
@@ -146,12 +165,16 @@ registerModule({
 
     <div class="panel pb-panel"><h3>Publish</h3><div class="sub">Sends the ticked pages to the target. Every page is screened first; a page with a blocking finding is held back unless Send anyway is ticked on its row. Drafts unless you tick Publish live, which asks for a second click. A page already in the target's ledger is updated in place (the adapter looks the slug up first). Media is resolved before each page: local photos are uploaded through the target or the media host, library lookups are searched, and an unresolved slot is dropped so nothing ships with a placeholder.</div>
       <div class="btnrow"><label class="chk"><input type="checkbox" id="pbLive"> Publish live (otherwise drafts)</label><label class="chk"><input type="checkbox" id="pbOnlyNew" checked> Skip pages already sent to this target</label><label class="chk"><input type="checkbox" id="pbReqMedia"> Require every image (stop when a slot is unresolved)</label></div>
+      <div class="pb-approve" id="pbApproveBox" hidden></div>
       <div class="btnrow"><button type="button" class="btn primary" id="pbGo">Deploy</button><button type="button" class="btn" id="pbStop" disabled>Stop</button><button type="button" class="btn" id="pbVerify">Verify links</button><button type="button" class="btn accent" id="pbSiteGo" hidden>Publish site now</button><span class="small" id="pbGoNote"></span></div>
       <div class="logbox pb-log" id="pbStatus" role="log" aria-live="polite">Nothing sent yet.</div>
       <div id="pbResults" class="pb-gap"></div></div>
 
-    <div class="panel pb-panel"><div class="pb-head"><div><h3>Sent so far</h3><div class="sub">The ledger for the selected target: what was sent, as what, where it lives, how it screened, and what went wrong. It is what Skip pages already sent reads.</div></div><button type="button" class="btn sm" id="pbLedCsv">↓ CSV for this target</button></div>
+    <div class="panel pb-panel"><div class="pb-head"><div><h3>Sent so far</h3><div class="sub">The ledger for the selected target: what was sent, as what, where it lives, how it screened, who approved it for publication, and what went wrong. It is what Skip pages already sent reads. Sent HTML downloads the exact page the platform received, for the firm's advertising records.</div></div><button type="button" class="btn sm" id="pbLedCsv">↓ CSV for this target</button></div>
       <div id="pbLedgerT"></div></div>
+
+    <div class="panel pb-panel" id="pbArcP"><div class="pb-head"><div><h3>Advertising Review Committee filing</h3><div class="sub">Rule 7.04: a non exempt advertisement is filed with the Advertising Review Committee, State Bar of Texas, within ten days of first dissemination. Rule 7.05 exempts website content other than the homepage, so the homepage is filed and other pages are logged as exempt; a campaign landing page is flagged too, because it is the page an ad sends people to: file it, or record the exemption, as the responsible lawyer decides. Every page published live lands here and in the Compliance Screen's filing log (module 11), where the filing date and the ARC number are recorded.</div></div><div class="btnrow"><button type="button" class="btn sm" id="pbArcCsv">↓ ARC filing CSV</button><button type="button" class="btn sm" id="pbArcComp">Compliance Screen ↗</button></div></div>
+      <div class="tiles pb-arct" id="pbArcTiles"></div><div id="pbArcT"></div></div>
 
     <div class="grid2"><div class="panel"><h3>How it works</h3><ol class="steps pb-meth" id="pbMeth"></ol></div><div class="panel"><h3>Judgment calls</h3><div id="pbJudg" class="pb-judg"></div></div></div>
     <div class="panel pb-panel"><h3>Source register</h3><div class="sub">The platform documentation each adapter follows, and the rules the screen applies.</div><ul class="srcs" id="pbSrc"></ul></div>

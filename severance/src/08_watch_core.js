@@ -36,6 +36,14 @@ const WATCH = (() => {
   const HOOKS = ['children first', 'custody', 'protect assets', 'fathers rights', 'mothers', 'speed', 'flat fee', 'free consultation', 'price transparency', 'payment plans', 'experience', 'board certification', 'reviews and trust', 'compassion', 'aggressive', 'Spanish', 'military', 'high asset', 'protective order urgency', 'CPS urgency', 'new year', 'summer possession', 'back to school', 'holidays', 'job loss', 'recruiting', 'other'];
   const RANK_WHERE = { maps: 'Map pack', organic: 'Organic results', lsa: 'Local Services Ads', ads: 'Search ads' };
   /* ---------- small parsers ---------- */
+  /* a link is rendered only for http and https: a bare domain becomes https://, anything else (javascript:, data:, file:) is dropped */
+  function safeUrl(u) { const t = String(u == null ? '' : u).trim(); if (!t) return ''; let x = t; if (!/^[a-z][a-z0-9+.-]*:/i.test(x)) { if (/^\/\//.test(x)) x = 'https:' + x; else if (/^(www\.)?[a-z0-9-]+(\.[a-z0-9-]+)*\.[a-z]{2,}(:\d+)?([/?#]\S*)?$/i.test(x)) x = 'https://' + x; else return ''; } try { const v = new URL(x); return (v.protocol === 'http:' || v.protocol === 'https:') && v.hostname ? v.href : ''; } catch (e) { return ''; } }
+  /* the CSV formula guard: a cell a spreadsheet would run as a formula (=, +, -, @, tab, carriage return first) gets a leading
+     apostrophe in the CSVs people open; the importers take it off again so a ledger or roster CSV round trips unchanged */
+  const csvGuard = v => (typeof v === 'string' && /^[=+\-@\t\r]/.test(v)) ? "'" + v : v;
+  const guardRows = rows => rows.map(r => r.map(csvGuard));
+  const unguard = v => (typeof v === 'string' && /^'[=+\-@\t\r]/.test(v)) ? v.slice(1) : v;
+  const unguardRows = rows => (rows || []).map(r => (r || []).map(unguard));
   const domOf = u => { const m = String(u || '').toLowerCase().trim().match(/(?:https?:\/\/)?(?:www\.)?([a-z0-9][a-z0-9.-]*\.[a-z]{2,})/); return m ? m[1].replace(/\.$/, '') : ''; };
   const hostOf = d => { const b = domOf(d); return !b ? '' : b.split('.').length > 2 ? b : 'www.' + b; };
   const daysAgo = d => { const t = Date.parse(String(d || '').slice(0, 10) + 'T12:00:00Z'); return isN(t) ? (nowMs() - t) / 864e5 : 9e9; };
@@ -143,7 +151,7 @@ const WATCH = (() => {
   function fixObs(o) {
     o = Object.assign({ id: '', comp: '', compName: '', kind: 'ad', platform: 'meta', status: 'active', first: '', last: '', format: 'other', line: '', hook: 'other', cta: '', url: '', geo: '', counties: [], zips: [], lang: 'en', snapshot: '', text: '', notes: '', src: 'manual', reviews: null, rank: null }, o || {});
     o.id = o.id || uid('ob'); o.offer = Object.assign({ type: 'none', text: '', price: null, fin: '' }, o.offer || {}); if (!OFFERS[o.offer.type]) o.offer.type = 'none'; o.offer.price = o.offer.price === '' || o.offer.price == null || !isFinite(+o.offer.price) ? null : +o.offer.price;
-    o.ids = Object.assign({ lib: '', page: '', adv: '', cr: '' }, o.ids || {});
+    o.ids = Object.assign({ lib: '', page: '', adv: '', cr: '' }, o.ids || {}); Object.keys(o.ids).forEach(k => { o.ids[k] = String(o.ids[k] == null ? '' : o.ids[k]).trim(); }); o.snapshot = safeUrl(o.snapshot);
     if (!KINDS[o.kind]) o.kind = 'note'; if (!PLATFORMS[o.platform]) o.platform = 'other'; if (!STATUSES.includes(o.status)) o.status = 'unknown';
     o.first = isoFrom(o.first) || isoFrom(o.last) || today(); o.last = isoFrom(o.last) || o.first; if (o.last < o.first) { const t = o.first; o.first = o.last; o.last = t; }
     if (!isLine(o.line)) o.line = ''; if (!HOOKS.includes(o.hook)) o.hook = 'other'; if (o.lang !== 'es') o.lang = 'en';
@@ -190,7 +198,22 @@ const WATCH = (() => {
   function observe(key, o) { const ob = blankObs(Object.assign({}, o, { comp: key || (o && o.comp) || '' })); S.obs.push(ob); learnIds(ob); save('obs'); return ob; }
   function obsUpdate(id, patch) { const i = S.obs.findIndex(x => x.id === id); if (i < 0) return null; const ob = fixObs(Object.assign({}, S.obs[i], patch, { id })); S.obs[i] = ob; learnIds(ob); save('obs'); return ob; }
   function obsRemove(id) { S.obs = S.obs.filter(x => x.id !== id); save('obs'); }
-  function obsAddMany(arr, key, meta) { const out = (arr || []).map(o => { const ob = blankObs(o); S.obs.push(ob); learnIds(ob); return ob; }); if (key && comp(key) && meta) setIdsQuiet(key, meta); save('obs'); return out; }
+  /* one observation, one key: the Meta library ID, else the Google advertiser and creative IDs, else the competitor, the platform, a hash
+     of what was seen and the first seen date. Imports skip a key already in the ledger (or seen earlier in the same batch) and only move
+     its last seen date forward when the copy shows it still running. */
+  function hashStr(t) { let h = 2166136261; const s = String(t || ''); for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return (h >>> 0).toString(36); }
+  function obsKey(o) {
+    const ids = o.ids || {}; if (ids.lib) return 'lib:' + String(ids.lib).trim(); if (ids.adv && ids.cr) return 'g:' + String(ids.adv).trim().toUpperCase() + '/' + String(ids.cr).trim().toUpperCase();
+    const what = [o.kind, String(o.text || '').replace(/\s+/g, ' ').trim().toLowerCase(), o.offer && o.offer.text, o.url, o.rank && [o.rank.query, o.rank.where, o.rank.county].join('|'), o.reviews && [o.reviews.count, o.reviews.rating, o.reviews.source].join('|'), o.text ? '' : o.notes].filter(x => x != null && x !== '').join('·');
+    return 'h:' + [o.comp || ('?' + normName(o.compName || '')), o.platform || '', hashStr(what), o.first || ''].join('|');
+  }
+  function obsAddMany(arr, key, meta) {
+    const seen = new Map(S.obs.map(o => [obsKey(o), o])); const out = []; let skipped = 0, extended = 0;
+    (arr || []).forEach(o => { const ob = blankObs(o); const k = obsKey(ob); const old = seen.get(k);
+      if (old) { skipped++; if (ob.last > old.last) { old.last = ob.last; if (ob.status === 'active' || ob.status === 'inactive') old.status = ob.status; extended++; } return; }
+      seen.set(k, ob); S.obs.push(ob); learnIds(ob); out.push(ob); });
+    if (key && comp(key) && meta) setIdsQuiet(key, meta); save('obs'); out.skipped = skipped; out.extended = extended; return out;
+  }
   function setIdsQuiet(key, meta) { const c = comp(key); if (!c) return; if (meta.pageId && !c.meta_page_id) c.meta_page_id = meta.pageId; if (meta.advId && !c.google_advertiser_id) c.google_advertiser_id = meta.advId; }
   const sortObs = a => a.sort((x, y) => String(y.last).localeCompare(String(x.last)) || String(y.first).localeCompare(String(x.first)));
   const forComp = key => sortObs(S.obs.filter(o => o.comp === key));
@@ -288,7 +311,7 @@ const WATCH = (() => {
   const CSV_H = ['id', 'competitor', 'competitor_key', 'kind', 'platform', 'status', 'first_seen', 'last_seen', 'format', 'service_line', 'offer_type', 'offer_text', 'fee_usd', 'payment_terms', 'hook', 'cta', 'landing_url', 'geo', 'counties', 'county_fips', 'zips', 'language', 'meta_library_id', 'meta_page_id', 'google_advertiser_id', 'google_creative_id', 'snapshot_url', 'text', 'notes', 'source', 'review_count', 'review_rating', 'review_source', 'rank_query', 'rank_position', 'rank_where', 'rank_county', 'lint'];
   const toRow = o => [o.id, o.compName, o.comp, o.kind, o.platform, o.status, o.first, o.last, o.format, o.line, o.offer.type, o.offer.text, o.offer.price, o.offer.fin, o.hook, o.cta, o.url, o.geo, (o.counties || []).map(f => CI[f] ? CI[f].name : f).join('; '), (o.counties || []).join(' '), (o.zips || []).join(' '), o.lang, o.ids.lib, o.ids.page, o.ids.adv, o.ids.cr, o.snapshot, o.text, o.notes, o.src, o.reviews ? o.reviews.count : '', o.reviews ? o.reviews.rating : '', o.reviews ? o.reviews.source : '', o.rank ? o.rank.query : '', o.rank ? o.rank.position : '', o.rank ? o.rank.where : '', o.rank && o.rank.county ? (CI[o.rank.county] || {}).name || '' : '', (o.lint || []).join(' ')];
   function fromLedgerRows(rows) {
-    const H = rows[0].map(h => String(h).trim().toLowerCase()); const g = (r, k) => { const i = H.indexOf(k); return i >= 0 ? String(r[i] == null ? '' : r[i]).trim() : ''; };
+    rows = unguardRows(rows); const H = rows[0].map(h => String(h).trim().toLowerCase()); const g = (r, k) => { const i = H.indexOf(k); return i >= 0 ? String(r[i] == null ? '' : r[i]).trim() : ''; };
     return rows.slice(1).map(r => { const key = g(r, 'competitor_key'); const c = key === FIRM_KEY ? { key: FIRM_KEY, name: firmName() } : comp(key) || matchComp(g(r, 'competitor'), g(r, 'landing_url'), g(r, 'meta_page_id')); const text = g(r, 'text'), ot = g(r, 'offer_text');
       return { id: g(r, 'id') && !S.obs.some(o => o.id === g(r, 'id')) ? g(r, 'id') : '', comp: c ? c.key : '', compName: c ? c.name : g(r, 'competitor'), kind: KINDS[g(r, 'kind')] ? g(r, 'kind') : 'ad', platform: PLATFORMS[g(r, 'platform')] ? g(r, 'platform') : 'other', status: g(r, 'status') || 'unknown', first: g(r, 'first_seen'), last: g(r, 'last_seen'), format: g(r, 'format') || 'other', line: isLine(g(r, 'service_line')) ? g(r, 'service_line') : inferLine(text + ' ' + ot), offer: { type: OFFERS[g(r, 'offer_type')] ? g(r, 'offer_type') : inferOffer(ot || text), text: ot, price: g(r, 'fee_usd') || g(r, 'price_usd') ? +(g(r, 'fee_usd') || g(r, 'price_usd')) : priceIn(ot), fin: g(r, 'payment_terms') || g(r, 'financing_terms') }, hook: HOOKS.includes(g(r, 'hook')) ? g(r, 'hook') : inferHook(text), cta: g(r, 'cta'), url: g(r, 'landing_url'), geo: g(r, 'geo'), counties: g(r, 'county_fips') ? g(r, 'county_fips').split(/[\s,;]+/) : g(r, 'counties'), zips: g(r, 'zips'), lang: g(r, 'language') === 'es' ? 'es' : 'en', ids: { lib: g(r, 'meta_library_id'), page: g(r, 'meta_page_id'), adv: g(r, 'google_advertiser_id'), cr: g(r, 'google_creative_id') }, snapshot: g(r, 'snapshot_url'), text, notes: g(r, 'notes'), src: g(r, 'source') && g(r, 'source') !== 'manual' ? g(r, 'source') : 'import', reviews: g(r, 'review_count') ? { count: +g(r, 'review_count'), rating: g(r, 'review_rating'), source: g(r, 'review_source') || 'Google' } : null, rank: g(r, 'rank_query') ? { query: g(r, 'rank_query'), position: g(r, 'rank_position'), where: g(r, 'rank_where'), county: g(r, 'rank_county') } : null }; });
   }
@@ -296,7 +319,7 @@ const WATCH = (() => {
   const officeStr = o => [o.street, o.city, o.zip ? 'TX ' + o.zip : ''].filter(Boolean).join(', ');
   const lawyerStr = l => l.name + (l.bar_no ? ` (${l.bar_no})` : '');
   function fromRosterRows(rows) {
-    const H = rows[0].map(h => String(h).trim().toLowerCase().replace(/\s+/g, '_')); const ix = names => { for (const n of names) { const i = H.indexOf(n); if (i >= 0) return i; } return -1; };
+    rows = unguardRows(rows); const H = rows[0].map(h => String(h).trim().toLowerCase().replace(/\s+/g, '_')); const ix = names => { for (const n of names) { const i = H.indexOf(n); if (i >= 0) return i; } return -1; };
     const col = { name: ix(['name', 'firm', 'firm_name', 'competitor', 'company']), domain: ix(['domain', 'website', 'url', 'site']), tier: ix(['tier', 'type']), counties: ix(['county_fips']), cnames: ix(['counties', 'county']), lines: ix(['lines', 'service_lines', 'practice_areas']), offices: ix(['offices', 'office', 'address', 'addresses']), lawyers: ix(['lawyers', 'attorneys']), page: ix(['meta_page_id']), adv: ix(['google_advertiser_id']), aliases: ix(['aliases']), notes: ix(['notes']), archived: ix(['archived']), checked: ix(['last_checked']) };
     const g = (r, i) => i >= 0 ? String(r[i] == null ? '' : r[i]).trim() : '';
     return rows.slice(1).map(r => ({ name: g(r, col.name), domain: g(r, col.domain), tier: tierOf(g(r, col.tier)), counties: g(r, col.counties) ? g(r, col.counties).split(/[\s,;]+/) : g(r, col.cnames), lines: g(r, col.lines), offices: g(r, col.offices).split(/;|\n/), lawyers: g(r, col.lawyers), meta_page_id: g(r, col.page), google_advertiser_id: g(r, col.adv), aliases: g(r, col.aliases), notes: g(r, col.notes), archived: /^(true|yes|1)$/i.test(g(r, col.archived)), lastChecked: isoFrom(g(r, col.checked)) })).filter(c => c.name);
@@ -371,7 +394,8 @@ const WATCH = (() => {
     if (!j || !Array.isArray(j.comps) || !Array.isArray(j.obs)) throw new Error('This file is not a Competitor Watch backup');
     if (mode === 'replace') { const keep = S.settings; S = Object.assign(blank(), { comps: [], obs: [], created: j.created || today() }); S.settings = Object.assign(blank().settings, j.settings || {}, { token: keep.keepToken ? keep.token : '', keepToken: keep.keepToken }); j.comps.map(normComp).forEach(c => { if (c.name) { if (!c.key || S.comps.some(x => x.key === c.key)) c.key = keyFor(c); S.comps.push(c); } }); S.obs = j.obs.map(fixObs); save('replace'); return { comps: S.comps.length, obs: S.obs.length, mode }; }
     let nc = 0, no = 0; j.comps.map(normComp).forEach(c => { if (!c.name) return; const same = S.comps.find(x => x.key === c.key) || findSame(c); if (same) mergeInto(same, c); else { if (!c.key || S.comps.some(x => x.key === c.key)) c.key = keyFor(c); S.comps.push(c); nc++; } });
-    j.obs.forEach(o => { if (o.id && S.obs.some(x => x.id === o.id)) return; S.obs.push(fixObs(o)); no++; }); save('merge'); return { comps: nc, obs: no, mode: 'merge' };
+    const seen = new Map(S.obs.map(o => [obsKey(o), o])); let skipped = 0;
+    j.obs.forEach(o => { if (o.id && S.obs.some(x => x.id === o.id)) { skipped++; return; } const ob = fixObs(o); const k = obsKey(ob); const old = seen.get(k); if (old) { skipped++; if (ob.last > old.last) old.last = ob.last; return; } seen.set(k, ob); S.obs.push(ob); no++; }); save('merge'); return { comps: nc, obs: no, skipped, mode: 'merge' };
   }
   function clear() { const n = { comps: S.comps.length, obs: S.obs.length }; S = blank(); save('clear'); return n; }
   /* ---------- analytics ---------- */
@@ -544,15 +568,15 @@ const WATCH = (() => {
     return out;
   }
   /* ---------- exports ---------- */
-  function csv() { return toCSV(CSV_H, S.obs.map(toRow), `Competitor Watch ledger, Severance module 24, exported ${today()}. Every row is an observation logged in this browser or imported; none ships with Severance.`); }
+  function csv() { return toCSV(CSV_H, guardRows(S.obs.map(toRow)), `Competitor Watch ledger, Severance module 24, exported ${today()}. Every row is an observation logged in this browser or imported; none ships with Severance.`); }
   function json() { const s = JSON.parse(JSON.stringify(S)); s.settings.token = ''; return JSON.stringify(Object.assign({ severance_watch: 1, exported: today(), atlas: 'Severance, module 24 Competitor Watch' }, s), null, 1); }
   function rosterRow(c) { const sd = scoreDetail(c); const rv = reviews(c.key); const cv = coverage(c); return [c.key, c.name, c.domain, c.tier, c.counties.map(f => CI[f] ? CI[f].name : f).join('; '), c.counties.join(' '), c.lines.join('; '), c.offices.map(officeStr).join('; '), c.lawyers.map(lawyerStr).join('; '), c.meta_page_id, c.google_advertiser_id, c.aliases, c.notes, c.archived ? 'yes' : '', c.created, c.lastChecked, sd.score, sd.live, sd.n, rv.latest ? rv.latest.count : '', rv.latest && rv.latest.rating != null ? rv.latest.rating : '', rv.velocity == null ? '' : rv.velocity.toFixed(1), cv.share == null ? '' : (cv.share * 100).toFixed(0) + '%', LINKS.metaKw(c.name), c.domain ? LINKS.googleDomain(c.domain) : '', LINKS.barSearch(c.name), LINKS.tblsForm(), LINKS.gMaps(c.name, placeOf(c))]; }
-  function rosterCSV() { return toCSV(ROSTER_H, S.comps.map(rosterRow), `Competitor Watch roster, Severance module 24, exported ${today()}. Import this file to restore or share the roster; scores and links are recomputed on import.`); }
+  function rosterCSV() { return toCSV(ROSTER_H, guardRows(S.comps.map(rosterRow)), `Competitor Watch roster, Severance module 24, exported ${today()}. Import this file to restore or share the roster; scores and links are recomputed on import.`); }
   const ROSTER_TEMPLATE = () => toCSV(['name', 'domain', 'tier', 'counties', 'lines', 'offices', 'lawyers', 'meta_page_id', 'google_advertiser_id', 'aliases', 'notes'], [], 'Roster template for Competitor Watch. One competitor per row. tier: direct, adjacent, referral or legalaid. counties: county names separated by semicolons.\nlines: service line names or keys (div_k, div_nk, sapcr, mod, enf, po, ivd, adopt, cps, prenup, high, mil, gray) separated by semicolons.\noffices: street, city, TX ZIP; separate several offices with semicolons. lawyers: names, optionally with the bar number in parentheses, separated by semicolons.');
-  const SWEEP_H = ['competitor', 'domain', 'tier', 'counties', 'last_checked', 'days_since', 'live_ads_on_record', 'meta_ad_library_by_name', 'meta_ad_library_page', 'google_transparency_by_domain', 'google_transparency_advertiser', 'state_bar_search', 'tbls_search', 'google_maps', 'google_reviews', 'county_search'];
-  function sweepRows(keys) { return (keys ? keys.map(comp).filter(Boolean) : list()).map(c => [c.name, c.domain, c.tier, c.counties.map(f => CI[f] ? CI[f].name : f).join('; '), c.lastChecked || '', c.lastChecked ? Math.max(0, Math.round(daysAgo(c.lastChecked))) : '', forComp(c.key).filter(isLiveAd).length, LINKS.metaKw(c.name), c.meta_page_id ? LINKS.metaPage(c.meta_page_id) : '', c.domain ? LINKS.googleDomain(c.domain) : '', c.google_advertiser_id ? LINKS.googleAdv(c.google_advertiser_id) : '', LINKS.barSearch(c.name), LINKS.tblsForm(), LINKS.gMaps(c.name, placeOf(c)), LINKS.gReviews(c.name), c.counties[0] && CI[c.counties[0]] ? LINKS.gCounty(CI[c.counties[0]].name) : '']); }
-  function sweepCSV() { return toCSV(SWEEP_H, sweepRows(), `Weekly sweep, Severance module 24, exported ${today()}. Open each link, log what you see, mark the competitor checked.`); }
-  function compareCSV(keys) { const c = compare(keys); return toCSV(['measure'].concat(c.cols.map(x => x.name)), c.rows.map(r => [r.label].concat(r.values)), `Competitor comparison, Severance module 24, ${today()}. Competitor values come from the roster and the observations logged in this browser.`); }
+  const SWEEP_H = ['competitor', 'competitor_key', 'domain', 'tier', 'counties', 'last_checked', 'days_since', 'live_ads_on_record', 'meta_ad_library_by_name', 'meta_ad_library_page', 'google_transparency_by_domain', 'google_transparency_advertiser', 'state_bar_search', 'tbls_search', 'google_maps', 'google_reviews', 'county_search'];
+  function sweepRows(keys) { return (keys ? keys.map(comp).filter(Boolean) : list()).map(c => [c.name, c.key, c.domain, c.tier, c.counties.map(f => CI[f] ? CI[f].name : f).join('; '), c.lastChecked || '', c.lastChecked ? Math.max(0, Math.round(daysAgo(c.lastChecked))) : '', forComp(c.key).filter(isLiveAd).length, LINKS.metaKw(c.name), c.meta_page_id ? LINKS.metaPage(c.meta_page_id) : '', c.domain ? LINKS.googleDomain(c.domain) : '', c.google_advertiser_id ? LINKS.googleAdv(c.google_advertiser_id) : '', LINKS.barSearch(c.name), LINKS.tblsForm(), LINKS.gMaps(c.name, placeOf(c)), LINKS.gReviews(c.name), c.counties[0] && CI[c.counties[0]] ? LINKS.gCounty(CI[c.counties[0]].name) : '']); }
+  function sweepCSV() { return toCSV(SWEEP_H, guardRows(sweepRows()), `Weekly sweep, Severance module 24, exported ${today()}. Open each link, log what you see, mark the competitor checked.`); }
+  function compareCSV(keys) { const c = compare(keys); return toCSV(['measure'].concat(c.cols.map(x => x.name)).map(csvGuard), guardRows(c.rows.map(r => [r.label].concat(r.values))), `Competitor comparison, Severance module 24, ${today()}. Competitor values come from the roster and the observations logged in this browser.`); }
   function settings() { return S.settings; }
   function setSettings(p) { Object.assign(S.settings, p || {}); save('settings'); }
   return {
@@ -560,7 +584,7 @@ const WATCH = (() => {
     get state() { return S; }, get obs() { return S.obs; }, list, get: comp, add, addMany, update, archive, remove, setChecked, setIds,
     observe, obsUpdate, obsRemove, obsAddMany, forComp, blankObs, blankComp, normComp, matchComp, compLinks, placeOf,
     score, scoreDetail, reviews, coverage, lineOverlap, compare, profileOf, claims, positionFor, lintFind, stats, weekly, activeAds, timeline, obsCounties, countyCounts, rosterByCounty, activity, context, uncontested, digest,
-    importText, importBackup, parseAdText, parseRosterText, fromMetaApi, fromUrls, metaApiUrl, metaApiRun, canFetch,
+    importText, importBackup, obsKey, safeUrl, csvGuard, unguard, parseAdText, parseRosterText, fromMetaApi, fromUrls, metaApiUrl, metaApiRun, canFetch,
     csv, json, rosterCSV, rosterTemplate: ROSTER_TEMPLATE, sweepRows, sweepCSV, compareCSV, settings, setSettings, clear, reload: load,
     isLive, isLiveAd, daysAgo, today, inferLine, inferOffer, inferHook, priceIn, isoFrom, domOf, countyByName, countiesFrom, linesFrom, parseOffice, officeStr, lawyerStr,
     setClock(d) { NOW = d || null; }

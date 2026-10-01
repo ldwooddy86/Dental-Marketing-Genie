@@ -1,0 +1,46 @@
+/* Module 26 · Filings Forecast (src/45_m26_forecast.js). Theme variables only; square corners. */
+#mod-forecast .fc-h4{font-family:var(--display);font-weight:700;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--judg);margin:14px 0 6px;border-bottom:1px solid var(--line);padding-bottom:4px}
+#mod-forecast .fc-sh{font-family:var(--display);font-size:20px;font-weight:700;color:var(--title);margin:0 0 2px;overflow-wrap:anywhere}
+#mod-forecast .fc-big{font-family:var(--display);font-weight:700;font-size:34px;line-height:1.05;color:var(--title);font-variant-numeric:tabular-nums;margin-top:10px}
+#mod-forecast #fcMini{margin-top:6px}
+#mod-forecast .fc-hb{display:flex;justify-content:space-between;gap:10px;font-size:13px;color:var(--ink-2);padding-top:4px}
+#mod-forecast .fc-hb b{font-weight:500;color:var(--ink);font-variant-numeric:tabular-nums;white-space:nowrap}
+#mod-forecast .fc-bar{height:8px;background:var(--sunk);border:1px solid var(--line);margin:3px 0 4px}
+#mod-forecast .fc-bar i{display:block;height:100%}
+#mod-forecast .fc-dur{display:flex;height:12px;border:1px solid var(--line);margin-top:4px}
+#mod-forecast .fc-dur i{display:block;min-width:1px}
+#mod-forecast .fc-durl{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:12px;color:var(--ink-3);margin-top:3px}
+#mod-forecast .fc-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+#mod-forecast .fc-hint{align-self:center;max-width:60ch;line-height:1.45}
+#mod-forecast .fc-scn{padding:8px 10px;background:var(--sunk);border:1px solid var(--line)}
+#mod-forecast .fc-econ{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:18px;align-items:start}
+@media (max-width:980px){#mod-forecast .fc-econ{grid-template-columns:1fr}}
+#mod-forecast table.fc-fees td{vertical-align:middle}
+#mod-forecast table.fc-fees td.small{white-space:normal;min-width:140px;line-height:1.35}
+#mod-forecast .fc-fee{width:100px;background:var(--card);border:1px solid var(--line-strong);border-radius:0;padding:5px 7px;font-size:13px;color:var(--ink);text-align:right;font-variant-numeric:tabular-nums}
+#mod-forecast .fc-fee:focus{border-color:var(--title)}
+#mod-forecast table.fc-fees input[type=checkbox]{accent-color:var(--on-bg);width:16px;height:16px}
+#mod-forecast .fc-facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px;margin:4px 0 6px}
+#mod-forecast .fc-fact{background:var(--sunk);border:1px solid var(--line);padding:10px 12px;display:flex;flex-direction:column;gap:3px;min-width:0}
+#mod-forecast .fc-fact b{font-family:var(--display);font-size:22px;color:var(--title);font-variant-numeric:tabular-nums}
+#mod-forecast .fc-fact span{font-size:12.5px;color:var(--ink-2);line-height:1.35}
+#mod-forecast #fcTop tr[data-id]{cursor:pointer}
+#mod-forecast .fc-qbox{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:8px;margin:6px 0 12px}
+#mod-forecast .fc-qb{background:var(--card);border:1px solid var(--line);padding:10px 12px;min-width:0}
+#mod-forecast .fc-qb .qt{font-family:var(--display);font-weight:700;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--judg)}
+#mod-forecast .fc-qb .qv{font-family:var(--display);font-weight:700;font-size:24px;color:var(--title);font-variant-numeric:tabular-nums;margin:3px 0}
+#mod-forecast .fc-qb .qd{font-size:12.5px;color:var(--ink-2);line-height:1.4;overflow-wrap:anywhere}
+#mod-forecast .fc-meth{padding-left:20px;font-size:13.5px;line-height:1.55}
+#mod-forecast .fc-meth li{margin:0 0 8px}
+#mod-forecast .fc-meth b{color:var(--title)}
+#mod-forecast .fc-dl{display:grid;grid-template-columns:minmax(0,13em) minmax(0,1fr);gap:6px 14px;font-size:13px;line-height:1.5;margin:0}
+#mod-forecast .fc-dl dt{font-family:var(--display);font-weight:700;color:var(--title)}
+#mod-forecast .fc-dl dd{margin:0;color:var(--ink-2)}
+@media (max-width:640px){#mod-forecast .fc-dl{grid-template-columns:1fr}#mod-forecast .fc-dl dd{margin-bottom:6px}}
+#mod-forecast .fc-col{cursor:default}
+#mod-forecast .fc-col:hover{opacity:.8}
+#mod-forecast .grade{vertical-align:1px}
+#mod-forecast #fcCalcIn .chk{align-self:end;padding-bottom:6px}
+#mod-forecast .fc-scn[hidden]{display:none}
+#mod-forecast .seg button:disabled{color:var(--ink-3);background:var(--sunk);cursor:not-allowed}
+#mod-forecast .ctl input:disabled{opacity:.55;cursor:not-allowed}
