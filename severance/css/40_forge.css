@@ -51,3 +51,17 @@
 @media (max-width:760px){#mod-forge .fg-pane iframe.preview{height:480px}#mod-forge .fg-mobile iframe.preview{height:620px}#mod-forge .fg-kv{grid-template-columns:1fr}#mod-forge .ctl select[multiple]{min-width:0}#mod-forge table.fg-media input[type=text]{min-width:140px}}
 #mod-forge .grid2>*,#mod-forge .split>*,#mod-forge .panel{min-width:0}
 @media (max-width:760px){#mod-forge table.fg-prose td:nth-child(2){min-width:160px}}
+
+/* markets: the primary office on both maps, the city map */
+#mod-forge .fg-map .fg-office path{fill:var(--title);stroke:var(--card);stroke-width:1.6;vector-effect:non-scaling-stroke;pointer-events:none}
+#mod-forge #fgMapZ{margin-top:4px}
+#mod-forge #fgMapZ svg{max-height:440px}
+#mod-forge #fgMapZN:empty,#mod-forge #fgMiNote:empty{display:none}
+/* the legal review in the studio and the bulk review under the ledger */
+#mod-forge .fg-rev{margin:0}
+#mod-forge .fg-rev .ctl{min-width:0}
+#mod-forge .fg-rev input{width:100%}
+#mod-forge .fg-bulk{margin-top:12px;border:1px solid var(--line);padding:8px 12px;background:var(--card)}
+#mod-forge .fg-bulk summary{cursor:pointer;font-family:var(--display);font-weight:700;font-size:12.5px;color:var(--link)}
+#mod-forge .fg-bulk[open] summary{margin-bottom:6px}
+#mod-forge #fgSafeNote .callout{margin-top:10px}

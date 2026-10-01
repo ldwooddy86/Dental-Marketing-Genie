@@ -64,7 +64,7 @@ const FCOPY = (() => {
     indep: { v: 'Independent', l: 'duties: unpaid support does not justify denying possession, and denied possession does not justify withholding support', c: FC + ' § 105.006(e)' },
     podef: { v: 'Family violence', l: 'must be found by the court before it grants a protective order', c: FC + ' ch. 85' },
     po2: { v: '2 years', es: '2 años', l: 'the usual longest term the court sets for a final protective order; some orders run longer', c: FC + ' § 85.025' },
-    posapcr: { v: '2 years after the decree', es: '2 años después del decreto', l: 'how long an order tied to a pending divorce or custody case can run, since September 2025', c: FC + ' § 85.025(a-2) and (a-3); SB 1120 (2025)' },
+    posapcr: { v: '2 years after the decree', es: '2 años después del decreto', l: 'how long an order tied to a pending divorce or custody case can run, since September 2025', c: FC + ' § 85.025 and SB 1120 (2025)' },   // the subsection letters (a-2) and (a-3) would lose their hyphen to the house style on a page
     exparte: { v: '20 days', es: '20 días', l: 'how long a temporary ex parte protective order lasts unless the court extends it', c: FC + ' § 83.002' },
     poviolate: { v: 'A crime', l: 'violating a protective order is a criminal offense', c: 'Texas Penal Code § 25.07' },
     e911: { v: '911', l: 'the emergency number to call first when anyone is in danger', c: 'Emergency services' },

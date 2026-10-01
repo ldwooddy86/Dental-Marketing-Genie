@@ -298,4 +298,43 @@ const phpBin = spawnSync('php', ['-v'], { encoding: 'utf8' });
 if (phpBin.status === 0) { const tmp = path.join(fs.mkdtempSync(path.join((await import('node:os')).tmpdir(), 'forge-')), 'forge-bridge.php'); fs.writeFileSync(tmp, PHP); const lint = spawnSync('php', ['-l', tmp], { encoding: 'utf8' }); assert(lint.status === 0, 'php -l: ' + lint.stdout + lint.stderr); console.log('php -l ok'); }
 else console.log('php not installed; php -l skipped');
 
+/* ---------- Safety mode: a protective order page (quick exit, hotline, safe contact question, no tracking, no third party frame) ---------- */
+{
+  const sbp = JSON.parse(JSON.stringify(bp));
+  sbp.page.slug = 'protective-order-lawyer'; sbp.page.h1 = 'Protective Order Lawyer in Houston'; sbp.page.title = 'Protective Order Lawyer in Houston | Rivera Family Law'; sbp.page.line = 'po';
+  sbp.page.safety = { sensitive: 'po', exit_url: 'https://www.weather.gov/' };
+  sbp.media.explainer = { source: 'https://www.youtube.com/watch?v=abcdefgh', alt: 'What a consultation looks like', kind: 'video' };
+  sbp.sections.splice(1, 0, { type: 'hotline', heading: 'If you are not safe', text: 'If you are in danger now, call 911.\nCall 1 800 799 7233 or text START to 88788.', phone: '18007997233', phone_label: '1 800 799 7233', url: 'https://www.thehotline.org/' }, { type: 'video', media: 'explainer', heading: 'What a consultation looks like' });
+  const sr = FC.compile(sbp, {});
+  assert(/^<style>\.forge-exit\{position:fixed/.test(sr.html) && /data-forge-exit/.test(sr.html.slice(0, 2500)), 'the quick exit leads the page');
+  assert(sr.html.includes('href="https://www.weather.gov/"') && sr.html.includes('rel="noreferrer noopener"') && sr.html.includes('>Leave this site<') && sr.html.includes('Or press Escape'), 'the exit link works without script and goes to the chosen neutral site');
+  assert(/location\.replace/.test(sr.html) && /key==="Escape"/.test(sr.html) && /visibility="hidden"/.test(sr.html), 'the exit script hides the page, replaces it (no Back) and answers Escape');
+  assert(sr.elementor_data[0].settings.css_classes === 'forge-exit-wrap' && /data-forge-exit/.test(JSON.stringify(sr.elementor_data[0])), 'the Elementor data starts with the exit');
+  assert(sr.html.includes('<a href="tel:+18007997233">1 800 799 7233</a>') && sr.html.includes('<a href="tel:911">911</a>') && sr.html.includes('START to 88788') && sr.html.includes('class="forge-hotline"'), 'the hotline box, numbers linked');
+  assert(!/dataLayer/.test(sr.html) && !/<iframe/i.test(sr.html) && !/youtube/i.test(sr.html), 'no dataLayer push, no video frame');
+  assert(sr.issues.some(i => /video section was left off/.test(i.msg)), 'the dropped video is reported');
+  assert(sr.html.includes('name="safe_contact"') && sr.html.includes('Is it safe to call, text or leave a voicemail?') && /<select id="[^"]+safe-contact" name="safe_contact" required/.test(sr.html), 'the required safe contact question');
+  assert(sr.html.includes('The firm contacts you only in the way you choose above.'), 'the consent says contact follows the choice');
+  assert(!/name="phone"[^>]*required/.test(sr.html), 'the phone is optional on a sensitive page');
+  assert(!sr.lint.some(l => /^BLOCK/.test(l) || /Safety mode/.test(l)), 'the safety checks pass: ' + JSON.stringify(sr.lint.filter(l => /BLOCK|Safety/.test(l))));
+  assert(sr.portable.sections[0].type === 'html' && /data-forge-exit/.test(sr.portable.sections[0].html) && sr.portable.sections.some(x => x.type === 'html' && /forge-hotline/.test(x.html)), 'the portable page carries the exit and the hotline as html');
+  assert(sr.portable.page.conversion.form.fields.some(f => f.id === 'safe_contact' && f.required), 'the portable form keeps the safe contact question');
+  const df = FC.defaultForm(sbp); eq(df.fields.map(f => f.id), ['name', 'phone', 'email', 'safe_contact', 'county', 'matter', 'message'], 'defaultForm on a sensitive page');
+  /* a Spanish page in Safety mode */
+  const es = JSON.parse(JSON.stringify(sbp)); es.page.language = 'es-US'; const er = FC.compile(es, {});
+  assert(er.html.includes('>Salir de este sitio<') && er.html.includes('¿Es seguro llamarle, enviarle mensajes de texto o dejarle un mensaje de voz?'), 'Spanish exit and question');
+  /* the compiler's own check catches tracking an author pasted into a sensitive page */
+  const bad = JSON.parse(JSON.stringify(sbp)); bad.sections.push({ type: 'html', html: '<script src="https://connect.facebook.net/en_US/fbevents.js"></script>' }); const brr = FC.compile(bad, {});
+  assert(brr.lint.some(l => /^BLOCK: Safety mode: tracking/.test(l)), 'a pixel on a sensitive page blocks');
+  /* Safety mode off: the ordinary page keeps its dataLayer event and has no exit */
+  const off = FC.compile(bp, {}); assert(/dataLayer/.test(off.html) && !/data-forge-exit/.test(off.html) && !/safe_contact/.test(off.html), 'ordinary pages are unchanged');
+  /* the LINT web tests read the compiled sensitive page as safe */
+  const lctx = vm.createContext({ console, FIRM: { get: () => firm, responsible: () => firm.attorneys[0], primary: () => firm.offices[0], certs: () => [], ready: () => true, adFooter: () => '' } });
+  vm.runInContext(read('src/03_lint.js'), lctx); const LINT = vm.runInContext('LINT', lctx);
+  const ls = LINT.screen(sr.preview, { kind: 'page', html: true });
+  ['WEB1', 'WEB5', 'WEB6', 'WEBRESP'].forEach(id => assert(!ls.findings.some(f => f.id === id), 'the compiled protective order page passes ' + id + ': ' + JSON.stringify(ls.findings.filter(f => f.id === id).map(f => f.hit))));
+  const lo = LINT.screen(FC.compile(Object.assign({}, sbp, { page: Object.assign({}, sbp.page, { safety: undefined }) }), {}).preview, { kind: 'page', html: true });
+  assert(['WEB1', 'WEB6'].every(id => lo.findings.some(f => f.id === id)), 'the same page without Safety mode trips WEB1 (the dataLayer push, the video frame) and WEB6');
+}
+
 console.log('forge_compile ok');

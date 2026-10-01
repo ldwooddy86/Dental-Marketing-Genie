@@ -38,7 +38,7 @@ profiles. Every ad and page reads it; until it is filled, generated copy carries
 | 08 | Supply Line | Law offices and legal jobs against the filings they compete for |
 | 09 | Timing Desk | Seasons, lags and the twelve month media calendar |
 | 10 | Campaign Desk | Budgets, ZIPs, keywords and creative; bulk files for Google Ads Editor, Microsoft, Local Services, YouTube and Demand Gen, Meta, LinkedIn, Yelp, Nextdoor and TikTok, screened and paused |
-| 11 | Compliance Screen | 77 rules: Rules 7.01 to 7.06 against the firm profile, platform policies, myths, stale numbers, Spanish; batch screening, safe fixes, the Advertising Review Committee filing log and the Texas changes register |
+| 11 | Compliance Screen | 87 rules: Rules 7.01 to 7.06 against the firm profile, platform policies, myths, stale numbers, Spanish; batch screening, safe fixes, the Advertising Review Committee filing log and the Texas changes register |
 | 12, 14 to 19 | Metro tabs | Dallas Fort Worth, Houston, San Antonio, Austin, El Paso, the Rio Grande Valley and the other metros at ZIP resolution |
 | 13 | Metro Atlas | The six largest metros at block group resolution |
 | 20 | Method and Sources | Every source with its date, every formula, the judgment calls and the limits (top bar) |

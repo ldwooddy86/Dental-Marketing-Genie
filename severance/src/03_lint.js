@@ -12,6 +12,12 @@
      LINT.LIMITS[platform][field]; LINT.checkAd({platform, fields}, opts) → findings; LINT.screenAd(ad, opts) → a screen result
      LINT.RULES, LINT.rule(id), LINT.ALIAS (build 1 ids r01 to r21), LINT.SOURCES, LINT.CHANGES (the dated changes register),
      LINT.PLATFORMS, LINT.FILING, LINT.stripHTML, LINT.detectLang, LINT.splitBatch, LINT.parseAdsCSV, LINT.diff, LINT.firmItems
+     LINT.FIGURES, LINT.figure(id) (the figures table: live, stale, died, vetoed, repealed; the stale number rules read it), LINT.STANDARDS,
+     LINT.CALENDAR (the law clock: the dated changes from July 1, 2021 to the next cap adjustment)
+     LINT.pageClass(html, opts) → {sensitive: 'po'|'cps'|'', contact, forms, quickExit} (what the web tests WEB1 to WEB6 and WEBRESP read)
+     the license battery (BAROK, BARINACT, BARNONE, BARNAME, TBLSNO): LINT.ROSTER_KEY ('sev.comp.roster'), LINT.roster(opts) (the stored
+       roster, else seeded from the firm profile; opts.roster overrides), LINT.parseRoster(text), LINT.barNumbers(text), LINT.lookupBar(q),
+       LINT.nameMatch(a, b), LINT.notEligible(row). screen() also takes opts.sensitive ('po' | 'cps' | false) and opts.roster.
    Severity: block (pass is false until it is fixed), fix (a safe correction exists), warn (a person decides), info (a reminder).
    A finding can be a block and still carry a safe fix (a stale number): LINT.fix removes it. Rules that need the firm (the responsible
    lawyer, certifications, advertised fees, ratings, Spanish staff) read FIRM at call time and run only on our own copy: a call with a

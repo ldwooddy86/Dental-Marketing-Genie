@@ -97,8 +97,9 @@ assert(html.slice(g.src_at, g.src_at + 9) === 'guarantee' && html.lastIndexOf('<
 assert(!/var a/.test(h1.text) && !/content:/.test(h1.text), 'script and style skipped');
 assert(h1.text.includes('Divorce Help') && h1.text.includes('Number one divorce firm') && h1.text.includes('Expert attorneys'), 'title, meta description and alt text screened');
 has(h1, 'stale_cap'); has(h1, 'number_one'); has(h1, 'competence');
-const h2 = LINT.screen('<p>Divorce help</p><script src="https://connect.facebook.net/en_US/fbevents.js"></script><form><input type="checkbox" name="sms" checked></form><script type="application/ld+json">{"aggregateRating":{"ratingValue":"5"}}</script>', { kind: 'page', footer: false });
-assert(h2.html, 'HTML detected without the flag'); has(h2, 'web_pixel'); has(h2, 'web_precheck'); has(h2, 'web_rating');
+const h2 = LINT.screen('<p>Divorce help</p><script src="https://connect.facebook.net/en_US/fbevents.js"></script><form><input type="checkbox" name="sms" checked></form><script type="application/ld+json">{"@type":"LegalService","aggregateRating":{"ratingValue":"5"}}</script>', { kind: 'page', footer: false });
+assert(h2.html, 'HTML detected without the flag'); has(h2, 'web_pixel'); has(h2, 'WEB2'); has(h2, 'WEB3');
+assert(LINT.rule('web_precheck').id === 'WEB2' && LINT.rule('web_rating').id === 'WEB3', 'the build 2 ids before WEB2 and WEB3 still resolve');
 const hfix = LINT.fix(html, { html: true, kind: 'page', footer: false }); assert(hfix.text.includes('$11,700') && hfix.text.includes('var a = "we guarantee"') && hfix.text.includes('<b>guarantee</b>'), 'HTML fix touches text only');
 const hmeta = LINT.fix('<head><meta name="description" content="Top rated divorce specialists in Plano"></head><body><img src="a.webp" alt="Our expert attorneys"><p>Hi</p></body>', { html: true, kind: 'page', footer: false });
 assert(/content="Top rated practice focused on divorce in Plano"/.test(hmeta.text) && /alt="Our attorneys"/.test(hmeta.text), 'meta description and alt text fixed: ' + hmeta.text);
@@ -203,4 +204,86 @@ has(LINT.screen('Uncontested divorce done in sixty days.', {}), 'sixty_days', 'd
 has(LINT.screen('Common law marriages do not need a divorce.', {}), 'informal_divorce'); hasNot(LINT.screen('It is a myth that common law marriages do not need a divorce.', {}), 'informal_divorce', 'stated as a myth');
 has(LINT.screen('Child support ends at 18.', {}), 'support_18'); hasNot(LINT.screen('Child support ends at 18 or high school graduation, whichever is later.', {}), 'support_18', 'complete statement');
 has(LINT.screen('Grandparents have automatic visitation rights in Texas.', {}), 'grandparent_rights'); hasNot(LINT.screen('Grandparents have access rights only in limited cases.', {}), 'grandparent_rights', 'limited stated');
+
+/* 12. web tests on raw page HTML: WEB1 to WEB6 and WEBRESP */
+const shell = (title, body, head) => `<!doctype html><html><head><title>${title}</title>${head || ''}</head><body><h1>${title}</h1>${body}</body></html>`;
+const FORM = '<form><label>Name <input name="name"></label><label>Phone <input type="tel" name="phone"></label><textarea name="message"></textarea><label><input type="checkbox" name="consent" value="yes"> I agree</label></form>';
+const NOTICE = '<p>Sending this form does not create an attorney client relationship.</p><p>Responsible attorney: Jane Doe. Primary office: Plano, Texas.</p>';
+const EXIT = '<div class="forge-exit"><a class="forge-exit-btn" href="https://weather.com/" data-forge-exit>Leave this site</a></div>';
+const GTM = '<script src="https://www.googletagmanager.com/gtm.js?id=GTM-ABC"></script>';
+eq(LINT.pageClass(shell('Protective Order Lawyer in Plano', FORM)).sensitive, 'po', 'protective order page from the h1');
+eq(LINT.pageClass(shell('CPS Defense Lawyer in Plano', '')).sensitive, 'cps', 'CPS page from the h1');
+eq(LINT.pageClass(shell('Abogado de órdenes de protección en Plano', '')).sensitive, 'po', 'Spanish protective order page');
+eq(LINT.pageClass('Family Lawyer in Dallas County\nWe handle divorce, custody and protective order cases.\n' + shell('Family Lawyer in Dallas County', '<p>Protective order cases: 1,378.</p>')).sensitive, '', 'a county page that mentions protective orders is not a protective order page');
+eq(LINT.pageClass(shell('Divorce Lawyer', ''), { sensitive: 'po' }).sensitive, 'po', 'the caller can say the page is sensitive');
+const poBad = LINT.screen(shell('Protective Order Lawyer in Plano', FORM, GTM + '<script>window.dataLayer=window.dataLayer||[];dataLayer.push({event:"x"})</script>'), { kind: 'page' });
+['WEB1', 'WEB5', 'WEB6', 'WEBRESP'].forEach(id => has(poBad, id, 'protective order page without the safeguards: ' + id));
+assert(/googletagmanager/.test(poBad.findings.find(f => f.id === 'WEB1').hit) && /datalayer/i.test(poBad.findings.find(f => f.id === 'WEB1').hit), 'WEB1 names the tag manager and the dataLayer push on a sensitive page');
+eq(poBad.findings.find(f => f.id === 'WEBRESP').sev, 'block', 'WEBRESP blocks'); hasNot(poBad, 'r702a', 'one finding per problem: WEBRESP replaces r702a when the source has neither');
+assert(!poBad.pass, 'the bad protective order page does not pass');
+const poGood = LINT.screen(shell('Protective Order Lawyer in Plano', EXIT + FORM + NOTICE), { kind: 'page' });
+['WEB1', 'WEB2', 'WEB3', 'WEB5', 'WEB6', 'WEBRESP', 'r702a'].forEach(id => hasNot(poGood, id, 'protective order page with every safeguard: ' + id)); assert(poGood.pass, 'the safe protective order page passes: ' + JSON.stringify(ids(poGood)));
+hasNot(LINT.screen(shell('Divorce Lawyer in Plano', FORM + NOTICE, '<script>dataLayer.push({event:"lead"})</script>'), { kind: 'page' }), 'WEB1', 'a dataLayer push alone is not a tag on an ordinary intake page');
+has(LINT.screen(shell('Divorce Lawyer in Plano', FORM + NOTICE, GTM), { kind: 'page' }), 'WEB1', 'a tag manager on an intake page');
+has(LINT.screen(shell('CPS Defense Lawyer', NOTICE + '<iframe src="https://www.youtube.com/embed/x"></iframe>'), { kind: 'page' }), 'WEB1', 'a third party frame on a CPS page');
+hasNot(LINT.screen(shell('Divorce Lawyer in Plano', NOTICE + '<p>Read more.</p>', GTM), { kind: 'page' }), 'WEB1', 'no intake form and not sensitive: WEB1 stays quiet (web_pixel covers the privacy link)');
+hasNot(LINT.screen(shell('CPS Defense Lawyer in Plano', NOTICE), { kind: 'page' }), 'WEB6', 'WEB6 is for protective order pages');
+has(LINT.screen(shell('Divorce Lawyer', '<form><input type="checkbox" checked name="sms"></form>' + NOTICE), { kind: 'page' }), 'WEB2', 'pre checked box');
+has(LINT.screen(shell('Divorce Lawyer', NOTICE, '<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Attorney","name":"Jane Doe","review":[{"@type":"Review"}]}]}</script>'), { kind: 'page' }), 'WEB3', 'review on the Attorney node');
+hasNot(LINT.screen(shell('Divorce Lawyer', NOTICE, '<script type="application/ld+json">{"@type":"Product","aggregateRating":{"ratingValue":"5"}}</script>'), { kind: 'page' }), 'WEB3', 'a rating on another type is not the firm rating itself');
+has(LINT.screen(shell('Divorce Lawyer', FORM + '<p>Responsible attorney: Jane Doe, Plano.</p>'), { kind: 'page' }), 'WEB5', 'a form without the notice');
+hasNot(LINT.screen(shell('Divorce Lawyer', FORM + NOTICE), { kind: 'page' }), 'WEB5', 'the notice beside the form');
+hasNot(LINT.screen(shell('Divorce Lawyer', '<p>Hi</p>' + '<script type="application/ld+json">{"name":"Jane Doe","address":{"addressLocality":"Plano"}}</script>'), { kind: 'page' }), 'WEBRESP', 'the source counts, schema and footer included');
+hasNot(LINT.screen(shell('Divorce Lawyer', '<p>Hi</p>'), { kind: 'page', footer: false }), 'WEBRESP', 'footer:false skips WEBRESP');
+eq(LINT.screen(shell('Divorce Lawyer', '<p>Hi</p>'), { posture: 'comp' }).findings.find(f => f.id === 'WEBRESP').sev, 'warn', 'competitor posture: a review, not a block');
+hasNot(LINT.screen(shell('Divorce Lawyer', '<p>Hi</p>'), {}), 'WEBRESP', 'neutral posture skips WEBRESP');
+const wrFix = LINT.fix(shell('Protective Order Lawyer in Plano', EXIT + FORM.replace('</form>', '</form><p>Sending this form does not create an attorney client relationship.</p>')), { kind: 'page' });
+assert(LINT.screen(wrFix.text, { kind: 'page' }).findings.every(f => f.id !== 'WEBRESP' && f.id !== 'r702a'), 'the safe fix adds the responsible lawyer footer and clears WEBRESP');
+
+/* 13. OFFICE2: wording that implies an office where the firm has none */
+const off = LINT.screen('Visit our Frisco office. Located in Allen. Oficina en McKinney. Our office in Plano is open. Office in Plano, Texas. Our Dallas County office is busy. Serving Frisco from our office in Plano.', { kind: 'page', footer: false });
+const offF = off.findings.find(f => f.id === 'OFFICE2'); assert(offF && offF.n === 3 && offF.sev === 'warn', 'OFFICE2 on Frisco, Allen and McKinney only: ' + JSON.stringify(offF && offF.hits.map(h => off.text.slice(h.at, h.at + h.len))));
+hasNot(LINT.screen('Our office in Frisco.', { posture: 'comp' }), 'OFFICE2', 'competitor posture: their offices are not ours');
+hasNot(LINT.screen('The Texas Office of Court Administration counts filings.', { kind: 'page', footer: false }), 'OFFICE2', 'a public office is not the firm\'s');
+
+/* 14. the license battery: BAROK, BARINACT, BARNONE, BARNAME, TBLSNO, the roster, the lookup */
+const firm2 = Object.assign(JSON.parse(JSON.stringify(profile)), { attorneys: [{ name: 'Jane Doe', bar_no: '24000000', tbls: 'Family Law' }, { name: 'John Roe', bar_no: '24111111', tbls: '' }] });
+const L2 = load(firm2).LINT;
+const seeded = L2.roster(); eq(seeded.map(r => r.name + ':' + r.bar_no), ['Jane Doe:24000000', 'John Roe:24111111'], 'the roster is seeded from the firm profile');
+const b1 = L2.screen('Jane Doe, State Bar of Texas No. 24000000, is the responsible attorney.', { kind: 'page', footer: false });
+has(b1, 'BAROK'); ['BARINACT', 'BARNONE', 'BARNAME'].forEach(id => hasNot(b1, id, 'a matching number: ' + id));
+const ros = [{ name: 'Jane Doe', bar_no: '24000000', status: 'Active', eligible: 'Yes', tbls: 'Family Law', as_of: '2026-09-30' }, { name: 'John Roe', bar_no: '24111111', status: 'Inactive', eligible: 'No', tbls: '', as_of: '2026-09-30' }];
+const b2 = L2.screen('John Roe, State Bar No. 24111111, handles custody.', { kind: 'page', footer: false, roster: ros });
+eq(b2.findings.find(f => f.id === 'BARINACT').sev, 'block', 'an inactive lawyer\'s number blocks'); assert(!b2.pass, 'BARINACT fails the copy'); has(b2, 'r706', 'and adds the prohibited employment reminder');
+const b3 = L2.screen('John Roe, State Bar No. 24000000. Mark Smith, State Bar No. 24999999.', { kind: 'page', footer: false, roster: ros });
+has(b3, 'BARNAME', 'a name paired with someone else\'s number'); has(b3, 'BARNONE', 'a number the roster does not hold'); eq(b3.findings.find(f => f.id === 'BARNONE').obs, false, 'BARNONE is not observable here');
+assert(/State Bar of Texas Find a Lawyer/.test(b3.findings.find(f => f.id === 'BARNONE').why) && /texasbar\.com/.test(b3.findings.find(f => f.id === 'BARNONE').url), 'BARNONE points at the State Bar search');
+has(L2.screen('Jane Doe, State Bar No. 24222222, handles custody.', { kind: 'page', footer: false, roster: ros }), 'BARNAME', 'a roster lawyer with a different number');
+const b4 = L2.screen('John Roe is Board Certified, Family Law, Texas Board of Legal Specialization.', { kind: 'page', footer: false, roster: ros });
+eq(b4.findings.find(f => f.id === 'TBLSNO').sev, 'block', 'TBLSNO: the roster lists no certification for the lawyer named');
+hasNot(L2.screen('Jane Doe is Board Certified, Family Law, Texas Board of Legal Specialization.', { kind: 'page', footer: false, roster: ros }), 'TBLSNO', 'the lawyer named holds it');
+const b5 = L2.screen('John Roe, State Bar No. 24111111.', { posture: 'comp', roster: ros }); eq(ids(b5).filter(x => /^BAR/.test(x)), ['BARNONE'], 'competitor posture: every number is not observable here');
+hasNot(L2.screen('Call 24000000 today. Order number 12345678.', { kind: 'ad', footer: false }), 'BARNONE', 'an 8 digit number with no bar context is not a bar number');
+eq(L2.barNumbers('State Bar of Texas, número 24000000').map(b => b.no), ['24000000'], 'Spanish bar context');
+const prs = L2.parseRoster('Name,Bar number,Status,Eligible to practice,TBLS area,Office city,As of\nJane Doe,24000000,Active,Yes,Family Law,Plano,2026-09-30\nMax Q,123,Inactive,No,,,\n');
+eq(prs.rows.length, 2, "roster CSV rows"); eq(prs.rows[1].bar_no, '00000123', 'bar numbers padded to 8 digits'); assert(L2.notEligible(prs.rows[1]) && !L2.notEligible(prs.rows[0]), 'status and eligibility read');
+eq(L2.parseRoster('Jane Doe, 24000000, Active, Yes, Family Law, Plano, 2026-09-30').rows[0].tbls, 'Family Law', 'no header: columns in order'); assert(L2.parseRoster('Jane Doe, 24000000').warnings.length, 'says when no header was found');
+eq(L2.lookupBar('24111111', ros).map(r => r.name), ['John Roe'], 'lookup by number'); eq(L2.lookupBar('doe', ros).map(r => r.name), ['Jane Doe'], 'lookup by name'); eq(L2.lookupBar('24999999', ros), [], 'lookup miss');
+assert(L2.nameMatch('Doe Family Law, PLLC', 'Jane Doe') && L2.nameMatch('The Law Office of Jane Doe', 'Jane Q. Doe') && !L2.nameMatch('Smith Divorce Attorneys', 'Jane Doe'), 'name matching sets aside law, firm, pllc, attorney, family and divorce');
+
+/* 15. the figures table is the one source of the stale number rules; the calendar and the standards */
+['cap', 'cap_2019', 'cap1', 'arrears', 'hb4213', 'sb849', 'sb2878', 'ground_o', 'po_dur', 'legal_sep', 'espo', 'prop15'].forEach(id => assert(LINT.figure(id), 'figure ' + id));
+assert(LINT.FIGURES.every(f => ['live', 'stale', 'died', 'vetoed', 'repealed', 'adopted', 'none'].includes(f.status) && ['✔', 'web', 'verify'].includes(f.v) && f.cite && f.label && f.value), 'every figure has a status, a vintage, a citation, a label and a value');
+eq(LINT.figure('cap').value, '$11,700', 'cap live'); eq(LINT.figure('cap_2019').status, 'stale', '$9,200 stale'); eq(LINT.figure('sb2878').status, 'vetoed', 'SB 2878 vetoed'); assert(/85\.025\(a-2\)/.test(LINT.figure('po_dur').cite), 'SB 1120 subsections');
+LINT.FIGURES.filter(f => f.status === 'stale' && f.num > 100 && !f.strict).forEach(f => has(LINT.screen(`Child support is capped at ${f.value}.`, {}), f.now === 'cap1' ? 'stale_per_child' : 'stale_cap', 'every stale figure trips its rule: ' + f.value));
+assert(LINT.RULE.stale_cap.why.includes(LINT.figure('cap').value) && LINT.RULE.stale_arrears.why.includes(LINT.figure('arrears').value), 'the rule reasons quote the figures table');
+{ /* change a figure: a copy of the engine with a different live cap and one more stale value reads the table, not a typed number */
+  const alt = code.replace("value: '$11,700', num: 11700, status: 'live'", "value: '$12,500', num: 12500, status: 'live'").replace("{ id: 'cap1', topic", "{ id: 'cap_2025', topic: 'Child support', label: 'test', value: '$11,700', num: 11700, status: 'stale', since: '2025-09-01', now: 'cap', cite: 'x', v: 'verify' },\n    { id: 'cap1', topic");
+  const ctx = vm.createContext({ FIRM: stubFirm(profile), console }); vm.runInContext(alt, ctx); const LA = vm.runInContext('LINT', ctx);
+  eq(LA.fix('Child support is capped at $11,700.', {}).text, 'Child support is capped at $12,500.', 'a new live figure moves the stale rule and its fix');
+}
+const cal = LINT.CALENDAR; eq(cal[0].date, '2021-07-01', 'the calendar starts with the July 1, 2021 rules'); eq(cal[cal.length - 1].date, '2031-09-01', 'and ends with the next cap adjustment');
+assert(cal.every(c => c.title && c.what && c.cite && c.status), 'calendar rows complete'); assert(cal.some(c => c.status === 'vetoed') && cal.some(c => c.status === 'died') && cal.some(c => c.status === 'repealed'), 'calendar statuses');
+['§ 6.301', '§ 6.702', '§ 7.001', 'ch. 8', '§ 154.125', '§§ 153.131 and 153.135', '§ 153.3171', '§ 153.009', 'ch. 85', '§ 161.001'].forEach(c => assert(LINT.STANDARDS.some(x => x.cite === c), 'standard ' + c));
+LINT.CHANGES.forEach(c => assert(c.status, 'every change carries a status: ' + c.title));
 console.log('lint ok: ' + LINT.RULES.length + ' rules');

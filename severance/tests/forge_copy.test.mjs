@@ -134,4 +134,76 @@ const gap = Object.assign({}, V('county')); delete gap.k_sapcr;
 const gbp = FCOPY.blueprint(Object.assign({ kind: 'county', fips: '48113', id: 'g' }, FCOPY.describe({ kind: 'county', fips: '48113' }, gap)), ctxFor(gap));
 assert(gbp._missing.includes('k_sapcr') && !/undefined|null|NaN/.test(FCOPY.visibleText(gbp).map(x => x[1]).join(' ')), 'missing values are listed in _missing and never printed as undefined');
 
+/* 8. Safety mode (on unless the forge passes safety false): protective order, family violence and CPS pages */
+{
+  const po = check('practice po (safety)', { kind: 'practice', line: 'po' }, V('practice'));
+  eq(po.bp.page.safety && po.bp.page.safety.sensitive, 'po', 'a protective order page is in Safety mode by default');
+  eq(po.bp.sections[0].type, 'quick_exit', 'the quick exit comes first'); eq(po.bp.sections[0].label, 'Leave this site', 'labelled Leave this site');
+  const hi = po.bp.sections.findIndex(x => x.type === 'hotline'); eq(po.bp.sections[hi - 1].type, 'hero', 'the hotline box sits right after the hero');
+  const hot = po.bp.sections[hi]; assert(hot.text.includes('1 800 799 7233') && hot.text.includes('START to 88788') && hot.text.includes('911') && /National Domestic Violence Hotline/.test(hot.text), 'the hotline in house style, numbers from FCOPY.LAW: ' + hot.text);
+  assert(FCOPY.LAW.ndvh && FCOPY.LAW.ndvh.v === '1 800 799 7233' && FCOPY.LAW.ndvh.sms === 'START to 88788', 'the hotline numbers live in the statute and source table');
+  assert(!/24\/7|loveisrespect|22522/i.test(JSON.stringify(po.bp)), 'no other hotline');
+  assert(po.r.html.includes('data-forge-exit') && !/dataLayer/.test(po.r.html) && po.r.html.includes('name="safe_contact"') && !/<iframe/i.test(po.r.html), 'compiled: the exit, the safe contact question, no dataLayer push, no frame');
+  const lpo = LINT.screen(po.bp.page.title + '\n' + po.bp.page.meta_description + '\n' + po.r.html, { kind: 'page', html: true, sensitive: 'po' }); ['WEB1', 'WEB5', 'WEB6', 'WEBRESP'].forEach(id => assert(!lpo.findings.some(f => f.id === id), 'the protective order page passes ' + id));
+  const cps = check('practice cps (safety)', { kind: 'practice', line: 'cps' }, V('practice'));
+  eq(cps.bp.page.safety.sensitive, 'cps', 'a CPS page is in Safety mode'); assert(cps.bp.sections.find(x => x.type === 'hotline').heading === 'If you or your children are not safe', 'the CPS hotline heading');
+  const g = check('guide po (safety)', { kind: 'guide', topic: 'po', fips: '48113' }, V('county')); eq(g.bp.page.safety.sensitive, 'po', 'the protective order guide is in Safety mode');
+  const esl = check('landing es po (safety)', { kind: 'landing', line: 'po', city: '19100|Dallas', fips: '48113', lang: 'es' }, V('landing'));
+  assert(esl.bp.sections[0].label === 'Salir de este sitio' && /Línea Nacional contra la Violencia Doméstica/.test(esl.bp.sections.find(x => x.type === 'hotline').text) && esl.r.html.includes('¿Es seguro llamarle'), 'the Spanish page: exit, hotline and question in Spanish');
+  const plain = check('practice div_k (no safety)', { kind: 'practice', line: 'div_k' }, V('practice')); assert(!plain.bp.page.safety && !plain.bp.sections.some(x => x.type === 'quick_exit' || x.type === 'hotline'), 'other pages are not in Safety mode');
+  eq(FCOPY.sensitiveOf({ kind: 'county', fips: '48113' }), '', 'a county page is not sensitive'); eq(FCOPY.sensitiveOf({ kind: 'landing', line: 'po' }), 'po', 'a protective order landing page is');
+  /* Safety mode off in the forge settings: the page is ordinary and the web tests say so */
+  const pg = Object.assign({ kind: 'practice', line: 'po', id: 'po' }, FCOPY.describe({ kind: 'practice', line: 'po' }, V('practice')));
+  const offBp = FCOPY.blueprint(pg, ctxFor(V('practice'), { safety: false }));
+  assert(!offBp.page.safety && !offBp.sections.some(x => x.type === 'quick_exit' || x.type === 'hotline'), 'safety false: no exit and no hotline');
+  const offR = FC.compile(JSON.parse(JSON.stringify(Object.assign({}, offBp, { _facts: undefined, _missing: undefined }))), {});
+  const offL = LINT.screen(offBp.page.title + '\n' + offBp.page.meta_description + '\n' + offR.html, { kind: 'page', html: true });
+  assert(offL.findings.some(f => f.id === 'WEB6') && offL.findings.some(f => f.id === 'WEB1'), 'Safety mode off: WEB6 (no quick exit) and WEB1 (the dataLayer push) warn');
+  const exitTo = FCOPY.blueprint(pg, ctxFor(V('practice'), { safety: { on: true, exit_url: 'https://www.weather.gov/' } })); eq(exitTo.sections[0].url, 'https://www.weather.gov/', 'the exit goes where the forge settings say');
+}
+
+/* 9. module 21's engine (SFORGE) on the real data: rank keys, distances from the primary office, the legal review gate, FILE1, Safety mode
+   in the forge settings and the specialization exclusion. Runs the data and the scripts in a vm context with a stubbed DOM. */
+{
+  const node = () => ({ style: { setProperty() { } }, dataset: {}, classList: { add() { }, remove() { }, toggle() { }, contains: () => false }, setAttribute() { }, removeAttribute() { }, appendChild() { }, addEventListener() { }, querySelector: () => null, querySelectorAll: () => [] });
+  const ls = new Map();
+  const c2 = { console, URL, URLSearchParams, TextEncoder, TextDecoder, setTimeout, clearTimeout, Intl, Blob,
+    document: { createElement: node, body: node(), documentElement: node(), head: node(), getElementById: () => null, querySelector: () => null, querySelectorAll: () => [], addEventListener() { }, removeEventListener() { }, activeElement: null },
+    addEventListener() { }, removeEventListener() { }, matchMedia: () => ({ matches: false, addEventListener() { } }), performance: globalThis.performance, ResizeObserver: class { observe() { } unobserve() { } disconnect() { } }, requestAnimationFrame: f => setTimeout(f, 0), cancelAnimationFrame: clearTimeout,
+    localStorage: { getItem: k => (ls.has(k) ? ls.get(k) : null), setItem: (k, v) => ls.set(k, String(v)), removeItem: k => ls.delete(k) }, navigator: { userAgent: 'node' }, location: { hash: '', protocol: 'file:' }, history: { replaceState() { } } };
+  c2.window = c2; vm.createContext(c2);
+  for (const f of ['data/suite.js', 'src/00_core.js', 'src/01_kit.js', 'src/02_firm.js', 'src/03_lint.js', 'src/04_forge_compile.js', 'src/06_forge_copy.js', 'src/25_m06_lines.js', 'src/40_m21_forge.js']) vm.runInContext(fs.readFileSync(path.join(ROOT, f), 'utf8'), c2, { filename: f });
+  const run = code => vm.runInContext(code, c2);
+  run(`FIRM.set(${JSON.stringify(Object.assign({}, firm, { lines: ['div_k', 'po', 'cps'] }))})`);
+  const off = run('SFORGE.office()'); eq(off.how, 'the center of ZIP 75024', 'the office is placed by its ZIP'); assert(Math.abs(off.ll[0] + 96.79) < 0.05 && Math.abs(off.ll[1] - 33.08) < 0.05, 'ZIP 75024 back to longitude and latitude: ' + off.ll);
+  const dfw = run(`(() => { const z = k => ZI[k]; return SFORGE.hav(SFORGE.zipLL(z('75201').cent, '19100'), SFORGE.zipLL(z('76102').cent, '19100')); })()`); assert(dfw > 29 && dfw < 32, 'downtown Dallas to downtown Fort Worth is about 30 miles: ' + dfw);
+  const hou = run(`SFORGE.hav(SFORGE.zipLL(ZI['77002'].cent, '26420'), SFORGE.zipLL(ZI['77479'].cent, '26420'))`); assert(hou > 18 && hou < 23, 'downtown Houston to Sugar Land, about 20 miles: ' + hou);
+  const cfgR = run(`(() => { const c = SFORGE.defaultCfg(); c.focus.scope = 'radius'; c.focus.miles = 25; c.focus.cscope = 'radius'; c.focus.n = 50; c.focus.minPop = 0; return c; })()`);
+  const msR = run(`(() => { const c = ${JSON.stringify(cfgR)}; const m = SFORGE.markets(c); return { counties: m.counties.map(x => x.fips), cmi: m.counties.map(x => SFORGE.milesCounty(x)), cities: m.cities.map(x => x.name), zmi: m.cities.map(x => SFORGE.milesCity(x)) }; })()`);
+  assert(msR.counties.includes('48085') && msR.cmi.every(d => d <= 25), 'counties within 25 miles of the office: ' + msR.counties.join(' '));
+  assert(msR.cities.includes('Plano') && msR.zmi.every(d => d <= 25) && msR.cities.length >= 5, 'cities within 25 miles, any county: ' + msR.cities.slice(0, 8).join(', '));
+  for (const k of ['xdiv', 'xdivk', 'married', 'kids', 'di', 'opp', 'gap', 'esi']) { assert(run(`!!SFORGE.CMET.${k} && !!SFORGE.ZMET.${k}`), 'rank key ' + k);
+    const v = run(`(() => { const c = SFORGE.defaultCfg(); c.focus.scope = 'metro'; c.focus.metro = '19100'; c.focus.nc = 11; c.focus.cmetric = '${k}'; c.focus.zmetric = '${k}'; c.focus.n = 12; const m = SFORGE.markets(c); const f = SFORGE.cmet('${k}')[1], g = SFORGE.zmet('${k}')[1]; return [m.counties.map(f), m.cities.slice(0, 12).map(g)]; })()`);
+    assert(v[0].every((x, i) => i === 0 || (x || 0) <= (v[0][i - 1] || 0)) && v[0].some(x => x > 0), 'counties ranked by ' + k); assert(v[1].every((x, i) => i === 0 || (x || 0) <= (v[1][i - 1] || 0)), 'cities ranked by ' + k); }
+  eq(run(`SFORGE.cmet('div')[0]`), run(`SFORGE.CMET.xdiv[0]`), 'a saved build 2 rank key (div) reads as xdiv'); eq(run(`SFORGE.zmet('per_office')[0]`), run(`SFORGE.ZMET.gap[0]`), 'per_office reads as gap');
+  /* the plan with Safety mode (the default) and the review gate */
+  const built = run(`(() => { const c = SFORGE.defaultCfg(); c.focus.n = 2; const P = SFORGE.plan(c); const live = SFORGE.parseLive('', ''); const out = {};
+    for (const want of [['practice', 'po'], ['practice', 'div_k'], ['landing', 'po'], ['home', '']]) { const p = P.pages.find(x => x.kind === want[0] && (!want[1] || x.line === want[1]) && x.lang === 'en'); const bp = SFORGE.blueprint(p, c, P.pages, live, P.markets, []);
+      const stripped = JSON.parse(JSON.stringify(Object.assign({}, bp, { _facts: undefined, _missing: undefined, _v: undefined }))); const r = FORGE_COMPILE.compile(stripped, {}); const hash = SFORGE.pageHash(bp);
+      const ck = o => SFORGE.checks(bp, r, Object.assign({ kind: p.kind, hash, sensitive: FCOPY.sensitiveOf(p) || false }, o)).issues.map(i => i.id + ':' + i.sev + ':' + i.where);
+      out[want.filter(Boolean).join(' ')] = { safety: bp.page.safety || null, none: ck({}), ok: ck({ review: { by: 'Elena Ramirez', date: todayISO(), hash } }), changed: ck({ review: { by: 'Elena Ramirez', date: todayISO(), hash: 'x' + hash } }), future: ck({ review: { by: 'Elena Ramirez', date: '2099-01-01', hash } }), exit: /data-forge-exit/.test(r.html), dl: /dataLayer/.test(r.html) }; }
+    const c3 = SFORGE.defaultCfg(); c3.site.safety = false; const P3 = SFORGE.plan(c3); const p3 = P3.pages.find(x => x.kind === 'practice' && x.line === 'po'); out.off = !!SFORGE.blueprint(p3, c3, P3.pages, live, P3.markets, []).page.safety; return out; })()`);
+  const poP = built['practice po'];
+  eq(poP.safety && poP.safety.sensitive, 'po', 'the forge plans the protective order page in Safety mode by default'); assert(poP.exit && !poP.dl, 'the compiled forge page has the exit and no dataLayer push');
+  assert(poP.none.includes('REVIEW1:block:legal review'), 'REVIEW1 blocks a practice page with no review'); assert(!poP.ok.some(x => /^REVIEW1/.test(x)), 'a recorded review of this text clears REVIEW1');
+  assert(poP.changed.includes('REVIEW1:block:legal review') && poP.future.includes('REVIEW1:block:legal review'), 'a review of other text or a future date does not count');
+  assert(!poP.ok.some(x => /:block:/.test(x)), 'the reviewed protective order page has no block: ' + JSON.stringify(poP.ok.filter(x => /:block:/.test(x))));
+  assert(!poP.ok.some(x => /^(?:WEB1|WEB5|WEB6|WEBRESP):/.test(x)), 'the forge protective order page passes the web tests');
+  assert(!poP.ok.some(x => /^(?:competence|certified):.*:(?:disclaimer|attorneys\.card)/.test(x)), 'the exact TBLS wording in the disclaimer and the attorney cards is not read as a specialization claim');
+  assert(built['landing po'].none.includes('REVIEW1:block:legal review') && built['landing po'].none.some(x => x === 'FILE1:note:filing'), 'landing pages: REVIEW1 and the FILE1 note');
+  assert(built['home'].none.some(x => x === 'FILE1:note:filing') && !built['home'].none.some(x => /^REVIEW1/.test(x)) && !built['home'].none.some(x => /^arc_filing/.test(x)), 'the home page: FILE1 replaces the general filing note, no review gate');
+  assert(!built['practice div_k'].safety && !built['practice div_k'].none.some(x => /^FILE1/.test(x)), 'other practice pages: no Safety mode, no FILE1');
+  eq(built.off, false, 'Safety mode off in the forge settings');
+}
+
 console.log(`forge_copy ok: ${FCOPY.LINE_KEYS.length} lines, ${FCOPY.GUIDES.length} guides, practice ${pr.text.length} chars, county ${co.text.length} chars, Spanish landing ${es.text.length} chars`);

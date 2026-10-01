@@ -101,10 +101,58 @@ counts). `srcFoot(items)` renders the sources, judgment calls and caveats panel.
 paid {metro, zip, line}, timing {county, line}, atlas {mk, metro}, others {code}, ground {county, zip, city, metro}, desk {geo, zips,
 counties, line, lines, bids}, forge {counties, zips, msa}, watch {county, zip, line, metro}.
 
+**Build 2 core additions (core4).** Every old call keeps working; these are options and helpers on top.
+
+- **Maps.** `drawMap(el, o)` zooms and pans by default on the Metro Atlas input model (drag once zoomed in, pinch, Ctrl or Cmd and the
+  wheel with a hint while a plain wheel scrolls the page, double click and Shift double click, the + − ⌂ buttons, and with the map focused
+  `+` `-`, the arrow keys, `0` or Home, Enter selects the area in the middle). New options: `zoom` (false turns it off), `maxZoom` (16),
+  `fit: [ids]` (alias `fitTo`; also a box `[x, y, w, h]`; applied when the list changes), `dim: Set | [ids] | null` (areas outside the set
+  fade), `pins: [{x, y, shape: 'circle'|'diamond'|'square', r, fill, label, title, tip, cls}]` (map units; drawn at a constant screen size,
+  `r` in px, 6 by default), `onPin(pin, i)` (without it a pin click selects the area under it), `reset: true` (forget the kept zoom),
+  `legend.grade` (a grade chip after the legend title). Zoom, dim and pins survive a redraw of the same geometry and home view (a layer
+  change); a new `view` or geometry starts at home. `drawMap` returns the svg, which carries the handle methods; `mapHandle(el)` returns the
+  handle, one per element, valid across redraws: `fit(ids, pad)`, `dim(set|null)`, `pins(list|null)`, `select(id)` (markSel plus the kept
+  selection), `reset()`, `zoomBy(f)` (below 1 zooms in), `view()`, `level()`. Pin helpers: `mapXY(geo, lon, lat)` (geo `'state'` or a metro
+  code; good to about 2 km), `zipXY(geo, zip)`, `firmPins(geo)` (the firm's offices as diamonds in `--firm-accent`), `loadedCourts()`
+  (`{fips, name, addr, city, lat, lon, metro}` from every Metro Atlas file already loaded) and `courtPins(geo)`. Coordinates: county
+  `GEO.state.cent` is state map units; `z.cent` and `GEO.metros[code].zcent` are the ZIP's own metro map units (use `zipXY('state', zip)`
+  on the state map). Also `mapBBox(paths, id)` and `mapAreaAt(paths, x, y)`.
+- **Find.** `findPlace(q, scope)` → `{kind: 'zip'|'county'|'city'|'court', fips, zip, msa, city, label, zips?, married?, court?}` or null:
+  a 5 digit ZIP (also '77002 Houston'), a county name or FIPS ('Harris', 'harris co', '48201', '201'), a city (exact, then a prefix ranked
+  by married adults), a courthouse from the loaded atlas files or a court named with its county ('Tarrant County district court' maps to
+  Tarrant). `scope`: null (Texas), an MSA code or a list of codes, or `{msa, counties, prefer: 'county'|'city'}` (prefer settles 'Dallas';
+  county by default); a place outside the scope is a miss. `findBox(el, onPick, {scope, label, placeholder, where, id})` renders a labeled
+  search field with suggestions (`findOptions(scope)`) into el; Enter or a picked suggestion calls `onPick(place)`, a miss marks the field
+  `aria-invalid` and toasts. Returns `{input, run(q), refresh()}`.
+- **Charts.** `lineChart` takes `hlines: [{y, label, color}]` (the y range stretches to show them) and `vlines: [{x, label, color}]`.
+  `colBars(el, {cats, series: [{name, color, values}], stacked, fmt, yfmt, catFmt, title, W, H, fixed, hlines, tip(i), onBar(i), sel})`
+  draws vertical stacked or side by side bars. `corrMatrix(el, {keys, labels, matrix, caption, corner, fmt, legend})` (labels `{key: text}`
+  or an array; matrix `{a: {b: r}}` or `[[r]]`) writes a correlation table on the diverging ramp in CSS variables and returns the html.
+- **CSV.** `csv(rows, cols, {note, guard, platform})` and `toCSV(header, rows, note, opts)` (or `toCSV(header, rows, {note, guard, platform})`)
+  guard text cells by default: a cell starting with `=`, `+`, `-`, `@`, a tab or a carriage return gets a leading apostrophe unless it is
+  a plain number (`-12.5`, `+3%`). Pass `platform: true` for files a platform imports (Google Ads Editor, Microsoft, Meta): no guard and no
+  note. `csvQ` never guards (the bulk writers in 10_desk_platforms.js use it). `csvSafe(v)` guards one value. `csvNote(module, extra)`
+  returns the provenance lines ('# ' each: the module by key or name, export and compile dates, OCA, LAUS, weekly claims and WARN through
+  dates, the ACS window, the grade legend) for `csv(rows, cols, {note: csvNote('index')})`. `parseCSV(text, delim, {raw})` takes the
+  guard's apostrophe off again unless `raw`.
+- **Grades.** `GRADE_DEF` {A: primary and direct, B: primary with a caveat or a model on primary data, C: proxy or allocation, D:
+  assumption}, `gradeLegend()` (the sentence), `gradeChip(g)` (the `.grade` span with the definition as its title; `tile()` uses it). The
+  footer prints the legend and the data vintages from META.
+- **Tables.** `table()` takes `rowClass` (a string or `row => class`) and `firm` (on unless `false`): rows whose `_id` is one of the firm's
+  counties (FIPS) or office ZIPs get the class `firm` (marked with `--firm-accent`). `firmIds()` returns that Set (null without a firm).
+- **Storage.** `store.set` returns true, or false when the browser refuses; a full storage toasts once a session ('Browser storage is
+  full; back up with Backup and clear old actuals').
+- **Firm on the shell** (02_firm.js): `<style id="firm-style">` sets `--firm-accent`, `--firm-accent-ink`, `--firm-accent-hover` (a
+  light and a dark variant, each at 3:1 or better against the card) plus `--firm-mark`, `--firm-mark-ink`, `--firm-dark`; nothing is set
+  until the firm has a name or its own colors. Use them only for firm identity: the lockup, `.btn.primary`, forge and ad previews (for
+  example `border-left-color: var(--firm-accent, var(--line-strong))`), never the data ramps `--rp-*`. `FIRM.docTitle(title)`, the lockup
+  logo (`#firmMark`, a monogram when there is no logo or it fails to load) and the page title are applied again on every BUS `firm`. Logos
+  are capped near 300 KB (`FIRM.LOGO_MAX`); a bigger raster is scaled down at upload.
+
 From `01_kit.js`: `RT` (the extension runtime or null), `ENV` (`chrome` | `firefox` | `viewer` | `file`), `ENV_LABEL`, `inViewer()`, `slug`,
 `debounce`, `el`, `todayISO`, `uid`, `phoneFmt`, `pctRank`, `BUS.on/emit` (events: `firm`, `theme`, `actuals`, `plan`, `forge`, `watch`,
-`live`), `toast(msg)`, `saveFile(name, data)` (Blob or string; the viewer's downloads capability when hosted), `toCSV(header, rows, note)`,
-`toTSV`, `parseCSV(text)`, `zipBlob([{name, data}])`, `copyText`, `readText(file)`, `readDataUrl(file)`, `pickFiles(accept, multiple)`,
+`live`), `toast(msg)`, `saveFile(name, data)` (Blob or string; the viewer's downloads capability when hosted), `toCSV(header, rows, note, opts)`,
+`toTSV`, `parseCSV(text, delim, opts)`, `zipBlob([{name, data}])`, `copyText`, `readText(file)`, `readDataUrl(file)`, `pickFiles(accept, multiple)`,
 `panel(title, sub, body, {id, cls})`, `callout(kind, title, html)` (kinds: '' gap, `note`, `judg`), `toolbarHTML(title, sub, [{id, label, primary}])`,
 `fieldHTML({k, l, t, hint, opts, def, wide, id})` and `readFieldsIn(root)`, `segHTML`/`wireSeg`, `pill(text, kind)`, `sevPill(sev)`,
 `goModule(key, payload)`. CSS classes: `.panel .sub .tiles .tile .grid2 .grid3 .split .controls .ctl .formgrid .btnrow .btn(.primary .accent .sm .danger)
@@ -134,7 +182,7 @@ LINT.fix(text, opts) → {text, applied:[{id, from, to}]}      deterministic cor
 LINT.house(text) → text                                       house style for outbound copy
 LINT.LIMITS[platform][field] → max characters; LINT.checkAd({platform, fields:{headline1:..}}, opts) → findings with length checks
 ```
-`pass` is false when any finding is `block`. Posture: firm checks (Rule 7.02(a) footer, placeholders, house style, filing reminders) run only on the firm's own copy (a call that sets `kind`, or `posture: 'self'`); `posture: 'comp'` screens a competitor's copy as positioning notes and skips them. HTML is detected when `html` is not passed; pass `html: false` to force plain text. Also exported: `screenAd`, `fixAd`, `rule(id)`, `SOURCES`, `CHANGES` (the dated Texas changes register), `PLATFORMS`, `FILING`, `stripHTML`, `detectLang`, `splitBatch`, `parseAdsCSV`, `diff`, `firmItems`. 74 rules; citations marked Verify in the rule book need a check against the live text before a finding leaves the firm. The Campaign Desk, the Site Forge, Publish (before deploy) and the Compliance Screen all
+`pass` is false when any finding is `block`. Posture: firm checks (Rule 7.02(a) footer, placeholders, house style, filing reminders) run only on the firm's own copy (a call that sets `kind`, or `posture: 'self'`); `posture: 'comp'` screens a competitor's copy as positioning notes and skips them. HTML is detected when `html` is not passed; pass `html: false` to force plain text. Also exported: `screenAd`, `fixAd`, `rule(id)`, `SOURCES`, `CHANGES` (the dated Texas changes register), `PLATFORMS`, `FILING`, `stripHTML`, `detectLang`, `splitBatch`, `parseAdsCSV`, `diff`, `firmItems`, and the law clock tables `FIGURES` (live, stale and failed figures; the stale number rules and the forge copy read them, one source), `figure(id)`, `STANDARDS`, `CALENDAR`; the license battery `roster()` (store `sev.comp.roster`, seeded from the firm), `lookupBar`, `barNumbers`, `nameMatch` with results BAROK, BARINACT, BARNONE, BARNAME, TBLSNO; web source rules WEB1 to WEB6 and WEBRESP on raw page HTML (`screen` takes `opts.sensitive` and `opts.roster`). 87 rules; citations marked Verify in the rule book need a check against the live text before a finding leaves the firm. The Campaign Desk, the Site Forge, Publish (before deploy) and the Compliance Screen all
 call it; an ad or page that does not pass is not exported as ready (it is exported with a `needs review` status and the findings).
 
 ## 4. Site Forge (04 to 06, module 21) and Publish (module 22)
@@ -144,7 +192,7 @@ returns `{elementor_data, page_settings, html, schema, seo, warnings, issues:[{s
 `MODI.forge.publishPages()` (PortablePage list, `CMS.pageFromForge`), `MODI.forge.publishAssets()` and `MODI.forge.publishSite()`.
 Module 22 mounts module 21 silently when it needs pages: `if (!MODI.forge.mounted) { MODI.forge.mounted = true; MODI.forge.mount($('#mod-forge')); }`.
 Schema for a firm is `LegalService` plus `Attorney` (with `areaServed`, `knowsAbout`, `address`, `telephone`), `FAQPage`, `BreadcrumbList`.
-Every page carries the responsible lawyer and the primary practice location (Rule 7.02(a)) and passes LINT before it can be deployed.
+Every page carries the responsible lawyer and the primary practice location (Rule 7.02(a)) and passes LINT before it can be deployed. Practice, guide and landing pages need a recorded legal review (REVIEW1: reviewer, date and a fingerprint of the text in `cfg.reviews`); home and landing pages carry the Rule 7.04 filing note (FILE1). Protective order, family violence and CPS pages run in Safety mode (on by default): a 'Leave this site' quick exit that replaces the history entry, the National Domestic Violence Hotline, a safe contact question in the form, and no tracking or third party scripts (the compiler blocks them). The forge `receive` accepts `{counties}`, `{msa}`, `{zips}`, `{cities}`.
 
 ## 5. Accounts (07, module 23)
 
