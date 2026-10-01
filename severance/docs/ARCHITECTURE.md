@@ -147,7 +147,7 @@ Specialization search, Google Maps and search, the firm's own site), imports and
 where reachable: the Texas Workforce Commission WARN notices on data.texas.gov, dataset `8w53-c4f6` through the Socrata API; Texas weekly
 initial claims from FRED, series `TXICLAIMS`), `LIVE.calendar(from, days)` (the legal and family calendar: the April 1 summer possession notice,
 school start, holiday possession, tax refunds, military moving season, the January filing rise), `LIVE.triggers()` and
-`LIVE.timing(line, date)` (a day by day bid and budget multiplier per service line). The background worker runs the same watch on a
+`LIVE.timing(line, date, fips)` → `{mult, adj, campaign, county, countyAdj, parts, reasons}` (a day by day bid and budget multiplier per service line; the step sizes are graded C judgment until account data replaces them). Also `LIVE.loadFile(text, name)` (a downloaded WARN or FRED file), exports `editorCSV`, `dailyCSV`, `windowsCSV`, `calendarCSV`, `ics`, `noticesCSV`, and `setUseObserved` (split the ad schedule by the hour pattern observed in Accounts). The background worker runs the same watch on a
 timer in the extension, notifies on new WARN notices in the firm's counties and claims jumps, and keeps the badge.
 
 ## 8. Rules for every module
