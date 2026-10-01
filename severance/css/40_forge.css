@@ -1,11 +1,13 @@
 /* Module 21 · Site Forge. Scoped to #mod-forge; CSS variables only so both themes work. */
 #mod-forge [hidden]{display:none!important}
-#mod-forge .fg-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+#mod-forge .fg-sr{position:absolute;left:0;top:0;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap}
+#mod-forge table.fg-media td{position:relative}
 #mod-forge .fg-kv{grid-template-columns:minmax(120px,auto) 1fr;margin:0 0 6px}
 #mod-forge .fg-kv dd{overflow-wrap:anywhere}
 #mod-forge .fg-miss{margin:8px 0 0;border-left-color:var(--critical)}
 #mod-forge .fg-miss .h{color:var(--critical)}
-#mod-forge .fg-map svg{width:100%;height:auto;display:block}
+#mod-forge .fg-map svg{width:100%;height:auto;max-height:520px;display:block}
+#mod-forge .fg-map path{vector-effect:non-scaling-stroke}
 #mod-forge .fg-map path.area.fg-on{stroke:var(--title);stroke-width:1.6;stroke-linejoin:round}
 #mod-forge .fg-chips{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 6px}
 #mod-forge .fg-chip{background:var(--card);border:1px solid var(--line-strong);color:var(--ink-2);font-family:var(--display);font-size:12px;font-weight:700;letter-spacing:.03em;padding:5px 10px;border-radius:0;cursor:pointer}
@@ -47,3 +49,5 @@
 #mod-forge .controls .ctl.wide input[type=text]{width:100%}
 @media (max-width:1100px){#mod-forge .fg-studio{grid-template-columns:1fr}}
 @media (max-width:760px){#mod-forge .fg-pane iframe.preview{height:480px}#mod-forge .fg-mobile iframe.preview{height:620px}#mod-forge .fg-kv{grid-template-columns:1fr}#mod-forge .ctl select[multiple]{min-width:0}#mod-forge table.fg-media input[type=text]{min-width:140px}}
+#mod-forge .grid2>*,#mod-forge .split>*,#mod-forge .panel{min-width:0}
+@media (max-width:760px){#mod-forge table.fg-prose td:nth-child(2){min-width:160px}}

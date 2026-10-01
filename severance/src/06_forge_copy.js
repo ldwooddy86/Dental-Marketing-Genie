@@ -841,7 +841,7 @@ const FCOPY = (() => {
       const tag = s.type;
       ['eyebrow', 'lede', 'body', 'text', 'html', 'heading', 'caption', 'label', 'note', 'source'].forEach(k => { if (s[k] && typeof s[k] === 'string') out.push([tag + '.' + k, strip(s[k])]); });
       (s.items || []).forEach((it, i) => { ['q', 'a', 'text', 'label', 'title', 'value', 'source', 'quote', 'anchor', 'name', 'role'].forEach(k => { if (it[k]) out.push([tag + '.' + k + i, String(it[k])]); });
-        if (s.type === 'attorneys') { const a = Object.assign({}, byName(it.name), it); [tblsLine(a), a.bar_no ? 'State Bar of Texas No. ' + a.bar_no : '', a.since ? 'Licensed in Texas since ' + a.since : '', a.bio].filter(Boolean).forEach((x, j) => out.push([tag + '.card' + i + '.' + j, x])); } });
+        if (s.type === 'attorneys') { const a = Object.assign({}, byName(it.name), it); out.push([tag + '.card' + i, [a.name, tblsLine(a), a.bar_no ? 'State Bar of Texas No. ' + a.bar_no : '', a.since ? 'Licensed in Texas since ' + a.since : '', a.bio].filter(Boolean).join('. ')]); } });
       (s.steps || []).forEach((st, i) => { out.push([tag + '.s' + i, (st.when ? st.when + ': ' : '') + st.title + '. ' + st.text]); });
       (s.courts || []).forEach((ct, i) => out.push([tag + '.court' + i, [ct.name, ct.address].filter(Boolean).join(', ')]));
       if (s.columns) out.push([tag + '.cols', s.columns.join(' · ')]);
