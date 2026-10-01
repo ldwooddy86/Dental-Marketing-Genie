@@ -54,6 +54,9 @@ const AT_PAL = ['var(--s1)', 'var(--s2)', 'var(--s3)', 'var(--s4)', 'var(--s5)',
 const MI_U = 160.9344; // map units (10 m) per mile
 const AT_WORD = ['no', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine'];
 const atNum = n => n < AT_WORD.length ? AT_WORD[n] : String(n);
+// label widths for the overlay's collision pass, measured in the label's own font (an estimate when canvas text is unavailable)
+const AT_MW = {}; let AT_CTX = null;
+function atTextW(t, px, weight, track) { const key = weight + '|' + px + '|' + (track || 0) + '|' + t; if (AT_MW[key] != null) return AT_MW[key]; let w = null; try { AT_CTX = AT_CTX || document.createElement('canvas').getContext('2d'); if (AT_CTX) { AT_CTX.font = `${weight} ${px}px 'DM Sans', Roboto, system-ui, sans-serif`; w = AT_CTX.measureText(t).width; } } catch (e) { w = null; } if (!isN(w) || w <= 0) w = t.length * px * 0.62; w += (track || 0) * px * t.length; return (AT_MW[key] = w); }
 let AT_TOK = 0, AT_RO = null, AT_RS = null;
 
 registerModule({
@@ -227,7 +230,7 @@ function mountAtlas(root, mk) {
     const on = (x, y, m = 40) => x > -m && y > -m && x < cw + m && y < ch + m;
     const out = []; const boxes = [];
     const fits = (x, y, w, h) => { if (x < 2 || y < 2 || x + w > cw - 2 || y + h > ch - 2) return false; for (const b of boxes) if (x < b[0] + b[2] && x + w > b[0] && y < b[1] + b[3] && y + h > b[1]) return false; boxes.push([x, y, w, h]); return true; };
-    if (st.ov.courts) A.courts.forEach(c => { const [x, y] = S(c.p[0], c.p[1]); if (!on(x, y)) return; out.push(`<g class="court" data-tip="court:${c.f}" transform="translate(${x} ${y})"><rect x="-7" y="-7" width="14" height="14"></rect><path d="M-4 3h8M-3 -1v4M0 -1v4M3 -1v4M-4.5 -1.5h9L0 -5z"></path></g>`); boxes.push([x - 8, y - 8, 16, 16]); if (km < 170) { const t = cName(c.f) + ' County courts'; const w = t.length * 6.3 + 6; if (fits(x + 10, y - 7, w, 15)) out.push(`<text class="courtl" x="${x + 12}" y="${y + 4}">${esc(t)}</text>`); } });
+    if (st.ov.courts) A.courts.forEach(c => { const [x, y] = S(c.p[0], c.p[1]); if (!on(x, y)) return; out.push(`<g class="court" data-tip="court:${c.f}" transform="translate(${x} ${y})"><rect x="-7" y="-7" width="14" height="14"></rect><path d="M-4 3h8M-3 -1v4M0 -1v4M3 -1v4M-4.5 -1.5h9L0 -5z"></path></g>`); boxes.push([x - 8, y - 8, 16, 16]); if (km < 170) { const t = cName(c.f) + ' County courts'; const w = atTextW(t, 11, 600) + 8; if (fits(x + 10, y - 8, w, 16)) out.push(`<text class="courtl" x="${x + 12}" y="${y + 4}">${esc(t)}</text>`); } });
     if (st.ov.warn && A.warn.length) { const mx = Math.max(1, ...A.warn.map(w => w.w)); A.warn.forEach((w, i) => { const [x, y] = S(w.p[0], w.p[1]); if (!on(x, y)) return; const r = 4 + 18 * Math.sqrt(w.w / mx); out.push(`<circle class="warnb" data-tip="warn:${i}" cx="${x}" cy="${y}" r="${r}"></circle>`); }); }
     if (st.ov.labels) {
       const cand = [];
@@ -236,7 +239,7 @@ function mountAtlas(root, mk) {
         const show = pop >= 1e6 || (pop >= 2e5 && km < 420) || (pop >= 5e4 && km < 170) || (pop >= 1e4 && km < 85) || (pop >= 1500 && km < 38) || km < 16;
         if (show) cand.push({ t: p.n, x: p.l[0], y: p.l[1], pr: 7 - Math.log10(pop + 10), fz, cls: 'cl' });
       });
-      if (km > 60) A.counties.forEach(c => cand.push({ t: c.n.toUpperCase() + ' COUNTY', x: c.l[0], y: c.l[1], pr: 0.5, fz: 11, cls: 'ctyl', ls: 1.8 }));
+      if (km > 60) A.counties.forEach(c => cand.push({ t: c.n.toUpperCase() + (cw >= 520 ? ' COUNTY' : ''), x: c.l[0], y: c.l[1], pr: 0.5, fz: cw >= 520 ? 11 : 10, cls: 'ctyl', ls: 1.8 }));
       if (st.ov.water && km < 130) A.water_labels.forEach(w => cand.push({ t: w.n, x: w.l[0], y: w.l[1], pr: 4.8 - Math.log10(w.a + 1) * 0.2, fz: 10.5, cls: 'lakel' }));
       if (st.ov.isd && km < 95) A.isd.forEach(z => cand.push({ t: z.n, x: z.l[0], y: z.l[1], pr: 5.2, fz: 10.5, cls: 'isdl' }));
       if (st.ov.zip && km < 48) A.zcta.forEach(z => cand.push({ t: z.z, x: z.l[0], y: z.l[1], pr: 5.6, fz: 10, cls: 'zipl' }));
@@ -245,7 +248,7 @@ function mountAtlas(root, mk) {
       const seen = {};
       for (const c of cand) {
         const [x, y] = S(c.x, c.y); if (!on(x, y, 0)) continue;
-        const w = c.t.length * c.fz * (c.ls ? 0.78 : 0.58) + (c.sh ? 10 : 4), h = c.fz + (c.sh ? 7 : 3);
+        const w = atTextW(c.t, c.fz, c.cls === 'lakel' ? 500 : 700, c.ls ? 0.18 : 0) + (c.sh ? 10 : 6), h = c.fz + (c.sh ? 7 : 4);
         if (c.sh) { const key = c.t; if (seen[key] && seen[key].some(([a, b]) => Math.hypot(a - x, b - y) < 170)) continue; }
         let ox = 0, oy = 0, placed = false;
         const tries = c.sh || c.pr > 2.6 ? [[0, 0]] : [[0, 0], [0, -h - 3], [0, h + 3], [w / 2 + 14, 0], [-w / 2 - 14, 0]];
@@ -315,12 +318,12 @@ function mountAtlas(root, mk) {
     if (!o) { $('#atSide').innerHTML = '<div class="small">No residents in this area.</div>'; return; }
     $('#atSide').innerHTML = `<div class="sidehead"><div class="eyebrow">${esc(sub || 'Area')}</div><h3>${esc(title)}</h3></div>
       <div class="sidebig"><div><b>${N(o.xd, 0)}</b><span>expected divorce filings a year</span></div><div><b>${N(o.xk, 0)}</b><span>with children</span></div></div>
-      ${kv([['Residents', N(o.pop)], ['Married adults', N(o.married)], ['Expected filings per 1,000 married', N(o.rate, 1)], ['Separated per 1,000 married', N(o.sep, 0)], ['Custody suits without a divorce', N(o.xs, 0) + ' a year'], ['Modifications and enforcements', N(o.xm, 0) + ' a year'], ['Median household income', $$$(o.inc)], ['Households at $150,000 or more', P(o.i150, 0)], ['Married couples raising children', P(o.kids, 0)], ['Owner occupied', P(o.own, 0)], ['Typical home value', $$$(o.val)], ['Pipeline and value (percentiles)', N(o.pipe, 0) + ' · ' + N(o.value, 0)]])}
+      ${kv([['Residents (ACS block groups)', N(o.pop)], ['Married adults (ACS block groups)', N(o.married)], ['Expected filings per 1,000 married', N(o.rate, 1)], ['Separated per 1,000 married', N(o.sep, 0)], ['Custody suits without a divorce', N(o.xs, 0) + ' a year'], ['Modifications and enforcements', N(o.xm, 0) + ' a year'], ['Median household income', $$$(o.inc)], ['Households at $150,000 or more', P(o.i150, 0)], ['Married couples raising children', P(o.kids, 0)], ['Owner occupied', P(o.own, 0)], ['Typical home value', $$$(o.val)], ['Pipeline and value (percentiles)', N(o.pipe, 0) + ' · ' + N(o.value, 0)]])}
       ${extra || ''}`;
   }
   function sideMetro() {
-    const parts = byX.map(c => `<div class="part" data-f="${c.f}"><b>${esc(c.n)}</b><span>${N(c.xd, 0)} divorce filings in 12 months · ${N(c.married)} married · ${$$$(c.inc)} median income</span><span class="small">Files in ${venueLine(c.f)}</span></div>`).join('');
-    sideArea(A.agg.metro, MN, mk === 'rgv' ? 'McAllen and Brownsville metros' : 'Metro', `<div class="parts">${parts}</div>`);
+    const parts = byX.map(c => `<div class="part" data-f="${c.f}" role="button" tabindex="0" data-kbd aria-label="${esc(c.n)} County: zoom to it"><b>${esc(c.n)}</b><span>${N(c.xd, 0)} divorce filings in 12 months · ${N(c.married)} married · ${$$$(c.inc)} median income</span><span class="small">Files in ${venueLine(c.f)}</span></div>`).join('');
+    sideArea(A.agg.metro, MN, mk === 'rgv' ? 'McAllen and Brownsville metros' : 'Metro', `<p class="small" style="margin-top:6px">Residents and married adults here add up ACS 2020 to 2024 block groups. The ${esc(MN)} tab counts Census Vintage 2025 residents and ACS county married adults, so its totals differ.</p><div class="parts">${parts}</div>`);
     $$('#atSide .part[data-f]').forEach(d => d.onclick = () => goCounty(d.dataset.f));
   }
   function sideBG(i) {
@@ -436,36 +439,41 @@ function mountAtlas(root, mk) {
   $('#atFind').addEventListener('change', doFind); $('#atFind').addEventListener('keydown', e => { if (e.key === 'Enter') doFind(); });
   // ---------- tables below the map
   function focusBlock() {
-    const card = c => `<div class="tile" data-f="${c.f}"><div class="l"><span>${esc(c.n)}</span></div><div class="v">${N(c.xd, 0)}</div><div class="s">divorce filings in the last 12 months · ${N(c.xk, 0)} with children<br>${N(c.married)} married adults · ${$$$(c.inc)} median income<br>Files in ${venueLine(c.f)}</div></div>`;
+    const card = c => `<div class="tile" data-f="${c.f}" role="button" tabindex="0" data-kbd aria-label="${esc(c.n)} County: zoom to it"><div class="l"><span>${esc(c.n)}</span></div><div class="v">${N(c.xd, 0)}</div><div class="s">divorce filings in the last 12 months · ${N(c.xk, 0)} with children<br>${N(c.married)} married adults · ${$$$(c.inc)} median income<br>Files in ${venueLine(c.f)}</div></div>`;
     $('#atFocus').innerHTML = `<div class="tiles" style="grid-template-columns:repeat(2,minmax(0,1fr));margin:8px 0 12px">${byX.slice(0, 4).map(card).join('')}</div><h4 class="minihd">By ZIP code</h4><div id="atFocZip"></div>`;
     $$('#atFocus .tile[data-f]').forEach(d => d.onclick = () => goCounty(d.dataset.f, true));
     const cols = [{ k: 'n', l: 'ZIP' }, { k: 'city', l: 'City', cls: 'l' }, { k: 'xd', l: 'Divorces a yr', fmt: v => N(v, 0) }, { k: 'xk', l: 'With kids', fmt: v => N(v, 0) }, { k: 'married', l: 'Married', fmt: v => N(v) }, { k: 'inc', l: 'Median income', fmt: v => $$$(v) }, { k: 'i150', l: '$150k+', fmt: v => P(v, 0) }];
     const rows = Object.keys(ZIPS).map(z => Object.assign({ _id: z, n: z, city: postal(z) || zipCity(z) }, zipAgg(z)));
-    table($('#atFocZip'), { cols, rows, sort: { k: 'xd', dir: -1 }, limit: 25, onRow: id => goZip(id) });
+    table($('#atFocZip'), { caption: 'ZIP codes by expected filings', cols, rows, sort: { k: 'xd', dir: -1 }, limit: 25, onRow: id => goZip(id) });
   }
-  let topRows = [];
+  let topRows = [], topTbl = null;
+  const bgShort = i => { const g = B.id[i]; const t = g.slice(5, 11); return `${+t.slice(0, 4)}${t.slice(4) !== '00' ? '.' + t.slice(4) : ''} · ${g.slice(11)}`; };
   const inArea = i => st.area === 'all' ? true : st.area.startsWith('c:') ? CC[B.c[i]] === st.area.slice(2) : B.pl[i] === plIdx[st.area.slice(2)];
-  const areaSlug = () => st.area === 'all' ? 'metro' : (st.area.startsWith('c:') ? cName(st.area.slice(2)) + ' county' : st.area.slice(2)).toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
   function topTable() {
     topRows = [];
     for (let i = 0; i < nB; i++) if (B.ok[i] && isN(fit[i]) && inArea(i)) topRows.push(i);
     topRows.sort((a, b) => fit[b] - fit[a]); topRows = topRows.slice(0, st.topN);
-    const rows = topRows.map((i, r) => ({ _id: String(i), rank: r + 1, n: placeLabel(i), zip: B.zip[i], isd: isdOf(i).replace(/ C?ISD$/, ''), xd: V.xd[i], x1: V.x1[i], inc: V.inc[i], fit: fit[i] }));
-    table($('#atTop'), { cols: [{ k: 'rank', l: '#' }, { k: 'n', l: 'Area', cls: 'l' }, { k: 'zip', l: 'ZIP', cls: 'l' }, { k: 'isd', l: 'District', cls: 'l' }, { k: 'xd', l: 'Divorces a yr', fmt: v => N(v, 1) }, { k: 'x1', l: 'Within 1 mi', fmt: v => N(v, 0) }, { k: 'inc', l: 'Income', fmt: v => $$$(v) }, { k: 'fit', l: 'Fit', fmt: v => N(v, 0) }], rows, sort: { k: 'rank', dir: 1 }, onRow: id => { select(+id, true); toMap(); } });
+    const rows = topRows.map((i, r) => ({ _id: String(i), rank: r + 1, n: placeLabel(i), bg: bgShort(i), zip: B.zip[i], isd: isdOf(i).replace(/ C?ISD$/, ''), xd: V.xd[i], x1: V.x1[i], inc: V.inc[i], fit: fit[i] }));
+    topTbl = table($('#atTop'), { caption: 'Block groups ranked by Market Fit', cols: [{ k: 'rank', l: '#', cls: 'rank' }, { k: 'n', l: 'Area', cls: 'l', fmt: (v, r) => `${esc(v)}<span class="bgid">tract ${esc(r.bg)}</span>` }, { k: 'zip', l: 'ZIP', cls: 'l' }, { k: 'isd', l: 'District', cls: 'l' }, { k: 'xd', l: 'Divorces a yr', fmt: v => N(v, 1) }, { k: 'x1', l: 'Within 1 mi', fmt: v => N(v, 0) }, { k: 'inc', l: 'Income', fmt: v => $$$(v) }, { k: 'fit', l: 'Fit', fmt: v => N(v, 0) }], rows, sort: { k: 'rank', dir: 1 }, onRow: id => { select(+id, true); toMap(); } });
   }
   $('#atArea').onchange = e => { st.area = e.target.value; topTable(); };
   $('#atTopN').onchange = e => { st.topN = +e.target.value; topTable(); };
-  $('#atCsvPin').onclick = () => exportText(`severance_${mk}_pin_targets_${areaSlug()}.csv`, csv(topRows.map((i, r) => ({ rank: r + 1, name: `${placeLabel(i)} ${B.zip[i] || ''} ${B.id[i].slice(5)}`.trim(), lat: V.lat[i], lon: V.lon[i], radius: 1, unit: 'mi', place: placeOf(i), zip: B.zip[i], county: CN[B.c[i]], xd: V.xd[i], x1: V.x1[i], inc: V.inc[i], fit: isN(fit[i]) ? Math.round(fit[i]) : '' })), [{ k: 'rank', l: 'Rank' }, { k: 'name', l: 'Target name' }, { k: 'lat', l: 'Latitude' }, { k: 'lon', l: 'Longitude' }, { k: 'radius', l: 'Radius' }, { k: 'unit', l: 'Unit' }, { k: 'place', l: 'City' }, { k: 'zip', l: 'ZIP' }, { k: 'county', l: 'County' }, { k: 'xd', l: 'Expected divorce filings a year' }, { k: 'x1', l: 'Expected within one mile' }, { k: 'inc', l: 'Median household income' }, { k: 'fit', l: 'Market Fit' }]));
+  const areaName = () => st.area === 'all' ? MN : MN + ' ' + (st.area.startsWith('c:') ? cName(st.area.slice(2)) + ' county' : st.area.slice(2));
+  // pins follow the table's current sort; rank stays the Market Fit rank
+  const pinOrder = () => topTbl ? topTbl.sorted().map(r => +r._id) : topRows;
+  $('#atCsvPin').onclick = () => exportText(expName('atlas_pins', areaName()), csv(pinOrder().map(i => ({ rank: topRows.indexOf(i) + 1, name: `${placeLabel(i)} ${B.zip[i] || ''} ${B.id[i].slice(5)}`.trim(), lat: V.lat[i], lon: V.lon[i], radius: 1, unit: 'mi', place: placeOf(i), zip: B.zip[i], county: CN[B.c[i]], xd: V.xd[i], x1: V.x1[i], inc: V.inc[i], fit: isN(fit[i]) ? Math.round(fit[i]) : '' })), [{ k: 'rank', l: 'Rank' }, { k: 'name', l: 'Target name' }, { k: 'lat', l: 'Latitude', d: 5 }, { k: 'lon', l: 'Longitude', d: 5 }, { k: 'radius', l: 'Radius' }, { k: 'unit', l: 'Unit' }, { k: 'place', l: 'City' }, { k: 'zip', l: 'ZIP' }, { k: 'county', l: 'County' }, { k: 'xd', l: 'Expected divorce filings a year', d: 1 }, { k: 'x1', l: 'Expected divorce filings within one mile a year', d: 0 }, { k: 'inc', l: 'Median household income ($)', d: 0 }, { k: 'fit', l: 'Market Fit (0 to 100)', d: 0 }]));
   $('#atCsvZip').onclick = () => {
     const z = {}; for (let i = 0; i < nB; i++) { if (!B.ok[i] || !B.zip[i] || !inArea(i)) continue; const o = z[B.zip[i]] = z[B.zip[i]] || { zip: B.zip[i], xd: 0, xk: 0, married: 0, fw: 0, bgs: 0 }; o.xd += V.xd[i]; o.xk += V.xk[i]; o.married += V.married[i] || 0; o.fw += (fit[i] || 0) * (V.married[i] || 0); o.bgs++; }
     const rows = Object.values(z).map(o => ({ zip: o.zip, xd: Math.round(o.xd * 10) / 10, xk: Math.round(o.xk * 10) / 10, married: o.married, fit: o.married ? Math.round(o.fw / o.married) : '', bgs: o.bgs })).sort((a, b) => (b.fit || 0) - (a.fit || 0));
-    exportText(`severance_${mk}_zip_targets_${areaSlug()}.csv`, csv(rows, [{ k: 'zip', l: 'ZIP' }, { k: 'fit', l: 'Market Fit (married weighted)' }, { k: 'xd', l: 'Expected divorce filings a year' }, { k: 'xk', l: 'With children' }, { k: 'married', l: 'Married adults' }, { k: 'bgs', l: 'Block groups' }]));
+    exportText(expName('atlas_zips', areaName()), csv(rows, [{ k: 'zip', l: 'ZIP' }, { k: 'fit', l: 'Market Fit (married weighted)' }, { k: 'xd', l: 'Expected divorce filings a year' }, { k: 'xk', l: 'With children' }, { k: 'married', l: 'Married adults' }, { k: 'bgs', l: 'Block groups' }]));
   };
   $('#atCsvBg').onclick = () => {
     const rows = []; for (let i = 0; i < nB; i++) rows.push(i);
-    const cols = [{ k: i => B.id[i], l: 'Block group GEOID' }, { k: i => CN[B.c[i]], l: 'County' }, { k: i => placeOf(i), l: 'City' }, { k: i => B.zip[i], l: 'ZIP' }, { k: i => isdOf(i), l: 'School district' }, { k: i => V.lat[i], l: 'Latitude' }, { k: i => V.lon[i], l: 'Longitude' }, { k: i => B.ok[i] ? 'yes' : 'no', l: 'Scored' }]
-      .concat(ATL.filter(l => !l.cat).map(l => ({ k: i => { const v = val(l.k, i); return isN(v) ? (Math.abs(v) < 10 ? Math.round(v * 1000) / 1000 : Math.round(v * 10) / 10) : ''; }, l: l.t })));
-    exportText(`severance_${mk}_block_groups.csv`, csv(rows, cols));
+    // each layer at the precision the map shows it: shares as percents, money in whole dollars
+    const AX = { kids: [0, 1], i150: [0, 1], own: [0, 1], mort: [0, 1], rent: [0, 1], snap: [1, 1], unemp: [1, 1], ba: [0, 1], c45: [0, 1], xd: [1], xden: [1], xk: [1], xs: [1], xm: [1], rate: [1], haz: [1], age: [1] };
+    const cols = [{ k: i => B.id[i], l: 'Block group GEOID' }, { k: i => CN[B.c[i]], l: 'County' }, { k: i => placeOf(i), l: 'City' }, { k: i => B.zip[i], l: 'ZIP' }, { k: i => isdOf(i), l: 'School district' }, { k: i => V.lat[i], l: 'Latitude', d: 5 }, { k: i => V.lon[i], l: 'Longitude', d: 5 }, { k: i => B.ok[i] ? 'yes' : 'no', l: 'Scored' }]
+      .concat(ATL.filter(l => !l.cat).map(l => { const x = AX[l.k] || [0]; return { k: i => { const v = val(l.k, i); return isN(v) ? v : ''; }, l: l.t + (x[1] ? ' (%)' : ['inc', 'val'].includes(l.k) ? ' ($)' : ''), d: x[0], pct: !!x[1] }; }));
+    exportText(expName('atlas_block_groups', MN), csv(rows, cols));
   };
   $('#atGoMetro').onclick = () => showModule(mk); $('#atGoDesk').onclick = () => showModule('desk');
   const cityCols = [{ k: 'n', l: 'City' }, { k: 'xd', l: 'Divorces a yr', fmt: v => N(v, 0) }, { k: 'xk', l: 'With kids', fmt: v => N(v, 0) }, { k: 'xs', l: 'Custody suits', fmt: v => N(v, 0) }, { k: 'xm', l: 'Mod + enf', fmt: v => N(v, 0) }, { k: 'rate', l: 'Per 1k married', fmt: v => N(v, 1) }, { k: 'sep', l: 'Separated per 1k', fmt: v => N(v, 0) }, { k: 'inc', l: 'Median income', fmt: v => $$$(v) }, { k: 'i150', l: '$150k+', fmt: v => P(v, 0) }, { k: 'kids', l: 'Raising kids', fmt: v => P(v, 0) }];

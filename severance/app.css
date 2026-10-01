@@ -319,6 +319,19 @@ textarea.copy{width:100%;min-height:160px;background:var(--card);border:1px soli
   .amap{height:480px}
   a{color:#000}
 }
+/* ---------- statewide module pieces: link buttons in tables, service line groups, ranks ---------- */
+.linkbtn{background:none;border:0;padding:0;margin:0;font:inherit;font-weight:500;color:var(--title);cursor:pointer;text-align:left;text-decoration:underline;text-decoration-color:var(--line-strong);text-underline-offset:2px}
+.linkbtn:hover{text-decoration-color:var(--title)}
+.ctl input[type=search]{background:var(--card);border:1px solid var(--line-strong);border-radius:0;padding:7px 9px;font-size:13.5px;max-width:100%;color:var(--ink)}
+table.t th.rank,table.t td.rank{min-width:0;width:2.6em;white-space:nowrap}
+table.t .bgid{display:block;font-size:11px;font-weight:400;color:var(--ink-3);white-space:nowrap}
+.lncards h2.minihd{font-size:11.5px}
+.lncards .linebox{gap:10px}
+.lncards .ln-court,.lncards .ln-est{grid-template-columns:repeat(5,minmax(0,1fr))}
+@media (max-width:1150px){.lncards .ln-court{grid-template-columns:repeat(3,minmax(0,1fr))}.lncards .ln-est{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media (max-width:900px){.lncards .ln-est{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:640px){.lncards .ln-court,.lncards .ln-est{grid-template-columns:minmax(0,1fr)}}
+@media (min-width:1101px){.atlas-grid>div:first-child{position:sticky;top:10px}}
 /* ---------- Metro Atlas ---------- */
 .atlas-ctl{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:flex-end;margin-bottom:10px}
 .atlas-ctl .ctl select{min-width:300px}
