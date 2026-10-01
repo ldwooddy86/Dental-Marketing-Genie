@@ -99,7 +99,7 @@ const DESKX = (() => {
       kwq: ['how to modify child support in texas', 'can child support be lowered after a job loss', 'how to change a custody order in texas', 'how often can child support be modified in texas'],
       kwEs: ['modificar manutención de menores', 'cambiar orden de custodia', 'abogado de modificación'],
       en: { h: ['Modify Child Support', 'Change a Custody Order', 'Support After a Job Loss', 'Order Modifications in Texas', 'Material Change Explained', 'Relocation and Custody'],
-        d: ['A support order can change after a material and substantial change, such as a job loss.', 'Three years and a 20 percent or $100 difference from guidelines can also qualify.', 'We review your order, the change in circumstances and what a court can modify.'],
+        d: ['A support order can change after a material and substantial change, such as a job loss.', 'Three years and a difference of 20 percent or 100 dollars from guidelines can also qualify.', 'We review your order, the change in circumstances and what a court can modify.'],
         meta: { p: 'Support and custody orders in {county} County can change when life does.', h: 'Modify a support or custody order', d: 'Talk with a family lawyer' } },
       es: { h: ['Modificar Manutención', 'Cambiar Orden de Custodia', 'Cambio Material'], d: ['La manutención puede cambiar tras un cambio material y sustancial, como perder el empleo.', 'Revisamos su orden y lo que un juez puede modificar.'],
         meta: { p: 'Las órdenes de manutención y custodia en el condado de {county} pueden cambiar.', h: 'Modificar manutención o custodia', d: 'Consulta en español' } } },
@@ -178,7 +178,7 @@ const DESKX = (() => {
   };
   /* copy every campaign shares, filled from the firm profile; a line only states a fact the profile holds */
   const SHARED = {
-    en: { h: c => ['{firm}', 'Office in {city}, Texas', 'Serving {county} County', 'Serving {mcity}', 'Talk With a Family Lawyer'].concat(c.virtual ? ['Consultations by Video'] : []).concat(c.free ? ['Free Consultation'] : c.cfee ? ['Consultation Fee {cfee}'] : []).concat(c.plans ? ['Payment Plans Available'] : []).concat(c.es ? ['Se Habla Español'] : []),
+    en: { h: c => ['{firm}', 'Serving {county} County', 'Office in {city}, Texas', 'Serving {mcity}', 'Talk With a Family Lawyer'].concat(c.virtual ? ['Consultations by Video'] : []).concat(c.free ? ['Free Consultation'] : c.cfee ? ['Consultation Fee {cfee}'] : []).concat(c.plans ? ['Payment Plans Available'] : []).concat(c.es ? ['Se Habla Español'] : []),
       d: c => [c.virtual ? 'Consultations in person or by video. Call or request a time online.' : 'Call or request a consultation time online.', 'Serving {county} County families from our {city} office.'],
       callouts: c => (c.virtual ? ['Video Consultations'] : []).concat(c.free ? ['Free Consultations'] : []).concat(c.plans ? ['Payment Plans'] : []).concat(c.es ? ['Se Habla Español'] : []).concat(['Office in {city}', 'Family Law Practice']),
       snippet: 'Service catalog', cities: 'Neighborhoods', cta: 'Talk with a family lawyer' },

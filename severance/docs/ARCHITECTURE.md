@@ -34,6 +34,8 @@ severance/
   src/06_forge_copy.js     FCOPY: the family law page writer
   src/07_accounts_core.js  ACCT: providers, OAuth, pulls, CSV importers, analytics, model feedback
   src/08_watch_core.js     WATCH: the competitor roster, observations, scores, ad library links
+  src/10_desk_platforms.js DESKX: the Campaign Desk's creative library and the bulk file and build sheet writers for nine platforms
+  src/11_workspace.js      WORKSPACE: one backup and restore of everything saved in the browser
   src/09_live_core.js      LIVE: triggers from the embedded data, the live sources, the legal calendar, ad timing
   src/cms/*.js             the CMS layer, identical to ../chrome-app/src/cms except the storage key (sv.cms.v1) and one WordPress hint
   src/20..39_m*.js         modules 01 to 20 (01 to 11 statewide, 12 to 19 metro areas, 20 method)
