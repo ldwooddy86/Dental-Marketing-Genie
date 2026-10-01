@@ -79,7 +79,10 @@ registerModule({
       const urLast = las.map(l => String(l.last || '')).sort().pop() || META.laus_through; const urLive = las.some(l => l.live); const hs = LIVE.holds(); const hNow = hs.filter(a => a.startDay <= d && a.endDay >= d);
       const g = geoNow(); const t = LIVE.timing(st.line, d, g || null); const nextCal = LIVE.calendar(d, 120).find(i => i.end >= d && Object.keys(i.lift || {}).length) || LIVE.calendar(d, 365)[0];
       $('#lvTiles', root).innerHTML = [
-        tile('WARN workers, 90 days', N(w90), `${n90.length} notice${n90.length === 1 ? '' : 's'} in ${esc(scopeTitle())}; ${LIVE.state.sources.warn.mode === 'live' ? 'live and snapshot combined' : 'snapshot through ' + esc(fd(snap.warn_through))}`, LIVE.state.sources.warn.mode === 'live' ? 'A' : 'B'),
+        /* a snapshot that ends more than 90 days back cannot say "no layoffs": it says nothing about those days */
+        (() => { const wm = LIVE.state.sources.warn.mode; const blind = wm !== 'live' && wm !== 'cached' && snap.warn_through && LIVE.diffD(snap.warn_through, d) > 90;
+          return blind ? tile('WARN workers, 90 days', 'n/a', `no notices on file for these 90 days: the snapshot ends ${esc(fd(snap.warn_through))}. Refresh live or load a WARN file.`, 'B')
+            : tile('WARN workers, 90 days', N(w90), `${n90.length} notice${n90.length === 1 ? '' : 's'} in ${esc(scopeTitle())}; ${wm === 'live' ? 'live and snapshot combined' : wm === 'cached' ? 'the last live answer and the snapshot' : 'snapshot through ' + esc(fd(snap.warn_through))}`, wm === 'live' ? 'A' : 'B'); })(),
         tile('Open WARN windows', N(warnAct.length), warnAct.length ? `lifting modification and enforcement in ${esc([...new Set(warnAct.map(x => x.county))].slice(0, 4).join(', '))} today` : 'no notice between 90 and 365 days old', 'C'),
         tile('Texas initial claims', ck ? N(ck.last.value) : 'n/a', ck ? `week ending ${esc(fd(ck.last.date))}: ${esc(sgn(ck.wowPct, 0))} on the week before, ${esc(sgn(ck.yoyPct, 0))} on a year earlier (4 weeks) · ${esc(cs.live ? 'FRED, live' : 'snapshot')}` : 'no series held', 'A'),
         tile('County claims, 4 weeks', N(w4n || w4), w4y ? `${esc(sgn((w4n / w4y - 1) * 100, 0))} on the same weeks a year earlier · ${esc(scopeTitle())}, snapshot` : esc(scopeTitle()), 'A'),

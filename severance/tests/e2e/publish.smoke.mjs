@@ -94,7 +94,7 @@ try {
   await page.click('#pbcAdd');
   await page.waitForSelector(`#pbPages tbody tr[data-slug="${SLUG}"]`, { timeout: 5000 });
   let sc = await page.evaluate(s => MODI.publish.screen(s), SLUG);
-  ok(sc && sc.pass === false && sc.findings.some(f => f.id === 'ph') && sc.findings.some(f => f.id === 'r702a'), 'screen blocks the page: unfilled placeholder and Rule 7.02(a)', sc && sc.findings.map(f => f.id + ':' + f.sev).join(' '));
+  ok(sc && sc.pass === false && sc.findings.some(f => f.id === 'ph') && sc.findings.some(f => (f.id === 'r702a' || f.id === 'WEBRESP')), 'screen blocks the page: unfilled placeholder and Rule 7.02(a)', sc && sc.findings.map(f => f.id + ':' + f.sev).join(' '));
   ok(/block/.test(await T(`#pbPages tbody tr[data-slug="${SLUG}"] td.pb-lint`)) && !!(await page.$(`#pbPages input[data-ovr="${SLUG}"]`)), 'row shows the block and offers Send anyway');
 
   /* ---- fill the firm profile: the module screens again, the template is written from FIRM ---- */
@@ -144,10 +144,10 @@ try {
   const imp = await page.evaluate(() => MODI.publish.pages().find(p => p.slug === 'child-custody-plano'));
   ok(imp && imp.title === 'Child Custody Lawyer in Plano | Example Family Law' && /Collin County/.test(imp.meta_description) && imp.schema && imp.schema['@type'] === 'LegalService' && /<h1>/.test(imp.html) && !/alert/.test(imp.html) && !/<header>/.test(imp.html), 'HTML import reads title, description, main, JSON-LD and drops scripts');
   sc = await page.evaluate(() => MODI.publish.screen('child-custody-plano'));
-  ok(sc.pass === false && sc.findings.some(f => f.id === 'r702a'), 'imported page without the responsible lawyer is held back (Rule 7.02(a))');
+  ok(sc.pass === false && sc.findings.some(f => (f.id === 'r702a' || f.id === 'WEBRESP')), 'imported page without the responsible lawyer is held back (Rule 7.02(a))');
   await page.click('#pbPages tbody tr[data-slug="child-custody-plano"] button[data-a="screen"]');
   await page.waitForSelector('#pbScreen .finding', { timeout: 5000 });
-  ok(/Responsible lawyer and primary practice location/.test(await T('#pbScreen')) && /7\.02\(a\)/.test(await T('#pbScreen')), 'Screen panel lists the finding with its rule');
+  ok(/Responsible lawyer and primary practice location|No responsible lawyer and office city/.test(await T('#pbScreen')) && /7\.02\(a\)/.test(await T('#pbScreen')), 'Screen panel lists the finding with its rule');
   await page.click('#pbScDisc');
   await page.waitForFunction(() => MODI.publish.screen('child-custody-plano').pass, null, { timeout: 5000 });
   ok(/Nothing found|clear/i.test(await T('#pbScreen')), 'Append the firm disclaimer clears the page');

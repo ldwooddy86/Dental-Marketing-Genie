@@ -15,7 +15,7 @@
 'use strict';
 const WATCH_HOST_ORIGINS = ['https://graph.facebook.com/*'];   // the Meta Ad Library API bridge (a click with the user's own token)
 const WATCH = (() => {
-  const KEY = 'sev.watch'; const FIRM_KEY = '_firm'; const HALF_LIFE = 45; const SKIP_LINT = new Set(['house', 'r702a', 'ph', 'meta_note', 'r706', 'arc_filing']);   // the firm's own obligations, not claims in the copy
+  const KEY = 'sev.watch'; const FIRM_KEY = '_firm'; const HALF_LIFE = 45; const SKIP_LINT = new Set(['house', 'r702a', 'WEBRESP', 'ph', 'meta_note', 'r706', 'arc_filing']);   // the firm's own obligations, not claims in the copy
   let NOW = null;   // test clock: WATCH.setClock('2026-10-01')
   const nowMs = () => NOW ? Date.parse(NOW + 'T12:00:00Z') : Date.now();
   const today = () => NOW || todayISO();
@@ -577,13 +577,23 @@ const WATCH = (() => {
   function sweepRows(keys) { return (keys ? keys.map(comp).filter(Boolean) : list()).map(c => [c.name, c.key, c.domain, c.tier, c.counties.map(f => CI[f] ? CI[f].name : f).join('; '), c.lastChecked || '', c.lastChecked ? Math.max(0, Math.round(daysAgo(c.lastChecked))) : '', forComp(c.key).filter(isLiveAd).length, LINKS.metaKw(c.name), c.meta_page_id ? LINKS.metaPage(c.meta_page_id) : '', c.domain ? LINKS.googleDomain(c.domain) : '', c.google_advertiser_id ? LINKS.googleAdv(c.google_advertiser_id) : '', LINKS.barSearch(c.name), LINKS.tblsForm(), LINKS.gMaps(c.name, placeOf(c)), LINKS.gReviews(c.name), c.counties[0] && CI[c.counties[0]] ? LINKS.gCounty(CI[c.counties[0]].name) : '']); }
   function sweepCSV() { return toCSV(SWEEP_H, guardRows(sweepRows()), `Weekly sweep, Severance module 24, exported ${today()}. Open each link, log what you see, mark the competitor checked.`); }
   function compareCSV(keys) { const c = compare(keys); return toCSV(['measure'].concat(c.cols.map(x => x.name)).map(csvGuard), guardRows(c.rows.map(r => [r.label].concat(r.values))), `Competitor comparison, Severance module 24, ${today()}. Competitor values come from the roster and the observations logged in this browser.`); }
+  /* the advertisers observed in a place, for the hand offs and for other modules (a Paid ZIP card, a county panel, a metro tab):
+     advertisersIn({county}|{counties:[...]}|{zip}) → [{key, name, live, n, platforms, last}] from observations naming the place (a ZIP
+     also counts observations naming its county), live ads first; tracked(o) → roster firms serving those counties */
+  function placeOf2(o) { o = o || {}; const zip = o.zip && ZI[String(o.zip)] ? String(o.zip) : ''; const cs = new Set((o.counties || []).concat(o.county ? [o.county] : []).concat(zip ? [ZI[zip].county] : []).filter(f => CI[f])); return { zip, cs }; }
+  function advertisersIn(o) {
+    const { zip, cs } = placeOf2(o); if (!cs.size) return []; const by = {};
+    S.obs.forEach(ob => { if (ob.comp === FIRM_KEY) return; if (!((zip && (ob.zips || []).includes(zip)) || obsCounties(ob).some(f => cs.has(f)))) return; const k = ob.comp || '?' + normName(ob.compName); const b = by[k] = by[k] || { key: ob.comp || '', name: ob.compName || 'Unmatched advertiser', live: 0, n: 0, platforms: new Set(), last: '' }; b.n++; if (isLiveAd(ob)) b.live++; b.platforms.add(ob.platform); if (ob.last > b.last) b.last = ob.last; });
+    return Object.values(by).map(b => Object.assign(b, { platforms: [...b.platforms] })).sort((a, b) => b.live - a.live || b.n - a.n || a.name.localeCompare(b.name));
+  }
+  function tracked(o) { const { cs } = placeOf2(o); return cs.size ? list().filter(c => c.counties.concat(c.offices.map(of => of.county)).some(f => cs.has(f))) : []; }
   function settings() { return S.settings; }
   function setSettings(p) { Object.assign(S.settings, p || {}); save('settings'); }
   return {
     KEY, FIRM_KEY, TIERS, KINDS, PLATFORMS, PLAT_SHORT, FORMATS, STATUSES, OFFERS, HOOKS, RANK_WHERE, LINKS, API_FIELDS, CSV_H, ROSTER_H, SWEEP_H,
     get state() { return S; }, get obs() { return S.obs; }, list, get: comp, add, addMany, update, archive, remove, setChecked, setIds,
     observe, obsUpdate, obsRemove, obsAddMany, forComp, blankObs, blankComp, normComp, matchComp, compLinks, placeOf,
-    score, scoreDetail, reviews, coverage, lineOverlap, compare, profileOf, claims, positionFor, lintFind, stats, weekly, activeAds, timeline, obsCounties, countyCounts, rosterByCounty, activity, context, uncontested, digest,
+    score, scoreDetail, reviews, coverage, lineOverlap, compare, profileOf, claims, positionFor, lintFind, stats, weekly, activeAds, timeline, obsCounties, countyCounts, rosterByCounty, activity, advertisersIn, tracked, context, uncontested, digest,
     importText, importBackup, obsKey, safeUrl, csvGuard, unguard, parseAdText, parseRosterText, fromMetaApi, fromUrls, metaApiUrl, metaApiRun, canFetch,
     csv, json, rosterCSV, rosterTemplate: ROSTER_TEMPLATE, sweepRows, sweepCSV, compareCSV, settings, setSettings, clear, reload: load,
     isLive, isLiveAd, daysAgo, today, inferLine, inferOffer, inferHook, priceIn, isoFrom, domOf, countyByName, countiesFrom, linesFrom, parseOffice, officeStr, lawyerStr,

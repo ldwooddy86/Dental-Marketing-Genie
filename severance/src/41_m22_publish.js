@@ -45,6 +45,7 @@ registerModule({
     const blockedEnv = ENV === 'file' || ENV === 'viewer';
     const errText = e => { let s = (e && (e.message || String(e))) + (e && e.hint ? ' · ' + e.hint : ''); if (e && e.network && blockedEnv) s += ENV === 'viewer' ? ' · the hosted viewer blocks calls to other sites; download the pages pack or use the Severance extension' : ' · the browser blocked the call: a page opened from disk only reaches a CMS that allows this origin (CORS); use the Severance extension, or download the pages pack'; return modFix(s); };
     const isHome = p => /^(home|homepage|index|inicio)$/.test(String(p.slug || '')) || /^home/i.test(String(p.kind || ''));
+    const RESP_IDS = new Set(['r702a', 'WEBRESP']);   /* LINT's Rule 7.02(a) findings: the visible text check, and the page source check that supersedes it */
     const isLanding = p => /^landing/i.test(String(p.kind || '')) || /^lp-/.test(String(p.slug || '')) || /^(spanish )?landing\b/i.test(String(p.label || ''));
     const arcKind = p => isHome(p) ? 'home' : isLanding(p) ? 'landing' : 'page';
     const ARC_DAYS = () => (typeof LINT !== 'undefined' && LINT.FILING && LINT.FILING.days) || 10;
@@ -445,7 +446,7 @@ registerModule({
     function showScreen(s, quiet) {
       const p = st.pages.find(x => x.slug === s); const host = $('#pbScreen', root); if (!p) { closeScreen(); return; }
       st.screenSlug = s; const r = screenPage(p); const c = r.counts; const ovr = st.override.has(s); host.hidden = false;
-      const can702 = r.findings.some(f => f.id === 'r702a') && !firmInfo().missing.length;
+      const can702 = r.findings.some(f => RESP_IDS.has(f.id)) && !firmInfo().missing.length;
       const cls = f => f.sev === 'block' ? 'crit' : f.sev === 'info' ? 'info' : '';
       const items = r.findings.length ? r.findings.map(f => `<div class="finding ${cls(f)}"><b>${esc(f.title)}</b><div class="rule">${sevPill(f.sev)} ${esc(f.rule)}</div><p>${esc(f.why)}</p>${f.hit ? `<div class="small">Matched: “${esc(String(f.hit).slice(0, 160))}”</div>` : ''}</div>`).join('') : '<div class="finding ok"><b>Nothing found</b><p>The compliance engine found no pattern on this page. It is a floor, not a review: the responsible lawyer still reads the page before it goes live.</p></div>';
       host.innerHTML = `<div class="pb-head"><div><h4 class="pb-subh">Screen · ${esc(p.title)}</h4><div class="small">${lintPill(r, ovr)} ${N(c.block)} block, ${N(c.fix)} fix, ${N(c.warn)} review, ${N(c.info)} note. Screened ${esc(when(r.at))} with the compliance engine (kind page, ${/^es/i.test(p.language || '') ? 'Spanish' : 'English'}): the title, the meta description and the body text.</div></div><div class="btnrow">${c.block ? `<label class="chk pb-ovr"><input type="checkbox" id="pbScOvr" ${ovr ? 'checked' : ''}> Send anyway (the responsible lawyer reviewed it)</label>` : ''}${can702 ? '<button type="button" class="btn sm" id="pbScDisc">Append the firm disclaimer</button>' : ''}<button type="button" class="btn sm" id="pbScClose">Close</button></div></div><div class="pb-finds">${items}</div>`;

@@ -40,6 +40,8 @@
   "host_permissions": [
     "https://data.texas.gov/*",
     "https://fred.stlouisfed.org/*",
+    "https://api.bls.gov/*",
+    "https://api.weather.gov/*",
     "https://accounts.google.com/*",
     "https://oauth2.googleapis.com/*",
     "https://googleads.googleapis.com/*",

@@ -628,11 +628,11 @@ const ACCT = (() => {
   }
   /* Revert: the desk goes back to its own inputs, the ones in force before the first Apply; returns them (or false when nothing was applied) */
   function revertModels() { const a = S.settings.applied; if (!a) return false; S.settings.applied = null; save('settings'); return { prev: a.prev || null, first: a.first || a.at, patch: a.patch, count: a.count || 1 }; }
-  /* the human sentence for a list of changes: "all lines cost per click $4.10 to $3.85; Modification retained rate n/a to 22.0%" */
+  /* one line per change: "All lines, cost per click: from $4.10 (desk input) to $3.85"; "Modification, retained rate: from the desk's own figure to 22.0%" */
   function changeText(changes, nameOf) {
     const v = (f, x) => f === 'cpc' ? '$' + (+x).toFixed(2) : f === 'fee' ? '$' + Math.round(+x).toLocaleString('en-US') : (+x).toFixed(1) + '%';
     const fr = c => c.from == null ? (c.fromSrc === 'applied' ? 'n/a' : 'the desk\'s own figure') : v(c.field, c.from) + (c.fromSrc === 'own' ? (c.field === 'fee' ? ' (firm profile)' : ' (desk input)') : '');
-    return (changes || []).map(c => `${c.line === 'all' ? 'all lines' : (nameOf ? nameOf(c.line) : lineName(c.line))} ${FIELD_NAME[c.field]} ${fr(c)} to ${c.to == null ? 'the desk\'s own figure' : v(c.field, c.to)}`);
+    return (changes || []).map(c => `${c.line === 'all' ? 'All lines' : (nameOf ? nameOf(c.line) : lineName(c.line))}, ${FIELD_NAME[c.field]}: from ${fr(c)} to ${c.to == null ? 'the desk\'s own figure' : v(c.field, c.to)}`);
   }
   const applied = () => S.settings.applied ? S.settings.applied.patch : null;
   async function clearAll(what) { if (what === 'tokens' || !what) S.tokens = {}; if (what === 'actuals' || !what) { S.actuals = {}; S.imports = []; S.settings.applied = null; } if (what === 'cfg') S.cfg = {}; await save(what || 'all'); }

@@ -172,5 +172,7 @@ const back2 = W.importText(gcsv); const fr = back2.obs.find(o => /HYPERLINK/.tes
 W.obsRemove(formula.id);
 W.update(a.key, { notes: '@mention and -minus' }); const rcsv = W.rosterCSV(); assert(rcsv.includes("'@mention and -minus"), 'roster CSV guarded'); eq(W.parseRosterText(rcsv).comps.find(c => c.key === a.key || c.name === W.get(a.key).name).notes, '@mention and -minus', 'roster CSV round trip unguards');
 const swc = W.sweepCSV(); assert(/^competitor,competitor_key,domain/m.test(swc) && swc.includes(',' + a.key + ','), 'sweep rows carry the competitor key');
+const adv = W.advertisersIn({ county: '48201' }); assert(adv.length && adv[0].key === a.key && adv[0].live >= 1 && adv[0].platforms.includes('meta'), 'advertisers observed in Harris County: ' + JSON.stringify(adv[0]));
+eq(W.advertisersIn({ county: '99999' }), [], 'an unknown county has no advertisers'); assert(W.tracked({ county: '48201' }).some(c => c.key === a.key), 'tracked firms serving Harris County');
 eq(W.csvGuard(-5), -5, 'numbers are left alone'); eq(W.csvGuard('-5'), "'-5", 'a text cell starting with a minus is guarded'); eq(W.unguard("'=1+1"), '=1+1', 'unguard');
 console.log('watch ok');

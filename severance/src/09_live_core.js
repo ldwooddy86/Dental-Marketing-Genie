@@ -24,10 +24,9 @@
      LIVE.settings() / setSettings(patch)   counties, thresholds, campaign names (sev.live.settings); written to the extension's watch
    Pure helpers (also used by the tests): parseWarn, parseFred, csvRows, claimsCheck, normDate, warnKey, calendarYear, thanksgiving. */
 'use strict';
-const LIVE_HOST_ORIGINS = ['https://data.texas.gov/*', 'https://fred.stlouisfed.org/*'];   // build.mjs checks these against host_permissions
-/* the optional sources' hosts: api.weather.gov answers browser pages (CORS), api.bls.gov needs the extension's host permission; both belong
-   in manifest.json host_permissions (and then in LIVE_HOST_ORIGINS above) so the extension reaches them without a prompt */
-const LIVE_OPT_ORIGINS = ['https://api.weather.gov/*', 'https://api.bls.gov/*'];
+/* build.mjs checks these against manifest.json host_permissions. The last two are the optional sources: api.weather.gov (the National
+   Weather Service alerts, which also answer a browser page) and api.bls.gov (the BLS Public Data API, which a page usually cannot call) */
+const LIVE_HOST_ORIGINS = ['https://data.texas.gov/*', 'https://fred.stlouisfed.org/*', 'https://api.weather.gov/*', 'https://api.bls.gov/*'];
 const LIVE = (() => {
   const SOCRATA = 'https://data.texas.gov/resource/8w53-c4f6.json';
   const WARN_PAGE = 'https://data.texas.gov/d/8w53-c4f6';
