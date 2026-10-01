@@ -1,0 +1,66 @@
+/* Module 01 Dissolution Index, and the map decorations modules 03, 04, 05, 08 and the metro tabs share (ix-*) */
+/* the side card */
+.ix-side{min-width:0}
+.ix-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:8px}
+.ix-head h3{font-family:var(--display);font-size:20px;line-height:1.15;margin:2px 0 3px;color:var(--title)}
+.ix-head .pill{flex:none;cursor:help}
+.ix-eb{font-family:var(--display);font-weight:700;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--judg)}
+.ix-big{display:flex;align-items:baseline;gap:10px;margin:4px 0 2px}
+.ix-big b{font-family:var(--display);font-size:38px;line-height:1;color:var(--title);font-variant-numeric:tabular-nums}
+.ix-big span{font-size:12.5px;color:var(--ink-2);line-height:1.35}
+.ix-sec{font-family:var(--display);font-weight:700;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--judg);margin:14px 0 6px;border-bottom:1px solid var(--line);padding-bottom:3px}
+.ix-fine{margin:4px 0 0;color:var(--ink-3)}
+/* diverging sigma bars */
+.ix-zbar{display:grid;grid-template-columns:minmax(0,1fr) 48px;grid-template-areas:"l l" "t v";gap:1px 8px;margin:5px 0;font-size:12px}
+.ix-zl{grid-area:l;color:var(--ink-2);min-width:0;overflow-wrap:anywhere}
+.ix-zl span{color:var(--ink-3)}
+.ix-zt{grid-area:t;position:relative;height:11px;background:var(--sunk);border:1px solid var(--line);align-self:center}
+.ix-zm{position:absolute;left:50%;top:-2px;bottom:-2px;width:1px;background:var(--line-strong)}
+.ix-zf{position:absolute;top:0;bottom:0;display:block}
+.ix-zf.up{background:var(--rp-leaf-5)} .ix-zf.dn{background:var(--rp-slate-5)}
+.ix-zv{grid-area:v;text-align:right;font-variant-numeric:tabular-nums;font-weight:500;color:var(--ink)}
+/* stacked share bars */
+.ix-stackrow{display:grid;grid-template-columns:76px minmax(0,1fr);gap:8px;align-items:center;margin:4px 0;font-size:12px;color:var(--ink-2)}
+.ix-stackrow>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ix-stack{display:flex;height:13px;border:1px solid var(--line);background:var(--sunk);overflow:hidden}
+.ix-stack i{display:block;height:100%;min-width:1px}
+.ix-skey{display:flex;flex-wrap:wrap;gap:3px 12px;font-size:11.5px;color:var(--ink-2);margin:5px 0 2px}
+.ix-skey span{display:inline-flex;align-items:center;gap:4px}
+.ix-skey i{width:9px;height:9px;display:inline-block;flex:none}
+.ix-skey b{font-weight:600;color:var(--ink)} .ix-skey em{font-style:normal;color:var(--ink-3)}
+.ix-side .callout{margin:8px 0;padding:8px 11px}
+.ix-side .callout p{font-size:12.5px}
+.ix-own{font-size:12.5px;color:var(--ink-2);border-left:3px solid var(--line-strong);padding:4px 0 4px 9px;margin:8px 0}
+.ix-btns{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.ix-h4{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);margin:14px 0 6px;border-bottom:1px solid var(--line);padding-bottom:3px}
+/* legend line under a map */
+.ix-legnote{font-size:12px;color:var(--ink-2);margin-top:6px;line-height:1.45}
+.ix-legnote .grade{margin-right:4px}
+.ix-legkeys{display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:5px}
+.ix-legkeys span{display:inline-flex;align-items:center;gap:6px}
+.ix-sw{width:13px;height:11px;display:inline-block;flex:none;border:1px solid var(--line)}
+.ix-sw.thin{background:var(--rp-forest-5);opacity:.38}
+.ix-sw.imp{background:var(--rp-forest-4);border:1.5px dashed var(--ink-2)}
+.ix-sw.firm{background:var(--sunk);border:2px solid var(--ink)}
+.ix-sw.dim{background:var(--rp-forest-5);opacity:.22}
+.ix-sw.pinf{width:9px;height:9px;background:var(--ink);transform:rotate(45deg);border:1px solid var(--card);margin:0 2px}
+.ix-sw.pinw{width:10px;height:10px;border-radius:50%;background:var(--s2);border:1px solid var(--card)}
+/* map decorations */
+.mapwrap path.area.ix-thin{opacity:.38}
+.mapwrap path.area.ix-imp:not(.sel){stroke:var(--ink-2);stroke-dasharray:3 2;stroke-width:1.1}
+.mapwrap path.area.ix-firm:not(.sel){stroke:var(--ink);stroke-width:2.2}
+.mapwrap path.cty.ix-firm{stroke:var(--ink);stroke-width:2.6;opacity:1}
+.mapwrap path.area.ix-dim{opacity:.2}
+.mapwrap path.area.ix-dim:hover{opacity:.45}
+.mapwrap .ix-pin{stroke:var(--card);stroke-width:1.3;vector-effect:non-scaling-stroke;cursor:pointer}
+.mapwrap .ix-pin.firm{fill:var(--ink)}
+.mapwrap .ix-pin.watch{fill:var(--s2);fill-opacity:.85}
+.mapwrap .ix-pin:hover{stroke:var(--ink);stroke-width:2}
+/* method, sanity and validation tables */
+table.t.ix-meth td.wrap,table.t.ix-val td.wrap,table.t.ix-san td.l{min-width:200px;white-space:normal}
+table.t.ix-san td .small,table.t.ix-meth td .small,table.t.ix-val td .small{font-weight:400;margin-top:2px;line-height:1.35}
+.ix-scat .legendc{margin:4px 0}
+@media (max-width:640px){
+  .ix-big b{font-size:32px}
+  table.t.ix-meth td.wrap,table.t.ix-val td.wrap,table.t.ix-san td.l{min-width:160px}
+}

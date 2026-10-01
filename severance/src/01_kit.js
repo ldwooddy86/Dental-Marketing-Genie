@@ -39,12 +39,22 @@ async function saveFile(filename, data, o) {
 }
 const mimeOf = f => /\.csv$/i.test(f) ? 'text/csv;charset=utf-8' : /\.tsv$/i.test(f) ? 'text/tab-separated-values;charset=utf-8' : /\.json$/i.test(f) ? 'application/json' : /\.html?$/i.test(f) ? 'text/html;charset=utf-8' : /\.php$/i.test(f) ? 'text/plain;charset=utf-8' : /\.zip$/i.test(f) ? 'application/zip' : /\.md$/i.test(f) ? 'text/markdown;charset=utf-8' : 'text/plain;charset=utf-8';
 const csvQ = v => { const s = v == null ? '' : String(v); return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
-/* toCSV(['a','b'], [[1,2],{a:1,b:2}], 'note line') — note lines are written as # comments above the header */
-function toCSV(header, rows, note) { return (note ? note.split('\n').map(l => '# ' + l).join('\n') + '\n' : '') + header.map(csvQ).join(',') + '\n' + rows.map(r => (Array.isArray(r) ? r : header.map(h => r[h])).map(csvQ).join(',')).join('\n') + '\n'; }
+/* toCSV(['a','b'], [[1,2],{a:1,b:2}], 'note line', opts) — note lines are written as # comments above the header (lines that already
+   start with # are kept as they are, so csvNote(module) can be passed straight in). The third argument may be the options object instead:
+   {note, guard, platform}. guard (on by default) writes a leading apostrophe before a text cell that starts with =, +, -, @, a tab or a
+   carriage return, so a spreadsheet cannot run it as a formula (plain numbers such as -12.5 are left alone); platform: true is for files a
+   platform imports (Google Ads Editor, Microsoft Advertising, Meta): no guard and no note. csvQ itself never guards (the bulk writers use it). */
+function toCSV(header, rows, note, opts) {
+  if (note && typeof note === 'object' && !Array.isArray(note)) { opts = note; note = opts.note; } opts = opts || {};
+  const guard = !opts.platform && opts.guard !== false; const cell = guard ? v => csvQ(csvSafe(v)) : csvQ;
+  const head = opts.platform || !note ? '' : (Array.isArray(note) ? note : String(note).split('\n')).map(l => /^#/.test(l) ? l : '# ' + l).join('\n') + '\n';
+  return head + header.map(cell).join(',') + '\n' + rows.map(r => (Array.isArray(r) ? r : header.map(h => r[h])).map(cell).join(',')).join('\n') + '\n';
+}
 const tsvQ = v => String(v == null ? '' : v).replace(/[\t\r\n]+/g, ' ');
 function toTSV(header, rows) { return header.map(tsvQ).join('\t') + '\n' + rows.map(r => (Array.isArray(r) ? r : header.map(h => r[h])).map(tsvQ).join('\t')).join('\n') + '\n'; }
-/* parse CSV text into rows of strings (quotes, doubled quotes, CRLF, BOM, # comment lines before the header skipped) */
-function parseCSV(text, delim) {
+/* parse CSV text into rows of strings (quotes, doubled quotes, CRLF, BOM, # comment lines before the header skipped). A cell the
+   formula guard wrote ('=..., '+..., '-..., '@...) comes back without the apostrophe unless opts.raw is set. */
+function parseCSV(text, delim, opts) {
   text = String(text || '').replace(/^﻿/, ''); const d = delim || (text.split('\n', 1)[0].split('\t').length > text.split('\n', 1)[0].split(',').length ? '\t' : ',');
   const rows = []; let row = [], cur = '', q = false;
   for (let i = 0; i < text.length; i++) {
@@ -53,7 +63,8 @@ function parseCSV(text, delim) {
     if (c === '"') q = true; else if (c === d) { row.push(cur); cur = ''; } else if (c === '\n' || c === '\r') { if (c === '\r' && text[i + 1] === '\n') i++; row.push(cur); rows.push(row); row = []; cur = ''; } else cur += c;
   }
   if (cur !== '' || row.length) { row.push(cur); rows.push(row); }
-  return rows.filter(r => r.some(x => String(x).trim() !== '') && !/^#/.test(String(r[0] || '')));
+  const keep = rows.filter(r => r.some(x => String(x).trim() !== '') && !/^#/.test(String(r[0] || '')));
+  return opts && opts.raw ? keep : keep.map(r => r.map(x => /^'[=+\-@\t\r]/.test(x) ? x.slice(1) : x));
 }
 const CRC_TABLE = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1); t[n] = c >>> 0; } return t; })();
 function crc32(u8) { let c = 0xFFFFFFFF; for (let i = 0; i < u8.length; i++) c = CRC_TABLE[(c ^ u8[i]) & 0xFF] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; }

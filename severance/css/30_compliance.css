@@ -82,3 +82,34 @@
 #mod-compliance .ctl > .lbl{font-family:var(--display);font-weight:700;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--judg)}
 #mod-compliance table.t th{cursor:default}
 #mod-compliance #cpDraftNote:empty{display:none}
+
+/* license battery: the roster, the lookup */
+#mod-compliance textarea.copy.cp-roster{min-height:150px;font-family:var(--mono,ui-monospace,monospace);font-size:12.5px}
+#mod-compliance .cp-lq{display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap}
+#mod-compliance .cp-lq .ctl{flex:1 1 220px;min-width:0}
+#mod-compliance .cp-lq .ctl input{width:100%}
+#mod-compliance .cp-lres{margin-top:8px}
+#mod-compliance .cp-lrow{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;border-bottom:1px solid var(--line);padding:7px 0;font-size:13px;overflow-wrap:anywhere}
+#mod-compliance .cp-lrow > span:last-child{text-align:right;flex:none}
+#mod-compliance ol.cp-tax li{margin-bottom:6px;line-height:1.45}
+
+/* the law clock: the overlays drawn on the line chart, its legend, the tables */
+#mod-compliance .cp-clock{margin-top:6px}
+#mod-compliance .cp-ov .cp-cap{fill:none;stroke:var(--s2);stroke-width:2.4}
+#mod-compliance .cp-ov .cp-capl{fill:var(--s2);font-size:11.5px;font-family:var(--display);font-weight:700}
+#mod-compliance .cp-ov .cp-capg{stroke:var(--s2);stroke-width:1.2}
+#mod-compliance .cp-ov .cp-capt{fill:var(--s2);font-size:10.5px}
+#mod-compliance .cp-ov .cp-vl{stroke:var(--ink-3);stroke-width:1.1;stroke-dasharray:4 3}
+#mod-compliance .cp-ov .cp-vc{fill:var(--card);stroke:var(--ink-2);stroke-width:1.3}
+#mod-compliance .cp-ov .cp-vt{fill:var(--ink);font-size:10.5px;font-weight:700;font-family:var(--display)}
+#mod-compliance .cp-clockleg{display:grid;gap:4px;margin:4px 0 6px;line-height:1.45}
+#mod-compliance .cp-lk{display:flex;gap:8px;align-items:baseline}
+#mod-compliance .cp-lk-cap{display:inline-block;width:18px;height:0;border-top:2.4px solid var(--s2);flex:none;transform:translateY(-3px)}
+#mod-compliance .cp-lk-n{display:inline-flex;align-items:center;justify-content:center;flex:none;width:18px;height:18px;border:1.3px solid var(--ink-2);border-radius:50%;font-size:10.5px;font-family:var(--display);color:var(--ink);background:var(--card)}
+#mod-compliance table.t.cp-clockt td:nth-child(4){min-width:200px}
+#mod-compliance table.t.cp-clockt td .pill{white-space:nowrap}
+@media (max-width:640px){
+  #mod-compliance .cp-lrow{flex-direction:column}
+  #mod-compliance .cp-lrow > span:last-child{text-align:left}
+  #mod-compliance table.t.cp-clockt td:nth-child(4){min-width:170px}
+}

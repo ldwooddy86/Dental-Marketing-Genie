@@ -31,10 +31,19 @@ const dateOf = d => `${MO[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
 const dLocal = iso => { const m = String(iso || '').match(/^(\d{4})-(\d{2})-(\d{2})/); return m ? new Date(+m[1], +m[2] - 1, +m[3]) : new Date(iso); };
 const wkYearTicks = (week0, n) => { const w0 = dLocal(week0); const out = []; for (let y = w0.getFullYear(); y <= w0.getFullYear() + 15; y++) { const i = Math.round((new Date(y, 0, 15) - w0) / 6048e5); if (i >= 0 && i < n) out.push(i); } return out; };
 const MNAME = t => String(t || '').replace(/, TX(-AR)?$/, '').replace(/-/g, ' / ');
+// store.set returns true once saved and false when the browser refuses (storage full, or blocked); a full storage says so once a session
+let STORE_FULL = false;
 const store = {
   get(k, d) { try { const v = localStorage.getItem('sv.' + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
-  set(k, v) { try { localStorage.setItem('sv.' + k, JSON.stringify(v)); } catch (e) { } }
+  set(k, v) {
+    try { localStorage.setItem('sv.' + k, JSON.stringify(v)); return true; }
+    catch (e) { const full = !!e && (e.name === 'QuotaExceededError' || e.name === 'NS_ERROR_DOM_QUOTA_REACHED' || e.code === 22 || e.code === 1014 || /quota/i.test(String(e.message || ''))); if (full && !STORE_FULL) { STORE_FULL = true; try { if (typeof toast === 'function') toast('Browser storage is full; back up with Backup and clear old actuals'); } catch (_) { } } return false; }
+  }
 };
+// confidence grades, defined once (the footer prints them; tiles, legends and CSV notes use them)
+const GRADE_DEF = { A: 'primary and direct', B: 'primary with a caveat or a model on primary data', C: 'proxy or allocation', D: 'assumption' };
+const gradeLegend = () => 'Grades: ' + Object.keys(GRADE_DEF).map(g => g + ' ' + GRADE_DEF[g]).join('; ');
+function gradeChip(g) { const k = String(g || '').trim().toUpperCase()[0]; if (!GRADE_DEF[k]) return ''; return `<span class="grade ${k}" title="Confidence grade ${esc(String(g).trim())}: ${esc(GRADE_DEF[k])}">${esc(String(g).trim())}</span>`; }
 // counties and ZIPs ship columnar ({__packed, cols, rows}, written by tools/extract.mjs); unpack them before anything reads them
 (function unpackSuite() { const MISS = '\u0000'; const un = p => { const paths = p.cols.map(c => c.split('.')); return p.rows.map(r => { const o = {}; for (let i = 0; i < paths.length; i++) { const v = r[i]; if (v === MISS) continue; const ks = paths[i]; let t = o; for (let j = 0; j < ks.length - 1; j++) t = t[ks[j]] || (t[ks[j]] = {}); t[ks[ks.length - 1]] = v; } return o; }); }; ['zctas', 'counties'].forEach(k => { if (D[k] && D[k].__packed) D[k] = un(D[k]); }); })();
 // ---- data indices
@@ -165,43 +174,221 @@ function textW(t, px) { t = String(t == null ? '' : t); const k = px + '|' + t; 
 // the width a chart draws at: the container's own width when it is on screen, the caller's W otherwise (a hidden module)
 function chartBox(el, o, W0, H0) { const cw = o.fixed ? 0 : Math.round(el.clientWidth || 0); const W = cw >= 120 ? cw : W0; return { W, H: cw >= 120 && H0 ? Math.round(H0 * clamp(cw / W0, 0.85, 1.35)) : H0, live: cw >= 120 }; }
 // ---- choropleth
+// drawMap(el, o) draws an SVG choropleth into el (a .mapwrap) and returns the svg element, which also carries the map handle's
+// methods (see mapHandle). o:
+//   {W, H, paths:{id:d}, value:id=>num, color:num=>css, label:id=>html, onSelect, selected, counties:{id:d}, outline, cent:{id:[x,y]},
+//    labels:[ids], labelText:id=>text, ramp, legend:{title, min, max, css, grade}, noDataLabel, title,
+//    alt:{test:id=>bool, color, label}   a second empty class with its own swatch, for areas whose value is a true zero rather than missing,
+//    view:[x,y,w,h]                      draw only that part of the map (a metro), in map units (the home view),
+//    zoom                                false turns zoom and pan off (on by default): drag to pan once zoomed in, pinch, Ctrl or Cmd and the
+//                                        wheel (a plain wheel scrolls the page and shows a hint), double click (Shift zooms out), the + − ⌂
+//                                        buttons, and with the map focused + and −, the arrow keys, 0 or Home, Enter selects the area in the middle,
+//    maxZoom                             16 by default (the home view's width over the narrowest view),
+//    fit:[ids] (or fitTo)                frame those areas (or a box [x,y,w,h]) when drawn; applied again only when the list changes,
+//    dim:Set|[ids]|null                  areas outside the set are faded (the scope); kept across redraws until a call passes dim again,
+//    pins:[{x, y, shape:'circle'|'diamond'|'square', r, fill, label, title, tip, cls}] marks in map units, drawn at a constant screen size
+//                                        (r in px, 6 by default); kept across redraws until a call passes pins again,
+//    onPin:(pin, i)=>{}                  a click on a pin (without it a click passes to the area under the pin),
+//    reset:true                          forget the zoom kept from the last draw}
+// The zoom, dim and pins survive a redraw of the same geometry and home view (a layer change); a new view or geometry starts at home.
+const MAP_BB = new WeakMap();
+// an area's bounding box in map units, parsed once per geometry (every path is absolute 'M x,y x,y ... Z' rings)
+function mapBBox(paths, id) {
+  if (!paths) return null; let c = MAP_BB.get(paths); if (!c) { c = {}; MAP_BB.set(paths, c); } if (id in c) return c[id];
+  const n = String(paths[id] || '').match(/-?\d+(?:\.\d+)?/g) || []; let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+  for (let i = 0; i + 1 < n.length; i += 2) { const x = +n[i], y = +n[i + 1]; if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+  return (c[id] = isFinite(x0) ? [x0, y0, x1, y1] : null);
+}
+// the area that holds a point (map units): bounding boxes first, then an even odd ray test on the rings
+function mapAreaAt(paths, x, y) {
+  let hit = null;
+  for (const id in paths) {
+    const b = mapBBox(paths, id); if (!b || x < b[0] || x > b[2] || y < b[1] || y > b[3]) continue;
+    let inside = false; String(paths[id]).split(/[Mm]/).forEach(ring => { const n = ring.match(/-?\d+(?:\.\d+)?/g) || []; for (let i = 0, j = n.length - 2; i + 1 < n.length; j = i, i += 2) { const xi = +n[i], yi = +n[i + 1], xj = +n[j], yj = +n[j + 1]; if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / ((yj - yi) || 1e-12) + xi) inside = !inside; } });
+    if (inside) { hit = id; break; }
+  }
+  return hit;
+}
+const MAP_HELP = '. Hold Ctrl or Cmd and scroll, pinch, or double click to zoom; drag to move once zoomed in. With the map focused, plus and minus zoom, the arrow keys move it, 0 goes back and Enter selects the area in the middle.';
+function mapPinsSVG(list) {
+  return (list || []).map((p, i) => {
+    if (!p || !isN(p.x) || !isN(p.y)) return '';
+    const r = isN(p.r) ? p.r : 6, f = p.fill || 'var(--ink)', sh = p.shape || 'circle', q = (r * 1.35).toFixed(2);
+    const mark = sh === 'diamond' ? `<path d="M0 -${q}L${q} 0L0 ${q}L-${q} 0Z" fill="${esc(f)}"></path>` : sh === 'square' ? `<rect x="${-r}" y="${-r}" width="${2 * r}" height="${2 * r}" fill="${esc(f)}"></rect>` : `<circle r="${r}" fill="${esc(f)}"></circle>`;
+    return `<g class="pin${p.cls ? ' ' + esc(p.cls) : ''}" data-pin="${i}" style="transform:translate(${(+p.x).toFixed(2)}px,${(+p.y).toFixed(2)}px) scale(var(--u,1))">${mark}${p.label ? `<text class="pinl" x="${(sh === 'circle' ? r : r * 1.35) + 3}" y="4">${esc(p.label)}</text>` : ''}</g>`;
+  }).join('');
+}
 function drawMap(el, o) {
-  // o: {W,H, paths:{id:d}, value:id=>num, color:num=>css, label:id=>html, onSelect, selected, counties:{id:d}, outline, cent:{id:[x,y]}, labels:[ids], ramp, legend:{min,max,fmt,title}, noDataLabel,
-  //     alt:{test:id=>bool, color, label}: a second empty class with its own swatch, for areas whose value is a true zero rather than missing,
-  //     view:[x,y,w,h]: draw only that part of the map (a metro), in map units}
   const vb = o.view ? o.view.map(v => +(+v).toFixed(1)) : [0, 0, o.W, o.H];
-  const svg = [`<svg viewBox="${vb.join(' ')}" role="img" aria-label="${esc(o.title || 'map')}"><g class="areas">`];
+  const zoom = o.zoom !== false; const prev = el.__mz;
+  const keep = !!prev && !o.reset && prev.paths === o.paths && prev.home0.join(' ') === vb.join(' ');
+  const mz = keep ? prev : { paths: o.paths, home0: vb.slice(), home: vb.slice(), v: vb.slice(), pins: null, dim: null, fitKey: '', set: '' };
+  if (!keep && prev && prev.paths === o.paths) { mz.pins = prev.pins; mz.dim = prev.dim; }   // a new home view on the same geometry keeps the marks
+  mz.W = o.W; mz.H = o.H; mz.max = isN(o.maxZoom) && o.maxZoom >= 1 ? o.maxZoom : 16; mz.o = o; el.__mz = mz;
+  if (o.pins !== undefined) mz.pins = o.pins || null;
+  if (o.dim !== undefined) mz.dim = o.dim ? (o.dim instanceof Set ? o.dim : new Set(o.dim)) : null;
+  const fitIds = o.fit || o.fitTo; if (fitIds) { const k = [].concat(fitIds).join(','); if (k !== mz.fitKey) { mz.fitKey = k; const b = mapFitBox(mz, fitIds); if (b) mz.v = b; } } else mz.fitKey = '';
+  const vbs = mz.v.map(n => +(+n).toFixed(2)).join(' '); mz.set = vbs;
+  const ttl = o.title || 'map';
+  const svg = [`<svg viewBox="${vbs}" ${zoom ? `role="application" aria-roledescription="map" tabindex="0" aria-label="${esc(ttl + MAP_HELP)}"` : `role="img" aria-label="${esc(ttl)}"`}><g class="areas">`];
   for (const id in o.paths) {
     const v = o.value(id); const c = isN(v) ? o.color(v) : (o.alt && o.alt.test(id) ? o.alt.color : null);
-    svg.push(`<path class="area${o.selected === id ? ' sel' : ''}" data-id="${id}" d="${o.paths[id]}" fill="${c || 'var(--nodata)'}"></path>`);
+    svg.push(`<path class="area${o.selected === id ? ' sel' : ''}${mz.dim && !mz.dim.has(id) ? ' dim' : ''}" data-id="${id}" d="${o.paths[id]}" fill="${c || 'var(--nodata)'}"></path>`);
   }
   svg.push('</g>');
   if (o.counties) for (const id in o.counties) svg.push(`<path class="cty" d="${o.counties[id]}"></path>`);
   if (o.outline) svg.push(`<path class="outline" d="${o.outline}"></path>`);
   if (o.labels && o.cent) o.labels.forEach(id => { const p = o.cent[id]; if (p) svg.push(`<text class="lbl" x="${p[0]}" y="${p[1]}" text-anchor="middle">${esc(o.labelText ? o.labelText(id) : id)}</text>`); });
-  svg.push('</svg>');
+  svg.push(`<g class="pins">${mapPinsSVG(mz.pins)}</g></svg>`);
+  // the zoom buttons and the scroll hint sit over the map; the cross marks the area Enter selects while the map has keyboard focus
+  const ctl = zoom ? `<div class="zoomctl mzc"><button type="button" data-mz="in" aria-label="Zoom in" title="Zoom in"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v10M3 8h10"/></svg></button><button type="button" data-mz="out" aria-label="Zoom out" title="Zoom out"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h10"/></svg></button><button type="button" data-mz="home" aria-label="Back to the whole map" title="Back to the whole map"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 8.5L8 3l5.5 5.5M4.5 7v6h7V7"/></svg></button></div><div class="maphint" aria-hidden="true">Hold Ctrl or Cmd and scroll to zoom</div><div class="mzx" aria-hidden="true"></div>` : '';
   let leg = '';
   // the legend keeps its pieces together on a phone: the title, then [min ramp max], then each no data swatch with its label
-  if (o.legend) leg = `<div class="legend"><span class="lt">${esc(o.legend.title || '')}</span><span class="lr"><span class="num">${esc(o.legend.min)}</span><span class="ramp" style="background:${o.legend.css || rampCSS(o.ramp || 'ember')}"></span><span class="num">${esc(o.legend.max)}</span></span>${o.alt ? `<span class="lnd"><span class="nd" style="background:${o.alt.color}"></span><span>${esc(o.alt.label)}</span></span>` : ''}<span class="lnd"><span class="nd"></span><span>${esc(o.noDataLabel || 'no data')}</span></span></div>`;
-  el.innerHTML = svg.join('') + leg;
-  const s = el.querySelector('svg');
-  s.addEventListener('mousemove', e => { const p = e.target.closest('path.area'); if (!p) { hideTip(); return; } showTip(o.label(p.dataset.id), e.clientX, e.clientY); });
+  if (o.legend) leg = `<div class="legend"><span class="lt">${esc(o.legend.title || '')}${o.legend.grade ? ' ' + gradeChip(o.legend.grade) : ''}</span><span class="lr"><span class="num">${esc(o.legend.min)}</span><span class="ramp" style="background:${o.legend.css || rampCSS(o.ramp || 'ember')}"></span><span class="num">${esc(o.legend.max)}</span></span>${o.alt ? `<span class="lnd"><span class="nd" style="background:${o.alt.color}"></span><span>${esc(o.alt.label)}</span></span>` : ''}<span class="lnd"><span class="nd"></span><span>${esc(o.noDataLabel || 'no data')}</span></span></div>`;
+  el.innerHTML = svg.join('') + ctl + leg;
+  el.classList.toggle('mz', zoom);
+  const s = el.querySelector(':scope > svg');
+  s.addEventListener('mousemove', e => {
+    const pg = e.target.closest && e.target.closest('g.pin'); if (pg) { const p = (mz.pins || [])[+pg.dataset.pin]; if (p && (p.tip || p.title || p.label)) showTip(p.tip || `<b>${esc(p.title || p.label)}</b>`, e.clientX, e.clientY); else hideTip(); return; }
+    const p = e.target.closest('path.area'); if (!p) { hideTip(); return; } showTip(o.label(p.dataset.id), e.clientX, e.clientY);
+  });
   s.addEventListener('mouseleave', hideTip);
-  s.addEventListener('click', e => { const p = e.target.closest('path.area'); if (!p) return; if (o.onSelect) o.onSelect(p.dataset.id); if (tipFromTouch()) hideTip(); });
+  s.addEventListener('click', e => {
+    const pg = e.target.closest && e.target.closest('g.pin');
+    if (pg) { const i = +pg.dataset.pin, p = (mz.pins || [])[i]; if (p && o.onPin) { o.onPin(p, i); return; } const a = p ? mapAreaAt(o.paths, p.x, p.y) : null; if (a && o.onSelect) o.onSelect(a); return; }
+    const p = e.target.closest('path.area'); if (!p) return; if (o.onSelect) o.onSelect(p.dataset.id); if (tipFromTouch()) hideTip();
+  });
+  if (zoom) mapWire(el, s, mz);
   el.__mapW = vb[2]; mapScale(el); sizeWatch(el, { map: true });
+  const h = mapHandle(el); ['fit', 'dim', 'pins', 'select', 'reset', 'zoomBy'].forEach(k => { s[k] = h[k]; });
   return s;
 }
-// map labels are in map units; scale them so they read at about 11 px whatever the map's width, and hide them below 600 px
-function mapScale(el) { const s = el.querySelector(':scope > svg'); if (!s || !el.__mapW) return; const cw = s.clientWidth || el.clientWidth; if (!cw) return; s.style.setProperty('--u', (el.__mapW / cw).toFixed(3)); el.classList.toggle('nolbl', cw < 600); }
+// the frame for a list of area ids (or a box [x,y,w,h]) at the home view's shape, padded, no closer than the zoom limit
+function mapFitBox(mz, ids, pad) {
+  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity; const add = (a, b, c, d) => { x0 = Math.min(x0, a); y0 = Math.min(y0, b); x1 = Math.max(x1, c); y1 = Math.max(y1, d); };
+  const list = [].concat(ids || []);
+  if (list.length === 4 && list.every(isN)) add(list[0], list[1], list[0] + list[2], list[1] + list[3]);
+  else list.forEach(id => { const b = mapBBox(mz.paths, id); if (b) add(b[0], b[1], b[2], b[3]); else { const c = mz.o && mz.o.cent && mz.o.cent[id]; if (c) add(c[0], c[1], c[0], c[1]); } });
+  if (!isFinite(x0)) return null;
+  const asp = mz.home[2] / mz.home[3]; let w = x1 - x0, h = y1 - y0; const m = Math.max(w, h) * (isN(pad) ? pad : 0.12) + 2; w += 2 * m; h += 2 * m;
+  if (w / h < asp) w = h * asp; else h = w / asp;
+  const minW = mz.home[2] / mz.max; if (w < minW) { w = minW; h = w / asp; }
+  const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2; return mapClamp(mz, [cx - w / 2, cy - h / 2, w, h]);
+}
+// a view stays over the map: the pan bounds are the whole geometry and the home view; a view wider than them is centered
+function mapClamp(mz, v) {
+  const h0 = mz.home; const bx0 = Math.min(0, h0[0]), by0 = Math.min(0, h0[1]), bx1 = Math.max(mz.W || h0[2], h0[0] + h0[2]), by1 = Math.max(mz.H || h0[3], h0[1] + h0[3]);
+  let [x, y, w, h] = v; const bw = bx1 - bx0, bh = by1 - by0;
+  x = w >= bw ? bx0 + (bw - w) / 2 : clamp(x, bx0, bx1 - w); y = h >= bh ? by0 + (bh - h) / 2 : clamp(y, by0, by1 - h);
+  return [x, y, w, h];
+}
+const mapCanPan = mz => { const b = mapClamp(mz, [-1e9, -1e9, mz.v[2], mz.v[3]]), c = mapClamp(mz, [1e9, 1e9, mz.v[2], mz.v[3]]); return Math.abs(c[0] - b[0]) > 0.5 || Math.abs(c[1] - b[1]) > 0.5; };
+// a module may set the svg's viewBox itself after drawing (the Site Forge frames its counties): that frame becomes home
+function mapAdopt(el, s, mz) { const cur = s.getAttribute('viewBox'); if (cur && cur !== mz.set) { const a = cur.split(/[\s,]+/).map(Number); if (a.length === 4 && a.every(isN) && a[2] > 0 && a[3] > 0) { mz.v = a; mz.home = a.slice(); mz.set = cur; } } }
+function mapApply(el, s, mz) { const vbs = mz.v.map(n => +n.toFixed(2)).join(' '); s.setAttribute('viewBox', vbs); mz.set = vbs; el.classList.toggle('zoomed', mz.home[2] / mz.v[2] > 1.01); mapScale(el); }
+// zoom by f (below 1 zooms in) about a screen point, or about the middle of the view without one
+function mapZoomAt(el, s, mz, cx, cy, f) {
+  mapAdopt(el, s, mz); const v = mz.v; let p = null;
+  if (isN(cx)) { const m = s.getScreenCTM && s.getScreenCTM(); if (m && m.a) { const q = s.createSVGPoint(); q.x = cx; q.y = cy; const r = q.matrixTransform(m.inverse()); p = [r.x, r.y]; } }
+  if (!p) p = [v[0] + v[2] / 2, v[1] + v[3] / 2];
+  const asp = v[2] / v[3]; const h0 = mz.home; const bw = Math.max(mz.W || 0, h0[0] + h0[2]) - Math.min(0, h0[0]), bh = Math.max(mz.H || 0, h0[1] + h0[3]) - Math.min(0, h0[1]);
+  const nw = clamp(v[2] * f, h0[2] / mz.max, Math.max(h0[2], bw, bh * asp)); const r = nw / v[2];
+  mz.v = mapClamp(mz, [p[0] - (p[0] - v[0]) * r, p[1] - (p[1] - v[1]) * r, nw, v[3] * r]); mapApply(el, s, mz);
+}
+function mapHint(el, s) { const h = el.querySelector(':scope > .maphint'); if (!h) return; h.style.top = (s.offsetTop + s.offsetHeight / 2) + 'px'; h.classList.add('on'); clearTimeout(el.__mzHint); el.__mzHint = setTimeout(() => h.classList.remove('on'), 1300); }
+function mapWire(el, s, mz) {
+  const ptrs = new Map(); let drag = null, pinch = null; mz.dragged = false;
+  s.addEventListener('pointerdown', e => {
+    if (e.pointerType === 'mouse' && e.button !== 0) return; mapAdopt(el, s, mz);
+    ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY }); mz.dragged = false;
+    if (ptrs.size === 1) drag = { x: e.clientX, y: e.clientY, v: mz.v.slice(), on: false };
+    else if (ptrs.size === 2) { const [a, b] = [...ptrs.values()]; pinch = { d: Math.hypot(a.x - b.x, a.y - b.y) || 1, v: mz.v.slice(), mx: (a.x + b.x) / 2, my: (a.y + b.y) / 2 }; drag = null; }
+  });
+  s.addEventListener('pointermove', e => {
+    if (!ptrs.has(e.pointerId)) return; ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (pinch && ptrs.size === 2) { const [a, b] = [...ptrs.values()]; const d = Math.hypot(a.x - b.x, a.y - b.y) || 1; mz.dragged = true; hideTip(); mz.v = pinch.v.slice(); mapZoomAt(el, s, mz, pinch.mx, pinch.my, pinch.d / d); return; }
+    if (!drag || ptrs.size !== 1) return; const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+    if (!drag.on) { if (Math.abs(dx) + Math.abs(dy) < 5 || !mapCanPan(mz)) return; drag.on = true; mz.dragged = true; try { s.setPointerCapture(e.pointerId); } catch (_) { } el.classList.add('mdrag'); hideTip(); }
+    const m = s.getScreenCTM && s.getScreenCTM(); if (!m || !m.a) return;
+    mz.v = mapClamp(mz, [drag.v[0] - dx / m.a, drag.v[1] - dy / m.d, drag.v[2], drag.v[3]]); mapApply(el, s, mz);
+  });
+  const end = e => { if (!ptrs.has(e.pointerId)) return; ptrs.delete(e.pointerId); if (ptrs.size < 2) pinch = null; if (!ptrs.size) { drag = null; el.classList.remove('mdrag'); } };
+  s.addEventListener('pointerup', end); s.addEventListener('pointercancel', end); s.addEventListener('lostpointercapture', end);
+  // the click that ends a drag or a pinch is not a selection (a capture listener on the svg runs before the selection listener)
+  s.addEventListener('click', e => { if (mz.dragged) { mz.dragged = false; e.stopImmediatePropagation(); } }, true);
+  // a plain wheel scrolls the page and shows the hint; Ctrl or Cmd (and a trackpad pinch, which arrives as a Ctrl wheel) zooms
+  s.addEventListener('wheel', e => { if (!(e.ctrlKey || e.metaKey)) { mapHint(el, s); return; } e.preventDefault(); mapZoomAt(el, s, mz, e.clientX, e.clientY, Math.exp(clamp(e.deltaY * (e.deltaMode === 1 ? 16 : 1), -120, 120) * 0.0022)); }, { passive: false });
+  s.addEventListener('dblclick', e => { e.preventDefault(); mapZoomAt(el, s, mz, e.clientX, e.clientY, e.shiftKey ? 2 : 0.5); });
+  s.addEventListener('focus', () => { const x = el.querySelector(':scope > .mzx'); if (x) { x.style.top = (s.offsetTop + s.offsetHeight / 2) + 'px'; x.style.left = (s.offsetLeft + s.offsetWidth / 2) + 'px'; } });
+  s.addEventListener('keydown', e => {
+    const k = e.key; if (e.altKey || e.ctrlKey || e.metaKey) return;
+    if (k === '+' || k === '=' || k === '-' || k === '_') { e.preventDefault(); mapZoomAt(el, s, mz, null, null, k === '+' || k === '=' ? 0.6 : 1 / 0.6); return; }
+    if (k === '0' || k === 'Home') { e.preventDefault(); mapAdopt(el, s, mz); mz.v = mz.home.slice(); mapApply(el, s, mz); return; }
+    if (/^Arrow/.test(k) && mapCanPan(mz)) { e.preventDefault(); const st = mz.v[2] * 0.12, sy = mz.v[3] * 0.12; mz.v = mapClamp(mz, [mz.v[0] + (k === 'ArrowLeft' ? -st : k === 'ArrowRight' ? st : 0), mz.v[1] + (k === 'ArrowUp' ? -sy : k === 'ArrowDown' ? sy : 0), mz.v[2], mz.v[3]]); mapApply(el, s, mz); return; }
+    if (k === 'Enter' || k === ' ') { e.preventDefault(); const id = mapAreaAt(mz.paths, mz.v[0] + mz.v[2] / 2, mz.v[1] + mz.v[3] / 2); if (id && mz.o.onSelect) mz.o.onSelect(id); }
+  });
+  $$(':scope > .mzc button', el).forEach(b => b.onclick = () => { const z = b.dataset.mz; if (z === 'home') { mapAdopt(el, s, mz); mz.v = mz.home.slice(); mapApply(el, s, mz); } else mapZoomAt(el, s, mz, null, null, z === 'in' ? 0.6 : 1 / 0.6); });
+  el.classList.toggle('zoomed', mz.home[2] / mz.v[2] > 1.01);
+}
+// mapHandle(el): one handle per map element that survives redraws: fit(ids, pad), dim(set|null), pins(list|null), select(id),
+// reset(), zoomBy(f) (below 1 zooms in), view() → [x,y,w,h], level() → home width over view width. Each returns the handle.
+function mapHandle(el) {
+  if (el.__map) return el.__map;
+  const S = () => el.querySelector(':scope > svg'); const Z = () => el.__mz;
+  const h = {
+    fit(ids, pad) { const s = S(), mz = Z(); if (!s || !mz) return h; mapAdopt(el, s, mz); const b = mapFitBox(mz, ids, pad); if (b) { mz.v = b; mapApply(el, s, mz); } return h; },
+    dim(set) { const s = S(), mz = Z(); if (!mz) return h; mz.dim = set ? (set instanceof Set ? set : new Set(set)) : null; if (s) $$('path.area', s).forEach(p => p.classList.toggle('dim', !!mz.dim && !mz.dim.has(p.dataset.id))); return h; },
+    pins(list) { const s = S(), mz = Z(); if (!mz) return h; mz.pins = list || null; const g = s && s.querySelector('g.pins'); if (g) g.innerHTML = mapPinsSVG(mz.pins); return h; },
+    select(id) { const mz = Z(); if (mz && mz.o) mz.o.selected = id; markSel(el, id); return h; },
+    reset() { const s = S(), mz = Z(); if (!s || !mz) return h; mapAdopt(el, s, mz); mz.v = mz.home.slice(); mapApply(el, s, mz); return h; },
+    zoomBy(f) { const s = S(), mz = Z(); if (s && mz && isN(f) && f > 0) mapZoomAt(el, s, mz, null, null, f); return h; },
+    view() { const mz = Z(); return mz ? mz.v.slice() : null; },
+    level() { const mz = Z(); return mz ? mz.home[2] / mz.v[2] : 1; }
+  };
+  return (el.__map = h);
+}
+// map labels and pins are in map units; scale them so they read at about 11 px whatever the map's width and zoom, and hide the
+// labels below 600 px until the map is zoomed in
+function mapScale(el) {
+  const s = el.querySelector(':scope > svg'); if (!s) return; const vb = String(s.getAttribute('viewBox') || '').split(/[\s,]+/).map(Number);
+  const vw = vb.length === 4 && vb[2] > 0 ? vb[2] : el.__mapW; if (!vw) return; const cw = s.clientWidth || el.clientWidth; if (!cw) return;
+  const ch = s.clientHeight; let u = vw / cw; if (vb.length === 4 && vb[3] > 0 && ch) u = Math.max(u, vb[3] / ch);
+  s.style.setProperty('--u', u.toFixed(4)); const mz = el.__mz; el.classList.toggle('nolbl', cw < 600 && !(mz && mz.home[2] / vw >= 1.8));
+}
 function markSel(el, id) { $$('path.area', el).forEach(p => p.classList.toggle('sel', p.dataset.id === id)); if (id) { const p = el.querySelector(`path.area[data-id="${id}"]`); if (p) p.parentNode.appendChild(p); } }
+// pins: map units from degrees on any map ('state' or a metro code; the maps are linear in their bounds, good to about 2 km), a ZIP's
+// center on a map, the firm's offices as diamonds, and the courthouses of every Metro Atlas file already loaded
+function mapXY(geo, lon, lat) { const M = !geo || geo === 'state' ? GEO.state : GEO.metros[geo]; if (!M || !M.bounds || !isN(lon) || !isN(lat)) return null; const b = M.bounds; return [(lon - b[0]) / (b[2] - b[0]) * M.W, (b[3] - lat) / (b[3] - b[1]) * M.H]; }
+function zipXY(geo, zip) {
+  const z = ZI[String(zip || '').trim()]; if (!z) return null; const M = GEO.metros[z.msa];
+  if (geo && geo !== 'state') { const G = GEO.metros[geo]; return G && G.zcent && G.zcent[z.zip] ? G.zcent[z.zip].slice() : null; }
+  if (!M || !z.cent || !M.bounds) return GEO.state.cent[z.county] ? GEO.state.cent[z.county].slice() : null; const b = M.bounds;
+  return mapXY('state', b[0] + z.cent[0] / M.W * (b[2] - b[0]), b[3] - z.cent[1] / M.H * (b[3] - b[1]));
+}
+function firmPins(geo) {
+  if (typeof FIRM === 'undefined' || !FIRM.get) return []; const F = FIRM.get();
+  return (F.offices || []).map(of => { const zip = String(of.zip || '').trim(); const fips = of.county || (ZI[zip] || {}).county || ''; let xy = zipXY(geo, zip);
+    if (!xy && (!geo || geo === 'state') && GEO.state.cent[fips]) xy = GEO.state.cent[fips].slice(); if (!xy && geo && geo !== 'state' && GEO.metros[geo] && GEO.metros[geo].ccent[fips]) xy = GEO.metros[geo].ccent[fips].slice(); if (!xy) return null;
+    const where = [of.street, of.city, zip].filter(Boolean).join(', ');
+    return { x: xy[0], y: xy[1], shape: 'diamond', r: 6, fill: 'var(--firm-accent, var(--s2))', cls: 'firmpin', label: of.label || of.city || '', tip: `<b>${esc(F.name || 'Firm office')}${of.label ? ' · ' + esc(of.label) : ''}</b>${where ? `<div class="small">${esc(where)}</div>` : ''}${of.primary ? '<div class="small">Primary practice location</div>' : ''}` }; }).filter(Boolean);
+}
+// courthouses from the Metro Atlas files already loaded (they load on first use): {fips, name, addr, city, lat, lon, metro}
+function loadedCourts() {
+  const out = []; const seen = new Set(); const pools = [window.__SEV_ATLAS__ || {}, typeof AT_CACHE !== 'undefined' ? AT_CACHE : {}];
+  pools.forEach(P => Object.keys(P).forEach(k => { const A = P[k]; ((A && A.courts) || []).forEach(c => { const fips = '48' + String(c.f || '').padStart(3, '0'); const key = fips + '|' + c.n; if (seen.has(key)) return; seen.add(key); out.push({ fips, name: c.n, addr: c.a || '', city: String(c.a || '').split(', ').pop(), lat: c.lat, lon: c.lon, metro: k }); }); }));
+  return out;
+}
+function courtPins(geo) { return loadedCourts().map(c => { const xy = mapXY(geo, c.lon, c.lat); return xy ? { x: xy[0], y: xy[1], shape: 'square', r: 4.5, fill: 'var(--title)', cls: 'courtpin', label: '', tip: `<b>${esc(c.name)}</b><div class="small">${esc(c.addr)}</div><div class="small">${esc(cname(c.fips))} County district courts, family cases</div>` } : null; }).filter(Boolean); }
 // ---- charts
 function lineChart(el, o) {
-  // o: {series:[{name,color,values:[{x,y}]}], W,H, xfmt, yfmt, area, ymin, xTicks:[x...], xTickFmt, yTicks, bands:[{x0,x1,label}], title, fixed}
+  // o: {series:[{name,color,values:[{x,y}]}], W,H, xfmt, yfmt, area, ymin, xTicks:[x...], xTickFmt, yTicks, bands:[{x0,x1,label}], title, fixed,
+  //     hlines:[{y, label, color}] reference lines across (the y range stretches to show them), vlines:[{x, label, color}] marks down (drawn when inside the x range)}
   // W and H are the design size: the chart draws at the container's width (H follows within 0.85 to 1.35 of the design ratio);
   // fixed:true draws at W exactly, as before.
   const bx = chartBox(el, o, o.W || 720, o.H || 240); const W = bx.W, H = bx.H; sizeWatch(el, { fn: lineChart, o, w: bx.live ? W : 0 });
   const xs = [], ys = []; o.series.forEach(s => s.values.forEach(p => { if (isN(p.y)) { xs.push(p.x); ys.push(p.y); } }));
   if (!xs.length) { el.innerHTML = '<div class="small">no data</div>'; return; }
+  const hl = (o.hlines || []).filter(h => h && isN(h.y)); hl.forEach(h => ys.push(h.y));
   const x0 = Math.min(...xs), x1 = Math.max(...xs); let y0 = isN(o.ymin) ? o.ymin : Math.min(0, Math.min(...ys)), y1 = Math.max(...ys); if (y1 === y0) y1 = y0 + 1; if (o.ypad !== false) y1 = y1 + (y1 - y0) * 0.08;
   const yt = o.yTicks || niceTicks(y0, y1, 4); const ylab = yt.map(v => String(o.yfmt ? o.yfmt(v) : K(v)));
   const AX = 11.5;   // the axis text size in px (app.css .chart .ax)
@@ -210,6 +397,9 @@ function lineChart(el, o) {
   const svg = [`<svg viewBox="0 0 ${W} ${H}"${o.title ? ` role="img" aria-label="${esc(o.title)}"` : ''}>`];
   yt.forEach((v, i) => { svg.push(`<line class="gridl" x1="${m.l}" x2="${W - m.r}" y1="${Y(v)}" y2="${Y(v)}"></line><text class="ax" x="${m.l - 6}" y="${Y(v) + 4}" text-anchor="end">${esc(ylab[i])}</text>`); });
   if (o.bands) o.bands.forEach(b => { const bw = Math.max(1, X(b.x1) - X(b.x0)); const fits = textW(b.label || '', AX) < Math.max(bw, 90); svg.push(`<rect x="${X(b.x0)}" y="${m.t}" width="${bw}" height="${H - m.t - m.b}" fill="var(--sunk-2)" opacity=".5"></rect>${fits ? `<text class="ax" x="${X(b.x0) + 3}" y="${m.t + 11}">${esc(b.label || '')}</text>` : ''}`); });
+  // reference lines: across at a value (the state rate), down at a moment (the 2020 closures, a large WARN notice); labels keep clear of each other
+  hl.forEach(h => { const y = Y(h.y); if (y < m.t - 0.5 || y > H - m.b + 0.5) return; const c = h.color || 'var(--ink-3)'; const below = y - 4 < m.t + 9; svg.push(`<line class="refl" x1="${m.l}" x2="${W - m.r}" y1="${y.toFixed(1)}" y2="${y.toFixed(1)}" style="stroke:${c}"></line>${h.label ? `<text class="ax refl-l" x="${W - m.r - 4}" y="${(below ? y + 13 : y - 4).toFixed(1)}" text-anchor="end">${esc(h.label)}</text>` : ''}`); });
+  { let lastR = -Infinity, dy = 0; (o.vlines || []).filter(v => v && isN(v.x) && v.x >= x0 && v.x <= x1).sort((a, b) => a.x - b.x).forEach(v => { const x = X(v.x); const c = v.color || 'var(--ink-3)'; svg.push(`<line class="refl" x1="${x.toFixed(1)}" x2="${x.toFixed(1)}" y1="${m.t}" y2="${H - m.b}" style="stroke:${c}"></line>`); if (!v.label) return; const tw = textW(v.label, AX); const end = x + 4 + tw > W - m.r; const L = end ? x - 4 - tw : x + 4; dy = L < lastR + 6 ? (dy + 13) % 39 : 0; lastR = L + tw; svg.push(`<text class="ax refl-l" x="${(end ? x - 4 : x + 4).toFixed(1)}" y="${m.t + 11 + dy}" text-anchor="${end ? 'end' : 'start'}">${esc(v.label)}</text>`); }); }
   // x ticks: drop every other one (then more) until the labels no longer collide at this width
   let xt = (o.xTicks || niceTicks(x0, x1, 6)).filter(v => v >= x0 && v <= x1); const xlab = v => String(o.xTickFmt ? o.xTickFmt(v) : v);
   const room = (W - m.l - m.r) / Math.max(1, xt.length - 1); const need = Math.max(...xt.map(v => textW(xlab(v), AX)), 6) + 10;
@@ -252,6 +442,59 @@ function barChart(el, o) {
   rows.forEach((r, i) => { const y = 4 + i * (bh + gap); const w = Math.abs(r.value) * scale; const x = r.value < 0 ? zero - w : zero; const lab = cut(r.label); svg.push(`<text class="lbl" x="${lw - 8}" y="${y + bh / 2 + 4}" text-anchor="end">${lab !== String(r.label) ? `<title>${esc(r.label)}</title>` : ''}${esc(lab)}</text><rect x="${x}" y="${y}" width="${Math.max(w, 1)}" height="${bh}" fill="${r.color || 'var(--s1)'}"><title>${esc(r.label)}: ${esc(fv(r.value))}</title></rect><text class="lbl" x="${r.value < 0 ? zero + 5 : x + w + 4}" y="${y + bh / 2 + 4}" text-anchor="start" style="font-variant-numeric:tabular-nums">${esc(fv(r.value))}</text>`); });
   if (neg) svg.push(`<line x1="${zero}" x2="${zero}" y1="0" y2="${H}" class="gridl" style="stroke:var(--line-strong)"></line>`);
   svg.push('</svg>'); el.innerHTML = svg.join('');
+}
+// colBars: vertical bars by category, stacked or side by side (filings by case type by year, intake by hour).
+// o:{cats:[label], series:[{name, color, values:[num by category]}], stacked, fmt (values in the tooltip), yfmt (axis), title, W, H, fixed,
+//    hlines:[{y, label, color}], tip:i=>html added to a category's tooltip, onBar:i=>{} (a click on a category), sel:i (a category drawn
+//    in full while the others fade)}. Draws at the container's width like lineChart; positive values stack up and negative ones down.
+function colBars(el, o) {
+  const bx = chartBox(el, o, o.W || 640, o.H || 260); const W = bx.W, H = bx.H; sizeWatch(el, { fn: colBars, o, w: bx.live ? W : 0 });
+  const cats = o.cats || [], ser = (o.series || []).filter(s => s && Array.isArray(s.values)); const n = cats.length; const stacked = !!o.stacked;
+  if (!n || !ser.some(s => s.values.some(isN))) { el.innerHTML = '<div class="small">no data</div>'; return; }
+  const AX = 11.5; let hi = 0, lo = 0;
+  cats.forEach((c, i) => { if (stacked) { let p = 0, q = 0; ser.forEach(s => { const v = s.values[i]; if (isN(v)) { if (v >= 0) p += v; else q += v; } }); hi = Math.max(hi, p); lo = Math.min(lo, q); } else ser.forEach(s => { const v = s.values[i]; if (isN(v)) { hi = Math.max(hi, v); lo = Math.min(lo, v); } }); });
+  const hl = (o.hlines || []).filter(h => h && isN(h.y)); hl.forEach(h => { hi = Math.max(hi, h.y); lo = Math.min(lo, h.y); });
+  if (hi === lo) hi = lo + 1; hi += (hi - lo) * 0.06;
+  const yt = niceTicks(lo, hi, 4); const y0 = Math.min(lo, yt[0]), y1 = Math.max(hi, yt[yt.length - 1]); const ylab = yt.map(v => String(o.yfmt ? o.yfmt(v) : K(v)));
+  const m = { l: Math.max(40, Math.round(Math.max(...ylab.map(s => textW(s, AX))) + 12)), r: 12, t: 14, b: 26 };
+  const Y = v => m.t + (1 - (v - y0) / ((y1 - y0) || 1)) * (H - m.t - m.b); const bw = (W - m.l - m.r) / n; const X = i => m.l + i * bw;
+  const pad = Math.min(10, bw * 0.16); const gw = Math.max(1, (bw - pad * 2) / (stacked ? 1 : ser.length)); const fv = v => String(o.fmt ? o.fmt(v) : N(v));
+  const svg = [`<svg viewBox="0 0 ${W} ${H}"${o.title ? ` role="img" aria-label="${esc(o.title)}"` : ''}>`];
+  yt.forEach((v, i) => svg.push(`<line class="gridl" x1="${m.l}" x2="${W - m.r}" y1="${Y(v).toFixed(1)}" y2="${Y(v).toFixed(1)}"></line><text class="ax" x="${m.l - 6}" y="${(Y(v) + 4).toFixed(1)}" text-anchor="end">${esc(ylab[i])}</text>`));
+  cats.forEach((c, i) => {
+    let up = 0, dn = 0; const fade = isN(o.sel) && o.sel !== i ? ' fade' : '';
+    ser.forEach((s, j) => {
+      const v = s.values[i]; if (!isN(v) || v === 0) return; let a, b;
+      if (stacked) { if (v >= 0) { a = up; b = up + v; up = b; } else { a = dn; b = dn + v; dn = b; } } else { a = 0; b = v; }
+      const yA = Y(Math.max(a, b)), yB = Y(Math.min(a, b)); const x = stacked ? X(i) + pad : X(i) + pad + j * gw; const w = Math.max(1, (stacked ? bw - pad * 2 : gw - (ser.length > 1 ? 1 : 0)));
+      svg.push(`<rect class="cb${fade}" x="${x.toFixed(1)}" y="${yA.toFixed(1)}" width="${w.toFixed(1)}" height="${Math.max(0.5, yB - yA - (stacked ? 0.75 : 0)).toFixed(1)}" fill="${s.color || 'var(--s1)'}"></rect>`);
+    });
+  });
+  // category labels: every k-th one, so they never collide at this width
+  const cl = i => String(o.catFmt ? o.catFmt(cats[i], i) : cats[i]); const need = Math.max(...cats.map((c, i) => textW(cl(i), AX))) + 8; const k = Math.max(1, Math.ceil(need / bw));
+  cats.forEach((c, i) => { if (i % k === 0 || (k > 1 && i === n - 1 && (n - 1) % k >= Math.ceil(k / 2))) svg.push(`<text class="ax" x="${(X(i) + bw / 2).toFixed(1)}" y="${H - 8}" text-anchor="middle">${esc(cl(i))}</text>`); });
+  svg.push(`<line class="gridl" x1="${m.l}" x2="${W - m.r}" y1="${Y(0).toFixed(1)}" y2="${Y(0).toFixed(1)}" style="stroke:var(--line-strong)"></line>`);
+  hl.forEach(h => { const y = Y(h.y); const below = y - 4 < m.t + 9; svg.push(`<line class="refl" x1="${m.l}" x2="${W - m.r}" y1="${y.toFixed(1)}" y2="${y.toFixed(1)}" style="stroke:${h.color || 'var(--ink-3)'}"></line>${h.label ? `<text class="ax refl-l" x="${W - m.r - 4}" y="${(below ? y + 13 : y - 4).toFixed(1)}" text-anchor="end">${esc(h.label)}</text>` : ''}`); });
+  cats.forEach((c, i) => svg.push(`<rect class="cbhit" data-i="${i}" x="${X(i).toFixed(1)}" y="${m.t}" width="${bw.toFixed(1)}" height="${H - m.t - m.b}"></rect>`));
+  svg.push('</svg>');
+  const legS = ser.filter(s => !s.nolegend); el.innerHTML = svg.join('') + (legS.length > 1 ? `<div class="legendc">${legS.map(s => `<span><i style="background:${s.color || 'var(--s1)'}"></i>${esc(s.lname || s.name)}</span>`).join('')}</div>` : '');
+  const s = el.querySelector('svg');
+  s.addEventListener('mousemove', e => { const r = e.target.closest('rect.cbhit'); if (!r) { hideTip(); return; } const i = +r.dataset.i; const vals = ser.map(q => q.values[i]); const tot = stacked ? sum(vals.filter(isN)) : null;
+    showTip(`<b>${esc(cl(i))}</b>${ser.slice().reverse().map(q => isN(q.values[i]) ? `<div class="row"><span><i style="display:inline-block;width:8px;height:8px;background:${q.color || 'var(--s1)'};margin-right:6px"></i>${esc(q.name)}</span><span>${esc(fv(q.values[i]))}</span></div>` : '').join('')}${stacked && ser.length > 1 ? `<div class="row"><span>Total</span><span>${esc(fv(tot))}</span></div>` : ''}${o.tip ? o.tip(i) : ''}`, e.clientX, e.clientY); });
+  s.addEventListener('mouseleave', hideTip);
+  if (o.onBar) s.addEventListener('click', e => { const r = e.target.closest('rect.cbhit'); if (r) o.onBar(+r.dataset.i); if (tipFromTouch()) hideTip(); });
+}
+// corrMatrix(el, {keys, labels, matrix, caption, corner, fmt, legend}): a correlation table colored on the diverging ramp (slate for
+// negative, leaf for positive) with CSS variables, so a theme switch needs no redraw. labels: {key: text} or [text by key order];
+// matrix: {a: {b: r}} or [[r]] in key order (null prints n/a). Writes into el when given and returns the html.
+function corrMatrix(el, o) {
+  o = o || {}; const ks = o.keys || []; const lab = k => String((o.labels && (Array.isArray(o.labels) ? o.labels[ks.indexOf(k)] : o.labels[k])) || k);
+  const get = (a, b, i, j) => { const M = o.matrix; if (!M) return null; const v = Array.isArray(M) ? (M[i] || [])[j] : (M[a] || {})[b]; return isN(v) ? v : null; };
+  const fmt = o.fmt || (v => MINUS(v.toFixed(2)));
+  const cell = (a, b, i, j) => { if (i === j) return `<td style="background:var(--sunk);color:var(--ink-3)">${esc(fmt(1))}</td>`; const v = get(a, b, i, j); if (!isN(v)) return `<td style="color:var(--ink-3)">${NA}</td>`; const bg = divergeColor(clamp(v, -1, 1)); return `<td style="background:${bg};color:${inkOn(bg)}" title="${esc(lab(a))} and ${esc(lab(b))}: r = ${esc(fmt(v))}">${esc(fmt(v))}</td>`; };
+  const leg = o.legend === false ? '' : `<div class="legend"><span class="lr"><span class="num">${MINUS('-1')}</span><span class="ramp" style="background:linear-gradient(90deg,${RAMPS.slate.slice(1).reverse().join(',')},var(--rp-mid),${RAMPS.leaf.slice(1).join(',')})"></span><span class="num">+1</span></span><span class="small">Pearson r: slate where two measures move in opposite directions, leaf where they move together</span></div>`;
+  const html = `<div class="tblbox"><div class="tblwrap"><table class="t corr"><caption class="vh">${esc(o.caption || o.title || 'Correlation matrix')}</caption><thead><tr><th scope="col">${esc(o.corner || '')}</th>${ks.map(k => `<th scope="col">${esc(lab(k))}</th>`).join('')}</tr></thead><tbody>${ks.map((a, i) => `<tr><th scope="row">${esc(lab(a))}</th>${ks.map((b, j) => cell(a, b, i, j)).join('')}</tr>`).join('')}</tbody></table></div></div>${leg}`;
+  if (el) el.innerHTML = html; return html;
 }
 // scatter: o:{points:[{x, y, r, id, label, color}], xfmt, yfmt, xlab, ylab, ylog, W, H, title, onPoint, selected, tip(p)}. Draws at the
 // container's width like lineChart; ylog plots y on a log axis (y must be above 0); a click on a point calls onPoint(id).
@@ -297,9 +540,13 @@ function coefPlot(el, o) {
 }
 function spark(vals, w = 120, h = 28, color = 'var(--s1)') { const v = vals.filter(isN); if (v.length < 2) return ''; const mn = Math.min(...v), mx = Math.max(...v); const d = vals.map((y, i) => isN(y) ? (i ? 'L' : 'M') + (i / (vals.length - 1) * w).toFixed(1) + ',' + (h - 2 - (y - mn) / (mx - mn || 1) * (h - 4)).toFixed(1) : '').join(''); return `<svg viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" style="vertical-align:middle"><path d="${d}" fill="none" stroke="${color}" stroke-width="1.6"></path></svg>`; }
 function seasBlock(el, idx, color) { const mx = Math.max(...idx), mn = Math.min(...idx); el.innerHTML = `<div class="seas">${idx.map((v, i) => { const t = (v - mn) / (mx - mn || 1); const bg = rampColor(color || 'ember', 0.08 + t * 0.8); return `<div style="background:${bg};color:${inkOn(bg)}"><b>${v.toFixed(0)}</b>${MO[i]}</div>`; }).join('')}</div>`; }
+// the firm's markets as ids: its counties (FIPS) and its office ZIPs; null when no firm profile is set
+function firmIds() { if (typeof FIRM === 'undefined' || !FIRM.get) return null; try { const F = FIRM.get(); const ids = new Set(FIRM.counties()); (F.offices || []).forEach(of => { const z = String(of.zip || '').trim(); if (ZI[z]) ids.add(z); }); return ids.size ? ids : null; } catch (e) { return null; } }
 // ---- tables
 function table(el, o) {
-  // o:{cols:[{k,l,fmt,cls,w,tip, h,d,pct}], rows:[obj], sort:{k,dir}, onRow, selected, limit, caption}
+  // o:{cols:[{k,l,fmt,cls,w,tip, h,d,pct}], rows:[obj], sort:{k,dir}, onRow, selected, limit, caption, rowClass, firm}
+  // rowClass: a class string, or row=>class; firm (on unless false): rows whose _id is one of the firm's counties (FIPS) or office ZIPs
+  // carry the class 'firm' and are marked (the firm's own markets read as the benchmark rows)
   // h, d and pct describe the column for csv(): export header, decimals, and a fraction written as a percent
   // Sort headers are buttons with aria-sort; rows with onRow are focusable and open with Enter or Space.
   let st = { k: o.sort ? o.sort.k : o.cols[1].k, dir: o.sort ? o.sort.dir : -1 };
@@ -310,9 +557,9 @@ function table(el, o) {
     const ae = document.activeElement; const back = ae && el.contains(ae) ? { k: ae.closest('th') ? ae.closest('th').dataset.k : null, id: ae.matches('tr[data-id]') ? ae.dataset.id : null } : null;
     const rows = sorted();
     const lim = o.limit ? rows.slice(0, o.limit) : rows;
-    const tab = o.onRow ? ' tabindex="0"' : '';
+    const tab = o.onRow ? ' tabindex="0"' : ''; const fs = o.firm === false ? null : firmIds();
     const ow = el.querySelector('.tblwrap'); const keep = ow ? [ow.scrollTop, ow.scrollLeft] : null;
-    el.innerHTML = `<div class="tblbox"><div class="tblwrap"><table class="t">${o.caption ? `<caption class="vh">${esc(o.caption)}</caption>` : ''}<thead><tr>${o.cols.map(c => `<th data-k="${esc(c.k)}" class="${st.k === c.k ? (st.dir < 0 ? 's' : 'sa') : ''} ${c.cls || ''}"${st.k === c.k ? ` aria-sort="${st.dir < 0 ? 'descending' : 'ascending'}"` : ''}><button type="button" class="thb"${c.tip ? ` title="${esc(c.tip)}"` : ''}>${esc(c.l)}</button></th>`).join('')}</tr></thead><tbody>${lim.map(r => { const sel = o.selected && r._id === o.selected; return `<tr data-id="${esc(r._id)}"${tab} class="${sel ? 'sel' : ''}"${sel ? ' aria-current="true"' : ''}>${o.cols.map((c, i) => `<td class="${i === 0 ? 'name' : ''} ${c.cls || ''}">${c.fmt ? c.fmt(r[c.k], r) : esc(r[c.k])}</td>`).join('')}</tr>`; }).join('')}</tbody></table></div></div>${o.limit && rows.length > o.limit ? `<div class="small">Showing ${o.limit} of ${rows.length}. Sort or filter to see others.</div>` : ''}`;
+    el.innerHTML = `<div class="tblbox"><div class="tblwrap"><table class="t">${o.caption ? `<caption class="vh">${esc(o.caption)}</caption>` : ''}<thead><tr>${o.cols.map(c => `<th data-k="${esc(c.k)}" class="${st.k === c.k ? (st.dir < 0 ? 's' : 'sa') : ''} ${c.cls || ''}"${st.k === c.k ? ` aria-sort="${st.dir < 0 ? 'descending' : 'ascending'}"` : ''}><button type="button" class="thb"${c.tip ? ` title="${esc(c.tip)}"` : ''}>${esc(c.l)}</button></th>`).join('')}</tr></thead><tbody>${lim.map(r => { const sel = o.selected && r._id === o.selected; const fm = fs && r._id != null && fs.has(String(r._id)); const rc = typeof o.rowClass === 'function' ? o.rowClass(r) : o.rowClass; const cl = [sel ? 'sel' : '', fm ? 'firm' : '', rc || ''].filter(Boolean).join(' '); return `<tr data-id="${esc(r._id)}"${tab} class="${esc(cl)}"${sel ? ' aria-current="true"' : ''}${fm ? ' aria-description="the firm\'s market"' : ''}>${o.cols.map((c, i) => `<td class="${i === 0 ? 'name' : ''} ${c.cls || ''}">${c.fmt ? c.fmt(r[c.k], r) : esc(r[c.k])}</td>`).join('')}</tr>`; }).join('')}</tbody></table></div></div>${o.limit && rows.length > o.limit ? `<div class="small">Showing ${o.limit} of ${rows.length}. Sort or filter to see others.</div>` : ''}`;
     $$('th', el).forEach(th => th.onclick = () => { const k = th.dataset.k; if (st.k === k) st.dir = -st.dir; else { st.k = k; st.dir = -1; } render(); const b = el.querySelector(`th[data-k="${CSS.escape(k)}"] .thb`); if (b) b.focus(); });
     if (o.onRow) { $$('tbody tr', el).forEach(tr => tr.onclick = () => o.onRow(tr.dataset.id)); const tb = el.querySelector('tbody'); if (tb) tb.onkeydown = e => { if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('tr[data-id]')) { e.preventDefault(); o.onRow(e.target.dataset.id); } }; }
     const nw = el.querySelector('.tblwrap'); if (keep && nw) { nw.scrollTop = keep[0]; nw.scrollLeft = keep[1]; }
@@ -327,11 +574,31 @@ function table(el, o) {
 }
 // ---- csv / export
 // cols:[{l, k (key or row=>value), d (round to d decimals), pct (a fraction written as a percent)}]; numbers are written without
-// thousands separators so a spreadsheet reads them as numbers
-function csv(rows, cols) {
-  const q = v => { const s = v == null ? '' : String(v); return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
+// thousands separators so a spreadsheet reads them as numbers. opts: {note, guard, platform}
+//   note      provenance lines written above the header as '# ' comments (csvNote(module) builds the standard set)
+//   guard     on by default: a text cell starting with =, +, -, @, a tab or a carriage return gets a leading apostrophe so a spreadsheet
+//             cannot run it as a formula (a plain number such as -12.5 or +3% is left alone)
+//   platform  true for a file a platform imports (Google Ads Editor, Microsoft Advertising, Meta): no guard and no note
+const CSV_NUM = /^[+-]?(?:\d[\d,]*(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?%?$/;
+const csvSafe = v => (typeof v === 'string' && /^[=+\-@\t\r]/.test(v) && !CSV_NUM.test(v.trim())) ? "'" + v : v;
+const csvNoteLines = note => note == null || note === '' ? '' : (Array.isArray(note) ? note : String(note).split('\n')).map(l => /^#/.test(l) ? l : '# ' + l).join('\n') + '\n';
+function csv(rows, cols, opts) {
+  opts = opts || {}; const guard = !opts.platform && opts.guard !== false;
+  const q = v => { if (guard) v = csvSafe(v); const s = v == null ? '' : String(v); return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
   const val = (c, r) => { let v = typeof c.k === 'function' ? c.k(r) : r[c.k]; if (typeof v === 'number') { if (!isFinite(v)) return ''; if (c.pct) v *= 100; if (c.d != null) { const f = Math.pow(10, c.d); v = Math.round(v * f) / f; if (Object.is(v, -0)) v = 0; } } return v; };
-  return [cols.map(c => q(c.l)).join(',')].concat(rows.map(r => cols.map(c => q(val(c, r))).join(','))).join('\n');
+  return (opts.platform ? '' : csvNoteLines(opts.note)) + [cols.map(c => q(c.l)).join(',')].concat(rows.map(r => cols.map(c => q(val(c, r))).join(','))).join('\n');
+}
+// csvNote(module, extra): the provenance lines for a human sheet: the module, the export and compile dates, each source's
+// through date (court filings, unemployment, weekly claims, WARN notices, the ACS window) and the grade legend; extra adds lines
+// (a string with new lines, or an array). Every line starts '# '. Keep it off platform import files.
+function csvNote(mod, extra) {
+  const m = typeof MODI !== 'undefined' && MODI[mod]; const what = m ? `module ${m.num} ${m.title}` : (mod ? String(mod) : 'Severance');
+  const d = new Date(); const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  const acs = (String(META.acs || '').match(/(\d{4})\D+(\d{4})/) || []); const lines = [
+    `Severance, ${what}. Exported ${fmtDateL(today)}; data compiled ${fmtDateL(META.compiled)}.`,
+    `Data through: court filings (Texas Office of Court Administration) ${fmtDateL(META.oca_through)}; unemployment (BLS LAUS) ${fmtDateL(META.laus_through)}; weekly unemployment claims ${fmtDateL(META.ui_through)}; WARN notices ${fmtDateL(META.warn_through)}; Census ACS ${acs[1] ? acs[1] + ' to ' + acs[2] : ''} five year estimates.`,
+    gradeLegend() + '.'].concat(extra == null || extra === '' ? [] : Array.isArray(extra) ? extra : String(extra).split('\n'));
+  return lines.map(l => '# ' + String(l).replace(/^#\s?/, '')).join('\n');
 }
 // export columns from table columns: the export header (h) when given, else the on screen label
 const xcols = cols => cols.map(c => ({ l: c.h || c.l, k: c.k, d: c.d, pct: c.pct }));
@@ -368,7 +635,7 @@ function closeModal() { const m = $('#modal'); if (m && m.classList.contains('on
 function mastHTML(o) { return `<div class="mast"><div class="eyebrow">${esc(o.eyebrow)}</div><h1 class="mh">${esc(o.title)}</h1><div class="dek">${o.dek}</div>${o.ribbon ? `<button type="button" class="ribbon" data-go="${esc(o.ribbon.go)}">${esc(o.ribbon.text)}</button><div style="height:14px"></div>` : '<div class="rule"></div>'}<div class="facts">${(o.facts || []).map(f => `<span><b>${f[0]}</b> ${f[1]}</span>`).join('')}</div></div>`; }
 // a module's sources, judgment calls and caveats, at its foot: items are [label, html] pairs (html already escaped)
 function srcFoot(items) { return `<div class="panel srcfoot" style="margin-top:14px"><h3>Sources, judgment calls and caveats</h3><ul class="srcs">${items.map(i => `<li><b>${esc(i[0])}.</b> ${i[1]}</li>`).join('')}</ul></div>`; }
-function tile(l, v, s, g) { return `<div class="tile"><div class="l"><span>${esc(l)}</span>${g ? `<span class="grade ${g}" title="Confidence grade ${g}">${g}</span>` : ''}</div><div class="v">${v}</div><div class="s">${s || ''}</div></div>`; }
+function tile(l, v, s, g) { return `<div class="tile"><div class="l"><span>${esc(l)}</span>${g ? (gradeChip(g) || `<span class="grade ${esc(g)}">${esc(g)}</span>`) : ''}</div><div class="v">${v}</div><div class="s">${s || ''}</div></div>`; }
 // ctl(label, inner): the label names the first select, input or textarea in inner (its id, or one given to it here)
 let CTL_N = 0;
 function ctl(label, inner) {
@@ -385,6 +652,91 @@ function ttmDiv(c) { return c.filings.ttm.div; }
 function metroCodes(tab) { return Array.isArray(tab.code) ? tab.code : [tab.code]; }
 function metroCounties(codes) { const out = []; codes.forEach(code => MSA[code].counties.forEach(f => out.push(f))); return out; }
 function metroZctas(codes) { return ZC.filter(z => codes.includes(z.msa)); }
+// ---- find a place: findPlace(q, scope) → {kind:'zip'|'county'|'city'|'court', fips, zip, msa, city, label, zips?, court?} or null
+// q: a 5 digit ZIP ('77002', '77002 Houston'), a county name or FIPS ('Harris', 'harris co', '48201', '201'), a city (exact, then a
+// prefix ranked by married adults: 'Pla' finds Plano), or a courthouse or district court named with its county ('Harris County Family
+// Law Center', 'Tarrant County district court'; the Metro Atlas courthouse list is searched for every atlas already loaded).
+// scope: null for all of Texas; an MSA code or a list of codes; or {msa, counties:[fips], prefer:'county'|'city'} (prefer settles a
+// name that is both, such as Dallas; county by default). A place outside the scope is a miss.
+function placeScope(scope) {
+  if (!scope) return { msa: null, cty: null, prefer: 'county' };
+  if (typeof scope === 'string' || Array.isArray(scope)) return { msa: new Set([].concat(scope)), cty: null, prefer: 'county' };
+  return { msa: scope.msa ? new Set([].concat(scope.msa)) : null, cty: scope.counties ? new Set([].concat(scope.counties)) : null, prefer: scope.prefer === 'city' ? 'city' : 'county' };
+}
+const placeInC = (S, f) => !!CI[f] && (!S.cty || S.cty.has(f)) && (!S.msa || S.msa.has(CI[f].msa));
+const placeInZ = (S, z) => !!z && (!S.cty || S.cty.has(z.county)) && (!S.msa || S.msa.has(z.msa));
+function placeCities(S) {
+  const by = new Map();
+  ZC.forEach(z => { if (!z.city || !placeInZ(S, z)) return; const k = z.city.toLowerCase(); let c = by.get(k); if (!c) by.set(k, c = { city: z.city, married: 0, zips: [], top: null, tm: -1 }); const m = (z.acs && z.acs.married) || 0; c.married += m; c.zips.push(z.zip); if (m > c.tm) { c.top = z; c.tm = m; } });
+  return by;
+}
+const placeOfZip = z => ({ kind: 'zip', zip: z.zip, fips: z.county, msa: z.msa || null, city: z.city || null, label: z.zip + (z.city ? ' ' + z.city : '') });
+const placeOfCounty = c => ({ kind: 'county', fips: c.fips, zip: null, msa: c.msa || null, city: null, label: c.name + ' County' });
+const placeOfCity = c => ({ kind: 'city', city: c.city, zip: c.top.zip, fips: c.top.county, msa: c.top.msa || null, zips: c.zips.slice(), married: c.married, label: c.city });
+function findPlace(q, scope) {
+  const S = placeScope(scope); const raw = String(q == null ? '' : q).trim(); if (!raw) return null;
+  let t = raw.toLowerCase().replace(/[.,;]+/g, ' ').replace(/\s+/g, ' ').trim().replace(/\s+(texas|tx)$/, '').replace(/\bft /g, 'fort ').replace(/\bmc (?=[a-z])/g, 'mc').trim();
+  // numbers: a ZIP (alone or ahead of its city), a five digit county FIPS, or a three digit county code
+  const d5 = t.match(/^(\d{5})(?:\s|$)/);
+  if (d5) { const z = ZI[d5[1]]; if (z) return placeInZ(S, z) ? placeOfZip(z) : null; if (CI[d5[1]]) return placeInC(S, d5[1]) ? placeOfCounty(CI[d5[1]]) : null; return null; }
+  if (/^\d{3}$/.test(t)) { const f = '48' + t; return placeInC(S, f) ? placeOfCounty(CI[f]) : null; }
+  if (/^\d+$/.test(t)) return null;
+  const big = (arr, w) => arr.sort((a, b) => w(b) - w(a))[0] || null; const cm = c => (c.acs && c.acs.married) || 0;
+  const ctys = CTY.filter(c => placeInC(S, c.fips));
+  // courts: the loaded courthouse list first, then any court words around a county name
+  const courtWords = /\b(court|courts|courthouse|justice center|family law center|law center|judicial center|district clerk|county clerk|courthouse annex|\d+(st|nd|rd|th) district)\b/;
+  const courts = loadedCourts().filter(c => placeInC(S, c.fips)); const cn = c => c.name.toLowerCase();
+  const isCourt = courtWords.test(t);
+  const court = courts.find(c => cn(c) === t) || (isCourt ? courts.find(c => cn(c).startsWith(t)) || courts.find(c => cn(c).includes(t)) || courts.find(c => t.includes(cn(c))) : null);
+  if (court) return { kind: 'court', fips: court.fips, zip: null, msa: CI[court.fips] ? CI[court.fips].msa || null : null, city: court.city || null, court: court.name, label: court.name };
+  const hadCounty = /\b(county|cnty|co)\b/.test(t);
+  let name = t; if (isCourt) name = name.replace(courtWords, ' ').replace(/\b(district|family|law|center|annex|the|of|and|judicial)\b/g, ' ');
+  name = name.replace(/\b(county|cnty|co)\b/g, ' ').replace(/\s+/g, ' ').trim();
+  if (isCourt) { const c = ctys.find(x => x.name.toLowerCase() === name) || (name.length >= 3 ? big(ctys.filter(x => x.name.toLowerCase().startsWith(name)), cm) : null); return c ? { kind: 'court', fips: c.fips, zip: null, msa: c.msa || null, city: null, court: raw, label: raw + ' (' + c.name + ' County)' } : null; }
+  if (!name) return null;
+  const cities = placeCities(S); const exactC = ctys.find(c => c.name.toLowerCase() === name); const exactT = cities.get(name);
+  if (exactC && (hadCounty || !exactT || S.prefer === 'county')) return placeOfCounty(exactC);
+  if (exactT && !hadCounty) return placeOfCity(exactT);
+  if (exactC) return placeOfCounty(exactC);
+  const cityList = [...cities.values()];
+  if (!hadCounty) { const c = big(cityList.filter(c => c.city.toLowerCase().startsWith(name)), c => c.married); if (c) return placeOfCity(c); }
+  { const c = big(ctys.filter(c => c.name.toLowerCase().startsWith(name)), cm); if (c) return placeOfCounty(c); }
+  if (name.length >= 3) {
+    if (!hadCounty) { const c = big(cityList.filter(c => c.city.toLowerCase().includes(name)), c => c.married); if (c) return placeOfCity(c); }
+    const c = big(ctys.filter(c => c.name.toLowerCase().includes(name)), cm); if (c) return placeOfCounty(c);
+  }
+  return null;
+}
+// the suggestions a find box offers inside a scope: counties, cities by married adults, ZIPs and the loaded courthouses
+function findOptions(scope) {
+  const S = placeScope(scope); const out = [];
+  CTY.filter(c => placeInC(S, c.fips)).sort((a, b) => a.name.localeCompare(b.name)).forEach(c => out.push([c.name + ' County', 'County']));
+  [...placeCities(S).values()].sort((a, b) => b.married - a.married).forEach(c => out.push([c.city, 'City · ' + cname(c.top.county) + ' County']));
+  loadedCourts().filter(c => placeInC(S, c.fips)).forEach(c => out.push([c.name, 'Courthouse · ' + cname(c.fips) + ' County']));
+  ZC.filter(z => placeInZ(S, z)).sort((a, b) => a.zip.localeCompare(b.zip)).forEach(z => out.push([z.zip, 'ZIP · ' + (z.city || cname(z.county))]));
+  return out;
+}
+// findBox(el, onPick, opts): a labeled search field with suggestions inside el. Enter (or picking a suggestion) runs findPlace in the
+// scope and hands the place to onPick; a miss marks the field and says so in a toast. opts: {scope (or a function returning it),
+// label, placeholder, where (the scope's name for the miss message), id}. Returns {input, run(q), refresh()}.
+let FB_N = 0;
+function findBox(el, onPick, opts) {
+  opts = opts || {}; const id = opts.id || ('fbx' + (++FB_N)); const scopeOf = () => typeof opts.scope === 'function' ? opts.scope() : opts.scope;
+  el.innerHTML = `<div class="ctl findbox"><label for="${esc(id)}">${esc(opts.label || 'Find a county, city, ZIP or court')}</label><input type="search" id="${esc(id)}" list="${esc(id)}_l" autocomplete="off" spellcheck="false" enterkeyhint="search" placeholder="${esc(opts.placeholder || 'Harris, Plano, 77002 or a courthouse')}"><datalist id="${esc(id)}_l"></datalist></div>`;
+  const inp = el.querySelector('input'), dl = el.querySelector('datalist'); let filled = null, last = '', lastT = 0;
+  const fill = () => { const key = JSON.stringify(scopeOf() || null) + '|' + loadedCourts().length; if (key === filled) return; filled = key; dl.innerHTML = findOptions(scopeOf()).map(o => `<option value="${esc(o[0])}" label="${esc(o[1])}"></option>`).join(''); };
+  const run = v => {
+    const q = String(v == null ? inp.value : v).trim(); if (!q) { inp.removeAttribute('aria-invalid'); return null; }
+    if (q === last && performance.now() - lastT < 500) return null; last = q; lastT = performance.now();   // Enter and a pick can both fire: run once
+    const hit = findPlace(q, scopeOf()); inp.setAttribute('aria-invalid', String(!hit));
+    if (!hit) { if (typeof toast === 'function') toast(`No county, city, ZIP or courthouse ${opts.where ? 'in ' + opts.where + ' ' : ''}matches "${q}"`); return null; }
+    if (onPick) { try { onPick(hit); } catch (e) { console.error(e); } } return hit;
+  };
+  inp.addEventListener('focus', fill);
+  inp.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); fill(); run(); } });
+  inp.addEventListener('input', e => { inp.removeAttribute('aria-invalid'); if (e.inputType && e.inputType !== 'insertReplacementText') return; const q = inp.value.trim().toLowerCase(); if (q && $$('option', dl).some(o => o.value.toLowerCase() === q)) run(); });   // a picked suggestion commits at once
+  return { input: inp, run, refresh() { filled = null; fill(); } };
+}
 const MODS = []; const MODI = {};
 function registerModule(m) { MODS.push(m); MODI[m.key] = m; }
 function showModule(key, payload) {
