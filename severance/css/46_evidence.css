@@ -14,6 +14,7 @@
 #mod-evidence table.ev-t td.ev-up b,#mod-evidence table.ev-t td.ev-dn b{color:var(--title)}
 #mod-evidence table.ev-t td.ev-wait{text-align:left;color:var(--ink-3);font-style:italic}
 #mod-evidence .ev-shap{min-width:118px}
+#mod-evidence .ev-regplot{max-width:980px;margin-bottom:10px}
 #mod-evidence .ev-barw{display:inline-block;width:64px;height:9px;background:var(--sunk-2);vertical-align:middle;margin-right:6px;position:relative}
 #mod-evidence .ev-bar{position:absolute;left:0;top:0;bottom:0;background:var(--s1)}
 /* correlation matrix */
@@ -27,11 +28,11 @@
 #mod-evidence .ev-q input{width:100%}
 /* the evidence matrix: prose columns wrap */
 #mod-evidence #evMx table.t td,#mod-evidence #evMx table.t th{white-space:normal;vertical-align:top}
-#mod-evidence #evMx table.t td:first-child{min-width:150px;max-width:220px}
-#mod-evidence #evMx td.ev-cite{min-width:200px;max-width:280px;font-size:12px;overflow-wrap:anywhere}
-#mod-evidence #evMx td.ev-notecol{min-width:300px;max-width:440px;font-size:12.5px;line-height:1.45}
-#mod-evidence #evMx td.wrap{min-width:120px}
-#mod-evidence #evMx .tblwrap{max-height:640px}
+#mod-evidence #evMx td.wrap{min-width:100px}
+#mod-evidence #evMx table.t td:first-child{min-width:140px;max-width:200px}
+#mod-evidence #evMx td.ev-cite{min-width:170px;max-width:260px;font-size:12px;overflow-wrap:anywhere}
+#mod-evidence #evMx td.ev-notecol{min-width:300px;max-width:460px;font-size:12.5px;line-height:1.45}
+#mod-evidence #evMx .tblwrap{max-height:720px}
 /* integrity log */
 #mod-evidence table.ev-int td{white-space:normal;vertical-align:top;text-align:left;line-height:1.45}
 #mod-evidence table.ev-int td:first-child{min-width:130px;max-width:190px;font-weight:600;color:var(--title)}
