@@ -1,0 +1,276 @@
+'use strict';
+/* Module 25: Live Desk. The Thermal Atlas Weather Desk (module 14) rebuilt for a family law firm: layoffs, unemployment claims and the
+   legal and family calendar, turned into day by day bid timing per service line. The logic lives in LIVE (src/09_live_core.js); this file
+   is the page: status, tiles, triggers, the 90 day timeline, the plan grid, the calendar, the sources, settings and the extension. */
+registerModule({
+  key: 'live', num: '25', title: 'Live Desk', desc: 'WARN layoff notices, weekly unemployment claims and the legal and family calendar, turned into day by day ad timing per service line',
+  mount(root) {
+    const ui0 = store.get('sev.live.ui', {});
+    const st = { line: ui0.line || 'mod', geo: ui0.geo == null ? null : ui0.geo, day: 0, horizon: ui0.horizon || '365', raw: false, ext: null };
+    const saveUI = () => store.set('sev.live.ui', { line: st.line, geo: st.geo, horizon: st.horizon });
+    const S = () => LIVE.settings(); const sc = () => LIVE.scope();
+    const today = () => LIVE.today(); const fd = s => LIVE.fmtD(s);
+    const lines = () => { const f = LIVE.firmLines(); return f.concat(Object.keys(LINE_META).filter(k => !f.includes(k))); };
+    const geoNow = () => { const s = sc(); if (st.geo === '' ) return ''; if (st.geo && s.includes(st.geo)) return st.geo; return s.length === 1 ? s[0] : ''; };
+    const geoLabel = g => g ? CI[g].name + ' County (campaign times county)' : 'Campaign level (statewide factors)';
+    const pctS = v => (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v) + '%';
+    const cwOf = (el, max) => { const w = el ? Math.round(el.clientWidth || 0) : 0; return w ? Math.max(330, Math.min(max, w)) : max; };   // the chart's viewBox follows its box so text stays readable on a phone
+    const KIND = { warn: 'WARN notice', claims: 'Claims', unemp: 'Unemployment', calendar: 'Calendar' };
+    const snap = LIVE.snapshot();
+
+    root.innerHTML = mastHTML({ eyebrow: 'Module 25 · Live Desk · Texas Workforce Commission WARN notices, weekly unemployment claims, the legal and family calendar', title: 'Live Desk',
+      dek: `Family law demand has its own weather. A layoff notice in a county today becomes support modification and enforcement work three to twelve months from now; a jump in weekly claims dips divorce filings the same month and lifts them a year later; April 1, the start of school, Thanksgiving and the Christmas exchange move possession questions on dates anyone can put in a calendar. This desk reads the Texas Workforce Commission's WARN notices and the weekly claims series, adds the legal and family calendar, and turns them into what a media buyer needs: which days to bid each service line up or down, in which counties, for the next ninety days.`,
+      facts: [[esc(fd(snap.warn_through)), 'WARN notices in the snapshot through'], [esc(fd(snap.ui_through)), 'weekly claims through'], ['3 to 12 months', 'when modification and enforcement respond to a layoff'], ['§ 153.312(b)', 'the April 1 summer possession notice']] }) + `
+    <div class="toolbar"><span class="ttl">Live Desk</span><span class="sub">Triggers, timeline, plan, calendar, sources</span><span class="sp"></span><button type="button" class="btn primary" id="lvRef">↻ Refresh live</button><button type="button" class="btn" id="lvLoad" title="A WARN export (JSON or CSV) or a FRED CSV you downloaded">↑ Load a file</button><button type="button" class="btn" id="lvEditor" title="Ad schedule and location bid modifiers for the firm's lines">↓ Google Ads Editor CSV</button><button type="button" class="btn" id="lvJson">↓ Live JSON</button><button type="button" class="btn" id="lvGoEcon">Economic Shock ↗</button><button type="button" class="btn" id="lvGoTiming">Timing Desk ↗</button><button type="button" class="btn" id="lvGoDesk">Campaign Desk ↗</button></div>
+    <div id="lvStatus"></div>
+    ${callout('', 'Read this first: what this desk does and does not do', `<p>It <b>does</b> read three kinds of signal and turn them into bids. <b>Layoffs:</b> every WARN notice the Texas Workforce Commission publishes for the firm's counties, live from data.texas.gov where the browser allows it and from the snapshot built into this atlas otherwise. <b>Claims:</b> weekly initial claims, statewide live from FRED and by county from the snapshot. <b>The calendar:</b> the April 1 summer possession notice, spring break, the end and start of the school year, Thanksgiving and Christmas possession under the standard possession order, tax refund season, the January rise and March peak in divorce filings, and the military moving season around Fort Hood, Fort Bliss and Joint Base San Antonio. The lag rules come from module 05: modification and enforcement respond 3 to 12 months after a claims surge, divorce filings dip the month it hits and rebound about twelve months later. Each day gets a multiplier per service line, which becomes an ad schedule, location bid modifiers for Google Ads Editor, a daily plan and a calendar file.</p><p>It does <b>not</b> predict any household's divorce, name anyone affected by a layoff, or target people because they lost a job: Google and Meta restrict ads that target or imply a person's financial hardship, so the desk only moves bids by county and date and never puts an employer or a layoff into ad copy. The step sizes are judgment (grade C) shaped to the panel's direction and timing, not a fitted demand model; replace them with the account's own results once module 23 holds ninety days of leads. Possession dates are the standard order's defaults; a family's own order can differ, and school dates vary by district.</p>`)}
+    <div class="tiles" id="lvTiles"></div>
+    <div id="lvScope"></div>
+    <div class="panel" style="margin-bottom:14px"><h3>Active and upcoming triggers</h3><div class="sub">Every signal touching the firm's counties, active ones first, each with the campaign rule it sets. WARN windows open 90 days after the notice and close a year after it.</div><div class="controls" style="margin-bottom:8px">${segHTML('lvTrigF', [['all', 'All'], ['warn', 'WARN'], ['claims', 'Claims'], ['calendar', 'Calendar']], 'all')}</div><div id="lvTrig"></div></div>
+    <div class="panel" style="margin-bottom:14px"><div class="controls"><div class="ctl"><label for="lvLine">Service line</label><select id="lvLine"></select></div><div class="ctl"><label for="lvGeo">Geography</label><select id="lvGeo"></select></div></div>
+      <h3>The next fourteen days</h3><div class="sub">The day's bid adjustment for the chosen line and geography. Click a day to see what moved it.</div><div class="lv-days" id="lvDays"></div><div id="lvDayDet"></div>
+      <h3 style="margin-top:16px">Ninety day timeline</h3><div class="sub">Bid change in percent, day by day. Shaded bands are the calendar windows that touch this line.</div><div class="chart" id="lvChart"></div><div class="small" id="lvChartN"></div></div>
+    <div class="grid2"><div class="panel"><h3>The weeks ahead in plain words</h3><div class="sub">One line per week for the firm's lines at the chosen geography: what moves 10% or more, and what starts.</div><ul class="lv-narr" id="lvNarr"></ul></div>
+      <div class="panel"><h3>Bid windows</h3><div class="sub">Runs of days at plus 15% or more, or minus 15% or less, for the chosen line. These rows are the bid windows export.</div><div id="lvWin"></div><div class="btnrow"><button type="button" class="btn sm" id="lvWinCsv">↓ Bid windows CSV</button><button type="button" class="btn sm" id="lvDailyCsv">↓ Daily plan CSV</button></div></div></div>
+    <div class="panel" style="margin:14px 0"><h3>Day by day plan, every line the firm sells</h3><div class="sub">Next 28 days at the chosen geography. Season times calendar times triggers, rounded to 5% and held between minus 50 and plus 90. Hover a cell for the reasons.</div><div id="lvGrid"></div><div class="small" id="lvGridN" style="margin-top:6px"></div></div>
+    <div class="panel" style="margin-bottom:14px"><h3>The legal and family calendar</h3><div class="sub">Dates, the lines they move, the ad action and the source. Possession dates follow the standard possession order (Tex. Fam. Code ch. 153); school dates vary by district.</div><div class="controls">${segHTML('lvHor', [['90', 'Next 90 days'], ['365', 'Next 12 months']], st.horizon)}<span class="sp"></span><button type="button" class="btn sm" id="lvCalCsv">↓ Calendar CSV</button><button type="button" class="btn sm" id="lvIcs">↓ Calendar .ics</button></div><div class="lv-cal" id="lvCal"></div></div>
+    <div class="grid2"><div class="panel"><h3>WARN notices in the firm's counties</h3><div class="sub" id="lvWarnSub"></div><div class="btnrow" id="lvWarnBtns"><button type="button" class="btn sm" id="lvWarnCsv">↓ WARN notices CSV</button><label class="chk" id="lvRawWrap"><input type="checkbox" id="lvRaw"> Show the raw columns</label></div><div id="lvWarn"></div></div>
+      <div class="panel"><h3>Weekly initial claims</h3><div class="sub" id="lvClaimsSub"></div><div class="chart" id="lvClaims"></div><div class="chart" id="lvCtyClaims" style="margin-top:8px"></div><div class="small" id="lvClaimsN"></div></div></div>
+    <div class="panel" style="margin:14px 0"><h3>County picture</h3><div class="sub">The scope counties side by side: claims, unemployment, layoffs and the location bid modifier the export would write today for the chosen line.</div><div id="lvCty"></div></div>
+    <div class="grid2"><div class="panel"><h3>Settings</h3><div class="sub" id="lvSetSub"></div><div id="lvSet"></div></div>
+      <div class="panel"><h3>What the browser extension adds</h3><div class="sub">The background watch: the same rules on a timer, with notifications and a toolbar badge.</div><div id="lvExt"></div></div></div>
+    <div class="panel" style="margin:14px 0"><h3>How the desk is built</h3><ol class="steps" id="lvMeth"></ol></div>
+    <div class="grid2"><div class="panel"><h3>Judgment calls</h3><div id="lvJudg"></div></div><div class="panel"><h3>Source register</h3><div id="lvSrc"></div></div></div>
+    <p class="small" style="margin:14px 0 28px">Severance, module 25. Layoffs and claims are the inputs here that change every week; everything the desk derives from them is a starting bid schedule for the account's own results to correct. Informational analysis for marketing and planning; not legal advice.</p>`;
+
+    /* ---------- status of each source ---------- */
+    function status() {
+      const s = LIVE.state; const src = s.sources; const env = ENV;
+      const row = (k, label) => { const x = src[k] || {}; const l = (LIVE.state.live || {})[k];
+        const mode = x.mode === 'live' ? pill(x.file ? 'file' : 'live', 'good') : x.mode === 'cached' ? pill('cached', 'warnp') : pill('snapshot', 'info');
+        const what = x.mode === 'live' ? `${x.file ? 'Loaded from ' + esc(String(x.url || '').replace(/^file: /, '')) : 'Fetched'} ${esc(fd(x.at))} ${x.at ? esc(new Date(x.at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })) : ''}, ${N(x.n)} ${k === 'warn' ? 'notices' : 'weeks'}${x.fallback ? ' (plain endpoint; counties filtered here because the county query was refused)' : ''}${x.missing && x.missing.length ? '. Unmapped: ' + esc(x.missing.join(', ')) : ''}`
+          : x.mode === 'cached' ? `Last good answer ${esc(fd(l && l.at))}` : k === 'warn' ? `Snapshot through ${esc(fd(snap.warn_through))} (the 12 most recent notices per county)` : k === 'icl' ? `Snapshot: TWC weekly claims through ${esc(fd(snap.ui_through))}` : 'Not in the snapshot';
+        const err = x.error === 'skipped' ? ` <span class="small">Skipped in a page: FRED does not send the header a browser page needs (CORS). Load the CSV from <a href="${esc(LIVE.FRED_PAGE(k === 'icl' ? 'TXICLAIMS' : 'TXCCLAIMS'))}" target="_blank" rel="noopener">FRED</a> with Load a file, turn on the FRED attempt in settings, or use the extension.</span>` : x.error ? ` <span class="small" style="color:var(--serious)">Last try failed: ${esc(x.error)}</span>` : '';
+        return `<div class="lv-src">${mode}<b>${esc(label)}</b><span class="tx">${what}.${err}</span></div>`; };
+      const head = s.loading ? 'Refreshing now' : s.error === 'viewer' ? 'Snapshot: the hosted viewer blocks live calls' : ['warn', 'icl'].some(k => src[k].mode === 'live') ? 'Live where it answered, snapshot elsewhere' : 'Snapshot built into this atlas';
+      const envTxt = env === 'viewer' ? 'Inside the hosted viewer the page cannot call data.texas.gov or FRED; download the single file or install the extension and the desk updates itself.'
+        : env === 'file' ? `Opened as a page. data.texas.gov usually answers a page; FRED usually does not (no CORS header), so the desk ${S().fredInPage ? 'tries it and reports the result' : 'skips it here unless you switch the attempt on in settings'}. Refresh live is manual in a page; results are cached for ${N(S().ttl)} hours.`
+        : `Running in ${esc(ENV_LABEL)}. Host permissions let the desk read both sources; it refreshes on open when the cache is older than ${N(S().ttl)} hours, and the background watch checks every ${N(Math.round((S().interval || 360) / 60))} hours.`;
+      $('#lvStatus', root).innerHTML = `<div class="callout ${['warn', 'icl'].some(k => src[k].mode === 'live') ? 'note' : 'judg'}"><div class="h">${esc(head)}</div>${row('warn', LIVE.SRC.warn)}${row('icl', LIVE.SRC.icl)}${row('ccl', LIVE.SRC.ccl)}<p class="small" style="margin-top:6px">${envTxt}</p></div>`;
+    }
+
+    /* ---------- tiles ---------- */
+    function tiles() {
+      const s = sc(); const d = today(); const ns = LIVE.notices({ counties: s }); const n90 = ns.filter(n => n.date && LIVE.diffD(n.date, d) <= 90 && n.date <= d); const w90 = sum(n90.map(n => n.workers || 0));
+      const tr = LIVE.triggers(); const warnAct = tr.filter(t => t.kind === 'warn' && t.status === 'active'); const cs = LIVE.claimsSeries(); const ck = LIVE.claimsCheck(cs.points, S());
+      const cty = s.map(f => CI[f]); const w4 = sum(cty.map(c => (c.ui || {}).w4 || 0)); const ckc = cty.map(c => c.ui && c.ui.weekly ? LIVE.claimsCheck(c.ui.weekly.map((v, i) => ({ date: LIVE.addD(c.ui.week0, 7 * i), value: v })).filter(p => isN(p.value)), S()) : null).filter(Boolean);
+      const w4y = sum(ckc.map(k => k.w4yago || 0)), w4n = sum(ckc.map(k => k.w4 || 0));
+      const lfs = cty.map(c => (c.laus || {}).lf || 0); const ur = sum(cty.map((c, i) => ((c.laus || {}).ur || 0) * lfs[i])) / (sum(lfs) || 1), urY = sum(cty.map((c, i) => ((c.laus || {}).ur_yago || 0) * lfs[i])) / (sum(lfs) || 1);
+      const g = geoNow(); const t = LIVE.timing(st.line, d, g || null); const nextCal = LIVE.calendar(d, 120).find(i => i.end >= d && Object.keys(i.lift || {}).length) || LIVE.calendar(d, 365)[0];
+      $('#lvTiles', root).innerHTML = [
+        tile('WARN workers, 90 days', N(w90), `${n90.length} notice${n90.length === 1 ? '' : 's'} in ${esc(scopeTitle())}; ${LIVE.state.sources.warn.mode === 'live' ? 'live and snapshot combined' : 'snapshot through ' + esc(fd(snap.warn_through))}`, LIVE.state.sources.warn.mode === 'live' ? 'A' : 'B'),
+        tile('Open WARN windows', N(warnAct.length), warnAct.length ? `lifting modification and enforcement in ${esc([...new Set(warnAct.map(x => x.county))].slice(0, 4).join(', '))} today` : 'no notice between 90 and 365 days old', 'C'),
+        tile('Texas initial claims', ck ? N(ck.last.value) : 'n/a', ck ? `week ending ${esc(fd(ck.last.date))}: ${esc(sgn(ck.wowPct, 0))} on the week before, ${esc(sgn(ck.yoyPct, 0))} on a year earlier (4 weeks) · ${esc(cs.live ? 'FRED, live' : 'snapshot')}` : 'no series held', 'A'),
+        tile('County claims, 4 weeks', N(w4n || w4), w4y ? `${esc(sgn((w4n / w4y - 1) * 100, 0))} on the same weeks a year earlier · ${esc(scopeTitle())}, snapshot` : esc(scopeTitle()), 'A'),
+        tile('Unemployment', P1(ur), `${esc(scopeTitle())}, ${esc(fmtDate(META.laus_through))}; ${esc(sgn(ur - urY, 1, ' pts'))} on a year earlier`, 'A'),
+        tile(`Today, ${LIVE.lineShort(st.line)}`, esc(pctS(t.adj)), esc(t.reasons[0] || 'every factor at its base') + (t.reasons.length > 1 ? ` and ${t.reasons.length - 1} more` : ''), 'C'),
+        tile('Next on the calendar', nextCal ? esc(fd(nextCal.date).replace(/, \d{4}$/, '')) : 'n/a', nextCal ? esc(nextCal.title) : '', 'B')
+      ].join('');
+    }
+    const scopeTitle = () => { const s = sc(); return s.length === 1 ? CI[s[0]].name + ' County' : s.length <= 3 ? s.map(f => CI[f].name).join(', ') : s.length + ' counties'; };
+    function scopeNote() {
+      const si = LIVE.scopeInfo();
+      $('#lvScope', root).innerHTML = si.from === 'default' ? callout('judg', 'No counties chosen yet', `The firm profile has no counties and none are picked in the settings below, so the desk shows ${esc(CI[si.fips[0]].name)} County. Pick the firm's counties in <b>Settings</b> on this page or in the firm profile (top bar).`) : '';
+    }
+
+    /* ---------- triggers ---------- */
+    function trig() {
+      const f = $('#lvTrigF [aria-pressed="true"]', root); const kind = f ? f.dataset.v : 'all';
+      const all = LIVE.triggers(); const list = all.filter(t => kind === 'all' || t.kind === kind || (kind === 'claims' && t.kind === 'unemp'));
+      const host = $('#lvTrig', root); if (!list.length) { host.innerHTML = `<p class="small">No ${kind === 'all' ? '' : esc(KIND[kind] || kind).toLowerCase() + ' '}trigger is active or due within 45 days for ${esc(scopeTitle())}. The calendar below shows what comes later.</p>`; return; }
+      const shown = list.slice(0, st.trigAll ? 200 : 6);
+      host.innerHTML = shown.map(t => { const eff = t.effects.map(e => e.lift ? Object.keys(e.lift).map(k => `${LIVE.lineShort(k)} ${pctS(e.lift[k])}`).join(', ') : `${e.lines.map(LIVE.lineShort).join(', ')} ${pctS(e.pct)} from ${fd(e.start)} to ${fd(e.end)}`).filter(Boolean).join('; ');
+        return `<div class="lv-trig k-${t.kind} s-${t.status}"><div class="lv-th">${pill(KIND[t.kind], t.kind === 'warn' ? 'warnp' : t.kind === 'calendar' ? 'info' : 'p-warn')} ${pill(t.status === 'active' ? 'active now' : 'from ' + fd(t.start), t.status === 'active' ? 'good' : '')} <b>${esc(t.title)}</b></div><div class="small">${t.kind === 'calendar' ? '' : esc(t.level === 'state' ? 'Texas' : t.county + (/,/.test(t.county) ? '' : ' County')) + ' · '}${esc(t.detail)}${t.live ? ' · live' : ''}</div><div class="lv-act">${esc(t.action)}</div>${eff ? `<div class="small">Bid effect: ${esc(eff)}. Grade ${esc(t.grade)}.</div>` : ''}<div class="small">Source: ${esc(t.source)}</div></div>`; }).join('') +
+        (list.length > shown.length ? `<div class="btnrow"><button type="button" class="btn sm" id="lvTrigMore">Show all ${list.length}</button></div>` : '');
+      const more = $('#lvTrigMore', root); if (more) more.onclick = () => { st.trigAll = true; trig(); };
+    }
+
+    /* ---------- selectors ---------- */
+    function selectors() {
+      $('#lvLine', root).innerHTML = lines().map(k => `<option value="${k}"${k === st.line ? ' selected' : ''}>${esc(LINE_META[k].name)}${LIVE.firmLines().includes(k) ? '' : ' (not in the firm profile)'}</option>`).join('');
+      const g = geoNow(); $('#lvGeo', root).innerHTML = [['', 'Campaign level (statewide factors)']].concat(sc().map(f => [f, CI[f].name + ' County (with county triggers)'])).map(o => `<option value="${o[0]}"${o[0] === g ? ' selected' : ''}>${esc(o[1])}</option>`).join('');
+    }
+
+    /* ---------- the next fourteen days ---------- */
+    function days() {
+      const g = geoNow(); const s = LIVE.series(st.line, g || null, today(), 14);
+      $('#lvDays', root).innerHTML = s.map((t, i) => { const k = new Set(t.parts.filter(p => Math.abs(p.f - 1) >= 0.005).map(p => p.kind)); const tags = [k.has('warn') ? 'WARN' : '', k.has('claims') ? 'Claims' : '', k.has('unemp') ? 'Jobs' : '', k.has('calendar') ? 'Calendar' : '', k.has('observed') ? 'Account' : ''].filter(Boolean);
+        return `<button type="button" class="lv-day${i === st.day ? ' on' : ''}${t.adj >= 15 ? ' up' : t.adj <= -15 ? ' dn' : ''}" data-i="${i}" aria-pressed="${i === st.day}"><span class="dd">${esc(t.dow.slice(0, 3))} ${esc(fd(t.date).replace(/, \d{4}$/, ''))}</span><b>${esc(pctS(t.adj))}</b><span class="tg">${tags.length ? esc(tags.join(' · ')) : 'season only'}</span></button>`; }).join('');
+      $$('#lvDays .lv-day', root).forEach(b => b.onclick = () => { st.day = +b.dataset.i; days(); });
+      const t = s[st.day] || s[0]; if (!t) return;
+      $('#lvDayDet', root).innerHTML = `<div class="lv-det"><div class="minihd">${esc(t.dow)}, ${esc(fd(t.date))} · ${esc(LINE_META[st.line].name)} · ${esc(geoLabel(g))}</div><dl class="kv">${t.parts.map(p => `<dt>${esc(p.label.replace(/ \([+−]?\d+%\)$/, ''))}</dt><dd>×${N(p.f, 3)}</dd>`).join('') || '<dt>No factor applies</dt><dd>×1.000</dd>'}<dt><b>Combined</b></dt><dd><b>×${N(t.mult, 3)} → ${esc(pctS(t.adj))}</b></dd>${g ? `<dt>Of which the county's own (location bid modifier)</dt><dd>${esc(pctS(t.countyAdj))}</dd>` : ''}</dl></div>`;
+    }
+
+    /* ---------- the ninety day timeline ---------- */
+    function chart() {
+      const g = geoNow(); const d0 = today(); const s = LIVE.series(st.line, g || null, d0, 90);
+      const series = [{ name: g ? CI[g].name + ' County, combined' : 'Campaign level', color: g ? 'var(--s1)' : 'var(--s3)', values: s.map((t, i) => ({ x: i, y: Math.round((t.mult - 1) * 1000) / 10 })) }];
+      if (g) series.push({ name: 'Campaign level', color: 'var(--s3)', dash: true, values: s.map((t, i) => ({ x: i, y: Math.round((t.campaign - 1) * 1000) / 10 })) });
+      series.push({ name: 'Season alone', color: 'var(--ink-3)', dash: true, values: s.map((t, i) => { const p = t.parts.find(x => x.kind === 'season'); return { x: i, y: p ? Math.round((p.f - 1) * 1000) / 10 : 0 }; }) });
+      const bands = LIVE.calendar(d0, 90).filter(it => it.lines.includes(st.line) && (!it.counties || (g && it.counties.includes(g)))).map(it => ({ x0: Math.max(0, LIVE.diffD(d0, it.start)), x1: Math.min(89, LIVE.diffD(d0, it.end)), label: it.short || '' }));
+      const ys = series.flatMap(x => x.values.map(v => v.y)); const lo = Math.min(-10, ...ys);
+      const el = $('#lvChart', root); const W = cwOf(el, 900);
+      lineChart(el, { series, W, H: W < 600 ? 260 : 240, ymin: Math.floor(lo / 10) * 10, ypad: true, xfmt: v => fd(LIVE.addD(d0, v)), xTicks: [0, 14, 28, 42, 56, 70, 84], xTickFmt: v => fd(LIVE.addD(d0, v)).replace(/, \d{4}$/, ''), yfmt: v => (v > 0 ? '+' : '') + N(v, 0) + '%', bands });
+      const w = LIVE.windows(st.line, g || null, d0, 90);
+      $('#lvChartN', root).innerHTML = `${esc(LINE_META[st.line].name)}, ${esc(geoLabel(g))}. ${w.length ? `${w.length} window${w.length > 1 ? 's' : ''} worth a bid change: ${esc(w.slice(0, 3).map(x => `${x.kind === 'up' ? 'up' : 'down'} ${pctS(x.avg)} ${fd(x.start).replace(/, \d{4}$/, '')} to ${fd(x.end).replace(/, \d{4}$/, '')}`).join('; '))}${w.length > 3 ? ' and more' : ''}.` : 'No run of days moves this line 15% or more either way.'} The season line is the statewide index alone; the gap between it and the plan is the calendar and the triggers.`;
+    }
+
+    /* ---------- the weeks ahead ---------- */
+    function narr() {
+      const g = geoNow(); const d0 = today(); const fl = LIVE.firmLines(); const out = []; const cal = LIVE.calendar(d0, 63); const tr = LIVE.triggers();
+      for (let w = 0; w < 8; w++) {
+        const a = LIVE.addD(d0, 7 * w), b = LIVE.addD(a, 6); const moves = fl.map(k => { const s = LIVE.series(k, g || null, a, 7); return [k, Math.round(sum(s.map(t => t.adj)) / 7 / 5) * 5]; }).filter(x => Math.abs(x[1]) >= 10).sort((x, y) => Math.abs(y[1]) - Math.abs(x[1]));
+        const starts = cal.filter(it => it.start >= a && it.start <= b).map(it => `${it.short || it.title} (${fd(it.start).replace(/, \d{4}$/, '')})`);
+        const wopen = tr.filter(t => t.kind === 'warn' && t.start >= a && t.start <= b); if (wopen.length) starts.push(`${wopen.length} WARN window${wopen.length > 1 ? 's' : ''} open in ${[...new Set(wopen.map(t => t.county))].join(', ')}`);
+        out.push(`<li><b>Week of ${esc(fd(a).replace(/, \d{4}$/, ''))}.</b> ${moves.length ? esc(moves.map(x => `${LIVE.lineShort(x[0])} ${pctS(x[1])}`).join(', ')) : 'Every line within 10% of its base'}.${starts.length ? ' Starts: ' + esc(starts.join('; ')) + '.' : ''}</li>`);
+      }
+      $('#lvNarr', root).innerHTML = out.join('');
+    }
+
+    /* ---------- windows and the plan grid ---------- */
+    function win() {
+      const g = geoNow(); const w = LIVE.windows(st.line, g || null, today(), 90);
+      $('#lvWin', root).innerHTML = w.length ? `<div class="tblwrap" style="max-height:300px"><table class="t"><thead><tr><th class="l">From</th><th class="l">To</th><th>Days</th><th>Bid</th><th>Peak</th><th class="l">Why</th></tr></thead><tbody>${w.map(x => `<tr><td class="l">${esc(fd(x.start))}</td><td class="l">${esc(fd(x.end))}</td><td>${x.n}</td><td>${esc(pctS(x.avg))}</td><td>${esc(pctS(x.peak))}</td><td class="l lv-why">${esc(x.why.join('; '))}</td></tr>`).join('')}</tbody></table></div>` : `<p class="small">No run of days in the next 90 moves ${esc(LINE_META[st.line].name.toLowerCase())} 15% or more either way at ${esc(geoLabel(g).toLowerCase())}.</p>`;
+    }
+    function grid() {
+      const g = geoNow(); const d0 = today(); const fl = LIVE.firmLines().slice(); if (!fl.includes(st.line)) fl.push(st.line); const n = 28; const ds = [...Array(n)].map((_, i) => LIVE.addD(d0, i));
+      const cell = t => { const a = clamp(t.adj / 40, -1, 1); const bg = a >= 0 ? `color-mix(in srgb, var(--s1) ${Math.round(a * 80)}%, var(--card))` : `color-mix(in srgb, var(--s3) ${Math.round(-a * 80)}%, var(--card))`; return `<td style="background:${bg};${Math.abs(a) > 0.55 ? 'color:#fff;' : ''}" title="${esc(fd(t.date) + ': ' + (t.reasons.join('; ') || 'base'))}">${esc(pctS(t.adj))}</td>`; };
+      $('#lvGrid', root).innerHTML = `<div class="tblwrap lv-grid"><table class="t"><thead><tr><th class="l">Line</th>${ds.map(d => `<th title="${esc(fd(d))}">${esc(LIVE.DOWN[new Date(d + 'T00:00:00Z').getUTCDay()].slice(0, 2))}<br>${+d.slice(8, 10)}</th>`).join('')}</tr></thead><tbody>${fl.map(k => `<tr class="${k === st.line ? 'sel' : ''}"><td class="l">${esc(LINE_META[k].short)}</td>${LIVE.series(k, g || null, d0, n).map(cell).join('')}</tr>`).join('')}</tbody></table></div>`;
+      $('#lvGridN', root).textContent = `${geoLabel(g)}, ${fd(d0)} to ${fd(LIVE.addD(d0, n - 1))}. The Google Ads Editor export writes the first seven days as the campaign ad schedule and each county's own share as its location bid modifier.`;
+    }
+
+    /* ---------- the calendar ---------- */
+    function cal() {
+      const items = LIVE.calendar(today(), +st.horizon);
+      $('#lvCal', root).innerHTML = items.length ? items.map(it => { const lifts = Object.keys(it.lift || {}); return `<div class="lv-ci k-${esc(it.kind)}"><div class="lv-cd"><b>${esc(fd(it.date).replace(/, \d{4}$/, ''))}</b><span>${esc(it.start === it.end ? fd(it.start) : fd(it.start).replace(/, \d{4}$/, '') + ' to ' + fd(it.end))}</span></div><div class="lv-cb"><div class="lv-ct">${esc(it.title)}</div><div class="lv-cl">${it.lines.map(k => pill(LIVE.lineShort(k) + (it.lift && it.lift[k] ? ' ' + pctS(it.lift[k]) : ''), it.lift && it.lift[k] ? 'good' : '')).join(' ')}${it.kind === 'season' ? ' ' + pill('season index', 'info') : ''}${it.counties ? ' ' + pill(it.counties.map(f => CI[f].name).join(', '), 'info') : ''}${!lifts.length && it.kind !== 'season' ? ' ' + pill('no bid change', '') : ''}</div><p>${esc(it.action)}</p><div class="small">Source: ${esc(it.source)}</div></div></div>`; }).join('') : '<p class="small">Nothing in this window.</p>';
+    }
+
+    /* ---------- WARN notices ---------- */
+    function warn() {
+      const s = sc(); const rows = LIVE.notices({ counties: s }); const lw = LIVE.state.live.warn; const extra = st.raw && lw && lw.unknown ? lw.unknown.slice(0, 8) : [];
+      $('#lvRawWrap', root).style.display = lw && lw.unknown && lw.unknown.length ? '' : 'none';
+      $('#lvWarnSub', root).innerHTML = `${esc(scopeTitle())}: ${N(rows.length)} notices held (${N(rows.filter(r => r.src !== 'snapshot').length)} from the live source or a file). Each opens a modification and enforcement window from day ${N(S().lagFrom)} to day ${N(S().lagTo)}. ${lw && lw.mapped ? 'Live columns mapped: ' + esc(Object.keys(lw.mapped).map(k => k + ' = ' + lw.mapped[k]).join(', ')) + '.' : ''}`;
+      const d = today(); const lim = rows.slice(0, 80);
+      $('#lvWarn', root).innerHTML = rows.length ? `<div class="tblwrap" style="max-height:420px"><table class="t"><thead><tr><th class="l">Employer</th><th class="l">County</th><th class="l">Noticed</th><th>Workers</th><th class="l">Window</th><th class="l">Source</th>${extra.map(k => `<th class="l">${esc(k)}</th>`).join('')}</tr></thead><tbody>${lim.map(r => { const a = LIVE.addD(r.date, S().lagFrom), b = LIVE.addD(r.date, S().lagTo); const stt = d < a ? 'opens ' + fd(a) : d > b ? 'closed' : 'open to ' + fd(b); return `<tr><td class="l lv-co" title="${esc(r.company)}">${esc(LIVE.coName(r.company))}${r.city ? `<div class="small">${esc(r.city)}</div>` : ''}</td><td class="l">${esc(r.county)}</td><td class="l">${esc(fd(r.date))}</td><td>${N(r.workers)}</td><td class="l">${esc(stt)}</td><td class="l">${esc(r.src)}</td>${extra.map(k => `<td class="l">${esc(r.raw ? r.raw[k] : '')}</td>`).join('')}</tr>`; }).join('')}</tbody></table></div>${rows.length > lim.length ? `<div class="small">Showing ${lim.length} of ${rows.length}; the CSV has all of them.</div>` : ''}` : `<p class="small">No WARN notice on file for ${esc(scopeTitle())} in the snapshot${lw ? ' or the live answer' : ''}.</p>`;
+    }
+
+    /* ---------- claims ---------- */
+    function claims() {
+      const cs = LIVE.claimsSeries(); const snapPts = snap.claims; const n = 104; const lastD = cs.points.length ? cs.points[cs.points.length - 1].date : today(); const d0 = LIVE.addD(lastD, -7 * (n - 1));
+      const ser = [{ name: 'TWC weekly initial claims (snapshot)', color: 'var(--s1)', values: snapPts.filter(p => p.date >= d0).map(p => ({ x: LIVE.diffD(d0, p.date) / 7, y: p.value })) }];
+      if (cs.live) ser.push({ name: 'FRED TXICLAIMS (live)', color: 'var(--s2)', values: cs.points.filter(p => p.date >= d0).map(p => ({ x: LIVE.diffD(d0, p.date) / 7, y: p.value })) });
+      const cc = LIVE.state.live.ccl;
+      const ticks = [0, 26, 52, 78];
+      const W = cwOf($('#lvClaims', root), 640);
+      lineChart($('#lvClaims', root), { series: ser, W, H: 200, ymin: 0, area: !cs.live, xfmt: v => 'Week ending ' + fd(LIVE.addD(d0, Math.round(v) * 7)), xTicks: ticks, xTickFmt: v => fmtDate(LIVE.addD(d0, Math.round(v) * 7).slice(0, 7)), yfmt: v => K(v) });
+      const ck = LIVE.claimsCheck(cs.points, S());
+      $('#lvClaimsSub', root).textContent = `Texas, the last two years. ${cs.live ? 'FRED series TXICLAIMS (not seasonally adjusted) fetched ' + fd(cs.at) + ', drawn over the TWC snapshot.' : 'Texas Workforce Commission weekly claims from the snapshot, through ' + fd(snap.ui_through) + '.'}`;
+      const g = geoNow() || sc()[0]; const c = CI[g];
+      if (c && c.ui && c.ui.weekly) { const pts = c.ui.weekly.map((v, i) => ({ date: LIVE.addD(c.ui.week0, 7 * i), value: v })).filter(p => isN(p.value) && p.date >= d0); lineChart($('#lvCtyClaims', root), { series: [{ name: c.name + ' County weekly initial claims', color: 'var(--s3)', values: pts.map(p => ({ x: LIVE.diffD(d0, p.date) / 7, y: p.value })) }], W, H: 150, ymin: 0, area: true, xfmt: v => 'Week ending ' + fd(LIVE.addD(d0, Math.round(v) * 7)), xTicks: ticks, xTickFmt: v => fmtDate(LIVE.addD(d0, Math.round(v) * 7).slice(0, 7)), yfmt: v => N(v) }); }
+      else $('#lvCtyClaims', root).innerHTML = '';
+      $('#lvClaimsN', root).innerHTML = `${ck ? `Latest week ${esc(fd(ck.last.date))}: ${N(ck.last.value)}, ${esc(sgn(ck.wowPct, 0))} on the week before (rule: ${esc(sgn(S().wow, 0))}), last four weeks ${esc(sgn(ck.yoyPct, 0))} on a year earlier (rule: ${esc(sgn(S().yoy, 0))}). ${ck.flags.wow || ck.flags.yoy ? '<b>The claims rule is on.</b>' : 'Neither rule is met.'}` : ''} ${cc && cc.points && cc.points.length ? `Continued claims (TXCCLAIMS) ${N(cc.points[cc.points.length - 1].value)} in the week ending ${esc(fd(cc.points[cc.points.length - 1].date))}.` : ''} ${c ? `${esc(c.name)} County is drawn below from the snapshot; county claims are not in FRED.` : ''}`;
+    }
+
+    /* ---------- county picture ---------- */
+    function cty() {
+      const d = today(); const rows = sc().map(f => { const c = CI[f]; const ui = c.ui || {}; const k = ui.weekly ? LIVE.claimsCheck(ui.weekly.map((v, i) => ({ date: LIVE.addD(ui.week0, 7 * i), value: v })).filter(p => isN(p.value)), S()) : null; const la = c.laus || {}; const ws = LIVE.notices({ counties: [f] }).filter(n => n.date && LIVE.diffD(n.date, d) <= 365); const t = LIVE.timing(st.line, d, f);
+        return `<tr><td class="l">${esc(c.name)}</td><td>${N(k && k.w4)}</td><td>${k && k.yoyPct != null ? esc(sgn(k.yoyPct, 0)) : 'n/a'}</td><td>${P1(la.ur)}</td><td>${esc(sgn(isN(la.ur) && isN(la.ur_yago) ? la.ur - la.ur_yago : null, 1, ''))}</td><td>${N(sum(ws.map(n => n.workers || 0)))}</td><td>${N(ws.length)}</td><td>${N(c.esi, 0)}</td><td>${esc(pctS(t.countyAdj))}</td></tr>`; });
+      $('#lvCty', root).innerHTML = `<div class="tblwrap"><table class="t"><thead><tr><th class="l">County</th><th>Claims, 4 weeks</th><th>vs a year earlier</th><th>Unemployment</th><th>Change, points</th><th>WARN workers, 12 months</th><th>Notices</th><th>Shock index</th><th>Location bid, ${esc(LIVE.lineShort(st.line))}</th></tr></thead><tbody>${rows.join('')}</tbody></table></div><p class="small" style="margin-top:6px">Claims and unemployment from the snapshot (claims through ${esc(fd(snap.ui_through))}, unemployment ${esc(fmtDate(META.laus_through))}). The shock index is module 05's. The location bid is the county's own factor for today, on top of the campaign's ad schedule.</p>`;
+    }
+
+    /* ---------- settings ---------- */
+    function settings() {
+      const s = S(); const si = LIVE.scopeInfo(); const ctyOpts = CTY.slice().sort((a, b) => a.name.localeCompare(b.name));
+      $('#lvSetSub', root).innerHTML = `Saved in this browser${RT ? ' and sent to the background watch' : ''}. Scope now: ${esc(scopeTitle())} (${si.from === 'settings' ? 'picked here' : si.from === 'firm' ? 'from the firm profile' : 'a default; pick counties below'}).`;
+      const f = (k, l, hint, o) => fieldHTML(Object.assign({ k, id: 'lvS_' + k, l, t: 'number', hint }, o || {}), s[k]);
+      $('#lvSet', root).innerHTML = `<div class="formgrid"><div class="ctl wide"><label for="lvSCounties">Counties to watch (Ctrl or Cmd click for several; none means the firm profile's)</label><input type="text" id="lvSFind" placeholder="Filter the list" aria-label="Filter the county list"><select id="lvSCounties" multiple size="7">${ctyOpts.map(c => `<option value="${c.fips}"${(s.counties || []).includes(c.fips) ? ' selected' : ''}>${esc(c.name)} County</option>`).join('')}</select></div></div>
+        <div class="formgrid">${f('warnMin', 'Smallest WARN notice that counts (workers)', null, { min: 0, step: 5 })}${f('lagFrom', 'Window opens, days after the notice', null, { min: 0, step: 5 })}${f('lagTo', 'Window closes, days after the notice', null, { min: 30, step: 5 })}${f('wow', 'Claims rule: week over week jump, %', null, { step: 1 })}${f('yoy', 'Claims rule: four weeks vs a year earlier, %', null, { step: 1 })}${f('ctyYoy', 'County claims rule: four weeks vs a year earlier, %', null, { step: 1 })}${f('ctyMin', 'County claims rule: at least this many claims in four weeks', null, { step: 5 })}${f('urPts', 'Unemployment rule: rise on a year earlier, points', null, { step: 0.1 })}
+        ${fieldHTML({ k: 'campaign', id: 'lvS_campaign', l: 'Campaign name pattern (Editor matches rows by name)', hint: 'Tokens: {KEY} line key in capitals, {LINE} short line name, {GEO} the scope. Match the names in the account.' }, s.campaign)}${fieldHTML({ k: 'geo', id: 'lvS_geo', l: 'Location rows in the Editor file', t: 'select', opts: [['county', 'One row per county'], ['zip', 'One row per ZIP in each county']] }, s.geo)}${f('ttl', 'Keep a live answer for (hours)', null, { min: 1, step: 1 })}${fieldHTML({ k: 'interval', id: 'lvS_interval', l: 'Background watch interval', t: 'select', opts: [[60, 'Every hour'], [180, 'Every 3 hours'], [360, 'Every 6 hours'], [720, 'Every 12 hours'], [1440, 'Once a day']] }, s.interval)}</div>
+        <div class="btnrow">${fieldHTML({ k: 'useObserved', id: 'lvS_useObserved', l: 'Use the account\'s own day of week pattern (module 23) when 30 or more leads are held', t: 'checkbox' }, s.useObserved)}${fieldHTML({ k: 'fredInPage', id: 'lvS_fredInPage', l: 'Try FRED from a page too (usually blocked by CORS)', t: 'checkbox' }, s.fredInPage)}</div>
+        <div class="btnrow"><button type="button" class="btn primary" id="lvSSave">Save settings</button><button type="button" class="btn" id="lvSFirm">Use the firm's counties</button><button type="button" class="btn" id="lvSReset">Restore defaults</button><button type="button" class="btn" id="lvSClear">Forget live data</button><span class="small" id="lvSMsg"></span></div>`;
+      $('#lvSFind', root).oninput = e => { const qv = e.target.value.trim().toLowerCase(); $$('#lvSCounties option', root).forEach(o => { o.hidden = !!qv && !o.textContent.toLowerCase().includes(qv) && !o.selected; }); };
+      $('#lvSSave', root).onclick = () => { const v = readFieldsIn($('#lvSet', root)); const patch = { counties: Array.from($('#lvSCounties', root).selectedOptions).map(o => o.value) }; ['warnMin', 'lagFrom', 'lagTo', 'wow', 'yoy', 'ctyYoy', 'ctyMin', 'urPts', 'ttl'].forEach(k => { if (isN(v[k])) patch[k] = v[k]; }); if (patch.lagTo != null && patch.lagFrom != null && patch.lagTo <= patch.lagFrom) { $('#lvSMsg', root).textContent = 'The window must close after it opens.'; return; } patch.campaign = String(v.campaign || '').trim() || LIVE.DEF.campaign; patch.geo = v.geo === 'zip' ? 'zip' : 'county'; patch.interval = +v.interval || 360; patch.useObserved = !!v.useObserved; patch.fredInPage = !!v.fredInPage; LIVE.setSettings(patch); toast('Live Desk settings saved' + (RT ? ' and sent to the background watch' : '')); };
+      $('#lvSFirm', root).onclick = () => { LIVE.setSettings({ counties: [] }); toast(FIRM.counties().length ? 'Using the firm profile\'s counties' : 'The firm profile has no counties yet'); };
+      $('#lvSReset', root).onclick = () => { LIVE.resetSettings(); toast('Defaults restored'); };
+      $('#lvSClear', root).onclick = () => { LIVE.clearLive(); toast('Live data forgotten; the snapshot is shown'); };
+    }
+
+    /* ---------- the extension ---------- */
+    async function ext() {
+      const host = $('#lvExt', root);
+      const adds = `<ul class="steps"><li><b>A background watch</b> every ${N(Math.round((S().interval || 360) / 60))} hours (Options can change it): new WARN notices for the watched counties from data.texas.gov, compared with what it has already seen.</li><li><b>Notifications</b> for each new notice with the campaign rule it triggers, and when Texas weekly claims jump past the thresholds.</li><li><b>The toolbar badge</b>: new notices in the last 14 days in the watched counties.</li><li><b>A popup</b> with the latest triggers and a button that opens this desk.</li><li><b>No CORS limit</b>: host permissions let it read FRED, which a page cannot. The Options page also shows the OAuth redirect address module 23 needs and asks for access to the firm's own site.</li></ul>`;
+      if (!RT) { host.innerHTML = adds + `<p class="small">Running in ${esc(ENV_LABEL)}. Load the severance folder as an unpacked extension (Chrome, Edge, Brave: Extensions, Developer mode, Load unpacked; Firefox 128 or later: about:debugging, Load Temporary Add-on, pick manifest.json) or install the zip from the build. The settings above are sent to the watch when this desk runs inside the extension.</p>`; return; }
+      const x = await LIVE.extState(); const o = (x && x.options) || {}; const s = (x && x.state) || {}; LIVE.adoptExt(o); const sm = s.summary || null; const last = s.last || null;
+      host.innerHTML = adds + `<dl class="kv"><dt>Watching</dt><dd>${o.counties && o.counties.length ? esc(o.counties.map(c => c.name).join(', ')) : 'all of Texas (no counties sent yet)'}</dd><dt>Every</dt><dd>${N(Math.round((o.interval || 360) / 60))} hours</dd><dt>Last check</dt><dd>${last ? esc(new Date(last.at).toLocaleString()) + ' (' + esc(last.reason || '') + ')' : 'not yet'}</dd>${sm ? `<dt>New notices, 14 days</dt><dd>${N(sm.new14)}</dd><dt>Notices held</dt><dd>${N((sm.notices || []).length)}</dd>${sm.claims && sm.claims.last ? `<dt>Claims, week ending ${esc(fd(sm.claims.last.date))}</dt><dd>${N(sm.claims.last.value)}</dd>` : ''}` : ''}${last && last.errors && last.errors.length ? `<dt>Errors</dt><dd>${esc(last.errors.join('; '))}</dd>` : ''}</dl>
+        <div class="btnrow"><button type="button" class="btn" id="lvExtPush">Send these settings to the watch</button><button type="button" class="btn" id="lvExtCheck">Check now</button><button type="button" class="btn" id="lvExtOpts">Open the extension options</button></div>`;
+      $('#lvExtPush', root).onclick = async () => { toast((await LIVE.pushExt({ force: true })) ? 'Sent to the background watch' : 'Could not reach extension storage'); ext(); };
+      $('#lvExtCheck', root).onclick = async () => { toast('The background watch is checking'); await LIVE.extCheck(); ext(); };
+      $('#lvExtOpts', root).onclick = () => { try { if (RT.runtime.openOptionsPage) RT.runtime.openOptionsPage(); else window.open(RT.runtime.getURL('options.html')); } catch (e) { toast('Could not open the options'); } };
+    }
+
+    /* ---------- method, judgment, sources ---------- */
+    $('#lvMeth', root).innerHTML = [
+      `<b>Sources and fallback.</b> WARN notices from the Texas Workforce Commission's dataset on data.texas.gov (Socrata 8w53-c4f6: newest first, the scope counties by name, 500 rows; if the county query is refused the plain endpoint is read and the counties filtered here). Statewide weekly initial and continued claims from FRED (TXICLAIMS and TXCCLAIMS, not seasonally adjusted). Field names are mapped tolerantly (notice date, employer, county, workers, layoff date under several spellings); anything unmapped is kept and shown as raw columns. When a source cannot be reached the desk uses the snapshot built into the atlas: the 12 most recent notices per county through ${esc(fd(snap.warn_through))}, statewide and county weekly claims through ${esc(fd(snap.ui_through))}, county unemployment for ${esc(fmtDate(META.laus_through))}.`,
+      `<b>Layoff rule.</b> A notice of at least ${N(S().warnMin)} workers opens a window from day ${N(S().lagFrom)} to day ${N(S().lagTo)} after its date in its county, lifting modification and enforcement. The lift is sized on the workers of all notices open in the county that day per 1,000 in its labor force: above 0 is +5%, 1 or more +10%, 3 or more +20%, 10 or more +30%. Protective orders are never moved by an economic signal.`,
+      `<b>Claims rule.</b> Statewide: the latest week ${esc(sgn(S().wow, 0))} or more on the week before, or the last four weeks ${esc(sgn(S().yoy, 0))} or more on the same weeks a year earlier. By county: four weeks ${esc(sgn(S().ctyYoy, 0))} or more on a year earlier with at least ${N(S().ctyMin)} claims. Either lifts modification and enforcement 10% statewide (15% in the county) from day ${N(S().lagFrom)} to day ${N(S().lagTo)}, trims the divorce lines 10% for 30 days and lifts them 10% from day 335 to day 395, the panel's twelve month rebound. A county unemployment rate ${N(S().urPts, 1)} points or more above a year earlier lifts modification 5% for six months.`,
+      '<b>Calendar.</b> The April 1 written notice for extended summer possession (§ 153.312(b), § 153.313), the April 15 counter notice, spring break, the end of school, the default summer periods, the start of school, Thanksgiving and Christmas possession by even and odd year (§ 153.314), tax refund season, the military moving season in Bell, Coryell, El Paso and Bexar counties, and in odd years the legislative session and the September 1 effective date. Each window carries a small lift for the lines it moves; the January rise and the March peak are already in the season index and are not added twice.',
+      '<b>Season.</b> The statewide monthly index of each line\'s filings (2022 to 2025, module 09), read a month ahead because the consult comes about a month before the petition (the same month for protective orders), interpolated day by day.',
+      '<b>Account pattern.</b> With 30 or more leads in the last 90 days held by module 23, each weekday\'s share of leads becomes a factor, shrunk toward 1 until the count is large.',
+      '<b>Combination and exports.</b> The day\'s multiplier is the product of the factors; the bid adjustment is that minus one, rounded to 5% and held between minus 50 and plus 90. The Google Ads Editor file writes the next seven days as an ad schedule (all seven days, so the schedule never stops the ads) at campaign level and each county\'s own factor, averaged over the same week, as its location bid modifier; import it again each week. The daily plan and the bid windows carry the reasons; the calendar exports as CSV and as an .ics file any calendar app reads.',
+      '<b>Background watch.</b> In the extension the same layoff and claims rules run on a timer (every 6 hours by default) with notifications and the badge; the desk sends its counties and thresholds to it.'
+    ].map(x => `<li>${x}</li>`).join('');
+    $('#lvJudg', root).innerHTML = `<dl class="kv lv-judg">${[['Bid steps, not a demand model', 'The panel says which way and when (module 05); the step sizes are a starting point graded C. Ninety days of the account\'s own leads by date should replace them.'], ['WARN catches only big layoffs', 'The federal WARN Act covers employers of 100 or more; most job losses never appear in a notice. Weekly claims catch the rest, which is why both run.'], ['County claims are the snapshot\'s', 'FRED carries Texas as a whole. County claims and county unemployment come from the data built into the atlas and age until the next build.'], ['Default orders, not the family\'s', 'The possession dates are the standard possession order\'s defaults. Many orders differ, and school calendars vary by district; the ads speak to the question, never to a family\'s order.'], ['Safety lines are not trimmed', 'Protective orders are never cut on an economic signal: the need is urgent whatever the claims say.']].map(j => `<dt><b>${esc(j[0])}</b></dt><dd class="lv-jd">${esc(j[1])}</dd>`).join('')}</dl>`;
+    $('#lvSrc', root).innerHTML = `<div class="tblwrap"><table class="t"><thead><tr><th class="l">Source</th><th class="l">Used for, through</th><th>Grade</th></tr></thead><tbody>${[
+      ['TWC WARN notices, data.texas.gov 8w53-c4f6', LIVE.WARN_PAGE, 'Layoff triggers', 'A', 'live, or ' + fd(snap.warn_through)],
+      ['FRED TXICLAIMS, Texas initial claims (NSA)', LIVE.FRED_PAGE('TXICLAIMS'), 'Statewide claims rule', 'A', 'live'],
+      ['FRED TXCCLAIMS, Texas continued claims', LIVE.FRED_PAGE('TXCCLAIMS'), 'Context', 'A', 'live'],
+      ['TWC weekly claims by county', 'https://www.twc.texas.gov/data-reports/unemployment-insurance-claims-data', 'County claims rule', 'A', fd(snap.ui_through)],
+      ['BLS Local Area Unemployment Statistics', 'https://www.bls.gov/lau/', 'Unemployment rule', 'A', fmtDate(META.laus_through)],
+      ['Texas courts monthly filings (OCA)', 'https://www.txcourts.gov/statistics/', 'Season index', 'A', '2022 to 2025 average'],
+      ['County panel lag model (module 05)', '', 'Timing of the rules', 'B', '2019 to 2026'],
+      ['Tex. Fam. Code ch. 153, subch. F (standard possession order)', 'https://statutes.capitol.texas.gov/Docs/FA/htm/FA.153.htm', 'Possession calendar', 'A', 'statute'],
+      ['Tex. Fam. Code §§ 6.303 to 6.304, ch. 156', 'https://statutes.capitol.texas.gov/Docs/FA/htm/FA.156.htm', 'Military residency, modification', 'A', 'statute'],
+      ['IRS refund timing', 'https://www.irs.gov/refunds', 'Tax refund window', 'A', 'annual'],
+      ['Military OneSource, PCS moves', 'https://www.militaryonesource.mil/', 'Moving season', 'B', 'annual'],
+      ['Texas Legislature Online', 'https://capitol.texas.gov/', 'Session and effective dates', 'A', 'odd years']
+    ].map(r => `<tr><td class="l">${r[1] ? `<a href="${esc(r[1])}" target="_blank" rel="noopener">${esc(r[0])}</a>` : esc(r[0])}</td><td class="l lv-why">${esc(r[2])} · ${esc(r[4])}</td><td>${esc(r[3])}</td></tr>`).join('')}</tbody></table></div>`;
+
+    /* ---------- wiring ---------- */
+    function renderPlan() { saveUI(); tiles(); days(); chart(); narr(); win(); grid(); cty(); }
+    function renderAll() { status(); scopeNote(); selectors(); tiles(); trig(); days(); chart(); narr(); win(); grid(); cal(); warn(); claims(); cty(); settings(); ext(); }
+    $('#lvLine', root).onchange = e => { st.line = e.target.value; st.day = 0; renderPlan(); };
+    $('#lvGeo', root).onchange = e => { st.geo = e.target.value; renderPlan(); claims(); };
+    wireSeg($('#lvTrigF', root), () => trig());
+    wireSeg($('#lvHor', root), v => { st.horizon = v; saveUI(); cal(); });
+    $('#lvRaw', root).onchange = e => { st.raw = e.target.checked; warn(); };
+    $('#lvRef', root).onclick = async () => { if (!LIVE.canFetch()) { toast('Live refresh is blocked inside the hosted viewer; open the single file or the extension'); return; } toast('Refreshing from data.texas.gov' + (LIVE.inPage() && !S().fredInPage ? '' : ' and FRED')); await LIVE.refresh({ force: true }); const s = LIVE.state.sources; toast(['warn', 'icl'].some(k => s[k].mode === 'live' && !s[k].error) ? 'Live data in' : 'No live source answered; the snapshot is shown'); };
+    $('#lvLoad', root).onclick = async () => { const [file] = await pickFiles('.json,.csv,application/json,text/csv'); if (!file) return; try { const r = LIVE.loadFile(await readText(file), file.name); toast(r.kind === 'warn' ? `Loaded ${r.n} WARN notices` : `Loaded ${r.n} weeks of ${r.id}`); } catch (e) { toast('That file could not be read'); $('#lvStatus', root).insertAdjacentHTML('beforeend', callout('judg', 'That file could not be read', esc(e.message))); } };
+    const stamp = () => today().replace(/-/g, '');
+    $('#lvEditor', root).onclick = () => saveFile(`google-ads-editor_live-timing_${stamp()}.csv`, LIVE.editorCSV({ geo: S().geo }));
+    $('#lvJson', root).onclick = () => saveFile(`severance_live_${stamp()}.json`, LIVE.snapshotJSON());
+    $('#lvWinCsv', root).onclick = () => saveFile(`bid-windows_${st.line}_${stamp()}.csv`, LIVE.windowsCSV(st.line, geoNow() || null));
+    $('#lvDailyCsv', root).onclick = () => saveFile(`daily-plan_${st.line}_${stamp()}.csv`, LIVE.dailyCSV(st.line, geoNow() || null));
+    $('#lvCalCsv', root).onclick = () => saveFile(`legal-family-calendar_${stamp()}.csv`, LIVE.calendarCSV(today(), +st.horizon));
+    $('#lvIcs', root).onclick = () => saveFile(`legal-family-calendar_${stamp()}.ics`, LIVE.ics(today(), +st.horizon));
+    $('#lvWarnCsv', root).onclick = () => saveFile(`warn-notices_${stamp()}.csv`, LIVE.noticesCSV());
+    $('#lvGoEcon', root).onclick = () => goModule('econ'); $('#lvGoTiming', root).onclick = () => goModule('timing'); $('#lvGoDesk', root).onclick = () => goModule('desk', { line: st.line });
+    BUS.on('live', () => renderAll());
+    BUS.on('firm', () => { LIVE.invalidate(); });
+    BUS.on('actuals', () => { LIVE.invalidate(); });
+    BUS.on('theme', () => { chart(); claims(); grid(); });
+    if (RT && RT.storage && RT.storage.onChanged && !MODI.live._extL) { MODI.live._extL = (ch, area) => { if (area === 'local' && ch[LIVE.EXT_ST] && root.isConnected) ext(); }; RT.storage.onChanged.addListener(MODI.live._extL); }
+    renderAll();
+    if (RT) { LIVE.pushExt(); if (!LIVE.fresh()) LIVE.refresh({ force: false }); }
+    this.receive = p => { if (!p) return; if (p.line && LINE_META[p.line]) st.line = p.line; if (p.county && CI[p.county]) st.geo = p.county; selectors(); renderPlan(); };
+  }
+});

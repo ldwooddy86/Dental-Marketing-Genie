@@ -1,0 +1,56 @@
+/* Module 10 · Campaign Desk. Scoped to #mod-desk; CSS variables only so both themes work. */
+#mod-desk .dk-files{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:-6px 0 16px}
+#mod-desk .dk-files .dk-lbl{font-family:var(--display);font-weight:700;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--judg);margin-right:4px}
+#mod-desk .dk-sec{font-family:var(--display);font-weight:700;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--judg);margin:14px 0 6px}
+#mod-desk .dk-mute{color:var(--ink-3);font-weight:400;letter-spacing:0;text-transform:none;font-family:var(--sans);font-size:12px}
+#mod-desk .dk-mix{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:6px 22px}
+#mod-desk .dk-mix .m{display:grid;grid-template-columns:minmax(0,1fr) minmax(90px,140px) 42px 74px;align-items:center;gap:8px;font-size:13px;min-width:0}
+#mod-desk .dk-mix .m label{color:var(--ink-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#mod-desk .dk-mix .m input[type=range]{width:100%;accent-color:var(--green-dark);min-width:0}
+#mod-desk .dk-mix .m b{font-family:var(--display);color:var(--title);text-align:right;font-variant-numeric:tabular-nums}
+#mod-desk .dk-mix .m .usd{color:var(--ink-3);text-align:right;font-variant-numeric:tabular-nums;font-size:12.5px}
+#mod-desk input.dk-num{width:76px;text-align:right;background:var(--card);border:1px solid var(--line-strong);border-radius:0;padding:3px 6px;font-size:12.5px;color:var(--ink);font-variant-numeric:tabular-nums}
+#mod-desk input.dk-num:focus{border-color:var(--title);outline:none}
+#mod-desk td.dk-src,#mod-desk td.dk-wrap,#mod-desk .dk-wrap{white-space:normal;min-width:200px;max-width:520px;line-height:1.4;font-size:12px;color:var(--ink-2)}
+#mod-desk .small.dk-wrap{min-width:0;max-width:none;overflow-wrap:anywhere}
+#mod-desk .dk-split{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);gap:20px}
+#mod-desk .dk-p{font-size:13.5px;line-height:1.55;color:var(--ink);margin:0 0 4px}
+#mod-desk .dk-ul{margin:0 0 10px;padding-left:18px;font-size:13px;line-height:1.5;color:var(--ink)}
+#mod-desk .dk-ul li{margin:2px 0}
+#mod-desk .dk-asset{display:flex;gap:10px;align-items:baseline;border:1px solid var(--line);background:var(--card);padding:6px 9px;margin:4px 0;font-size:13px;line-height:1.4;min-width:0}
+#mod-desk .dk-asset>span:last-child{min-width:0;overflow-wrap:anywhere}
+#mod-desk .dk-asset .cnt{flex:none;min-width:46px;font-family:var(--display);font-weight:700;font-size:11px;color:var(--ink-3);font-variant-numeric:tabular-nums}
+#mod-desk .dk-asset .cnt.over{color:var(--critical)}
+#mod-desk .dk-line{border-top:1px solid var(--line);padding:10px 0}
+#mod-desk .dk-line:first-child{border-top:0;padding-top:0}
+#mod-desk .dk-line code,#mod-desk .dk-neg code{font-size:11.5px;background:var(--sunk);border:1px solid var(--line);padding:0 4px;margin:1px 0;display:inline-block}
+#mod-desk .dk-pills{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
+#mod-desk .dk-pills .pill{font-family:var(--sans);font-weight:500;font-size:12px;letter-spacing:0;text-transform:none;white-space:normal;color:var(--ink)}
+#mod-desk .dk-kw{columns:3 220px;column-gap:18px;font-size:12.5px;line-height:1.6}
+#mod-desk .dk-kw div{break-inside:avoid;overflow-wrap:anywhere}
+#mod-desk .dk-neg{line-height:1.9}
+#mod-desk .dk-ad{border:1px solid var(--line);border-left:4px solid var(--line-strong);padding:8px 11px;margin:6px 0;background:var(--card)}
+#mod-desk .dk-ad .dk-adh{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;font-size:13px;margin-bottom:3px}
+#mod-desk .dk-ad .dk-adh b{color:var(--title);font-family:var(--display)}
+#mod-desk .dk-ol{padding-left:20px;font-size:13.5px;line-height:1.55}
+#mod-desk .dk-ol li{margin:0 0 8px}
+#mod-desk .dk-j{border-top:1px solid var(--line);padding:8px 0}
+#mod-desk .dk-j:first-child{border-top:0;padding-top:0}
+#mod-desk .dk-j b{font-family:var(--display);color:var(--title);font-size:13.5px}
+#mod-desk .dk-kv2{grid-template-columns:minmax(120px,30%) minmax(0,1fr)}
+#mod-desk .dk-kv2 dd{text-align:left;justify-self:stretch;font-weight:400;line-height:1.5}
+#mod-desk .dk-up{color:var(--critical)} #mod-desk .dk-dn{color:var(--good)}
+#mod-desk table.t.dk-kv td{white-space:normal}
+#mod-desk .finding .pill{margin-right:4px}
+#mod-desk #dkCounties{min-height:84px}
+#mod-desk .tabs button{cursor:pointer}
+#mod-desk .mapwrap svg{max-height:560px}
+@media (max-width:980px){#mod-desk .dk-split{grid-template-columns:1fr}}
+@media (max-width:640px){
+  #mod-desk .dk-mix{grid-template-columns:1fr}
+  #mod-desk .dk-mix .m{grid-template-columns:minmax(0,1fr) 42px 70px;grid-template-areas:'l b u' 'r r r'}
+  #mod-desk .dk-mix .m label{grid-area:l} #mod-desk .dk-mix .m input{grid-area:r} #mod-desk .dk-mix .m b{grid-area:b} #mod-desk .dk-mix .m .usd{grid-area:u}
+  #mod-desk td.dk-src,#mod-desk td.dk-wrap{min-width:160px}
+  #mod-desk .dk-kv2{grid-template-columns:1fr} #mod-desk .dk-kv2 dt{font-weight:700;color:var(--title)}
+  #mod-desk .dk-files .btn{flex:1 1 auto}
+}

@@ -1,1 +1,27 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Severance</title></head><body><p>Severance</p></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Severance</title>
+<link rel="stylesheet" href="ext.css">
+</head>
+<body class="popup">
+<header class="xh"><img src="icons/icon48.png" alt=""><div><div class="nm">Severance</div><div class="sb" id="sub">Live watch</div></div></header>
+<main>
+  <div id="err" class="err" hidden></div>
+  <div class="row3">
+    <div class="k"><div class="lbl">New notices</div><div class="v" id="kNew">n/a</div><div class="s">WARN, last 14 days</div></div>
+    <div class="k"><div class="lbl">Workers</div><div class="v" id="kWork">n/a</div><div class="s">on those notices</div></div>
+    <div class="k"><div class="lbl">TX claims</div><div class="v" id="kCl">n/a</div><div class="s" id="kClS">latest week</div></div>
+  </div>
+  <section><h2>Latest triggers</h2><div id="trig"><p class="small">Waiting for the first check.</p></div></section>
+  <div class="btns">
+    <button type="button" class="p" id="open">Open the atlas</button>
+    <button type="button" id="refresh">Check now</button>
+  </div>
+  <div class="foot"><span id="upd"></span><button type="button" class="lnk" id="opts">Options</button></div>
+</main>
+<script src="popup.js"></script>
+</body>
+</html>

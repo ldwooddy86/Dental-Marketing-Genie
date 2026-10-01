@@ -1,0 +1,131 @@
+/* Module 24 · Competitor Watch (src/43_m24_watch.js). CSS variables only, so both themes work; square corners. */
+#mod-watch .cw-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px 16px;flex-wrap:wrap;margin-bottom:8px}
+#mod-watch .cw-head>div:first-child{min-width:0;flex:1 1 280px}
+#mod-watch .cw-head .btnrow{margin:0}
+#mod-watch .cw-grow{flex:1 1 220px}
+#mod-watch .cw-grow input{width:100%}
+#mod-watch .controls .seg{align-self:flex-end}
+#mod-watch .cw-digest{margin:0;padding-left:20px;font-size:14px;line-height:1.55;color:var(--ink-2)}
+#mod-watch .cw-digest li{margin:4px 0}
+#mod-watch .cw-digest b{color:var(--title)}
+#mod-watch .cw-empty{border:1px dashed var(--line-strong);background:var(--sunk);padding:16px 18px;font-size:14px;line-height:1.55;color:var(--ink-2)}
+#mod-watch .cw-empty b{color:var(--title)}
+#mod-watch .cw-empty a{font-size:13px}
+
+/* roster cards */
+#mod-watch .cw-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:10px}
+#mod-watch .cw-card{cursor:pointer}
+#mod-watch .cw-card:hover{border-color:var(--line-strong)}
+#mod-watch .cw-card.arch{opacity:.78}
+#mod-watch .cw-ctop{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+#mod-watch .cw-ctop h4{overflow-wrap:anywhere}
+#mod-watch .cw-score{font-family:var(--display);font-weight:700;font-size:20px;line-height:1;color:var(--title);border:1px solid var(--line-strong);padding:5px 8px;min-width:40px;text-align:center;font-variant-numeric:tabular-nums;flex:none}
+#mod-watch .cw-card .meta{overflow-wrap:anywhere}
+#mod-watch .cw-stats{display:flex;flex-wrap:wrap;gap:3px 12px;font-size:12.5px;color:var(--ink-3)}
+#mod-watch .cw-stats b{color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums}
+#mod-watch .cw-n{font-style:normal;font-size:11.5px;color:var(--ink-2);margin:0 6px 0 2px}
+#mod-watch .cw-cbtn{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;margin-top:4px;padding-top:8px;border-top:1px solid var(--line);font-size:12.5px}
+#mod-watch .cw-cbtn .chk{font-size:12.5px}
+
+/* platform badges and tags */
+#mod-watch .cw-pb{display:inline-block;font-family:var(--display);font-weight:700;font-size:10.5px;letter-spacing:.05em;padding:1px 6px;border:1px solid var(--line-strong);color:var(--ink-2);background:var(--card);white-space:nowrap}
+#mod-watch .cw-pb.p-meta{border-color:var(--s3);color:var(--s3)}
+#mod-watch .cw-pb.p-google,#mod-watch .cw-pb.p-youtube{border-color:var(--s1);color:var(--s1)}
+#mod-watch .cw-pb.p-lsa,#mod-watch .cw-pb.p-gbp,#mod-watch .cw-pb.p-organic{border-color:var(--s4);color:var(--s4)}
+#mod-watch .cw-pb.p-tiktok,#mod-watch .cw-pb.p-linkedin,#mod-watch .cw-pb.p-microsoft{border-color:var(--s5);color:var(--s5)}
+#mod-watch .cw-tag{display:inline-block;font-size:11px;padding:1px 7px;border:1px solid var(--line-strong);color:var(--ink-2);margin:1px 4px 1px 0;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis;vertical-align:middle}
+#mod-watch .cw-tag.on{border-color:var(--good);color:var(--good)}
+#mod-watch .cw-tag.bad{border-color:var(--critical);color:var(--critical)}
+#mod-watch .cw-tag.warnp{border-color:var(--warning);color:var(--warning)}
+
+/* the work area: profile on the left, forms on the right */
+#mod-watch .cw-work{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:14px;align-items:start;margin-bottom:14px}
+#mod-watch .cw-work>*{min-width:0}
+#mod-watch .cw-stack{display:grid;gap:14px;min-width:0}
+#mod-watch .cw-stack .panel{margin:0}
+#mod-watch #cwDetailP{position:relative}
+#mod-watch .cw-sh{font-family:var(--display);font-weight:700;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--judg);margin:16px 0 8px;border-bottom:1px solid var(--line);padding-bottom:4px}
+#mod-watch .cw-list{margin:0;padding-left:18px;font-size:13px;color:var(--ink-2);line-height:1.5}
+#mod-watch .cw-bars{display:grid;gap:4px}
+#mod-watch .cw-bars div{display:grid;grid-template-columns:130px minmax(0,1fr) 30px;gap:8px;align-items:center;font-size:12px;color:var(--ink-2)}
+#mod-watch .cw-bars i{display:block;height:8px;background:var(--sunk-2)}
+#mod-watch .cw-bars s{display:block;height:8px;background:var(--s1)}
+#mod-watch .cw-bars b{text-align:right;color:var(--title);font-variant-numeric:tabular-nums}
+#mod-watch .cw-links{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px 18px}
+#mod-watch .cw-links>div{display:flex;flex-direction:column;gap:4px;min-width:0}
+#mod-watch .cw-links a{font-size:13px;overflow-wrap:anywhere}
+#mod-watch .cw-lg{font-family:var(--display);font-weight:700;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3)}
+#mod-watch .kv dd{overflow-wrap:anywhere}
+
+/* timeline */
+#mod-watch .cw-tl{display:grid;gap:6px}
+#mod-watch .cw-tli{border:1px solid var(--line);border-left:3px solid var(--line-strong);padding:7px 10px;background:var(--card);min-width:0}
+#mod-watch .cw-tli.live{border-left-color:var(--s1)}
+#mod-watch .cw-tlh{font-size:12.5px;color:var(--ink-2)}
+#mod-watch .cw-tlt{font-size:13px;color:var(--ink);margin:3px 0;overflow-wrap:anywhere}
+#mod-watch .cw-tla{display:flex;gap:6px 10px;flex-wrap:wrap;align-items:center;font-size:12.5px}
+#mod-watch .cw-month{font-family:var(--display);font-weight:700;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--title);margin:14px 0 6px}
+#mod-watch .cw-month:first-child{margin-top:0}
+
+/* forms */
+#mod-watch textarea.cw-code{width:100%;font-family:var(--sans);font-size:12.5px;min-height:96px}
+#mod-watch select[multiple]{min-height:120px;width:100%}
+#mod-watch .cw-draft{margin-bottom:10px}
+#mod-watch .cw-lint{display:grid;gap:4px;margin:4px 0 6px}
+#mod-watch .cw-iss{border-left:3px solid var(--line-strong);padding:3px 8px;font-size:13px;background:var(--sunk)}
+#mod-watch .cw-iss.block{border-left-color:var(--critical)}
+#mod-watch .cw-iss.warn{border-left-color:var(--warning)}
+#mod-watch .cw-iss.fix{border-left-color:var(--serious)}
+#mod-watch .cw-iss.info{border-left-color:var(--s3)}
+#mod-watch .cw-msg{padding:8px 10px;border:1px solid var(--line);border-left:4px solid var(--good);background:var(--sunk);font-size:13px;margin-top:8px}
+#mod-watch .cw-msg.err{border-left-color:var(--critical)}
+#mod-watch pre.cw-url{white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-all;font-size:12px;background:var(--sunk);border:1px solid var(--line);padding:8px 10px;margin:8px 0 0;max-height:120px;overflow:auto;color:var(--ink-2)}
+#mod-watch .cw-vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* tables */
+#mod-watch table.cw-t td.cw-wrap,#mod-watch table.cw-cmp td.cw-wrap{white-space:normal;min-width:200px;max-width:420px;overflow-wrap:anywhere}
+#mod-watch table.cw-t td .btn+.btn{margin-left:4px}
+#mod-watch table.cw-cmp td:first-child{white-space:normal;min-width:150px;max-width:220px;font-weight:500;color:var(--title)}
+#mod-watch table.cw-cmp th.cw-firm,#mod-watch table.cw-cmp td.cw-firm{background:var(--sel-soft)}
+#mod-watch table.cw-cmp th{cursor:default}
+#mod-watch table.cw-matrix td{text-align:center;min-width:44px}
+#mod-watch table.cw-matrix td.sells{color:var(--ink-3)}
+#mod-watch table.cw-matrix th{font-size:9.5px;cursor:default}
+#mod-watch tr.cw-stale td:first-child{box-shadow:inset 3px 0 0 var(--warning)}
+#mod-watch .cw-bad{color:var(--critical);font-weight:600}
+#mod-watch td.cw-sl a{margin-right:8px;white-space:nowrap}
+#mod-watch .cw-pick{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;margin-bottom:10px}
+
+/* claims */
+#mod-watch .cw-claims{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:10px;margin-bottom:8px}
+#mod-watch .cw-claim{border:1px solid var(--line);border-left:4px solid var(--line-strong);padding:10px 12px;font-size:13.5px;line-height:1.5;min-width:0;overflow-wrap:anywhere}
+#mod-watch .cw-claim.block{border-left-color:var(--critical)}
+#mod-watch .cw-claim.warn{border-left-color:var(--warning)}
+#mod-watch .cw-claim.info{border-left-color:var(--s3)}
+#mod-watch .cw-claim p{margin:6px 0}
+#mod-watch .cw-claim b{color:var(--title)}
+
+/* map side */
+#mod-watch #cwMap path.cty{stroke:var(--title);stroke-width:1.6;opacity:1}
+#mod-watch .cw-sideh{font-family:var(--display);font-size:20px;color:var(--title);margin:0 0 8px}
+#mod-watch .cw-chipl{display:flex;flex-wrap:wrap;gap:6px}
+#mod-watch .cw-row{display:flex;justify-content:space-between;gap:10px;width:100%;text-align:left;background:var(--card);border:0;border-bottom:1px solid var(--line);padding:6px 2px;font-size:13px;color:var(--ink-2);cursor:pointer}
+#mod-watch .cw-row:hover{background:var(--sunk)}
+#mod-watch .cw-row b{color:var(--title);font-variant-numeric:tabular-nums;white-space:nowrap}
+#mod-watch .cw-dl{display:grid;gap:2px 0;margin:0;font-size:13.5px;line-height:1.55}
+#mod-watch .cw-dl dt{font-family:var(--display);font-weight:700;color:var(--title);margin-top:8px}
+#mod-watch .cw-dl dt:first-child{margin-top:0}
+#mod-watch .cw-dl dd{margin:0;color:var(--ink-2)}
+#mod-watch .cw-foot{margin:16px 0 0}
+.modal .cw-mh{font-family:var(--display);font-size:22px;color:var(--title);margin-bottom:8px}
+
+@media (max-width:1100px){#mod-watch .cw-work{grid-template-columns:1fr}}
+@media (max-width:640px){
+  #mod-watch .cw-cards{grid-template-columns:1fr}
+  #mod-watch .cw-claims{grid-template-columns:1fr}
+  #mod-watch .cw-links{grid-template-columns:1fr}
+  #mod-watch .controls .ctl{flex:1 1 140px}
+  #mod-watch .controls .ctl select{min-width:0;width:100%}
+  #mod-watch .cw-bars div{grid-template-columns:110px minmax(0,1fr) 26px}
+  #mod-watch table.cw-t td.cw-wrap,#mod-watch table.cw-cmp td.cw-wrap{min-width:160px}
+}

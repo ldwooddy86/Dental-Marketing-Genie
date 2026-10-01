@@ -1,1 +1,68 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Severance</title></head><body><p>Severance</p></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Severance · Options</title>
+<link rel="stylesheet" href="ext.css">
+</head>
+<body class="opts">
+<header class="xh"><img src="icons/icon48.png" alt=""><div><h1>Severance · Options</h1><p>The live watch, its notifications and badge, the addresses the provider consoles need, and site access.</p></div></header>
+<main>
+  <section>
+    <h2>Live watch</h2>
+    <p class="mini">In the background the extension reads the Texas Workforce Commission's WARN notices for the watched counties (data.texas.gov) and Texas weekly initial claims (FRED), on this timer.</p>
+    <div class="grid">
+      <label class="fld"><span>Check every</span><select id="interval"><option value="60">Every hour</option><option value="180">Every 3 hours</option><option value="360">Every 6 hours</option><option value="720">Every 12 hours</option><option value="1440">Once a day</option></select></label>
+      <label class="fld"><span>Smallest WARN notice that counts (workers)</span><input type="number" id="warnMin" min="0" step="5"></label>
+      <label class="fld"><span>Window opens, days after the notice</span><input type="number" id="lagFrom" min="0" step="5"></label>
+      <label class="fld"><span>Window closes, days after the notice</span><input type="number" id="lagTo" min="30" step="5"></label>
+      <label class="fld"><span>Claims rule: week over week jump, %</span><input type="number" id="wow" step="1"></label>
+      <label class="fld"><span>Claims rule: four weeks vs a year earlier, %</span><input type="number" id="yoy" step="1"></label>
+    </div>
+  </section>
+  <section>
+    <h2>Watched counties</h2>
+    <p class="mini">The Live Desk (module 25) sends the firm's counties here when it runs inside the extension; a change made here holds until the desk's county list changes. None picked means all of Texas.</p>
+    <div class="grid">
+      <label class="fld"><span>Filter</span><input type="text" id="find" placeholder="Type a county name"></label>
+      <label class="fld" style="grid-column:1/-1"><span>Counties (Ctrl or Cmd click for several)</span><select id="counties" multiple size="9"></select></label>
+    </div>
+    <p class="small" id="picked"></p>
+  </section>
+  <section>
+    <h2>Notifications and badge</h2>
+    <p class="mini">A desktop notification for each new WARN notice in the watched counties, with the campaign rule it triggers, and when Texas weekly claims jump past the thresholds. The badge counts new notices in the last 14 days.</p>
+    <label class="chk"><input type="checkbox" id="notify"> Show notifications</label>
+    <div class="chks">
+      <label class="chk"><input type="checkbox" data-kind="warn"> New WARN notices (modification and enforcement windows)</label>
+      <label class="chk"><input type="checkbox" data-kind="claims"> Weekly claims jumps</label>
+      <label class="chk"><input type="checkbox" id="badge"> Badge on the toolbar icon</label>
+    </div>
+  </section>
+  <section>
+    <h2>Provider consoles</h2>
+    <p class="mini">Every OAuth client the firm creates for module 23 (Google Cloud, Meta for Developers, TikTok for Business, Microsoft Azure, LinkedIn) needs this redirect address. In Firefox the address is different for each browser profile (it ends in extensions.allizom.org) and the add-on must be granted site access below before a sign in can finish.</p>
+    <p>Redirect URL: <code id="redirect">n/a</code> <button type="button" id="copyR">Copy</button></p>
+    <p>Extension ID: <code id="extid">n/a</code></p>
+  </section>
+  <section>
+    <h2>Site access</h2>
+    <p class="mini">Chrome grants the atlas's API hosts at install. Firefox treats them as optional: grant them here once. Publishing to the firm's own website (module 22) asks for access to that site; you can grant it ahead of time.</p>
+    <div class="acts"><button type="button" id="grantAll">Grant the atlas's API hosts</button><span class="msg" id="grantMsg"></span></div>
+    <div class="grid" style="margin-top:10px">
+      <label class="fld"><span>The firm's website</span><input type="url" id="site" placeholder="https://www.example.com"></label>
+    </div>
+    <div class="acts"><button type="button" id="grantSite">Grant access to this site</button><span class="msg" id="siteMsg"></span></div>
+    <ul class="plain" id="granted"></ul>
+  </section>
+  <section>
+    <h2>Last check</h2>
+    <pre id="last">No check yet.</pre>
+    <div class="acts"><button type="button" id="refresh">Check now</button><button type="button" id="openDesk">Open the Live Desk</button></div>
+  </section>
+  <div class="acts"><button type="button" class="p" id="save">Save options</button><button type="button" id="reset">Restore defaults</button><span class="msg" id="msg"></span></div>
+</main>
+<script src="options.js"></script>
+</body>
+</html>
