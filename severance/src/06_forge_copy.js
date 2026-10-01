@@ -28,6 +28,14 @@ const FCOPY = (() => {
 
   /* ---------- the law: every statutory number a page may print, with its cite (grade A unless marked) ---------- */
   const FC = 'Texas Family Code';
+  /* the support cap, the one child amount at the cap and the arrears rate come from the compliance engine's figures table when it is
+     loaded (LINT.FIGURES, one source for these pages and for the stale number rules); the same values stand in when it is not */
+  const FIGX = id => (typeof LINT !== 'undefined' && LINT && typeof LINT.figure === 'function' && LINT.figure(id)) || null;
+  const MESX = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+  const MONX = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  const dEn = d => { const m = String(d || '').match(/^(\d{4})-(\d{2})-(\d{2})$/); return m ? `${MONX[+m[2] - 1]} ${+m[3]}, ${m[1]}` : String(d || ''); };
+  const dEs = d => { const m = String(d || '').match(/^(\d{4})-(\d{2})-(\d{2})$/); return m ? `${+m[3]} de ${MESX[+m[2] - 1]} de ${m[1]}` : String(d || ''); };
+  const F_CAP = FIGX('cap') || { value: '$11,700', since: '2025-09-01' }, F_CAP1 = FIGX('cap1') || { value: '$2,340' }, F_ARR = FIGX('arrears') || { num: 6 };
   const LAW = {
     wait: { v: '60 days', es: '60 días', l: 'the earliest a Texas court can grant a divorce after the petition is filed, except in some family violence cases', les: 'como mínimo entre la petición y el decreto de divorcio, salvo algunos casos de violencia familiar', c: FC + ' § 6.702' },
     res: { v: '6 months', es: '6 meses', l: 'of Texas residence for one spouse before a divorce is filed, with 90 days in the county of filing', c: FC + ' § 6.301' },
@@ -36,8 +44,8 @@ const FCOPY = (() => {
     comm: { v: 'Community', l: 'property is presumed for everything either spouse holds when the marriage ends; separate property must be proved by clear and convincing evidence', c: FC + ' § 3.003' },
     sep: { v: 'Separate', l: 'property, meaning what a spouse owned before marriage or received by gift or inheritance, is not divided', c: FC + ' § 3.001' },
     reimb: { v: 'Reimbursement', l: 'claims let one marital estate recover what it paid toward another, under an equitable standard', c: FC + ' ch. 3, subch. E' },
-    cap: { v: '$11,700', w: 'since September 1, 2025', l: 'a month: the cap on net resources used for guideline child support since September 1, 2025', les: 'al mes: el tope de ingresos netos para la manutención de menores según las guías desde el 1 de septiembre de 2025', c: FC + ' § 154.125 and the Attorney General adjustment' },
-    cap1: { v: '$2,340', l: 'a month: guideline support for one child when net resources are at the cap', c: FC + ' § 154.125' },
+    cap: { v: F_CAP.value, w: 'since ' + dEn(F_CAP.since), l: `a month: the cap on net resources used for guideline child support since ${dEn(F_CAP.since)}`, les: `al mes: el tope de ingresos netos para la manutención de menores según las guías desde el ${dEs(F_CAP.since)}`, c: FC + ' § 154.125 and the Attorney General adjustment' },
+    cap1: { v: F_CAP1.value, l: 'a month: guideline support for one child when net resources are at the cap', c: FC + ' § 154.125' },
     pct: { v: '20%', l: 'of monthly net resources for one child; 25% for two, 30% for three, 35% for four, 40% for five and at least 40% for six or more', c: FC + ' § 154.125' },
     pcts: { v: 'Guidelines', rows: [['One child', '20%'], ['Two children', '25%'], ['Three children', '30%'], ['Four children', '35%'], ['Five children', '40%'], ['Six or more children', 'At least 40%']], l: 'percentage of the paying parent\'s monthly net resources by the number of children before the court', c: FC + ' § 154.125' },
     jmc: { v: 'Joint', l: 'managing conservatorship is presumed to be in the child\'s best interest; it shares rights and duties and does not set an even division of time', c: FC + ' § 153.131' },
@@ -52,14 +60,15 @@ const FCOPY = (() => {
     mod3pct: { v: '20%', l: 'difference from guideline support that allows a review after three years', c: FC + ' § 156.401' },
     mod3amt: { v: '$100', l: 'a month difference from guideline support that allows a review after three years', c: FC + ' § 156.401' },
     modcust: { v: 'Material change', l: 'a material and substantial change since the last order, plus the child\'s best interest, is the usual test to modify conservatorship or possession', c: FC + ' § 156.101' },
-    interest: { v: '6%', l: 'simple interest a year accrues on unpaid child support', c: FC + ' § 157.265' },
+    interest: { v: F_ARR.num + '%', l: 'simple interest a year accrues on unpaid child support', c: FC + ' § 157.265' },
     indep: { v: 'Independent', l: 'duties: unpaid support does not justify denying possession, and denied possession does not justify withholding support', c: FC + ' § 105.006(e)' },
     podef: { v: 'Family violence', l: 'must be found by the court before it grants a protective order', c: FC + ' ch. 85' },
     po2: { v: '2 years', es: '2 años', l: 'the usual longest term the court sets for a final protective order; some orders run longer', c: FC + ' § 85.025' },
-    posapcr: { v: '2 years after the decree', es: '2 años después del decreto', l: 'how long an order tied to a pending divorce or custody case can run, since September 2025', c: FC + ' § 85.025 and SB 1120 (2025)' },
+    posapcr: { v: '2 years after the decree', es: '2 años después del decreto', l: 'how long an order tied to a pending divorce or custody case can run, since September 2025', c: FC + ' § 85.025(a-2) and (a-3); SB 1120 (2025)' },
     exparte: { v: '20 days', es: '20 días', l: 'how long a temporary ex parte protective order lasts unless the court extends it', c: FC + ' § 83.002' },
     poviolate: { v: 'A crime', l: 'violating a protective order is a criminal offense', c: 'Texas Penal Code § 25.07' },
     e911: { v: '911', l: 'the emergency number to call first when anyone is in danger', c: 'Emergency services' },
+    ndvh: { v: '1 800 799 7233', sms: 'START to 88788', smses: 'START al 88788', l: 'the National Domestic Violence Hotline: free and confidential, day and night, in English and Spanish; or text START to 88788', c: 'National Domestic Violence Hotline, thehotline.org', g: 'A' },
     adv14: { v: '14 days', es: '14 días', l: 'after a removal, the deadline for the full adversary hearing in a CPS case', c: FC + ' § 262.201' },
     cps1: { v: '1 year', es: '1 año', l: 'after the temporary order, the deadline to finish a CPS case unless the court grants an extension', c: FC + ' § 263.401' },
     counsel: { v: 'Appointed', l: 'counsel is available to a parent who cannot afford a lawyer and opposes a termination suit filed by the state', c: FC + ' § 107.013' },
@@ -586,6 +595,15 @@ const FCOPY = (() => {
     notice: 'Esta página es publicidad de abogados. Abogado responsable: {atty}, {brand}. Oficina principal: {officeAddr}. La información de esta página es información general sobre la ley de Texas, no asesoría legal para su caso. Contactar a la firma no crea una relación de abogado y cliente.',
     breadcrumbs: 'Inicio', more: 'Más información', facts: { wait: 'como mínimo entre la petición y el decreto de divorcio', consult: 'consulta con un abogado', src: 'Código de Familia de Texas' }
   };
+  /* Safety mode (protective order, family violence and CPS pages): the quick exit and the hotline box; every number comes from LAW */
+  const SAFE = {
+    en: { exit: 'Leave this site', hint: 'Or press Escape', head: { po: 'If you are not safe', cps: 'If you or your children are not safe' },
+      text: 'If you are in danger now, call {law.e911}.\nThe National Domestic Violence Hotline is free and confidential, day and night: call {law.ndvh} or text {law.ndvh.sms}.\nUse a phone or computer the other person cannot check. The Leave this site button at the top of the page, or the Escape key, closes this page.' },
+    es: { exit: 'Salir de este sitio', hint: 'O presione la tecla Esc', head: { po: 'Si no está a salvo', cps: 'Si usted o sus hijos no están a salvo' },
+      text: 'Si está en peligro ahora, llame al {law.e911}.\nLa National Domestic Violence Hotline (Línea Nacional contra la Violencia Doméstica) es gratuita y confidencial, de día y de noche, también en español: llame al {law.ndvh} o envíe {law.ndvh.smses}.\nUse un teléfono o una computadora que la otra persona no pueda revisar. El botón Salir de este sitio, arriba en la página, o la tecla Esc, cierra esta página.' }
+  };
+  /* which pages are sensitive: protective order and family violence pages ('po'), CPS pages ('cps') */
+  const sensitiveOf = p => !p ? '' : (p.line === 'po' || (p.kind === 'guide' && p.topic === 'po')) ? 'po' : p.line === 'cps' ? 'cps' : '';
   const CONSENT = 'By submitting, you agree that the firm may contact you by phone, text or email about your request. Message and data rates may apply. Reply STOP to opt out of texts. Sending this form does not create an attorney client relationship; please do not include confidential details.';
   const FORM_FIELDS = [{ id: 'name', label: 'Full name', type: 'text', required: true }, { id: 'phone', label: 'Phone', type: 'tel', required: true }, { id: 'email', label: 'Email', type: 'email', required: false }, { id: 'county', label: 'County where the case is or will be filed', type: 'text', required: false }, { id: 'message', label: 'What is happening (no confidential details)', type: 'textarea', required: false }];
   const NOTICE = 'This page is attorney advertising. Responsible attorney: {atty}, {brand}{attyBarClause}. Primary practice location: {officeAddr}. The information on this page is general information about Texas law, not legal advice for your situation, and contacting the firm does not create an attorney client relationship.';
@@ -667,6 +685,8 @@ const FCOPY = (() => {
   function blueprint(p, ctx) {
     ctx = ctx || {}; const V = ctx.V || {}; const S = ctx.site || {}; const F0 = ctx.firm || {}; const missing = []; const es = p.lang === 'es';
     const L = p.line ? LINES[p.line] : null; const brand = V.brand || ''; const desc = { title: p.title, h1: p.h1, meta: p.meta, slug: p.slug };
+    /* Safety mode is on unless the forge passes safety false (or {on: false}) */
+    const sens = sensitiveOf(p); const sf = ctx.safety; const safeOn = !!sens && !(sf === false || (sf && typeof sf === 'object' && sf.on === false));
     if (!desc.title || !desc.h1 || !desc.slug) Object.assign(desc, describe(p, V), Object.fromEntries(Object.entries(desc).filter(([, v]) => v)));
     const F = t => fill(t, V, missing), FD = x => fillDeep(x, V, missing);
     const used = []; const facts = (keys, lang) => keys.map(k => factItem(k, V, lang)).filter(Boolean).map(f => { used.push(f); return { value: f.value, label: f.label, source: f.source }; });
@@ -692,6 +712,7 @@ const FCOPY = (() => {
     if (p.kind === 'attorney' && ctx.attorney) page.attorney = Object.assign({}, ctx.attorney, media.headshot ? { media: 'headshot' } : {});
     if (ctx.langAlt && ctx.langAlt.url) page.alternates = [{ lang: ctx.langAlt.lang === 'es' ? 'es-US' : 'en-US', url: ctx.langAlt.url }];
     if (p.kind === 'landing' && S.noindex_landing !== false) page.noindex = true;
+    if (safeOn) page.safety = { sensitive: sens, quick_exit: true, exit_url: (sf && typeof sf === 'object' && sf.exit_url) || S.exit_url || undefined, safe_contact: true, tracking: false };
     if (['practice', 'city', 'county'].includes(p.kind)) page.service = { '@type': 'Service', serviceType: L ? F(L.nm) : 'Family law', areaServed: p.kind === 'city' ? { '@type': 'City', name: V.cityFull || V.city } : p.kind === 'county' ? { '@type': 'AdministrativeArea', name: (V.county || '') + ' County, TX' } : 'Texas' };
     const sec = [];
     const hero = o => { sec.push(Object.assign({ type: 'hero', media: media.hero ? 'hero' : undefined, layout: media.hero ? 'split' : 'center', cta: ['primary'], trust: true }, o)); if (ctx.langAlt && ctx.langAlt.url) sec.push({ type: 'lang_toggle', url: ctx.langAlt.url, lang: ctx.langAlt.lang, label: TOGGLE[ctx.langAlt.lang] || TOGGLE.es }); };
@@ -701,7 +722,7 @@ const FCOPY = (() => {
     const testi = h => { if (tst && !es) sec.push({ type: 'testimonials', heading: h || 'What clients say', items: tst.slice(0, 3) }); };
     const authors = () => { if (page.author && !es) sec.push({ type: 'authors', heading: 'Responsible attorney' }); };
     const lawyers = (h, t, only) => { const items = (ctx.attorneys || []).filter(a => a && a.name && (only == null || a.name === only)); if (items.length) sec.push({ type: 'attorneys', heading: h, text: t, items: items.map(a => Object.assign({}, a)) }); };
-    const video = h => { if (media.explainer && !es) sec.push({ type: 'video', media: 'explainer', heading: h || F('What a consultation with {brand} looks like'), description: page.meta_description }); };
+    const video = h => { if (media.explainer && !es && !safeOn) sec.push({ type: 'video', media: 'explainer', heading: h || F('What a consultation with {brand} looks like'), description: page.meta_description }); };
     const band = (h, t) => sec.push({ type: 'cta_band', heading: h, text: t });
     const steps = (h, list) => { const st = FD(list); sec.push({ type: st.some(x => x.when) ? 'process' : 'steps', id: 'how-it-works', heading: h, steps: st }); };
     const faqs = items => FD(items.filter(it => !it.need || has(V, ...String(it.need).split(' ')))).filter(it => it.q && it.a).map(it => ({ q: it.q, a: it.a }));
@@ -822,6 +843,12 @@ const FCOPY = (() => {
         sec.push({ type: 'faq', heading: 'Questions and answers', items: items.slice(0, 24) }); authors();
         band('Talk with a Texas family lawyer.', consultBand); formSec(FORM_H, FORM_T); notice(); links(); break; }
     }
+    if (safeOn) {
+      /* the quick exit first (it is fixed at the top of the page), the hotline box right after the hero */
+      const Sx = SAFE[es ? 'es' : 'en']; let k = sec.findIndex(s => s.type === 'hero') + 1; while (sec[k] && sec[k].type === 'lang_toggle') k++;
+      sec.splice(k, 0, { type: 'hotline', id: 'safety', heading: Sx.head[sens], text: F(Sx.text), phone: '18007997233', phone_label: LAW.ndvh.v, url: 'https://www.thehotline.org/' });
+      sec.unshift({ type: 'quick_exit', id: 'quick-exit', label: Sx.exit, hint: Sx.hint, url: page.safety.exit_url });
+    }
     const lineNames = {}; LINE_KEYS.forEach(k => { lineNames[k] = fill(LINES[k].nm, V); });
     const site = { url: S.url || 'https://www.example.com', name: brand, cms: S.cms || undefined, brand: { name: brand, primary: S.primary || (F0.colors || {}).primary, accent: S.accent || (F0.colors || {}).accent, dark: S.dark || (F0.colors || {}).dark, font_heading: S.font_heading || undefined, font_body: S.font_body || undefined, logo_url: S.logo_url || undefined, globals: S.globals !== false }, firm: publicFirm(F0, lineNames) };
     const mspec = {}; for (const k in media) if (media[k]) mspec[k] = media[k];
@@ -844,7 +871,7 @@ const FCOPY = (() => {
     const c = pg.cta || {}; ['primary', 'secondary'].forEach(k => { if (c[k] && c[k].label) out.push(['cta.' + k, c[k].label]); if (c[k] && c[k].phone_label) out.push(['cta.' + k + '.phone', c[k].phone_label]); });
     for (const s of bp.sections || []) {
       const tag = s.type;
-      ['eyebrow', 'lede', 'body', 'text', 'html', 'heading', 'caption', 'label', 'note', 'source'].forEach(k => { if (s[k] && typeof s[k] === 'string') out.push([tag + '.' + k, strip(s[k])]); });
+      ['eyebrow', 'lede', 'body', 'text', 'html', 'heading', 'caption', 'label', 'hint', 'note', 'source'].forEach(k => { if (s[k] && typeof s[k] === 'string') out.push([tag + '.' + k, strip(s[k])]); });
       (s.items || []).forEach((it, i) => { ['q', 'a', 'text', 'label', 'title', 'value', 'source', 'quote', 'anchor', 'name', 'role'].forEach(k => { if (it[k]) out.push([tag + '.' + k + i, String(it[k])]); });
         if (s.type === 'attorneys') { const a = Object.assign({}, byName(it.name), it); out.push([tag + '.card' + i, [a.name, tblsLine(a), a.bar_no ? 'State Bar of Texas No. ' + a.bar_no : '', a.since ? 'Licensed in Texas since ' + a.since : '', a.bio].filter(Boolean).join('. ')]); } });
       (s.steps || []).forEach((st, i) => { out.push([tag + '.s' + i, (st.when ? st.when + ': ' : '') + st.title + '. ' + st.text]); });
@@ -859,5 +886,5 @@ const FCOPY = (() => {
   }
   const wordCount = bp => visibleText(bp).filter(([w]) => !w.startsWith('seo.')).reduce((t, [, s]) => t + words(s), 0);
 
-  return { LAW, SRC, LINES, LINE_KEYS, ESN, STEPS, GUIDES, ES, HOME_FAQ, CITY_FAQ, COUNTY_FAQ, ATTY_FAQ, CONSENT, NOTICE, FORM_FIELDS, KL, TOGGLE, publicFirm, tblsLine, fill, fillDeep, has, house, listAnd, slugify, firstSentence, strip, factItem, describe, blueprint, visibleText, wordCount, cleanDeep, fitTitle, fitMeta };
+  return { LAW, SRC, LINES, LINE_KEYS, ESN, STEPS, GUIDES, ES, SAFE, sensitiveOf, HOME_FAQ, CITY_FAQ, COUNTY_FAQ, ATTY_FAQ, CONSENT, NOTICE, FORM_FIELDS, KL, TOGGLE, publicFirm, tblsLine, fill, fillDeep, has, house, listAnd, slugify, firstSentence, strip, factItem, describe, blueprint, visibleText, wordCount, cleanDeep, fitTitle, fitMeta };
 })();

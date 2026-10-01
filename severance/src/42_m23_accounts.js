@@ -69,7 +69,7 @@ registerModule({
         tile(`Leads and calls, ${st.range} days`, N(Math.round(leads)), cpl ? `cost per lead ${money(cpl)}${intake ? ` · ${N(intake)} intake records` : ''}` : intake ? `${N(intake)} intake records` : 'platform conversions, LSA leads and tracked calls') +
         tile('Retained matters', N(retained), retained && spend ? `cost per retained matter ${money(spend / retained)}` : intake ? `${N(intake)} inquiries, none retained in the range` : 'import Clio Grow, Lawmatics or a sheet with a retained column') +
         tile('Against the desk', cpl && deskCpl ? sgn((cpl / deskCpl - 1) * 100, 0) : 'n/a', deskCpl ? `cost per lead against the ${money(deskCpl)} the desk implies (${money2(dp.cpc)} a click at ${N(dp.cvr, 1)}%)` : 'save a Campaign Desk plan to compare') +
-        tile('Desk corrections', ap ? 'Applied' : 'Assumptions', ap ? 'applied ' + when(ap.at) : 'the Campaign Desk runs on its own inputs');
+        tile('Desk corrections', ap ? 'Applied' : 'Not applied', ap ? 'applied ' + when(ap.at) + (ap.count > 1 ? ', ' + N(ap.count) + ' times' : '') : 'the Campaign Desk runs on its own inputs');
     }
     /* ---------- connectors ---------- */
     const secretK = (k, o) => (o && o.secret) || /secret|token/i.test(k);

@@ -289,7 +289,10 @@ registerModule({
     function stopAuto() { if (M._lvTimer) { clearInterval(M._lvTimer); M._lvTimer = null; } }
     function startAuto() { stopAuto(); if (S().autoRefresh === false || !LIVE.canFetch() || !root.isConnected || root.hidden || document.hidden) return; M._lvTimer = setInterval(autoTick, 60000); autoTick(); }
     if (M._lvVis) document.removeEventListener('visibilitychange', M._lvVis);
-    M._lvVis = () => { if (document.hidden) stopAuto(); else if (root.isConnected && !root.hidden) startAuto(); }; document.addEventListener('visibilitychange', M._lvVis);
+    M._lvVis = () => { if (document.hidden || !root.isConnected || root.hidden) stopAuto(); else startAuto(); }; document.addEventListener('visibilitychange', M._lvVis);
+    /* switching to another module hides this section: stop at once rather than at the next tick */
+    if (M._lvMO) M._lvMO.disconnect();
+    if (typeof MutationObserver !== 'undefined') { M._lvMO = new MutationObserver(() => { if (root.hidden) stopAuto(); }); M._lvMO.observe(root, { attributes: true, attributeFilter: ['hidden'] }); }
     M.autoState = () => ({ running: !!M._lvTimer, every: S().ttl, on: S().autoRefresh !== false });
     $('#lvOutCsv', root).onclick = () => saveFile(`shock-outlook_${today().replace(/-/g, '')}.csv`, LIVE.outlookCSV());
     $('#lvLine', root).onchange = e => { st.line = e.target.value; st.day = 0; renderPlan(); };

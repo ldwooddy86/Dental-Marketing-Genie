@@ -528,7 +528,7 @@ const LINT = (() => {
   const PO_HEAD = /\bprotective orders?\b|\bfamily violence\b|\bdomestic violence\b|\bdating violence\b|(?<![\p{L}])(?:[oó]rden(?:es)? de protecci[oó]n|violencia (?:familiar|dom[eé]stica))(?![\p{L}])/iu;
   const CPS_HEAD = /\bCPS\b|\bDFPS\b|\bchild protective services\b|\btermination of parental rights\b|(?<![\p{L}])(?:servicios de protecci[oó]n infantil|defensa ante CPS)(?![\p{L}])/iu;
   function headOf(raw) {
-    const out = [String(raw).split('<')[0]]; const re = /<(title|h1)\b[^>]*>([\s\S]*?)<\/\1\s*>/gi; let m; while ((m = re.exec(raw))) out.push(m[2].replace(/<[^>]+>/g, ' '));
+    const out = [String(raw).split('<')[0].split('\n')[0]]; const re = /<(title|h1)\b[^>]*>([\s\S]*?)<\/\1\s*>/gi; let m; while ((m = re.exec(raw))) out.push(m[2].replace(/<[^>]+>/g, ' '));
     const og = String(raw).match(/<meta\b[^>]*(?:property|name)\s*=\s*["']og:title["'][^>]*>/i); if (og) { const c = og[0].match(/content\s*=\s*["']([^"']*)/i); if (c) out.push(c[1]); }
     return out.join('\n');
   }
@@ -545,7 +545,7 @@ const LINT = (() => {
   const TRACK = /connect\.facebook\.net|fbevents\.js|\bfbq\s*\(|googletagmanager\.com|\bgtag\s*\(|google-analytics\.com|analytics\.tiktok\.com|\bttq\.(?:load|page|track)\b|clarity\.ms|snap\.licdn\.com|px\.ads\.linkedin\.com|bat\.bing\.com|static\.hotjar\.com|cdn\.segment\.com|\bdataLayer\.push\s*\(/gi;
   function trackersIn(raw, sensitive) {
     const out = new Set(); let m; TRACK.lastIndex = 0;
-    while ((m = TRACK.exec(raw))) { const h = m[0].replace(/\s*\($/, '').toLowerCase(); if (/datalayer/.test(h) && !sensitive) continue; out.add(/datalayer/.test(h) ? 'dataLayer.push' : h.replace(/^\\b/, '')); }
+    while ((m = TRACK.exec(raw))) { const h = m[0].replace(/\s*\($/, '').toLowerCase(); if (/datalayer/.test(h) && !sensitive) continue; out.add(/datalayer/.test(h) ? 'dataLayer.push' : h); }
     if (sensitive) { const re = /<(script|iframe)\b[^>]*\bsrc\s*=\s*["']?(?:https?:)?\/\/([^"'\s>\/]+)/gi; while ((m = re.exec(raw))) out.add(`${m[1].toLowerCase()} from ${m[2].toLowerCase()}`); }
     return [...out];
   }
@@ -573,8 +573,9 @@ const LINT = (() => {
   function web6Test(t, ctx) { const pc = ctx.pc || pageClass(ctx.raw, ctx.o); return pc.sensitive === 'po' && !pc.quickExit ? [{ at: -1, hit: '' }] : []; }
 
   /* ---- OFFICE2: "our Frisco office", "office in Frisco", "located in Frisco" when the profile lists no office there */
-  const OFFICE_RE = /\b(?:our|an?|the firm'?s|the)\s+(?:new\s+|main\s+|local\s+|satellite\s+|second\s+)?((?:\p{L}[\p{L}.']*)(?:\s+\p{L}[\p{L}.']*){0,2})\s+offices?\b|\boffices?\s+(?:is\s+|are\s+)?(?:right\s+)?(?:here\s+)?(?:in|at)\s+((?:\p{L}[\p{L}.']*)(?:\s+\p{L}[\p{L}.']*){0,2})|\b(?:located|based|headquartered)\s+(?:right\s+)?(?:here\s+)?in\s+((?:\p{L}[\p{L}.']*)(?:\s+\p{L}[\p{L}.']*){0,2})|\bvisit\s+(?:us|our office)\s+in\s+((?:\p{L}[\p{L}.']*)(?:\s+\p{L}[\p{L}.']*){0,2})|(?<![\p{L}])oficinas?\s+(?:principal\s+)?(?:est[aá]\s+)?en\s+((?:\p{L}[\p{L}.']*)(?:\s+\p{L}[\p{L}.']*){0,2})/giu;
-  const NOT_PLACE = /^(?:texas|tx|the|our|your|this|that|a|an|person|downtown|town|county|state|court|courthouse|suite|primary|main|law|family|plano's)$/i;
+  const PLACE = "(\\p{L}[\\p{L}']*(?:[ \\t]+\\p{L}[\\p{L}']*){0,2})";
+  const OFFICE_RE = new RegExp(`\\b(?:our|an?|the firm'?s|the)\\s+(?:new\\s+|main\\s+|local\\s+|satellite\\s+|second\\s+)?${PLACE}\\s+offices?\\b|\\boffices?\\s+(?:is\\s+|are\\s+)?(?:right\\s+)?(?:here\\s+)?(?:in|at)\\s+${PLACE}|\\b(?:located|based|headquartered)\\s+(?:right\\s+)?(?:here\\s+)?in\\s+${PLACE}|\\bvisit\\s+(?:us|our office)\\s+in\\s+${PLACE}|(?<![\\p{L}])oficinas?\\s+(?:principal\\s+)?(?:est[aá]\\s+)?en\\s+${PLACE}`, 'giu');
+  const NOT_PLACE = /^(?:texas|tx|the|our|your|this|that|a|an|person|downtown|town|county|state|court|courthouse|suite|primary|main|law|family|home|new|one|each|every|same|other|their|his|her)$/i;
   function officeTest(t, ctx) {
     if (!ctx.firm) return []; const offs = (ctx.firm.g.offices || []).map(o => String(o && o.city || '').trim().toLowerCase()).filter(Boolean); if (!offs.length) return [];
     const out = []; OFFICE_RE.lastIndex = 0; let m;
@@ -583,7 +584,8 @@ const LINT = (() => {
       const cap = m.slice(1).find(x => x); if (!cap) continue;
       const words = []; for (const w of cap.split(/\s+/)) { if (!/^\p{Lu}/u.test(w) || NOT_PLACE.test(w.replace(/[.,]$/, ''))) break; words.push(w.replace(/[.,']+$/, '')); }
       if (!words.length) continue; const place = words.join(' ');
-      if (/^county$/i.test((t.slice(m.index + m[0].length).match(/^\s+(\p{L}+)/u) || [])[1] || '') && words.length === cap.split(/\s+/).length) continue;   // "office in Collin County"
+      const rest = cap.split(/\s+/).slice(words.length).join(' ') || (t.slice(m.index + m[0].length).match(/^\s+(\p{L}+)/u) || [])[1] || '';
+      if (/^county\b/i.test(rest)) continue;   // "office in Collin County", "our Dallas County office": a county, not a city
       const low = place.toLowerCase(); if (offs.some(c => c === low || c.includes(low) || low.includes(c))) continue;
       out.push({ at: m.index, hit: m[0].trim(), why: `"${m[0].trim()}" tells the reader the firm has an office in ${place}. The firm profile lists ${offs.length > 1 ? 'offices in ' : 'an office in '}${(ctx.firm.g.offices || []).map(o => o && o.city).filter(Boolean).join(' and ')}. Say "serving ${place} from our office in ${ctx.firm.p.city || (ctx.firm.g.offices || [])[0].city}" instead, or add the office to the firm profile.` });
     }
@@ -616,7 +618,11 @@ const LINT = (() => {
   /* an 8 digit number counts as a bar number only with bar context in the 40 characters before it */
   const BAR_CTX = /(?:\bstate bar(?: of texas)?|\bbar(?: card)?|\bsbn|\bsbot|\btexas bar|(?<![\p{L}])(?:barra|colegiatura|matr[ií]cula))(?:[^\d\n]{0,30})$/iu;
   function barNumbers(t) { const out = []; const re = /(?<![\d-])(\d{8})(?![\d-])/g; let m; while ((m = re.exec(t))) { if (BAR_CTX.test(t.slice(Math.max(0, m.index - 40), m.index))) out.push({ at: m.index, no: m[1], hit: m[0] }); } return out; }
-  const sentenceAround = (t, at, len) => { let s = at; while (s > 0 && !/[.!?\n]/.test(t[s - 1])) s--; let e = at + len; while (e < t.length && !/[!?\n]/.test(t[e]) && !(t[e] === '.' && /\s|$/.test(t[e + 1] || ''))) e++; return t.slice(s, e); };
+  /* the line around a hit (HTML is stripped with a line per block, so an attorney card's lines stay apart from the next card) */
+  /* the sentence around a hit, inside its line; "No.", "St.", initials and the like do not end a sentence */
+  const ABBR = /(?:\b(?:No|Nos|St|Ste|Mr|Mrs|Ms|Dr|Jr|Sr|Inc|Co|Corp|Ltd|Esq|Tex|Fam|Gov|Bus|Com|U\.S|P\.C|L\.L\.P|vs|v)|\b\p{Lu})$/u;
+  const isStop = (t, i) => /[!?]/.test(t[i]) || (t[i] === '.' && /\s/.test(t[i + 1] || ' ') && !ABBR.test(t.slice(Math.max(0, i - 8), i)));
+  const sentenceAround = (t, at, len) => { let s = at; const s0 = Math.max(0, at - 300); while (s > s0 && t[s - 1] !== '\n' && !isStop(t, s - 1)) s--; let e = at + len; const e0 = Math.min(t.length, e + 300); while (e < e0 && t[e] !== '\n' && !isStop(t, e)) e++; return t.slice(s, e); };
   const namedIn = (txt, rows) => { const low = txt.toLowerCase(); return rows.filter(r => r.name && (low.includes(r.name.toLowerCase()) || (() => { const tk = nameTokens(r.name); return tk.length >= 2 && low.includes(tk[tk.length - 1]) && low.includes(tk[0]); })())); };
   function barRun(t, ctx) {
     if (ctx._bar && ctx._bar.t === t) return ctx._bar.out;
@@ -624,15 +630,16 @@ const LINT = (() => {
     const byNo = {}; rows.forEach(r => { if (r.bar_no) byNo[normBar(r.bar_no)] = r; });
     barNumbers(t).forEach(b => {
       if (inSpans(b.at, ctx.protect)) return; const r = byNo[b.no]; const sent = sentenceAround(t, b.at, b.hit.length); const named = namedIn(sent, rows);
-      const before = (t.slice(Math.max(0, b.at - 90), b.at).match(/(\p{Lu}[\p{L}'.]+(?:\s+\p{Lu}[\p{L}'.]+){1,3})\s*,?\s*(?:Attorney,?\s*)?(?:State Bar|Texas Bar|Bar\b|SBN|SBOT)[^\d\n]{0,30}$/u) || [])[1];
+      const before = (t.slice(Math.max(0, b.at - 90), b.at).match(/(\p{Lu}[\p{L}']*(?:\s+\p{Lu}\.|\s+\p{Lu}[\p{L}']*){1,3})\s*(?:,\s*(?:Attorney,\s*)?|\(\s*)(?:State Bar|Texas Bar|Bar\b|SBN|SBOT)[^\d\n]{0,30}$/u) || [])[1];
       if (!self) { out.BARNONE.push({ at: b.at, hit: b.hit, why: `${b.no}: ${RULE.BARNONE.why}` }); return; }
       if (r) {
         const asof = r.as_of ? ` (roster as of ${r.as_of})` : ' (roster with no as of date)';
         const other = named.find(x => x !== r && normBar(x.bar_no) !== b.no);
+        const n0 = out.BARNAME.length;
         if (other && !named.includes(r)) out.BARNAME.push({ at: b.at, hit: b.hit, why: `${b.no} is ${r.name}'s number in the roster${asof}, but the sentence names ${other.name}${other.bar_no ? ', whose number is ' + normBar(other.bar_no) : ''}.` });
         else if (before && !nameMatch(before, r.name) && !named.includes(r)) out.BARNAME.push({ at: b.at, hit: b.hit, why: `The copy prints ${b.no} beside "${before}"; the roster lists ${b.no} under ${r.name}${asof}.` });
         if (notEligible(r)) out.BARINACT.push({ at: b.at, hit: b.hit, why: `${b.no} belongs to ${r.name}, whose roster status is ${[r.status, r.eligible !== '' && r.eligible != null ? 'eligible to practice: ' + r.eligible : ''].filter(Boolean).join(', ') || 'not eligible'}${asof}. ${RULE.BARINACT.why}` });
-        else out.BAROK.push({ at: b.at, hit: b.hit, why: `${b.no} is ${r.name}${r.status ? ', ' + r.status : ', status not recorded in the roster'}${asof}. Confirm it on the State Bar of Texas Find a Lawyer search the day the piece runs.` });
+        else if (out.BARNAME.length === n0) out.BAROK.push({ at: b.at, hit: b.hit, why: `${b.no} is ${r.name}${r.status ? ', ' + r.status : ', status not recorded in the roster'}${asof}. Confirm it on the State Bar of Texas Find a Lawyer search the day the piece runs.` });
         return;
       }
       const who = named[0];
@@ -647,7 +654,7 @@ const LINT = (() => {
     });
     ctx._bar = { t, out }; return out;
   }
-  const barTest = id => (t, ctx) => barRun(t, ctx)[id];
+  function barTest(id) { return (t, ctx) => barRun(t, ctx)[id]; }
   /* the lookup box in module 11: by number or by name, roster only (nothing is fetched) */
   function lookupBar(q, rows) {
     rows = rows || roster(); const s = String(q || '').trim(); if (!s) return [];
@@ -670,7 +677,7 @@ const LINT = (() => {
   /* ---- compile */
   const RULES = DEFS.map(d => { const r = Object.assign({ lang: 'en', v: '◐' }, d); if (r.re) { r._g = r.re.global ? r.re : new RegExp(r.re.source, r.re.flags + 'g'); } if (r.skip) r._skip = r.skip.global ? r.skip : new RegExp(r.skip.source, r.skip.flags + 'g'); r.url = (SOURCES[r.src] || {}).url || ''; r.cite = r.rule; r.name = r.t; return r; });
   const RULE = {}; RULES.forEach(r => { RULE[r.id] = r; });
-  const ALIAS = {}; RULES.forEach(r => { if (r.alias) ALIAS[r.alias] = r.id; });
+  const ALIAS = {}; RULES.forEach(r => { if (r.alias) ALIAS[r.alias] = r.id; if (r.was) ALIAS[r.was] = r.id; });   // build 1 ids (r01 to r21) and the build 2 ids a rule had before (web_precheck, web_rating)
   const PLATFORMS = { google: 'Google Ads (search)', microsoft: 'Microsoft Ads', meta: 'Meta (Facebook and Instagram)', youtube: 'YouTube', demandgen: 'Google Demand Gen', tiktok: 'TikTok', linkedin: 'LinkedIn', lsa: 'Local Services Ads', gbp: 'Google Business Profile', yelp: 'Yelp', nextdoor: 'Nextdoor' };
   function normPlat(p) { const s = String(p || '').toLowerCase().trim(); if (!s) return ''; if (PLATFORMS[s]) return s; if (/facebook|instagram|^fb$|^ig$|meta/.test(s)) return 'meta'; if (/bing|microsoft/.test(s)) return 'microsoft'; if (/demand ?gen|discovery/.test(s)) return 'demandgen'; if (/youtube/.test(s)) return 'youtube'; if (/local services|^lsa/.test(s)) return 'lsa'; if (/business profile|^gbp|google my business|^gmb/.test(s)) return 'gbp'; if (/google|adwords|search/.test(s)) return 'google'; if (/tiktok/.test(s)) return 'tiktok'; if (/linkedin/.test(s)) return 'linkedin'; if (/yelp/.test(s)) return 'yelp'; if (/nextdoor/.test(s)) return 'nextdoor'; return s; }
   function applies(r, ctx) {
@@ -772,13 +779,15 @@ const LINT = (() => {
     o = Object.assign({}, o || {});
     const raw = String(text == null ? '' : text); const isHtml = o.html === true || (o.html == null && looksHTML(raw));
     const S = isHtml ? Object.assign(stripHTML(raw), { raw }) : { text: raw, map: null, raw };
-    const ctx = mkCtx(S.text, o, { raw, html: isHtml });
+    const ctx = mkCtx(S.text, o, { raw, html: isHtml }); if (isHtml) ctx.pc = pageClass(raw, o);
     const findings = [];
     for (const r of RULES) {
       if (r.post || !applies(r, ctx)) continue;
       let hits; try { hits = r.test ? r.test(ctx.t, ctx) : matchAll(r, ctx.t, ctx); } catch (e) { hits = []; }
       if (hits && hits.length) findings.push(mkFinding(r, hits, ctx, S));
     }
+    /* one finding per problem: when the whole source lacks the responsible lawyer or the city (WEBRESP), the visible text check says nothing new */
+    const wr = findings.find(f => f.id === 'WEBRESP' && f.sev === 'block'); if (wr) { const i = findings.findIndex(f => f.id === 'r702a'); if (i >= 0) { if (!wr.fix && findings[i].fix) wr.fix = findings[i].fix; findings.splice(i, 1); } }
     if (ctx.posture !== 'comp' && findings.some(f => f.sev === 'block' && f.fam === TX && f.id !== 'r702a')) findings.push(mkFinding(RULE.r706, [{ at: -1, hit: '' }], ctx, S));
     findings.sort((a, b) => rank(a.sev) - rank(b.sev) || (a.at < 0) - (b.at < 0) || a.at - b.at);
     const counts = { block: 0, fix: 0, warn: 0, info: 0 }; findings.forEach(f => { counts[f.sev] = (counts[f.sev] || 0) + 1; });
@@ -928,7 +937,7 @@ const LINT = (() => {
      already in Severance: the rule whys above (build 1 COMP_RULES), LINE_META .angle and .law (module 06) and module 20's sources. */
   const CHANGES = [
     { date: '2021-07-01', title: 'Texas advertising rules rewritten as Rules 7.01 to 7.06', what: 'Part VII of the Texas Disciplinary Rules of Professional Conduct took effect (Misc. Docket No. 21-9061): a responsible lawyer and primary practice location on every advertisement, special competence only in the TBLS form, a filing with the Advertising Review Committee within ten days unless exempt.', copy: 'Every ad and page names the responsible lawyer and the primary office city; "specialist" and "expert" become "practice focused on"; log each filing.', rules: ['r702a', 'competence', 'arc_filing'], cite: 'Rules 7.01 to 7.06', src: 'Module 20 sources; module 11 rules' },
-    { date: '2021', title: 'Expanded standard possession order is the default within 50 miles', what: 'The expanded standard possession order became the default when parents live within 50 miles of each other.', copy: 'Describe the expanded order as the default since 2021; never as a 2025 change; do not present the older standard order as the default.', rules: ['espo_2025', 'equal_time'], cite: 'Tex. Fam. Code § 153.3171', src: 'LINE_META.div_k.angle and .law', sample: 'The new 2025 expanded standard possession order gives you more time.' },
+    { date: '2021-09-01', title: 'Expanded standard possession order is the default within 50 miles', what: 'The expanded standard possession order became the default when parents live within 50 miles of each other (suits filed on or after September 1, 2021).', copy: 'Describe the expanded order as the default since 2021; never as a 2025 change; do not present the older standard order as the default.', rules: ['espo_2025', 'equal_time'], cite: 'Tex. Fam. Code § 153.3171', src: 'LINE_META.div_k.angle and .law', sample: 'The new 2025 expanded standard possession order gives you more time.' },
     { date: '2023', title: 'Protective orders: violence occurred, not that it will recur', what: 'The applicant proves that family violence occurred; the requirement to prove it is likely to occur again was removed.', copy: 'Drop "likely to happen again" from protective order pages and ads.', rules: ['po_future'], cite: 'Tex. Fam. Code ch. 85', src: 'LINE_META.po.angle', sample: 'To get a protective order you must prove family violence is likely to occur again.' },
     { date: '2023', title: 'Reimbursement claims on one unjust enrichment standard', what: 'Reimbursement between marital estates runs on a unified unjust enrichment standard (HB 1547).', copy: 'High asset pages: describe reimbursement on the current standard; tracing and the clear and convincing burden for separate property are the technical hooks.', rules: [], cite: 'Tex. Fam. Code ch. 3 subch. E (HB 1547, 2023)', src: 'LINE_META.high.angle and .law' },
     { date: '2023-09-01', title: 'DFPS stops accepting anonymous reports', what: 'DFPS no longer accepts anonymous reports; only a tip made to law enforcement and referred to DFPS gets a preliminary investigation.', copy: 'CPS defense pages: do not say DFPS investigates anonymous reports.', rules: ['anonymous_reports', 'anonymous_reports_es'], cite: 'HB 63 (2023), § 261.304', src: 'COMP_RULES r20; LINE_META.cps.angle', sample: 'CPS opens a case on anonymous reports from neighbors.' },
@@ -937,11 +946,23 @@ const LINT = (() => {
     { date: '2025', title: 'Three possession contempt findings are a material change', what: 'A possession contempt finding after repeated findings is a material change for custody modification (§ 156.107, new in 2025).', copy: 'Modification pages may use it as an angle; state it as the statute does, without promising a modification.', rules: [], cite: '§ 156.107', src: 'LINE_META.mod.angle and .law' },
     { date: '2025-09-01', title: 'Child support cap rises to $11,700', what: 'The guideline cap on monthly net resources rose from $9,200 to $11,700 ($2,340 for one child at the cap).', copy: 'Replace $9,200 with $11,700 and $1,840 with $2,340 in every support page, ad and calculator.', rules: ['stale_cap', 'stale_per_child'], cite: 'Tex. Fam. Code § 154.125; OAG adjustment', src: 'COMP_RULES r13; LINE_META.div_k.angle', sample: 'Texas child support is capped at $9,200 in monthly net resources.' },
     { date: '2025-09-01', title: 'Termination ground (O) repealed', what: 'Ground (O), service plan noncompliance, was repealed including for pending suits; the grounds were relettered (A) to (U).', copy: 'CPS defense pages: remove ground (O) and the old letters.', rules: ['ground_o'], cite: 'HB 116 (2025)', src: 'COMP_RULES r19; LINE_META.cps.angle', sample: 'DFPS can terminate under ground (O) for missing service plan steps.' },
-    { date: '2025-09', title: 'Protective orders tied to a pending divorce or SAPCR', what: 'An order tied to a pending divorce or SAPCR runs until two years after the final decree.', copy: 'Protective order pages: do not state a flat two year duration.', rules: ['po_duration'], cite: 'Tex. Fam. Code § 85.025; SB 1120 (2025)', src: 'LINE_META.po.angle and .law', sample: 'A protective order lasts two years.' },
+    { date: '2025-09-01', title: 'Protective orders tied to a pending divorce, SAPCR or criminal case', what: 'An order against a party to a pending divorce runs until the second anniversary of the final decree (§ 85.025(a-2)); a pending SAPCR, of the final order ((a-3)); a pending family violence charge, of the final disposition ((a-4)).', copy: 'Protective order pages: do not state a flat two year duration.', rules: ['po_duration'], cite: 'Tex. Fam. Code § 85.025(a-2) to (a-4); SB 1120 (2025)', src: 'LINE_META.po.angle and .law', sample: 'A protective order lasts two years.' },
     { date: '2025-11', title: 'Proposition 15 parental rights amendment adopted', what: 'Voters adopted the parental rights amendment in November 2025. As of June 2026 the Supreme Court of Texas had not defined its effect.', copy: 'Describe it; do not state what it changes in a custody case.', rules: ['prop15'], cite: 'Proposition 15 (2025)', src: 'Module 11 build 1, content facts', sample: 'Prop 15 means Texas courts must now favor parents in every custody fight.' }
   ];
+  /* each change's status for the law clock, and the figure it moved */
+  const CH_STATUS = { 'Texas advertising rules rewritten as Rules 7.01 to 7.06': ['in force', ''], 'Expanded standard possession order is the default within 50 miles': ['in force', 'espo'], 'Protective orders: violence occurred, not that it will recur': ['in force', 'po_future'], 'Reimbursement claims on one unjust enrichment standard': ['in force', ''], 'DFPS stops accepting anonymous reports': ['in force', 'anon'], 'Equal time presumption bill fails': ['died', 'sb849'], 'Arrears interest change dies; the rate stays 6%': ['died', 'hb4213'], 'Three possession contempt findings are a material change': ['in force', ''], 'Child support cap rises to $11,700': ['in force', 'cap'], 'Termination ground (O) repealed': ['repealed', 'ground_o'], 'Protective orders tied to a pending divorce, SAPCR or criminal case': ['in force', 'po_dur'], 'Proposition 15 parental rights amendment adopted': ['adopted', 'prop15'] };
+  CHANGES.forEach(c => { const x = CH_STATUS[c.title] || ['in force', '']; c.status = x[0]; if (x[1]) c.fig = x[1]; });
+  /* the law clock calendar: the dated changes above plus the dates they imply, from the July 1, 2021 rules to the next cap adjustment.
+     v as in FIGURES (✔ already in Severance, web checked by web search for build 2) */
+  const dkey = d => /^\d{4}$/.test(d) ? d + '-12-31' : /^\d{4}-\d{2}$/.test(d) ? d + '-28' : d;
+  const CALENDAR = CHANGES.map(c => ({ date: c.date, title: c.title, what: c.what, cite: c.cite, status: c.status, fig: c.fig || '', rules: c.rules, v: '✔', src: c.src }))
+    .concat([
+      { date: '2025-06-22', title: 'Omnibus courts bill vetoed', what: 'The governor vetoed SB 2878, the 2025 omnibus courts bill; nothing in it took effect from that bill.', cite: 'SB 2878 (2025)', status: 'vetoed', fig: 'sb2878', rules: [], v: 'web', src: 'checked by web search' },
+      { date: FIG.cap.until ? '2031-09-01' : '', title: 'Next scheduled child support cap adjustment', what: `The Title IV-D agency adjusts the ${CAP.value} cap on monthly net resources for inflation every six years; the next adjusted cap takes effect September 1, 2031. Until then, ${CAP.value} is the figure.`, cite: 'Tex. Fam. Code § 154.125(a-1)', status: 'scheduled', fig: 'cap', rules: ['stale_cap'], v: 'web', src: 'FIGURES.cap; the six year cycle checked by web search' }
+    ]).sort((a, b) => dkey(String(a.date)).localeCompare(dkey(String(b.date))));
 
-  return { VERSION, SEVS, SEV_LABEL, RULES, RULE, rule: id => RULE[id] || RULE[ALIAS[id]] || null, ALIAS, SOURCES, LIMITS, HARD, COUNTS, PLATFORMS, FILING, CHANGES, normPlat, fieldBase,
+  return { VERSION, SEVS, SEV_LABEL, RULES, RULE, rule: id => RULE[id] || RULE[ALIAS[id]] || null, ALIAS, SOURCES, LIMITS, HARD, COUNTS, PLATFORMS, FILING, CHANGES, FIGURES, figure, STANDARDS, CALENDAR, normPlat, fieldBase,
+    pageClass, trackersIn, ROSTER_KEY, roster, rosterSeed, parseRoster, barNumbers, nameMatch, notEligible, lookupBar, normBar, longDate,
     screen, fix, house, checkAd, screenAd, fixAd, stripHTML, looksHTML, detectLang, splitBatch, parseAdsCSV, parseCSV: parseCSVText, diff, firmItems };
 })();
 /* build 1 shape of the regex rules (sev crit | review | info), kept for anything that still reads COMP_RULES */

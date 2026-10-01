@@ -15,13 +15,17 @@
                 meta_description, language (en-US or es-US), template, breadcrumbs, summary, entity (merged into the LegalService node),
                 dates {published, modified, reviewed}, cta, conversion {sticky_mobile_bar, trust, form}, internal_links, schema_extra, author,
                 service, line (a LINE_META key), attorney (the lawyer an attorney page is about), alternates [{lang, url}], noindex, canonical,
-                disclaimer (false drops the automatic disclaimer block)
+                disclaimer (false drops the automatic disclaimer block), safety {sensitive: 'po' | 'cps', quick_exit, exit_url, safe_contact}
+                (Safety mode for protective order, family violence and CPS pages: a quick exit at the top, the intake form asks whether it
+                is safe to call, text or leave a voicemail, no dataLayer push, and no video, map or other third party frame)
      conversion.form  {provider html | elementor_pro | wpforms | gravity | cf7 | fluent | shortcode, fields [{id, label, type, required,
                 options, hint, placeholder, maxlength, autocomplete}], counties, matters, consent, button, success, shortcode, email_to, action}
      sections   hero, answer, key_facts, rich_text, steps, process, features, media, video, gallery, testimonials, stats, faq, cta_band, form,
                 map, table, authors, links, html, and for the firm: attorneys {heading, text, items, show_bar}, disclaimer {attorney, firm,
                 city, location, extra}, court_facts {heading, county, items [{label, value, source}], courts [{name, address, phone, url}],
-                note, source}, lang_toggle {url, lang, label}. Every step of steps and process may carry when.
+                note, source}, lang_toggle {url, lang, label}, quick_exit {url, label, hint} (a "Leave this site" button fixed at the top;
+                the Escape key does the same; both replace the page with a neutral site so Back does not return to it), hotline {heading,
+                text (paragraphs by line), phone, phone_label, url}. Every step of steps and process may carry when.
    Media: a slot the compile cannot resolve becomes a "resolved at deploy" placeholder in the html and preview (Publish strips it), an
    empty image in the Elementor data (marked with _forge_media so the bridge fills it from media_resolved on import), and is left out of
    the JSON-LD and the og image. A page never ships a placeholder. */
@@ -68,7 +72,10 @@ const FORGE_COMPILE = (() => {
       fullProfile: 'Read the full profile', more: 'Learn more', court: c => c ? `${c} County courts and filing facts` : 'Court and county facts', courtLbl: 'Court', source: 'Source', choose: 'Choose one',
       ok: 'Thank you. The firm will contact you soon.', err: 'Something went wrong. Please call the office.', formName: 'Consultation request', consentLbl: 'Consent', otherCounty: 'Another Texas county', otherMatter: 'Something else', newInquiry: 'New inquiry: ',
       photoAlt: n => 'Photo of ' + n, langs: { en: 'English', es: 'Spanish' }, speaks: l => 'Speaks ' + l, and: ' and ', countyName: c => `${c} County`, website: 'Website',
-      fields: { name: 'Full name', phone: 'Phone', email: 'Email', county: 'County', matter: 'Type of matter', message: 'Short description', hint: 'Do not include confidential details.' },
+      fields: { name: 'Full name', phone: 'Phone', email: 'Email', county: 'County', matter: 'Type of matter', message: 'Short description', hint: 'Do not include confidential details.', phoneSafe: 'Leave it blank if no number is safe.',
+        safe: 'Is it safe to call, text or leave a voicemail?', safeHint: 'The firm contacts you only in the way you choose.', safeOpts: ['Yes, calls, texts and voicemail are all safe', 'Calls only, please leave no voicemail', 'Texts only', 'Email only', 'None of these, I will contact the firm'] },
+      consentSafe: 'The firm contacts you only in the way you choose above.', exit: 'Leave this site', exitHint: 'Or press Escape', exitRegion: 'Quick exit',
+      hotline: { heading: 'If you are not safe', text: 'If you are in danger now, call 911.\nThe National Domestic Violence Hotline is free and confidential, day and night: call 1 800 799 7233 or text START to 88788.\nUse a phone or computer the other person cannot check. The Leave this site button, or the Escape key, closes this page.' },
       consent: firm => `By submitting this form, you agree that ${firm || 'the firm'} may contact you about your inquiry by phone, text message or email. Message and data rates may apply. Message frequency varies. Reply STOP to opt out of texts. Consent is not a condition of hiring the firm. Submitting this form does not create an attorney client relationship; the firm represents you only after you and the firm sign an engagement agreement.`,
       disclaimer: (atty, firm, loc) => [`This page is attorney advertising. Responsible attorney: ${atty}, ${firm}. Primary practice location: ${loc}.`, 'The information on this page is general information about Texas law, not legal advice for your situation. Reading this page, calling the firm or sending the form does not create an attorney client relationship. The firm represents you only after you and the firm sign an engagement agreement, so please do not send confidential information before then.'] },
     es: { answer: 'La respuesta corta', how: 'Cómo funciona', process: 'Cómo funciona el proceso', faq: 'Preguntas frecuentes', clients: 'Lo que dicen nuestros clientes', related: 'Más información', reviewed: 'Revisado por', profile: 'Perfil', transcript: 'Transcripción del video', video: 'Video',
@@ -76,33 +83,45 @@ const FORGE_COMPILE = (() => {
       fullProfile: 'Ver el perfil completo', more: 'Más información', court: c => c ? `Tribunales y datos del condado de ${c}` : 'Datos del condado y de los tribunales', courtLbl: 'Tribunal', source: 'Fuente', choose: 'Elija una opción',
       ok: 'Gracias. La firma se comunicará con usted pronto.', err: 'Algo salió mal. Por favor llame a la oficina.', formName: 'Solicitud de consulta', consentLbl: 'Consentimiento', otherCounty: 'Otro condado de Texas', otherMatter: 'Otro asunto', newInquiry: 'Nueva consulta: ',
       photoAlt: n => 'Foto de ' + n, langs: { en: 'inglés', es: 'español' }, speaks: l => 'Habla ' + l, and: ' y ', countyName: c => `Condado de ${c}`, website: 'Sitio web',
-      fields: { name: 'Nombre completo', phone: 'Teléfono', email: 'Correo electrónico', county: 'Condado', matter: 'Tipo de asunto', message: 'Breve descripción', hint: 'No incluya detalles confidenciales.' },
+      fields: { name: 'Nombre completo', phone: 'Teléfono', email: 'Correo electrónico', county: 'Condado', matter: 'Tipo de asunto', message: 'Breve descripción', hint: 'No incluya detalles confidenciales.', phoneSafe: 'Déjelo en blanco si ningún número es seguro.',
+        safe: '¿Es seguro llamarle, enviarle mensajes de texto o dejarle un mensaje de voz?', safeHint: 'La firma se comunica con usted solo de la forma que usted elija.', safeOpts: ['Sí, llamadas, mensajes de texto y mensajes de voz', 'Solo llamadas, sin mensajes de voz', 'Solo mensajes de texto', 'Solo correo electrónico', 'Ninguno, yo me comunico con la firma'] },
+      consentSafe: 'La firma se comunica con usted solo de la forma que usted elija arriba.', exit: 'Salir de este sitio', exitHint: 'O presione la tecla Esc', exitRegion: 'Salida rápida',
+      hotline: { heading: 'Si no está a salvo', text: 'Si está en peligro ahora, llame al 911.\nLa National Domestic Violence Hotline (Línea Nacional contra la Violencia Doméstica) es gratuita y confidencial, de día y de noche, también en español: llame al 1 800 799 7233 o envíe START al 88788.\nUse un teléfono o una computadora que la otra persona no pueda revisar. El botón Salir de este sitio, o la tecla Esc, cierra esta página.' },
       consent: firm => `Al enviar este formulario, acepta que ${firm || 'la firma'} se comunique con usted sobre su consulta por teléfono, mensaje de texto o correo electrónico. Pueden aplicarse tarifas de mensajes y datos. La frecuencia de los mensajes varía. Responda STOP para dejar de recibir mensajes de texto. El consentimiento no es una condición para contratar a la firma. Enviar este formulario no crea una relación de abogado y cliente; la firma le representa solo después de que usted y la firma firmen un contrato de representación.`,
       disclaimer: (atty, firm, loc) => [`Esta página es publicidad de abogados. Abogado responsable: ${atty}, ${firm}. Oficina principal: ${loc}.`, 'La información de esta página es información general sobre la ley de Texas, no asesoría legal para su caso. Leer esta página, llamar a la firma o enviar el formulario no crea una relación de abogado y cliente. La firma le representa solo después de que usted y la firma firmen un contrato de representación; por favor no envíe información confidencial antes de eso.'] },
   };
   const TOGGLE = { es: 'Lea esta página en español', en: 'Read this page in English' };
   const optList = o => arr(o).map(x => x && typeof x === 'object' ? { value: String(x.value != null ? x.value : x.label), label: String(x.label != null ? x.label : x.value) } : { value: String(x), label: String(x) }).filter(x => x.label);
-  function defaultFields(lang, counties, matters) {
+  const safeField = lang => { const L = (STR[lang] || STR.en).fields; return { id: 'safe_contact', label: L.safe, type: 'select', required: true, options: L.safeOpts.slice(), hint: L.safeHint }; };
+  function defaultFields(lang, counties, matters, safe) {
     const T = STR[lang] || STR.en, L = T.fields;
     return [
       { id: 'name', label: L.name, type: 'text', required: true, autocomplete: 'name' },
-      { id: 'phone', label: L.phone, type: 'tel', required: true, autocomplete: 'tel' },
-      { id: 'email', label: L.email, type: 'email', required: false, autocomplete: 'email' },
+      safe ? { id: 'phone', label: L.phone, type: 'tel', required: false, autocomplete: 'tel', hint: L.phoneSafe } : { id: 'phone', label: L.phone, type: 'tel', required: true, autocomplete: 'tel' },
+      { id: 'email', label: L.email, type: 'email', required: false, autocomplete: 'email' }].concat(safe ? [safeField(lang)] : []).concat([
       counties.length ? { id: 'county', label: L.county, type: 'select', required: false, options: counties.concat([T.otherCounty]) } : { id: 'county', label: L.county, type: 'text', required: false },
       matters.length ? { id: 'matter', label: L.matter, type: 'select', required: false, options: matters.concat([T.otherMatter]) } : { id: 'matter', label: L.matter, type: 'text', required: false },
-      { id: 'message', label: L.message, type: 'textarea', required: false, maxlength: 600, hint: L.hint }];
+      { id: 'message', label: L.message, type: 'textarea', required: false, maxlength: 600, hint: L.hint }]);
   }
   const FORM_CSS = '<style>.forge-form select{width:100%;padding:12px;border:1px solid #cfcdc5;border-radius:8px;font:inherit;background:#fff}.forge-form .forge-hint{display:block;font-size:13px;opacity:.8;margin:4px 0 0}.forge-form .forge-consent input{width:auto;margin:0 8px 0 0}.forge-form .forge-hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}</style>';
   const FORM_JS = '<scr' + 'ipt>(function(){var fs=document.querySelectorAll("[data-forge-form]");Array.prototype.forEach.call(fs,function(f){if(f.getAttribute("data-forge-bound"))return;f.setAttribute("data-forge-bound","1");f.addEventListener("submit",function(e){e.preventDefault();var m=f.querySelector(".forge-form-msg"),b=f.querySelector("button[type=submit]")||f.querySelector("button"),ok=f.getAttribute("data-ok"),er=f.getAttribute("data-err");b.disabled=true;var d={};new FormData(f).forEach(function(v,k){d[k]=v});fetch(f.action,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(d)}).then(function(r){return r.json().catch(function(){return {}}).then(function(j){return {ok:r.ok&&j.ok!==false,j:j||{}}})}).then(function(x){if(x.ok){m.textContent=ok||x.j.message||"Thank you.";f.reset();if(window.dataLayer)window.dataLayer.push({event:"forge_lead",page:d.page})}else{m.textContent=x.j.message||er||"Please call the office."}b.disabled=false}).catch(function(){m.textContent=er||"Please call the office.";b.disabled=false})})})})();</' + 'script>';
-  const PREVIEW_CSS = ':root{--p:%p;--a:%a;--t:%t;--d:%d}*{box-sizing:border-box}body{margin:0;font:16px/1.6 %font;color:#1b1b1a;background:#fff}h1,h2,h3{font-family:%hfont;line-height:1.15;margin:.2em 0 .5em}h1{font-size:clamp(30px,4.2vw,48px)}h2{font-size:clamp(24px,3vw,34px)}h3{font-size:20px}.forge-section{padding:72px 20px}.forge-tint{background:var(--t)}.forge-brand{background:var(--p);color:#fff}.forge-brand h2{color:#fff}.forge-dark{background:var(--d);color:#fff}.forge-inner{max-width:1140px;margin:0 auto}.forge-narrow{max-width:820px}.forge-split{display:grid;grid-template-columns:1.2fr 1fr;gap:40px;align-items:center}.forge-split img,.forge-video iframe,video{width:100%;height:auto;border-radius:14px;aspect-ratio:16/10;object-fit:cover}.forge-video{position:relative;aspect-ratio:16/9}.forge-video iframe{position:absolute;inset:0;height:100%}.forge-eyebrow{color:var(--a);font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-size:13px}.forge-lede{font-size:19px;color:#3f3f3c}.forge-btn{display:inline-block;padding:14px 22px;border-radius:8px;font-weight:700;text-decoration:none;margin:6px 8px 6px 0}.forge-btn-primary{background:var(--p);color:#fff}.forge-btn-secondary{background:var(--a);color:#fff}.forge-brand .forge-btn-primary{background:var(--a);color:#fff}.forge-trust{list-style:none;padding:0;display:flex;flex-wrap:wrap;gap:8px 18px;font-size:14px}.forge-trust li:before{content:"✓ ";color:var(--p);font-weight:700}.forge-answer{font-size:20px;border-left:4px solid var(--p);padding-left:16px}.forge-facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px}.forge-facts div{background:#fff;border-radius:12px;padding:22px;box-shadow:0 1px 3px rgba(0,0,0,.08)}.forge-facts dt{font-size:34px;font-weight:800;color:var(--p)}.forge-brand .forge-facts div{background:rgba(255,255,255,.08)}.forge-brand .forge-facts dt{color:#fff}.forge-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:24px}.forge-card{background:#fff;border-radius:12px;padding:22px;box-shadow:0 1px 3px rgba(0,0,0,.08);margin:0}.forge-att h3{margin-top:10px}.forge-att p{margin:4px 0}.forge-att .forge-role{color:#55534d}.forge-att .forge-cert{font-weight:700;color:var(--p)}.forge-att .forge-bar,.forge-att .forge-since{font-size:14px;color:#55534d}.forge-steps li{margin-bottom:14px}.forge-when{color:var(--a);margin:0 0 4px}.forge-faq{border-bottom:1px solid #e3e1da;padding:10px 0}.forge-faq summary{cursor:pointer;list-style:none}.forge-faq summary h3{display:inline;font-size:18px}.forge-form{display:grid;gap:6px;max-width:560px;position:relative}.forge-form label{font-weight:600;margin-top:8px}.forge-form input,.forge-form textarea,.forge-form select{width:100%;padding:12px;border:1px solid #c3c0b7;border-radius:8px;font:inherit;background:#fff}.forge-consent{font-weight:400!important;font-size:13px;display:grid;grid-template-columns:auto 1fr;align-items:start;gap:8px;margin-top:12px}.forge-consent input{width:auto}.forge-form button{justify-self:start;border:0;cursor:pointer;margin-top:8px}.forge-table{width:100%;border-collapse:collapse}.forge-table th,.forge-table td{padding:10px;border-bottom:1px solid #e3e1da;text-align:left;vertical-align:top}.forge-court th{width:36%}.forge-tablewrap{overflow-x:auto}.forge-links{columns:2}.forge-lang{margin:0;text-align:right;font-weight:600}.forge-sec-lang_toggle{padding:14px 20px}.forge-disclaimer{font-size:13px;color:#4a4945;border-top:1px solid #e3e1da;padding-top:14px}.forge-sec-disclaimer{padding:32px 20px}.forge-sticky{display:none}@media(max-width:767px){.forge-split{grid-template-columns:1fr}.forge-section{padding:44px 16px}.forge-sticky{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:99;gap:8px;padding:10px 12px;background:#fff;box-shadow:0 -4px 16px rgba(0,0,0,.14)}.forge-sticky a{flex:1;text-align:center;padding:12px;border-radius:8px;font-weight:700;text-decoration:none}.forge-sticky-call{background:var(--a);color:#fff}.forge-sticky-cta{background:var(--p);color:#fff}body{padding-bottom:70px}}';
+  /* Safety mode: the same form script without the dataLayer push, and the quick exit (a link that works without script; with script the
+     click and the Escape key hide the page and replace it with the neutral site, so the Back button does not return to it) */
+  const FORM_JS_SAFE = FORM_JS.replace('if(window.dataLayer)window.dataLayer.push({event:"forge_lead",page:d.page})', '');
+  const EXIT_URL = 'https://weather.com/';
+  const EXIT_CSS = '<style>.forge-exit{position:fixed;top:12px;right:12px;z-index:100000;display:flex;flex-direction:column;align-items:flex-end;gap:3px;margin:0}.forge-exit-btn{display:inline-block;background:#a3221b;color:#fff!important;font:700 15px/1.2 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:12px 16px;border-radius:8px;text-decoration:none!important;box-shadow:0 2px 10px rgba(0,0,0,.28)}.forge-exit-btn:hover{background:#7f1a15}.forge-exit-btn:focus{outline:3px solid #111;outline-offset:2px}.forge-exit-hint{font:12px/1.3 system-ui,sans-serif;background:#fff;color:#333;padding:2px 6px;border-radius:4px;box-shadow:0 1px 4px rgba(0,0,0,.2)}@media(max-width:767px){.forge-exit{top:8px;right:8px}.forge-exit-hint{display:none}}</style>';
+  const EXIT_JS = '<scr' + 'ipt>(function(){if(window.__forgeExit)return;window.__forgeExit=1;function go(e){var a=document.querySelector("[data-forge-exit]");var u=(a&&a.getAttribute("data-exit-url"))||"' + EXIT_URL + '";if(e&&e.preventDefault)e.preventDefault();try{document.documentElement.style.visibility="hidden";document.title="";}catch(x){}try{window.location.replace(u)}catch(x){window.location.href=u}}document.addEventListener("click",function(e){var t=e.target&&e.target.closest?e.target.closest("[data-forge-exit]"):null;if(t)go(e)});document.addEventListener("keydown",function(e){if(e.key==="Escape"||e.key==="Esc")go(e)})})();</' + 'script>';
+  const safeUrl = u => /^https:\/\/[^\s"'<>]+$/i.test(String(u || '').trim()) ? String(u).trim() : EXIT_URL;
+  const TRACKING = /dataLayer|\bfbq\s*\(|\bgtag\s*\(|googletagmanager|connect\.facebook\.net|google-analytics|analytics\.tiktok|clarity\.ms|<iframe\b|<script\b[^>]*\bsrc\s*=/gi;
+  const PREVIEW_CSS = ':root{--p:%p;--a:%a;--t:%t;--d:%d}*{box-sizing:border-box}body{margin:0;font:16px/1.6 %font;color:#1b1b1a;background:#fff}h1,h2,h3{font-family:%hfont;line-height:1.15;margin:.2em 0 .5em}h1{font-size:clamp(30px,4.2vw,48px)}h2{font-size:clamp(24px,3vw,34px)}h3{font-size:20px}.forge-section{padding:72px 20px}.forge-tint{background:var(--t)}.forge-brand{background:var(--p);color:#fff}.forge-brand h2{color:#fff}.forge-dark{background:var(--d);color:#fff}.forge-inner{max-width:1140px;margin:0 auto}.forge-narrow{max-width:820px}.forge-split{display:grid;grid-template-columns:1.2fr 1fr;gap:40px;align-items:center}.forge-split img,.forge-video iframe,video{width:100%;height:auto;border-radius:14px;aspect-ratio:16/10;object-fit:cover}.forge-video{position:relative;aspect-ratio:16/9}.forge-video iframe{position:absolute;inset:0;height:100%}.forge-eyebrow{color:var(--a);font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-size:13px}.forge-lede{font-size:19px;color:#3f3f3c}.forge-btn{display:inline-block;padding:14px 22px;border-radius:8px;font-weight:700;text-decoration:none;margin:6px 8px 6px 0}.forge-btn-primary{background:var(--p);color:#fff}.forge-btn-secondary{background:var(--a);color:#fff}.forge-brand .forge-btn-primary{background:var(--a);color:#fff}.forge-trust{list-style:none;padding:0;display:flex;flex-wrap:wrap;gap:8px 18px;font-size:14px}.forge-trust li:before{content:"✓ ";color:var(--p);font-weight:700}.forge-answer{font-size:20px;border-left:4px solid var(--p);padding-left:16px}.forge-facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px}.forge-facts div{background:#fff;border-radius:12px;padding:22px;box-shadow:0 1px 3px rgba(0,0,0,.08)}.forge-facts dt{font-size:34px;font-weight:800;color:var(--p)}.forge-brand .forge-facts div{background:rgba(255,255,255,.08)}.forge-brand .forge-facts dt{color:#fff}.forge-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:24px}.forge-card{background:#fff;border-radius:12px;padding:22px;box-shadow:0 1px 3px rgba(0,0,0,.08);margin:0}.forge-att h3{margin-top:10px}.forge-att p{margin:4px 0}.forge-att .forge-role{color:#55534d}.forge-att .forge-cert{font-weight:700;color:var(--p)}.forge-att .forge-bar,.forge-att .forge-since{font-size:14px;color:#55534d}.forge-steps li{margin-bottom:14px}.forge-when{color:var(--a);margin:0 0 4px}.forge-faq{border-bottom:1px solid #e3e1da;padding:10px 0}.forge-faq summary{cursor:pointer;list-style:none}.forge-faq summary h3{display:inline;font-size:18px}.forge-form{display:grid;gap:6px;max-width:560px;position:relative}.forge-form label{font-weight:600;margin-top:8px}.forge-form input,.forge-form textarea,.forge-form select{width:100%;padding:12px;border:1px solid #c3c0b7;border-radius:8px;font:inherit;background:#fff}.forge-consent{font-weight:400!important;font-size:13px;display:grid;grid-template-columns:auto 1fr;align-items:start;gap:8px;margin-top:12px}.forge-consent input{width:auto}.forge-form button{justify-self:start;border:0;cursor:pointer;margin-top:8px}.forge-table{width:100%;border-collapse:collapse}.forge-table th,.forge-table td{padding:10px;border-bottom:1px solid #e3e1da;text-align:left;vertical-align:top}.forge-court th{width:36%}.forge-tablewrap{overflow-x:auto}.forge-links{columns:2}.forge-lang{margin:0;text-align:right;font-weight:600}.forge-sec-lang_toggle{padding:14px 20px}.forge-disclaimer{font-size:13px;color:#4a4945;border-top:1px solid #e3e1da;padding-top:14px}.forge-sec-disclaimer{padding:32px 20px}.forge-sticky{display:none}@media(max-width:767px){.forge-split{grid-template-columns:1fr}.forge-section{padding:44px 16px}.forge-sticky{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:99;gap:8px;padding:10px 12px;background:#fff;box-shadow:0 -4px 16px rgba(0,0,0,.14)}.forge-sticky a{flex:1;text-align:center;padding:12px;border-radius:8px;font-weight:700;text-decoration:none}.forge-sticky-call{background:var(--a);color:#fff}.forge-sticky-cta{background:var(--p);color:#fff}body{padding-bottom:70px}}.forge-hotline{border:2px solid var(--a);border-radius:10px;padding:18px 22px;background:#fff}.forge-hotline h2{margin-top:0}.forge-sec-hotline{padding-top:28px;padding-bottom:28px}';
   const gap = n => ({ column: String(n), row: String(n), unit: 'px', size: n });
   const box = (n, linked) => ({ unit: 'px', top: String(n), right: String(n), bottom: String(n), left: String(n), isLinked: linked !== false });
   const pad = (v, h) => ({ unit: 'px', top: String(v), right: String(h), bottom: String(v), left: String(h), isLinked: false });
 
   /* ---------- section registry ---------- */
-  const TYPES = new Set(['hero', 'answer', 'key_facts', 'rich_text', 'steps', 'process', 'features', 'media', 'video', 'gallery', 'testimonials', 'stats', 'faq', 'cta_band', 'form', 'map', 'table', 'authors', 'links', 'html', 'attorneys', 'disclaimer', 'court_facts', 'lang_toggle']);
+  const TYPES = new Set(['hero', 'answer', 'key_facts', 'rich_text', 'steps', 'process', 'features', 'media', 'video', 'gallery', 'testimonials', 'stats', 'faq', 'cta_band', 'form', 'map', 'table', 'authors', 'links', 'html', 'attorneys', 'disclaimer', 'court_facts', 'lang_toggle', 'quick_exit', 'hotline']);
   const STYLE = { answer: 'tint', key_facts: 'tint', testimonials: 'tint', form: 'tint', attorneys: 'tint', stats: 'brand', cta_band: 'brand' };
-  const NARROW = new Set(['answer', 'steps', 'process', 'video', 'faq', 'form', 'authors', 'links', 'disclaimer']);
+  const NARROW = new Set(['answer', 'steps', 'process', 'video', 'faq', 'form', 'authors', 'links', 'disclaimer', 'hotline']);
   const styleOf = s => s.type === 'cta_band' ? 'brand' : (s.style || STYLE[s.type] || 'light');
   const narrowOf = s => NARROW.has(s.type) || s.width === 'narrow' || (s.type === 'rich_text' && !s.width);
 
@@ -212,6 +231,7 @@ const FORGE_COMPILE = (() => {
       this.lang = /^es/i.test(this.page.language || '') ? 'es' : 'en'; this.T = STR[this.lang];
       this.base = String(this.site.url || '').replace(/\/+$/, ''); this.url = this.page.canonical || `${this.base}/${String(this.page.slug || '').replace(/^\/+|\/+$/g, '')}/`;
       this.firm = firmModel(firm); this.used = new Set(); this.autoDisclaimer = false;
+      const sf = this.page.safety; this.safety = sf && typeof sf === 'object' && sf.on !== false ? Object.assign({ quick_exit: true, safe_contact: true }, sf) : null;
       this.S = this.normSections();
     }
     warn(msg) { if (!this.warnings.includes(msg)) this.warnings.push(msg); }
@@ -221,6 +241,11 @@ const FORGE_COMPILE = (() => {
       const S = []; const seen = new Set();
       for (const s0 of arr(this.bp.sections)) { if (!s0 || typeof s0 !== 'object') continue; if (!TYPES.has(s0.type)) { this.warn(`unknown section type ${s0.type} skipped`); continue; } S.push(Object.assign({}, s0)); }
       if (!S.some(s => s.type === 'disclaimer' || s.id === 'notice' || s.id === 'disclaimer') && this.page.disclaimer !== false) { S.push({ type: 'disclaimer', id: 'disclaimer' }); this.autoDisclaimer = true; this.infos.push('No disclaimer section in the blueprint: the compiler added one at the end (attorney advertising, responsible attorney, primary practice location, no attorney client relationship).'); }
+      if (this.safety) {
+        /* no third party frame on a sensitive page: video embeds and maps load another company's script */
+        for (let k = S.length - 1; k >= 0; k--) if (S[k].type === 'video' || S[k].type === 'map' || (S[k].type === 'media' && /youtube|youtu\.be|vimeo/i.test(String(((this.bp.media || {})[S[k].media] || {}).source || '')))) { this.infos.push(`Safety mode: the ${S[k].type} section was left off this page (no third party frames or scripts on a sensitive page).`); S.splice(k, 1); }
+        if (this.safety.quick_exit !== false && !S.some(s => s.type === 'quick_exit')) { S.unshift({ type: 'quick_exit', id: 'quick-exit' }); this.infos.push('Safety mode: the compiler added the quick exit at the top of the page.'); }
+      }
       for (const s of S) { let id = s.id || (s.type === 'form' ? 'contact' : slug(s.heading || s.type)) || s.type; const b = id; let n = 2; while (seen.has(id)) id = `${b}-${n++}`; seen.add(id); s._sid = id; }
       return S;
     }
@@ -318,9 +343,12 @@ const FORGE_COMPILE = (() => {
       const f = (this.page.conversion || {}).form || {}; const T = this.T; const F = this.firm;
       const counties = Array.isArray(f.counties) ? f.counties : F.counties.map(c => T.countyName(c));
       const matters = Array.isArray(f.matters) ? f.matters : F.areas;
-      const fields = (Array.isArray(f.fields) && f.fields.length ? f.fields : defaultFields(this.lang, counties, matters)).map(x => Object.assign({}, x));
+      const safe = !!(this.safety && this.safety.safe_contact !== false);
+      const fields = (Array.isArray(f.fields) && f.fields.length ? f.fields : defaultFields(this.lang, counties, matters, safe)).map(x => Object.assign({}, x));
+      if (safe && !fields.some(x => x.id === 'safe_contact')) { const at = fields.findIndex(x => x.id === 'email'); fields.splice(at >= 0 ? at + 1 : Math.min(2, fields.length), 0, safeField(this.lang)); }
+      if (safe && f.shortcode) this.warn('Safety mode: the plugin form (shortcode) needs its own required question "' + T.fields.safe + '"; the compiler cannot add it to a plugin form');
       for (const x of fields) if (x.type === 'select' && !optList(x.options).length) { x.options = x.id === 'county' ? counties : x.id === 'matter' ? matters : []; if (!optList(x.options).length) x.type = 'text'; }
-      const consent = f.consent || T.consent(F.name || this.brand.name || '');
+      const consent = (f.consent || T.consent(F.name || this.brand.name || '')) + (safe && !String(f.consent || '').includes(T.consentSafe) ? ' ' + T.consentSafe : '');
       return (this._form = Object.assign({}, f, { provider: f.provider || 'html', fields, consent, button: f.button || T.send }));
     }
 
@@ -428,6 +456,19 @@ const FORGE_COMPILE = (() => {
     s_disclaimer(sec) { const els = (sec.heading ? [this.heading(sec.heading, 'h2', 'left', null, 'small')] : []).concat([this.text(this.disclaimerHTML(sec))]); return this.section(els, sec, { padding: pad(32, 20), padding_mobile: pad(28, 16) }); }
     s_court_facts(sec) { const els = [this.heading(sec.heading || this.T.court(sec.county), 'h2')]; if (sec.text) els.push(this.text('<p>' + esc(sec.text) + '</p>')); els.push(this.w('html', { html: this.courtTable(sec) })); const foot = this.courtFoot(sec); if (foot) els.push(this.text(foot)); return this.section(els, sec); }
     s_lang_toggle(sec) { const h = this.langHTML(sec); return h ? this.section([this.text(h)], sec, { padding: pad(14, 20), padding_mobile: pad(12, 16) }) : null; }
+    s_quick_exit(sec) { return { id: this.eid(), elType: 'container', settings: { content_width: 'full', padding: box(0), css_classes: 'forge-exit-wrap', _element_id: sec._sid }, elements: [this.w('html', { html: this.exitHTML(sec) })], isInner: false }; }
+    s_hotline(sec) { const b = this.hotlineBody(sec); return this.section([this.heading(b.heading, 'h2'), this.text(b.html)], sec, { border_border: 'solid', border_width: box(2), border_color: this.accent }); }
+    exitHTML(sec) {
+      const T = this.T; const url = safeUrl(sec.url || (this.safety && this.safety.exit_url) || EXIT_URL); const hint = sec.hint != null ? sec.hint : T.exitHint;
+      return EXIT_CSS + `<div class="forge-exit" role="region" aria-label="${esc(T.exitRegion)}"><a class="forge-exit-btn" href="${esc(url)}" rel="noreferrer noopener" data-forge-exit data-exit-url="${esc(url)}">${esc(sec.label || T.exit)}</a>${hint ? `<span class="forge-exit-hint">${esc(hint)}</span>` : ''}</div>` + EXIT_JS;
+    }
+    hotlineBody(sec) {
+      const T = this.T; const tx = String(sec.text || T.hotline.text); const lab = sec.phone_label || '1 800 799 7233'; const tl = 'tel:+1' + String(sec.phone || '18007997233').replace(/\D/g, '').replace(/^1(?=\d{10}$)/, '');
+      const para = p => esc(p).replace(esc(lab), `<a href="${esc(tl)}">${esc(lab)}</a>`).replace(/\b911\b/, '<a href="tel:911">911</a>');
+      let host = ''; try { host = sec.url ? new URL(sec.url).hostname.replace(/^www\./, '') : ''; } catch (e) { host = ''; }
+      return { heading: sec.heading || T.hotline.heading, html: tx.split(/\n+/).filter(x => x.trim()).map(p => `<p>${para(p)}</p>`).join('') + (host ? `<p><a href="${esc(sec.url)}" rel="noreferrer noopener">${esc(host)}</a></p>` : '') };
+    }
+    hotlineHTML(sec) { const b = this.hotlineBody(sec); return `<div class="forge-hotline" role="note"><h2>${esc(b.heading)}</h2>${b.html}</div>`; }
     stickyBar() {
       const p = this.cta.primary || {}; const tl = p.phone ? tel(p.phone) : null; const T = this.T;
       const a = (tl ? `<a class="forge-sticky-call" href="${esc(tl)}">${esc(T.callNow)}</a>` : '') + `<a class="forge-sticky-cta" href="${esc(p.url || '#contact')}">${esc(p.label || T.start)}</a>`;
@@ -448,7 +489,7 @@ const FORGE_COMPILE = (() => {
     /* ---------- semantic html ---------- */
     html() {
       const out = [];
-      for (const sec of this.S) { const body = this.secBody(sec); if (body == null) continue;
+      for (const sec of this.S) { if (sec.type === 'quick_exit') { out.push(this.exitHTML(sec)); continue; } const body = this.secBody(sec); if (body == null) continue;
         out.push(`<section id="${esc(sec._sid)}" class="forge-section forge-sec-${sec.type} forge-${styleOf(sec)}"><div class="forge-inner${narrowOf(sec) ? ' forge-narrow' : ''}">${body}</div></section>`); }
       return out.join('\n');
     }
@@ -481,6 +522,8 @@ const FORGE_COMPILE = (() => {
         case 'disclaimer': return (sec.heading ? h('h2', sec.heading) : '') + this.disclaimerHTML(sec);
         case 'court_facts': return h('h2', sec.heading || T.court(sec.county)) + (sec.text ? h('p', sec.text) : '') + this.courtTable(sec) + this.courtFoot(sec);
         case 'lang_toggle': return this.langHTML(sec) || null;
+        case 'quick_exit': return this.exitHTML(sec);
+        case 'hotline': return this.hotlineHTML(sec);
       }
       return null;
     }
@@ -519,7 +562,7 @@ const FORGE_COMPILE = (() => {
           : `<input type="${esc(x.type || 'text')}" id="${id}" name="${esc(x.id)}"${attrs}>`;
         return `<label for="${id}">${esc(x.label)}</label>${ctl}` + (hid ? `<small class="forge-hint" id="${hid}">${esc(x.hint)}</small>` : '');
       }).join('');
-      return FORM_CSS + `<form class="forge-form" method="post" action="${esc(f.action || '/wp-json/forge/v1/lead')}" data-forge-form data-ok="${esc(f.success || T.ok)}" data-err="${esc(T.err)}"><input type="hidden" name="page" value="${esc(this.page.slug)}"><div class="forge-hp" aria-hidden="true"><label>${esc(T.website)}<input type="text" name="website" tabindex="-1" autocomplete="off"></label></div>${rows}<label class="forge-consent"><input type="checkbox" name="consent" value="yes" required> <span>${esc(f.consent)}</span></label><button type="submit" class="forge-btn forge-btn-primary">${esc(f.button)}</button><p class="forge-form-msg" aria-live="polite"></p></form>` + FORM_JS;
+      return FORM_CSS + `<form class="forge-form" method="post" action="${esc(f.action || '/wp-json/forge/v1/lead')}" data-forge-form data-ok="${esc(f.success || T.ok)}" data-err="${esc(T.err)}"><input type="hidden" name="page" value="${esc(this.page.slug)}"><div class="forge-hp" aria-hidden="true"><label>${esc(T.website)}<input type="text" name="website" tabindex="-1" autocomplete="off"></label></div>${rows}<label class="forge-consent"><input type="checkbox" name="consent" value="yes" required> <span>${esc(f.consent)}</span></label><button type="submit" class="forge-btn forge-btn-primary">${esc(f.button)}</button><p class="forge-form-msg" aria-live="polite"></p></form>` + (this.safety ? FORM_JS_SAFE : FORM_JS);
     }
 
     /* ---------- schema: LegalService, Person (attorneys), WebPage or ProfilePage, WebSite, BreadcrumbList, FAQPage, Article, Service ---------- */
@@ -643,6 +686,12 @@ const FORGE_COMPILE = (() => {
       if (S.some(s => s.type === 'form') && !this.formSpec().shortcode && !/attorney client|abogado y cliente/i.test(this.formSpec().consent)) w.push('form consent does not say that submitting does not create an attorney client relationship');
       const org = (schema['@graph'] || [])[0] || {}; if (!org.address || !org.telephone) w.push('schema: the LegalService node has no ' + [!org.address ? 'address' : '', !org.telephone ? 'telephone' : ''].filter(Boolean).join(' or ') + '; fill the firm profile (offices and phone)');
       validateSchema(schema).filter(m => !/LegalService is missing (address|telephone)/.test(m)).slice(0, 12).forEach(m => w.push('schema: ' + m));
+      if (this.safety) {
+        const tr = [...new Set((String(html).replace(/<script type="application\/ld\+json">[\s\S]*?<\/script>/gi, '').match(TRACKING) || []).map(x => x.replace(/\s*\($/, '').toLowerCase()))];
+        if (tr.length) w.push(`BLOCK: Safety mode: tracking or a third party script or frame on a ${this.safety.sensitive === 'cps' ? 'CPS' : 'protective order or family violence'} page (${tr.join(', ')}); remove it`);
+        if (this.safety.quick_exit !== false && !/data-forge-exit/.test(html)) w.push('Safety mode: no quick exit on the page');
+        if (this.S.some(s => s.type === 'form') && !/name="safe_contact"/.test(html) && !this.formSpec().shortcode && this.formSpec().provider !== 'elementor_pro') w.push('Safety mode: the intake form does not ask whether it is safe to call, text or leave a voicemail');
+      }
       return w.concat(this.warnings);
     }
     /* ---------- the portable blueprint: what the headless kit and the bridge's forge field carry ---------- */
@@ -650,7 +699,7 @@ const FORGE_COMPILE = (() => {
       const out = [];
       for (const s of this.S) {
         const o = Object.assign({}, s); delete o._sid; o.id = s._sid;
-        if (s.type === 'attorneys' || s.type === 'court_facts' || s.type === 'lang_toggle') { const body = this.secBody(s); if (!body) continue; out.push({ type: 'html', id: s._sid, style: styleOf(s), html: stripDataImg(body) }); continue; }
+        if (s.type === 'attorneys' || s.type === 'court_facts' || s.type === 'lang_toggle' || s.type === 'quick_exit' || s.type === 'hotline') { const body = this.secBody(s); if (!body) continue; out.push({ type: 'html', id: s._sid, style: styleOf(s), html: stripDataImg(body) }); continue; }
         if (s.type === 'disclaimer') { out.push({ type: 'rich_text', id: s._sid, heading: s.heading || '', html: this.disclaimerHTML(s), width: 'narrow' }); continue; }
         if (s.type === 'steps' || s.type === 'process') { o.type = 'steps'; if (!o.heading) o.heading = s.type === 'process' ? this.T.process : this.T.how; o.steps = arr(s.steps).map(st => Object.assign({}, st, { text: st.when ? `${st.when}: ${st.text}` : st.text })); }
         out.push(o);
@@ -683,5 +732,5 @@ const FORGE_COMPILE = (() => {
   function pageFor(bp, r, media, extra) { r = r || compile(bp, media); if (typeof CMS === 'undefined' || !CMS.pageFromForge) throw new Error('the CMS layer is not loaded'); return CMS.pageFromForge(r.portable || portable(bp, media), r, media, extra); }
   function previewPage(a, b, c, d) { if (a instanceof Forge) return previewDoc(a, b, c, d); return compile(a, b).preview; }
   function defaultForm(bp) { const f = new Forge(bp || {}, {}).formSpec(); return { fields: f.fields, consent: f.consent, button: f.button }; }
-  return { compile, bundle, portable, pageFor, previewPage, validateSchema, defaultForm, tblsLine, tblsArea, parseHours, visibleText, isPlaceholder: isPh, stripPlaceholders: stripPh, esc, slug, tel, hexmix, PREVIEW_CSS, FORM_JS, STR, Forge };
+  return { compile, bundle, portable, pageFor, previewPage, validateSchema, defaultForm, tblsLine, tblsArea, parseHours, visibleText, isPlaceholder: isPh, stripPlaceholders: stripPh, esc, slug, tel, hexmix, PREVIEW_CSS, FORM_JS, FORM_JS_SAFE, EXIT_URL, STR, Forge };
 })();
