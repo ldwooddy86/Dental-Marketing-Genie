@@ -331,7 +331,7 @@ table.t .bgid{display:block;font-size:11px;font-weight:400;color:var(--ink-3);wh
 @media (max-width:1150px){.lncards .ln-court{grid-template-columns:repeat(3,minmax(0,1fr))}.lncards .ln-est{grid-template-columns:repeat(4,minmax(0,1fr))}}
 @media (max-width:900px){.lncards .ln-est{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:640px){.lncards .ln-court,.lncards .ln-est{grid-template-columns:minmax(0,1fr)}}
-@media (min-width:1101px){.atlas-grid>div:first-child{position:sticky;top:10px}}
+@media (min-width:1101px) and (min-height:700px){.atlas-grid>div:first-child{position:sticky;top:10px}}
 /* ---------- Metro Atlas ---------- */
 .atlas-ctl{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:flex-end;margin-bottom:10px}
 .atlas-ctl .ctl select{min-width:300px}
