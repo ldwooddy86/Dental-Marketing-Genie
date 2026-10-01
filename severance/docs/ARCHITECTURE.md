@@ -80,7 +80,13 @@ prefixed `sv.`; use `sev.<module>.<name>`), data indices `D`, `CTY`/`CI` (counti
 `markSel`, `lineChart`, `barChart`, `spark`, `seasBlock`, `table(el, {cols, rows, sort, onRow, selected, limit})`, `csv(rows, cols)`,
 `exportText(name, text, mime)` (download plus a copy box), `openModal(html)`, `closeModal()`, `mastHTML({eyebrow, title, dek, facts, ribbon})`,
 `tile(label, value, sub, grade)`, `ctl(label, inner)`, `sel(id, opts, val)`, `registerModule({key, num, title, desc, mount(root), receive?, onShow?})`,
-`showModule(key, payload)`.
+`showModule(key, payload)` (a history step per module: Back and Forward move between them). Charts (`lineChart`, `barChart`, and
+`scatter`, `coefPlot`) draw at the container's width with `o.W`/`o.H` as the design size (`fixed: true` keeps the old fixed viewBox) and
+redraw on resize through one shared ResizeObserver; `drawMap` takes `alt: {test, color, label}` for a true zero class and `view: [x, y, w, h]`
+to draw part of the map; `table()` returns `{render, setRows, setSel, sorted, sort, reveal}` and takes `caption`; `csv()` columns take `d`
+(decimals) and `pct` (a fraction written as a percent); `ctl()` labels its control; `expName(module, geo, ext)` names exports
+`severance_<module>_<geo>_<yyyy-mm-dd>.<ext>`; data helpers `stTTM(k)`, `ttmSpan()`, `seriesSpan()`, `repGap(c)` (a clerk reporting gap).
+Any element with `data-kbd` answers Enter and Space like a click.
 
 From `01_kit.js`: `RT` (the extension runtime or null), `ENV` (`chrome` | `firefox` | `viewer` | `file`), `ENV_LABEL`, `inViewer()`, `slug`,
 `debounce`, `el`, `todayISO`, `uid`, `phoneFmt`, `pctRank`, `BUS.on/emit` (events: `firm`, `theme`, `actuals`, `plan`, `forge`, `watch`,

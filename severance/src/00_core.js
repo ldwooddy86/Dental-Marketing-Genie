@@ -343,5 +343,5 @@ function showModule(key, payload) {
   if (!m.mounted) { m.mounted = true; try { m.mount($('#mod-' + m.key)); } catch (e) { $('#mod-' + m.key).innerHTML = `<div class="callout"><div class="h">Module error</div><p>${esc(e.message)}</p></div>`; console.error(e); } }
   if (payload && m.receive) { try { m.receive(payload); } catch (e) { console.error(e); } }   // goModule('publish', {pages}) hands the payload over
   if (m.onShow) { try { m.onShow(); } catch (e) { console.error(e); } }
-  store.set('sev.tab', m.key); try { history.replaceState(null, '', '#' + m.key); } catch (e) { } if (window.onModuleShown) window.onModuleShown(m.key); if (!payload || !payload.keepScroll) window.scrollTo({ top: 0 });
+  store.set('sev.tab', m.key); try { const h = '#' + m.key; if (location.hash !== h) { if (MODI[(location.hash || '').slice(1).split('?')[0]]) history.pushState(null, '', h); else history.replaceState(null, '', h); } } catch (e) { }   // a step per module, so Back and Forward move between them (the boot listens for hashchange) if (window.onModuleShown) window.onModuleShown(m.key); if (!payload || !payload.keepScroll) window.scrollTo({ top: 0 });
 }

@@ -222,7 +222,7 @@ registerModule({
         + tile('Cost per retained matter', T.ret > 0 ? $$$(clientBudget() / T.ret) : NA, T.leads > 0 ? `${$$$(clientBudget() / T.leads)} per lead` : (P.budget > 0 ? 'no leads at these rates: check a cost or conversion of 0' : 'no budget set'), 'D')
         + tile('Revenue / month', $$$(T.rev), P.budget > 0 ? N(T.rev / P.budget, 1) + '× the budget' : 'no budget set', 'D')
         + tile('Share of market', DK_PCT(T.ret * 12 / Math.max(T.n, 1), 1), 'retained a year against expected matters')
-        + tile('Shock index', N(mean(M.ctys.map(c => c.esi)), 0), 'population unweighted average; lead with modification and enforcement where high')
+        + tile('Shock index', N((() => { const cs = M.ctys.filter(c => isN(c.esi) && c.pop2025); const p = sum(cs.map(c => c.pop2025)); return p ? sum(cs.map(c => c.esi * c.pop2025)) / p : null; })(), 0), 'population weighted, as in modules 07 and 12; lead with modification and enforcement where high')
         + tile('Campaign objects', N(objs.total), `${objs.camps} campaigns · ${objs.groups} ad groups or sets · ${objs.ads} ads`)
         + tile('Creative screened', `${N(cr.length)}`, nr ? `${nr} need review before export` : 'no block findings');
     }
