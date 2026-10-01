@@ -142,9 +142,17 @@ const atlasTags = listDir('data').filter(f => /^data\/atlas-/.test(f)).map(f => 
 single = single.replace('<script type="application/json" id="suite-data">', atlasTags + '\n<script type="application/json" id="suite-data">');
 single = single.replace(/<!-- [^>]*-->\n?/g, '');
 if (problems.length) { console.log('\nPROBLEMS\n  ' + problems.join('\n  ')); process.exit(1); }
+/* size budget: the single file must stay under 16,000,000 bytes so it can be hosted as one page (the claude.ai viewer limit is 16 MB) */
+const BUDGET = 16000000; const bytes = Buffer.byteLength(single);
+const blocks = {}; const add = (k, n) => { blocks[k] = (blocks[k] || 0) + n; };
+for (const m of single.matchAll(/<script type="application\/json" id="([^"]+)">([\s\S]*?)<\/script>/g)) add(m[1] === 'suite-data' ? 'data: suite' : 'data: ' + m[1], Buffer.byteLength(m[2]));
+for (const m of single.matchAll(/<style>([\s\S]*?)<\/style>/g)) { const fonts = (m[1].match(/url\(data:font[^)]+\)/g) || []).reduce((t, f) => t + f.length, 0); add('css: fonts', fonts); add('css: rules', Buffer.byteLength(m[1]) - fonts); }
+for (const m of single.matchAll(/<script>\n([\s\S]*?)\n<\/script>/g)) add('js', Buffer.byteLength(m[1]));
+info(Object.entries(blocks).map(([k, v]) => `${k} ${(v / 1e6).toFixed(2)} MB`).join(', '));
+if (bytes > BUDGET) { console.log(`\nPROBLEMS\n  the single file is ${bytes.toLocaleString('en-US')} bytes, over the ${BUDGET.toLocaleString('en-US')} byte budget`); process.exit(1); }
 fs.mkdirSync(DIST, { recursive: true });
 fs.writeFileSync(OUT_HTML, single);
-info(`${path.relative(path.resolve(ROOT, '..'), OUT_HTML)}, ${(single.length / 1024 / 1024).toFixed(2)} MB`);
+info(`${path.relative(path.resolve(ROOT, '..'), OUT_HTML)}, ${bytes.toLocaleString('en-US')} bytes (budget ${BUDGET.toLocaleString('en-US')}, ${((BUDGET - bytes) / 1e6).toFixed(2)} MB left)`);
 if (args.has('--single')) process.exit(0);
 
 /* ---- 8. zip (local file headers, central directory, deflate or stored) ---- */
