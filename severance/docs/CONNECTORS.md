@@ -24,7 +24,7 @@ unpacked folder moves, so check it again after reinstalling. Firefox asks for si
 against `manifest.json` `host_permissions` (all present): `accounts.google.com`, `oauth2.googleapis.com`, `googleads.googleapis.com`,
 `localservices.googleapis.com`, `youtubeanalytics.googleapis.com`, `www.googleapis.com`, `businessprofileperformance.googleapis.com`,
 `graph.facebook.com`, `www.facebook.com`, `business-api.tiktok.com`, `ads.tiktok.com`, `api.linkedin.com`, `www.linkedin.com`,
-`login.microsoftonline.com`, `*.api.bingads.microsoft.com`.
+`login.microsoftonline.com`, `*.api.bingads.microsoft.com`, and `*.blob.core.windows.net` (the Azure storage host the `ReportDownloadUrl` points to; without it the zipped report download could be blocked).
 
 **Versions.** Google Ads and Meta are probed when you press Test: the first version in the list that answers anything but 404 is stored in
 `cfg._ver` and shown on the card ("API v24") and in the source register. The others are fixed.
@@ -160,7 +160,7 @@ folded `ads` row per day and campaign). Headers: `Authorization`, `DeveloperToke
 LinkedIn uses the authorization code flow with the client secret, then
 `GET /rest/adAnalytics?q=analytics&pivot=CAMPAIGN&timeGranularity=DAILY&dateRange=(start:(...),end:(...))&accounts=List(urn:li:sponsoredAccount:<id>)&fields=...`
 (`LinkedIn-Version: 202509`, `X-Restli-Protocol-Version: 2.0.0`) and the organization follower statistics. Campaigns come back as URNs with no
-names, so LinkedIn rows go to the high asset line (`high`) unless a line token is found. Test: `GET /rest/adAccounts?q=search`.
+names, so LinkedIn rows stay unmapped unless a line token is found: the Campaign Desk runs LinkedIn for attorney and paralegal recruiting and referral partners, not client matters, so its rows never correct a service line's rates. Test: `GET /rest/adAccounts?q=search`.
 
 ---
 
