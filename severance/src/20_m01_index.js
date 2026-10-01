@@ -21,9 +21,11 @@ function layerScale(L, objs) {
   // the color scale stops at the 2nd and 98th percentiles (97th for diverging layers); a legend end that is a stop, not the real
   // minimum or maximum, reads '≤' or '≥'
   const ok = vals.filter(isN);
-  if (L.ramp === 'div' || L.ramp === 'divinv') { const inv = L.ramp === 'divinv' ? -1 : 1; const mx = Math.max(...ok.map(Math.abs).sort((a, b) => a - b).slice(0, Math.floor(vals.length * 0.97)), 1); const neg = inv > 0 ? RAMPS.slate : RAMPS.leaf, pos = inv > 0 ? RAMPS.leaf : RAMPS.slate; return { color: v => divergeColor(inv * clamp(v / mx, -1, 1)), legend: { min: (ok.some(v => v < -mx) ? '≤ ' : '') + sgn(-mx, 0), max: (ok.some(v => v > mx) ? '≥ ' : '') + sgn(mx, 0), css: `linear-gradient(90deg,${neg[7]},${neg[4]},var(--rp-mid),${pos[4]},${pos[7]})` } }; }
+  // diverging legends print their ends in the layer's own unit (points stay points, percents stay percents)
+  if (L.ramp === 'div' || L.ramp === 'divinv') { const inv = L.ramp === 'divinv' ? -1 : 1; const mx = Math.max(...ok.map(Math.abs).sort((a, b) => a - b).slice(0, Math.floor(vals.length * 0.97)), 1); const neg = inv > 0 ? RAMPS.slate : RAMPS.leaf, pos = inv > 0 ? RAMPS.leaf : RAMPS.slate; const lf = L.lf || L.f || (v => sgn(v, 0)); return { color: v => divergeColor(inv * clamp(v / mx, -1, 1)), legend: { min: (ok.some(v => v < -mx) ? '≤ ' : '') + lf(-mx), max: (ok.some(v => v > mx) ? '≥ ' : '') + lf(mx), css: `linear-gradient(90deg,${neg[7]},${neg[4]},var(--rp-mid),${pos[4]},${pos[7]})` } }; }
+  // a log layer colors a true zero with the lowest step (a map can give zero its own class with drawMap's alt); its legend runs over the values above zero
   const sc = L.log ? (() => { const q = quantScale(vals.map(v => isN(v) && v > 0 ? Math.log(v) : null)); return v => v > 0 ? q(Math.log(v)) : 0; })() : (L.q === false ? (v => clamp(v / 100, 0, 1)) : quantScale(vals));
-  const sorted = ok.slice().sort((a, b) => a - b); if (!sorted.length) return { color: () => null, legend: { min: NA, max: NA, css: rampCSS(L.ramp) } };
+  const sorted = (L.log ? ok.filter(v => v > 0) : ok).slice().sort((a, b) => a - b); if (!sorted.length) return { color: () => null, legend: { min: NA, max: NA, css: rampCSS(L.ramp) } };
   const pick = p => sorted[clamp(Math.floor(p * (sorted.length - 1)), 0, sorted.length - 1)];
   const lo = L.q === false ? 0 : pick(0.02), hi = L.q === false ? 100 : pick(0.98);
   const lo_c = L.q !== false && sorted[0] < lo, hi_c = L.q !== false && sorted[sorted.length - 1] > hi;

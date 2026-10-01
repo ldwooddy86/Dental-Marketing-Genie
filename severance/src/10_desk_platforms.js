@@ -195,7 +195,21 @@ const DESKX = (() => {
   const NEG = ['free', 'pro bono', 'legal aid', 'forms', 'form', 'pdf', 'template', 'do it yourself', 'diy', 'without a lawyer', 'pro se', 'how to become', 'salary', 'jobs', 'career', 'paralegal', 'school', 'degree', 'definition', 'meaning', 'statistics', 'rate', 'records', 'lookup', 'search records', 'public records', 'movie', 'song', 'lyrics', 'reddit', 'quotes', 'memes', 'wedding', 'anniversary', 'counseling', 'therapist', 'church', 'texas law help', 'texaslawhelp'];
   const NEG_ES = ['gratis', 'formularios', 'formulario', 'pdf', 'plantilla', 'sin abogado', 'trabajo', 'empleo', 'salario', 'curso', 'significado', 'canción', 'película'];
   const NEG_RECRUIT = ['divorce', 'custody', 'child support', 'how to file', 'cost', 'price', 'near me', 'free', 'forms'];
+  /* the divorce campaigns' phrase seeds ('divorce lawyer') also match military, high asset and gray divorce queries; when those lines run
+     their own campaigns, the divorce campaigns carry these as negatives so each query lands in one campaign */
+  const OVER_NEG = { high: ['high net worth', 'high asset', 'business owner', 'executive', 'stock options'], mil: ['military', 'deployment', 'deployed', 'fort hood', 'fort bliss', 'jbsa', 'usfspa', 'scra'], gray: ['after 50', 'gray divorce', 'grey divorce', 'qdro', 'pension', 'retirement'] };
+  const OVER_NEG_ES = { high: ['negocio', 'empresa', 'acciones'], mil: ['militar', 'despliegue'], gray: ['jubilación', 'pensión', 'retiro'] };
+  const freeConsult = M => !!(M && M.firm && M.firm.consult && M.firm.consult.free);
+  /* campaign negatives for one line and language: 'free' and 'gratis' stay out when the firm offers free consultations (they would block
+     'free consultation' searches the firm wants) */
+  function negsFor(M, line, lang) {
+    const free = freeConsult(M); let n = NEG.filter(k => !(free && k === 'free')); if (lang === 'es') n = n.concat(NEG_ES.filter(k => !(free && k === 'gratis')));
+    const keys = ((M && M.lines) || []).map(l => l.key); if (line === 'div_k' || line === 'div_nk') Object.keys(OVER_NEG).forEach(o => { if (keys.includes(o)) n = n.concat(lang === 'es' ? OVER_NEG_ES[o] : OVER_NEG[o]); });
+    return [...new Set(n)];
+  }
   const BASES = { '48027': 'Fort Hood', '48099': 'Fort Hood', '48141': 'Fort Bliss', '48029': 'JBSA' };   // Fort Cavazos was renamed Fort Hood in 2025
+  /* a keyword that names a base runs only where the plan targets the base's county */
+  const BASE_KW = [[/\bfort (?:hood|cavazos)\b/i, ['48027', '48099']], [/\bfort bliss\b/i, ['48141']], [/\bjbsa\b|\bjoint base san antonio\b|\blackland\b|\bfort sam houston\b|\brandolph\b/i, ['48029']]];
   /* Local Services: the family law case types to switch on per line (names vary in the console; verify) and the Google Screened checklist */
   const LSA_CHECK = ['License check: every lawyer listed, by State Bar of Texas number and status', 'Background check on the firm and the lawyers, run through Google\'s screening partner', 'Business registration and the primary office address, matching the Business Profile', 'Reviews: the profile\'s own reviews, never incentivized', 'Answer the phone during the hours set; responsiveness drives ranking', 'Rule 7.04: file the profile and bio with the Advertising Review Committee unless exempt'];
   const SCHED = { all: { label: 'All hours', days: null }, extended: { label: 'Every day, 6 am to 11 pm', days: [['Monday', '06:00', '23:00'], ['Tuesday', '06:00', '23:00'], ['Wednesday', '06:00', '23:00'], ['Thursday', '06:00', '23:00'], ['Friday', '06:00', '23:00'], ['Saturday', '06:00', '23:00'], ['Sunday', '06:00', '23:00']] }, business: { label: 'Weekdays, 8 am to 6 pm', days: [['Monday', '08:00', '18:00'], ['Tuesday', '08:00', '18:00'], ['Wednesday', '08:00', '18:00'], ['Thursday', '08:00', '18:00'], ['Friday', '08:00', '18:00']] } };
@@ -290,13 +304,36 @@ const DESKX = (() => {
   const daily = (monthly) => (Math.max(0, monthly) / 30.4).toFixed(2);
   const bidStr = b => (b >= 0 ? '+' : '') + Math.round(b) + '%';
 
-  /* ---- keywords: Core (seeds, exact and phrase), Questions (phrase), Local (seed with a city or county, exact; the build 1 rule) */
+  /* ---- keywords: Core (seeds, exact and phrase), Questions (phrase), Local (two seeds crossed with each local modifier, exact).
+     kwMods(M, lang) is the one list of modifiers the Local group uses and module 10 shows: up to six, the market cities first and the
+     largest counties after them ("condado de" in Spanish). seedPlan sorts the line's seeds: question forms go to Questions, do it yourself
+     seeds (papers, forms, calculators) are left out because the negatives block that intent, a seed that names a military base runs only
+     where the plan targets the base's county, and the Local crosses use seeds with "Texas" and base names taken out, lawyer seeds first. */
+  const DIY_RE = /\b(?:papers?|forms?|calculator|templates?|diy|do it yourself|pdf|free|gratis|formularios?)\b/i;
+  const Q_RE = /^(?:how|what|when|where|who|why|can|do|does|is|are|should|will|c[oó]mo|qu[eé]|cu[aá]nto)\b/i;
+  const LAWYER_RE = /\b(?:lawyers?|attorneys?|law firm|abogad[oa]s?)\b/i;
+  const norm = k => String(k).toLowerCase().replace(/\s+/g, ' ').trim();
+  function planFips(M) { const f = new Set(); ((M && M.counties) || []).forEach(k => k && k.fips && f.add(k.fips)); ((M && M.markets) || []).forEach(m => m && m.county && f.add(m.county)); if (M && M.geo && M.geo.fips0) f.add(M.geo.fips0); return f; }
+  const namesBase = k => BASE_KW.some(([re]) => re.test(k));
+  const baseOK = (k, fips) => BASE_KW.every(([re, fs]) => !re.test(k) || fs.some(x => fips.has(x)));
+  function kwMods(M, lang) { return ((M && M.geoMods) || []).slice(0, 6).map(m => lang === 'es' ? String(m).replace(/^(.+) County$/, 'condado de $1') : m); }
+  function seedPlan(M, line, lang) {
+    const L = LIB[line] || {}; const raw = lang === 'es' ? (L.kwEs || []) : ((M.lineInfo && M.lineInfo[line] && M.lineInfo[line].kw) || []); const fips = planFips(M);
+    const out = { core: [], questions: [], cross: [], left: [] };
+    raw.forEach(k0 => { const k = norm(k0); if (!k) return;
+      if (!baseOK(k, fips)) { out.left.push({ kw: k, why: 'names a base outside the plan' }); return; }
+      if (DIY_RE.test(k)) { out.left.push({ kw: k, why: 'do it yourself intent' }); return; }
+      if (Q_RE.test(k)) { out.questions.push(k); return; }
+      out.core.push(k); });
+    out.cross = [...new Set(out.core.filter(k => !namesBase(k)).map(k => k.replace(/\s*\b(?:in\s+)?texas\b\s*/gi, ' ').replace(/\s+/g, ' ').trim()).filter(k => k.split(' ').length >= 2 && !/\bnear me\b/.test(k)))].sort((a, b) => (LAWYER_RE.test(b) ? 1 : 0) - (LAWYER_RE.test(a) ? 1 : 0)).slice(0, 2);
+    return out;
+  }
   function keywords(M, line, lang) {
-    const L = LIB[line]; const seeds = lang === 'es' ? (L.kwEs || []) : ((M.lineInfo && M.lineInfo[line] && M.lineInfo[line].kw) || []); const mods = (M.geoMods || []).slice(0, 6); const out = [];
-    const add = (group, kw, match) => { const k = String(kw).toLowerCase().replace(/\s+/g, ' ').trim(); if (k && !out.some(x => x.group === group && x.kw === k && x.match === match)) out.push({ group, kw: k, match }); };
-    seeds.forEach(k => { add('Core', k, 'Exact'); add('Core', k, 'Phrase'); });
-    if (lang !== 'es') (L.kwq || []).forEach(k => add('Questions', k, 'Phrase'));
-    mods.forEach(gm => seeds.slice(0, 2).forEach(k => { add('Local', k + ' ' + gm, 'Exact'); add('Local', gm + ' ' + k, 'Exact'); }));
+    const L = LIB[line]; const sp = seedPlan(M, line, lang); const mods = kwMods(M, lang); const out = [];
+    const add = (group, kw, match) => { const k = norm(kw); if (k && !out.some(x => x.group === group && x.kw === k && x.match === match)) out.push({ group, kw: k, match }); };
+    sp.core.forEach(k => { add('Core', k, 'Exact'); add('Core', k, 'Phrase'); });
+    (lang !== 'es' ? (L.kwq || []) : []).concat(sp.questions).forEach(k => add('Questions', k, 'Phrase'));
+    mods.forEach(gm => sp.cross.forEach(k => { add('Local', k + ' ' + gm, 'Exact'); add('Local', gm + ' ' + k, 'Exact'); }));
     return out;
   }
 
@@ -309,7 +346,7 @@ const DESKX = (() => {
       rows.push({ 'Campaign': c, 'Campaign Type': 'Search', 'Networks': 'Google search', 'Budget': daily(monthly), 'Budget type': 'Daily', 'Languages': LANGN[lang], 'Bid Strategy Type': 'Maximize conversions', 'Start Date': M.start, 'End Date': M.end, 'Campaign Status': 'Paused', 'Ad Schedule': sched });
       if (M.scope === 'counties') (M.counties || []).forEach(k => rows.push({ 'Campaign': c, 'Location': `${k.name} County, Texas, United States`, 'ID': p === 'google' ? (k.gt || '') : '', 'Bid Modifier': bidStr(k.bid || 0), 'Criterion Type': 'Location', 'Status': 'Enabled' }));
       else (M.markets || []).forEach(m => rows.push({ 'Campaign': c, 'Location': `${m.zip}, Texas, United States`, 'ID': p === 'google' ? (m.gt || '') : '', 'Bid Modifier': bidStr(m.bid || 0), 'Criterion Type': 'Location', 'Status': 'Enabled' }));
-      NEG.concat(lang === 'es' ? NEG_ES : []).forEach(k => rows.push({ 'Campaign': c, 'Keyword': k, 'Criterion Type': 'Negative Phrase', 'Status': 'Enabled' }));
+      negsFor(M, line, lang).forEach(k => rows.push({ 'Campaign': c, 'Keyword': k, 'Criterion Type': 'Negative Phrase', 'Status': 'Enabled' }));
       S.callouts(ctx).map(t => fill(t, ctx, limit(p, 'callout'))).filter(Boolean).forEach(t => rows.push({ 'Campaign': c, 'Callout text': t, 'Status': 'Enabled' }));
       const sls = [line].concat((M.lines || []).map(x => x.key).filter(k => k !== line)).slice(0, 4);
       sls.forEach(k => { const L = LIB[k]; const sm = limit(p, 'sitelink'), dm = limit(p, 'sitelink_desc') || 35; const txt = (lang === 'es' && fill(L.es.h[0], ctx, sm)) || fill(L.sl, ctx, sm); const d1 = lang === 'es' ? 'Consulta en español' : L.sld[0], d2 = lang === 'es' ? 'Hable con un abogado' : L.sld[1]; if (txt) rows.push({ 'Campaign': c, 'Sitelink text': txt, 'Description line 1': fill(d1, ctx, dm) || '', 'Description line 2': fill(d2, ctx, dm) || '', 'Sitelink final URL': landing(M, k, p, c), 'Status': 'Enabled' }); });
@@ -456,25 +493,33 @@ const DESKX = (() => {
   const FL_H = ['month', 'days', 'season_index', 'live_multiplier', 'media_usd', 'live_reasons'];
   const flightCSV = (M, months) => out(fname(M, 'flight-pacing', 'csv'), FL_H, months.map(x => ({ month: x.label, days: x.days, season_index: x.idx.toFixed(1), live_multiplier: x.mult.toFixed(3), media_usd: Math.round(x.spend), live_reasons: x.reasons.map(r => `${r.text} (${r.days} d)`).join('; ') })));
   /* the build 1 exports, kept: keywords, negatives, ZIP targets, plan */
-  const KW_H = ['Campaign', 'Ad Group', 'Keyword', 'Match Type'];
-  const kwCSV = M => out(fname(M, 'keywords', 'csv'), KW_H, (M.langs || ['en']).flatMap(lang => (M.lines || []).flatMap(li => keywords(M, li.key, lang).map(k => ({ 'Campaign': campName(M, li.key, 'google', lang), 'Ad Group': `${li.short || li.key} ${k.group}`, 'Keyword': k.kw, 'Match Type': k.match })))));
-  const negText = M => NEG.concat((M.langs || []).includes('es') ? NEG_ES : []).join('\n') + '\n';
-  const ZIP_H = ['Location', 'ID', 'Type', 'Bid adjustment', 'City', 'County'];
-  const zipCSV = M => out(fname(M, 'zip-targets', 'csv'), ZIP_H, M.scope === 'counties' ? (M.counties || []).map(k => ({ Location: k.name + ' County, Texas, United States', ID: k.gt || '', Type: 'County', 'Bid adjustment': bidStr(k.bid || 0), City: '', County: k.name })) : (M.markets || []).map(m => ({ Location: m.zip + ', Texas, United States', ID: m.gt || '', Type: 'Postal Code', 'Bid adjustment': bidStr(m.bid || 0), City: m.city, County: m.county_name })));
-  const PLAN_H = ['geography', 'line', 'expected_matters', 'value_per_matter', 'share_pct', 'budget_month', 'leads_month', 'retained_month', 'revenue_month', 'cpc', 'conversion_pct', 'retained_pct', 'rates_source'];
+  /* the build 1 exports, in the Google Ads Editor layout: every row names its campaign (the Google search campaigns of the Editor file:
+     one per line and language) and carries a status, so Editor attaches them; import the Editor file first, these add to its campaigns */
+  const KW_H = ['Campaign', 'Ad Group', 'Keyword', 'Criterion Type', 'Status'];
+  const kwCSV = M => out(fname(M, 'keywords', 'csv'), KW_H, (M.langs || ['en']).flatMap(lang => (M.lines || []).flatMap(li => { const c = campName(M, li.key, 'google', lang); return keywords(M, li.key, lang).map(k => ({ 'Campaign': c, 'Ad Group': `${li.short || li.key} ${k.group}`, 'Keyword': k.kw, 'Criterion Type': k.match, 'Status': 'Enabled' })).concat(negsFor(M, li.key, lang).map(k => ({ 'Campaign': c, 'Ad Group': '', 'Keyword': k, 'Criterion Type': 'Negative Phrase', 'Status': 'Enabled' }))); })));
+  const negText = M => { const free = freeConsult(M); return NEG.filter(k => !(free && k === 'free')).concat((M.langs || []).includes('es') ? NEG_ES.filter(k => !(free && k === 'gratis')) : []).join('\n') + '\n'; };
+  const ZIP_H = ['Campaign', 'Location', 'ID', 'Bid Modifier', 'Criterion Type', 'Status', 'Location type', 'City', 'County', 'Monthly allocation'];
+  function zipCSV(M) {
+    const locs = M.scope === 'counties' ? (M.counties || []).map(k => ({ Location: k.name + ' County, Texas, United States', ID: k.gt || '', bid: k.bid || 0, type: 'County', city: '', county: k.name, spend: '' })) : (M.markets || []).map(m => ({ Location: m.zip + ', Texas, United States', ID: m.gt || '', bid: m.bid || 0, type: 'Postal code', city: m.city, county: m.county_name, spend: m.spend != null ? Math.round(m.spend) : '' }));
+    const rows = []; (M.langs || ['en']).forEach(lang => (M.lines || []).forEach(li => { const c = campName(M, li.key, 'google', lang); locs.forEach(x => rows.push({ 'Campaign': c, 'Location': x.Location, 'ID': x.ID, 'Bid Modifier': bidStr(x.bid), 'Criterion Type': 'Location', 'Status': 'Enabled', 'Location type': x.type, 'City': x.city, 'County': x.county, 'Monthly allocation': x.spend })); }));
+    return out(fname(M, 'zip-targets', 'csv'), ZIP_H, rows);
+  }
+  const PLAN_H = ['geography', 'line', 'expected_matters', 'value_per_matter', 'share_pct', 'budget_month', 'leads_month', 'retained_month', 'matter_value_month', 'cpc', 'conversion_pct', 'retained_pct', 'rates_source', 'matters_counted', 'overlay_of', 'share_set_by', 'counts_source'];
   /* one row per line with its twelve month plan (from the flight start month) in the trailing columns, and a total row */
   function planCSV(M) {
     const lines = M.lines || []; const per = lines.map(r => monthPlan({ start: M.start, lines: [{ budget: r.budget, seas: r.seas, shift: r.shift }] }));
     const mcols = (per[0] || monthPlan({ start: M.start, lines: [] })).map(x => x.label + ' usd'); const head = PLAN_H.concat(mcols);
     const fx = (v, d) => isFinite(+v) ? (+v).toFixed(d) : '';
-    const rows = lines.map((r, i) => { const o = { geography: M.geo && M.geo.title, line: r.name, expected_matters: Math.round(r.n || 0), value_per_matter: r.fee, share_pct: fx((r.share || 0) * 100, 1), budget_month: Math.round(r.budget || 0), leads_month: fx(r.leads || 0, 1), retained_month: fx(r.ret || 0, 2), revenue_month: Math.round(r.rev || 0), cpc: r.cpc > 0 ? fx(r.cpc, 2) : '', conversion_pct: fx(r.cvr, 2), retained_pct: fx(r.retain, 1), rates_source: r.src || 'assumption' }; per[i].forEach((x, j) => o[mcols[j]] = Math.round(x.spend)); return o; });
-    if (lines.length) { const t = { geography: M.geo && M.geo.title, line: 'Total', expected_matters: Math.round(lines.reduce((a, r) => a + (r.n || 0), 0)), share_pct: '100.0', budget_month: Math.round(lines.reduce((a, r) => a + (r.budget || 0), 0)), leads_month: fx(lines.reduce((a, r) => a + (r.leads || 0), 0), 1), retained_month: fx(lines.reduce((a, r) => a + (r.ret || 0), 0), 2), revenue_month: Math.round(lines.reduce((a, r) => a + (r.rev || 0), 0)), rates_source: '' }; mcols.forEach((c, j) => t[c] = Math.round(per.reduce((a, p) => a + p[j].spend, 0))); rows.push(t); }
+    const counted = r => (r.nNet != null ? r.nNet : r.n) || 0;
+    const rows = lines.map((r, i) => { const o = { geography: M.geo && M.geo.title, line: r.name, expected_matters: Math.round(r.n || 0), value_per_matter: r.fee, share_pct: fx((r.share || 0) * 100, 1), budget_month: Math.round(r.budget || 0), leads_month: fx(r.leads || 0, 1), retained_month: fx(r.ret || 0, 2), matter_value_month: Math.round(r.rev || 0), cpc: r.cpc > 0 ? fx(r.cpc, 2) : '', conversion_pct: fx(r.cvr, 2), retained_pct: fx(r.retain, 1), rates_source: r.src || 'assumption', matters_counted: Math.round(counted(r)), overlay_of: r.overlay ? 'divorce with and without children' : '', share_set_by: r.pinned ? 'user' : 'model', counts_source: r.est ? 'includes estimates for counties that report no filings' : 'court filings and module 06 estimates' }; per[i].forEach((x, j) => o[mcols[j]] = Math.round(x.spend)); return o; });
+    /* the total counts each matter once: the overlay lines (high asset, military, gray divorce) sit inside the divorce counts */
+    if (lines.length) { const nTot = M.nTotal != null ? M.nTotal : lines.reduce((a, r) => a + counted(r), 0); const t = { geography: M.geo && M.geo.title, line: 'Total', expected_matters: Math.round(nTot), share_pct: fx(lines.reduce((a, r) => a + (r.share || 0), 0) * 100, 1), budget_month: Math.round(lines.reduce((a, r) => a + (r.budget || 0), 0)), leads_month: fx(lines.reduce((a, r) => a + (r.leads || 0), 0), 1), retained_month: fx(lines.reduce((a, r) => a + (r.ret || 0), 0), 2), matter_value_month: Math.round(lines.reduce((a, r) => a + (r.rev || 0), 0)), rates_source: '', matters_counted: Math.round(nTot), overlay_of: lines.some(r => r.overlay) ? 'each matter counted once' : '' }; mcols.forEach((c, j) => t[c] = Math.round(per.reduce((a, p) => a + p[j].spend, 0))); rows.push(t); }
     return out(fname(M, 'plan', 'csv'), head, rows);
   }
 
   return { PLATS, PLAB, ASM0, MIX0, MIX_BASE, PBOOK, LIB, SHARED, RECRUIT, REFERRAL, NEG, NEG_ES, NEG_RECRUIT, LSA_CHECK, SCHED, BASES,
     HEAD: { google: GH, microsoft: GH, lsa: LSA_H, dg: DG_H, meta: META_H, linkedin: LI_H, yelp: YELP_H, nextdoor: ND_H, tiktok: TT_H, creative: CR_H, flight: FL_H, keywords: KW_H, zips: ZIP_H, plan: PLAN_H },
     fname,
-    limit, house, fill, footer, ctxFor, lineMix, rsa, social, recruitAd, lsaBio, screen, csv, csvQ, keywords, campName, landing, endDate, isoOf, dateOfISO, schedString,
+    limit, house, fill, footer, ctxFor, lineMix, rsa, social, recruitAd, lsaBio, screen, csv, csvQ, keywords, kwMods, seedPlan, negsFor, OVER_NEG, campName, landing, endDate, isoOf, dateOfISO, schedString,
     google, microsoft, lsa, dg, meta, linkedin, yelp, nextdoor, tiktok, creative, creativeCSV, flightMonths, monthPlan, flightCSV, kwCSV, negText, zipCSV, planCSV };
 })();

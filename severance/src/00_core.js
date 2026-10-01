@@ -45,6 +45,52 @@ const YR = s => (typeof s !== 'string' || /^\d{4}-\d{2}(-\d{2})?$/.test(s)) ? s 
 Object.keys(META).forEach(k => { META[k] = YR(META[k]); }); (D.lit || []).forEach(l => { l.cite = YR(l.cite).replace(/: (\d+)-(\d+)/g, ': $1 to $2'); });
 const CITYFIX = s => typeof s !== 'string' ? s : s.replace(/\bMc ([A-Z])/g, 'Mc$1').replace(/\bMc([a-z])/g, (m, c) => 'Mc' + c.toUpperCase()).replace(/\bDe ?[Ss]oto\b/g, 'DeSoto').replace(/\bJbsa\b/g, 'JBSA').replace(/\bFt\.? /g, 'Fort ');   // Mc Dade, Mckinney, Desoto and De Soto as the towns spell themselves
 (D.zctas || []).forEach(z => { if (z.city) z.city = CITYFIX(z.city); }); (D.counties || []).forEach(c => ((c.warn || {}).recent || []).forEach(r => { if (r.city) r.city = CITYFIX(r.city); }));
+// ---- data hygiene, once, before any module reads the data. DATA_FIX says what changed (the method module and the tests read it).
+const DATA_FIX = { sentinels: 0, sentinelFields: {}, moved: [] };
+// 1. The Census writes 'not available' as a code, not a number: -666666666 (cannot be computed), -999999999, -888888888, -555555555,
+//    -333333333 and -222222222. Each becomes null, so it prints n/a, maps as no data and stays out of sums, sorts and scales.
+(function acsSentinels() {
+  const walk = (o, at) => { if (!o || typeof o !== 'object') return; const arr = Array.isArray(o); for (const k in o) { const v = o[k]; if (typeof v === 'number') { if (v <= -1e8) { o[k] = null; DATA_FIX.sentinels++; const p = at + (arr ? '[]' : k); DATA_FIX.sentinelFields[p] = (DATA_FIX.sentinelFields[p] || 0) + 1; } } else if (v && typeof v === 'object') walk(v, at + (arr ? '[]' : k) + '.'); } };
+  (D.counties || []).forEach(c => walk(c, 'county.')); (D.zctas || []).forEach(z => walk(z, 'zip.')); Object.values(D.msas || {}).forEach(m => walk(m, 'metro.')); if (D.state) walk(D.state.acs, 'state.acs.');
+})();
+// 2. ZIP to county. The source gave each ZIP to the county holding most of its land, which hands some city ZIPs to the rural county next
+//    door (79601 Abilene to Jones, 79705 Midland to Martin, 76310 Wichita Falls to Archer). A ZIP now belongs to the county holding most
+//    of its residents wherever the data shows it:
+//    - in the six Metro Atlas metros, from the block group populations: ZC_POP_COUNTY lists the ZIPs with a clear majority (60% or more
+//      of the ZIP's block group residents) in a county other than the land county (tests/sevcore.test.mjs recomputes it from data/atlas-*.js);
+//    - everywhere, the land county is kept unless its own population rules it out: its residents outside the ZIPs lying wholly inside it
+//      are fewer than half the ZIP's, and then the ZIP goes to the county it touches, in the same metro, that has room for them.
+//    Close calls stay with the land county; a move never leaves the ZIP's metro. The two counties' filings are then spread over their new
+//    sets of ZIPs exactly as the source spreads them (married adults times the modeled hazard), so every county still sums to its clerk
+//    count; the efficiency, opportunity and ZIP index percentiles are ranked again across all ZIPs.
+//    z.county_raw keeps the source's land county.
+const ZC_POP_COUNTY = { '78015': '48029', '78130': '48091', '78154': '48187', '78641': '48491' };
+(function zipCounties() {
+  const all = (GEO && GEO.zc_county_all) || {}; const solo = {};
+  ZC.forEach(z => { z.county_raw = z.county; const a = all[z.zip]; if (!a || !a.length) return; const top = a.reduce((p, q) => q[1] > p[1] ? q : p); if (top[1] >= 0.99) solo[top[0]] = (solo[top[0]] || 0) + ((z.acs && z.acs.pop) || 0); });
+  const room = f => CI[f] && CI[f].acs && isN(CI[f].acs.pop) ? CI[f].acs.pop - (solo[f] || 0) : Infinity;
+  ZC.forEach(z => {
+    let to = null, how = ''; const pin = ZC_POP_COUNTY[z.zip]; const pop = (z.acs && z.acs.pop) || 0;
+    if (pin) { if (pin !== z.county) { to = pin; how = 'block group residents'; } }
+    else if (pop && room(z.county) < pop / 2) { const ok = (all[z.zip] || []).filter(x => x[0] !== z.county && x[1] >= 0.005 && room(x[0]) >= pop / 2).sort((p, q) => q[1] - p[1]); if (ok.length) { to = ok[0][0]; how = 'county population'; } }
+    if (to && CI[to] && CI[to].msa === z.msa) DATA_FIX.moved.push({ zip: z.zip, city: z.city, from: z.county, to, how, pop });
+  });
+  if (!DATA_FIX.moved.length) return;
+  const touched = new Set();
+  DATA_FIX.moved.forEach(m => { touched.add(m.from); touched.add(m.to); const z = ZI[m.zip], c = CI[m.to]; z.county = m.to; z.county_name = c.name; z.county_esi = c.esi; z.county_di = c.di; z.county_grade = c.grade; if (c.econ && c.econ.expected) z.county_econ = Object.assign({}, c.econ.expected); if (z.comp) z.comp.econ = c.comp_econ; });
+  // the source's weight is married adults times the modeled hazard (it reproduces every ZIP's share exactly); the expected rate per
+  // 1,000 married is the allocated count over married adults
+  const w = z => ((z.acs && z.acs.married) || 0) * ((z.risk && z.risk.haz_pred) || 0);
+  touched.forEach(f => {
+    const c = CI[f]; const zs = ZC.filter(z => z.county === f); if (!c || !zs.length) return; const t = (c.filings && c.filings.ttm) || {}; const tot = sum(zs.map(w));
+    zs.forEach(z => { const s = tot > 0 ? w(z) / tot : 0; z.alloc_share = s; if (z.alloc) Object.keys(z.alloc).forEach(k => { if (isN(t[k])) z.alloc[k] = Math.round(t[k] * s * 10) / 10; }); const mar = (z.acs && z.acs.married) || 0; if (z.alloc && isN(z.alloc.div)) z.exp_div_per_1k_married = mar > 0 ? z.alloc.div / mar * 1000 : null; if (z.paid && z.alloc && isN(z.alloc.priv)) { z.paid.opp = z.alloc.priv; z.paid.opp_per_office = z.paid.opp / ((z.paid.comp || 0) + 1); } if (z.comp && z.alloc && isN(z.alloc.priv)) z.comp.supply = Math.log((z.alloc.priv + 1) / ((z.lawoffices || 0) + 1)); });
+  });
+  // average rank percentiles across all ZIPs, as the source ranks them
+  const rank = (get, set) => { const idx = ZC.map((z, i) => [get(z), i]).filter(p => isN(p[0])).sort((a, b) => a[0] - b[0]); const n = idx.length; for (let i = 0; i < n;) { let j = i; while (j + 1 < n && idx[j + 1][0] === idx[i][0]) j++; const r = 100 * ((i + j) / 2 + 1) / n; for (let k = i; k <= j; k++) set(ZC[idx[k][1]], r); i = j + 1; } };
+  rank(z => z.paid && z.paid.opp, (z, r) => { z.paid.opp_pct = r; }); rank(z => z.paid && z.paid.opp_per_office, (z, r) => { z.paid.eff_pct = r; });
+  rank(z => z.comp && z.comp.econ, (z, r) => { z.pct.econ = r; }); rank(z => z.comp && z.comp.supply, (z, r) => { z.pct.supply = r; });
+  const W = D.zweights || {}; ZC.forEach(z => { if (!z.pct) return; let s = 0, d = 0; Object.keys(W).forEach(k => { if (isN(z.pct[k])) { s += W[k] * z.pct[k]; d += W[k]; } }); if (d) z.di = s / d; });
+})();
 const CO_KEEP = [[/chick\s*-\s*fil\s*-\s*a/ig, 'Chick-fil-A'], [/jeld\s*-\s*wen/ig, 'JELD-WEN'], [/\bt\s*-\s*mobile/ig, 'T-Mobile']];   // brand names keep their own spelling
 const CO = s => { let t = String(s || ''); const keep = []; CO_KEEP.forEach(([re, v]) => { t = t.replace(re, () => { keep.push(v); return '\u0001' + (keep.length - 1) + '\u0001'; }); }); t = t.replace(/\b([A-Z])-(Shift)\b/g, '$1 $2').replace(/\s*-\s+|\s+-\s*/g, ' / ').replace(/([A-Za-z0-9.]{2,})-(?=[A-Z])/g, '$1 / ').replace(/\s{2,}/g, ' ').trim(); t = CO_DATED.reduce((x, re) => x.replace(re, ''), t).trim(); return t.replace(/\u0001(\d+)\u0001/g, (m, k) => keep[+k]); };
 // WARN filers sometimes put the notice month in the company name ('Spirit Airlines (IAH) May 2026', 'Congo, LLC (Updated March 2026)'); the date has its own column
@@ -257,7 +303,9 @@ function table(el, o) {
   // h, d and pct describe the column for csv(): export header, decimals, and a fraction written as a percent
   // Sort headers are buttons with aria-sort; rows with onRow are focusable and open with Enter or Space.
   let st = { k: o.sort ? o.sort.k : o.cols[1].k, dir: o.sort ? o.sort.dir : -1 };
-  const sorted = () => o.rows.slice().sort((a, b) => { const x = a[st.k], y = b[st.k]; if (x == null && y == null) return 0; if (x == null) return 1; if (y == null) return -1; return (typeof x === 'string' ? x.localeCompare(y) : x - y) * st.dir; });
+  // numbers sort as numbers; anything else (text, a list such as a city's counties) sorts as its text, so a column never sorts as NaN
+  const sk = v => Array.isArray(v) ? v.join(', ') : String(v);
+  const sorted = () => o.rows.slice().sort((a, b) => { const x = a[st.k], y = b[st.k]; if (x == null && y == null) return 0; if (x == null) return 1; if (y == null) return -1; return (typeof x === 'number' && typeof y === 'number' ? x - y : sk(x).localeCompare(sk(y))) * st.dir; });
   function render() {
     const ae = document.activeElement; const back = ae && el.contains(ae) ? { k: ae.closest('th') ? ae.closest('th').dataset.k : null, id: ae.matches('tr[data-id]') ? ae.dataset.id : null } : null;
     const rows = sorted();
@@ -343,5 +391,7 @@ function showModule(key, payload) {
   if (!m.mounted) { m.mounted = true; try { m.mount($('#mod-' + m.key)); } catch (e) { $('#mod-' + m.key).innerHTML = `<div class="callout"><div class="h">Module error</div><p>${esc(e.message)}</p></div>`; console.error(e); } }
   if (payload && m.receive) { try { m.receive(payload); } catch (e) { console.error(e); } }   // goModule('publish', {pages}) hands the payload over
   if (m.onShow) { try { m.onShow(); } catch (e) { console.error(e); } }
-  store.set('sev.tab', m.key); try { const h = '#' + m.key; if (location.hash !== h) { if (MODI[(location.hash || '').slice(1).split('?')[0]]) history.pushState(null, '', h); else history.replaceState(null, '', h); } } catch (e) { }   // a step per module, so Back and Forward move between them (the boot listens for hashchange) if (window.onModuleShown) window.onModuleShown(m.key); if (!payload || !payload.keepScroll) window.scrollTo({ top: 0 });
+  // a history step per module, so Back and Forward move between them (the boot listens for hashchange)
+  store.set('sev.tab', m.key); try { const h = '#' + m.key; if (location.hash !== h) { if (MODI[(location.hash || '').slice(1).split('?')[0]]) history.pushState(null, '', h); else history.replaceState(null, '', h); } } catch (e) { }
+  if (window.onModuleShown) window.onModuleShown(m.key); if (!payload || !payload.keepScroll) window.scrollTo({ top: 0 });
 }
