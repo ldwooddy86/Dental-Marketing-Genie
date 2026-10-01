@@ -115,3 +115,28 @@ const sevPill = s => pill(s === 'block' ? 'Blocks' : s === 'fix' ? 'Fix' : s ===
 
 /* ---- payload routing: goModule('publish', {pages}) mounts the module if needed and hands it the payload through m.receive */
 function goModule(key, payload) { showModule(key, payload); }
+
+/* ---- motion and focus, for every module ----
+   scrollToEl(el, block) scrolls smoothly only where the reader has not asked for reduced motion.
+   keepFocus(host, fn) runs fn, which rebuilds part of host, and puts the keyboard back where it was: on the element with the same id,
+   or else the same kind of control with the same data-*, name, value and aria-label attributes (its label text when it has none), or
+   else on host itself, so a press that re-renders its own block never drops focus to the top of the page. fn may return a promise. */
+const reduceMotion = () => !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+function scrollToEl(e, block) { if (e && e.scrollIntoView) e.scrollIntoView({ behavior: reduceMotion() ? 'auto' : 'smooth', block: block || 'start' }); }
+function focusKey(a) {
+  if (!a || a === document.body || a === document.documentElement) return null; if (a.id) return { id: a.id };
+  const at = {}; for (const x of Array.from(a.attributes || [])) if (/^(data-[\w-]+|name|value|aria-label|type)$/.test(x.name)) at[x.name] = x.value;
+  return { tag: a.tagName, at, txt: Object.keys(at).some(n => n !== 'type') ? '' : String(a.textContent || '').trim().slice(0, 80) };
+}
+function findFocus(host, k) {
+  if (!k) return null; if (k.id) return document.getElementById(k.id);
+  const names = Object.keys(k.at); return Array.from(host.querySelectorAll(k.tag)).find(c => names.every(n => c.getAttribute(n) === k.at[n]) && (!k.txt || String(c.textContent || '').trim().slice(0, 80) === k.txt)) || null;
+}
+function keepFocus(host, fn) {
+  const a = document.activeElement; const k = host && a && a !== host && host.contains(a) ? focusKey(a) : null;
+  const back = () => {
+    if (!k || (a.isConnected && document.activeElement === a)) return; const h = host && host.isConnected ? host : null; const t = findFocus(h || document, k);
+    try { if (t && !t.disabled) t.focus({ preventScroll: true }); else if (h) { if (!h.hasAttribute('tabindex')) h.setAttribute('tabindex', '-1'); h.focus({ preventScroll: true }); } } catch (e) { }
+  };
+  const r = fn(); if (r && typeof r.then === 'function') return r.then(v => { back(); return v; }, e => { back(); throw e; }); back(); return r;
+}
