@@ -258,7 +258,7 @@ const SFORGE = (() => {
     const ctx = { V, site: S, firm, lines: activeLines(cfg), internal: linksFor(p, live, '/' + p.slug + '/', cfg), crumbs: liveHas(live, '/'), media, entity: entity(cfg, ms), extraSchema: [],
       features: featuresFor(cfg, V, live, pages), testimonials: testimonials(cfg), today: todayISO(), attorneys: cards, counties: ms.counties.map(c => c.name), langAlt };
     if (p.kind === 'attorney') { const a = (F.attorneys || [])[p.atty] || {}; const ap = attyPage(p.atty); ctx.author = { name: a.name, credentials: a.bar_no ? `Attorney, State Bar of Texas No. ${a.bar_no}` : 'Attorney licensed in Texas', bio: a.bio || '' };
-      ctx.attorney = { name: a.name, title: 'Attorney', bar_no: a.bar_no || undefined, tbls: a.tbls || undefined, since: a.since || undefined, bio: a.bio || undefined, url: ap ? '/' + ap.slug + '/' : undefined, languages: (F.languages || []).length > 1 ? undefined : undefined }; }
+      ctx.attorney = { name: a.name, title: 'Attorney', bar_no: a.bar_no || undefined, tbls: a.tbls || undefined, since: a.since || undefined, bio: a.bio || undefined, url: ap ? '/' + ap.slug + '/' : undefined }; }
     const bp = C.blueprint(p, ctx); bp._v = V; return bp;
   }
 
@@ -660,7 +660,9 @@ for f in pack/blueprints/*.blueprint.json; do s=$(basename $f .blueprint.json); 
           else if (src.startsWith('library:')) media[k] = { id: 0, url: '', alt: spec.alt || '', kind: spec.kind || 'image', library: src.slice(8) }; }
         const r = compile(bp, forCompile); const blockLines = b.ch.issues.filter(i => i.sev === 'block').map(i => `BLOCK: needs review, ${i.id} ${i.msg} (${i.where})`);
         const extra = { label: p.label, kind: KL[p.kind], forgeId: p.id, checks: b.ch, words: b.words, ready: !isBlocked(b), review_status: isBlocked(b) ? 'needs review' : 'ready', findings: isBlocked(b) ? findingsOf(b).findings : [], lint: (r.lint || r.warnings || []).concat(blockLines) };
-        return typeof CMS !== 'undefined' && CMS.pageFromForge ? CMS.pageFromForge(bp, r, media, extra) : Object.assign({ slug: bp.page.slug, title: bp.page.title, html: r.html, schema: r.schema, blueprint: bp, media }, extra); }); };
+        /* the portable blueprint (law firm sections lowered to what every CMS and the headless kit render) through FORGE_COMPILE.pageFor */
+        if (FC && typeof FC.pageFor === 'function' && typeof CMS !== 'undefined') return FC.pageFor(bp, r, media, extra);
+        return typeof CMS !== 'undefined' && CMS.pageFromForge ? CMS.pageFromForge(r.portable || bp, r, media, extra) : Object.assign({ slug: bp.page.slug, title: bp.page.title, html: r.html, schema: r.schema, blueprint: r.portable || bp, media }, extra); }); };
     this.publishAssets = () => ASSETS.slice();
     this.publishSite = () => Object.assign({}, E.site(CFG), { firm: FIRM.get().name || '', responsible: FIRM.responsible().name || '', office: FIRM.primary().city || '' });
 
