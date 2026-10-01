@@ -113,7 +113,7 @@ LINT.fix(text, opts) → {text, applied:[{id, from, to}]}      deterministic cor
 LINT.house(text) → text                                       house style for outbound copy
 LINT.LIMITS[platform][field] → max characters; LINT.checkAd({platform, fields:{headline1:..}}, opts) → findings with length checks
 ```
-`pass` is false when any finding is `block`. The Campaign Desk, the Site Forge, Publish (before deploy) and the Compliance Screen all
+`pass` is false when any finding is `block`. Posture: firm checks (Rule 7.02(a) footer, placeholders, house style, filing reminders) run only on the firm's own copy (a call that sets `kind`, or `posture: 'self'`); `posture: 'comp'` screens a competitor's copy as positioning notes and skips them. HTML is detected when `html` is not passed; pass `html: false` to force plain text. Also exported: `screenAd`, `fixAd`, `rule(id)`, `SOURCES`, `CHANGES` (the dated Texas changes register), `PLATFORMS`, `FILING`, `stripHTML`, `detectLang`, `splitBatch`, `parseAdsCSV`, `diff`, `firmItems`. 74 rules; citations marked Verify in the rule book need a check against the live text before a finding leaves the firm. The Campaign Desk, the Site Forge, Publish (before deploy) and the Compliance Screen all
 call it; an ad or page that does not pass is not exported as ready (it is exported with a `needs review` status and the findings).
 
 ## 4. Site Forge (04 to 06, module 21) and Publish (module 22)

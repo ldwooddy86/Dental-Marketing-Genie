@@ -334,7 +334,7 @@ registerModule({
     }
     function fromFirm() {
       const items = LINT.firmItems(); let miss = []; try { miss = FIRM.missing(); } catch (e) { }
-      if (!items.length || items.every(i => /Ad footer/.test(i.label))) { note(`The firm profile is empty${miss.length ? ' (missing: ' + miss.join(', ') + ')' : ''}. Open the Firm button and fill it, then screen it again.`); if (items.length) runItems(items, 'Firm profile', 'the ad footer only'); return; }
+      if (!items.length || items.every(i => /Ad footer/.test(i.label))) { if (items.length) runItems(items, 'Firm profile', 'the ad footer only'); note(`The firm profile is empty${miss.length ? ' (missing: ' + miss.join(', ') + ')' : ''}. Open the Firm button and fill it, then screen it again; the ad footer below shows the placeholders every ad would carry.`); return; }
       runItems(items, 'Firm profile', `${items.length} fields${miss.length ? '; still missing: ' + miss.join(', ') : ''}`);
     }
     async function fromFiles(files) {
