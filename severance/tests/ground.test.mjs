@@ -52,8 +52,8 @@ eq(J(`['A', 'B', 'C', 'D', null].map(GROUND.stepDown)`), ['B', 'C', 'D', 'D', nu
 eq(run(`CTY.filter(c => GROUND.gradeRule(c) === c.grade).length`), 254, 'grade rule reproduces 254 grades');
 
 /* modeled divorces and capture */
-const and = J(`[GROUND.modeled(CI['48001']), GROUND.capture(CI['48001']), CI['48001'].risk.haz_pred * CI['48001'].acs.married / 1000, CI['48001'].filings.ttm.div]`);
-near(and[0], and[2], 1e-9, 'modeled divorces = hazard x married / 1000'); near(and[1], and[3] / and[2], 1e-9, 'capture = filed / modeled');
+const and = J(`[GROUND.modeled(CI['48001']), GROUND.capture(CI['48001']), CI['48001'].risk.haz_pred * CI['48001'].acs.married / 1000 / 2, CI['48001'].filings.ttm.div]`);
+near(and[0], and[2], 1e-9, 'modeled divorces = hazard x married / 1000 / 2 (two spouses per divorce)'); near(and[1], and[3] / and[2], 1e-9, 'capture = filed / modeled');
 eq(run(`GROUND.capture({ filings: { ttm: { div: 5 } }, risk: { haz_pred: null }, acs: { married: 100 } })`), null, 'no hazard, no capture');
 
 /* city rollup: sums and married weighted means on a synthetic set, then on the data */

@@ -37,9 +37,13 @@ severance/
   src/10_desk_platforms.js DESKX: the Campaign Desk's creative library and the bulk file and build sheet writers for nine platforms
   src/11_workspace.js      WORKSPACE: one backup and restore of everything saved in the browser
   src/09_live_core.js      LIVE: triggers from the embedded data, the live sources, the legal calendar, ad timing
+  src/12_hazard_core.js    SEV_HAZ: divorce hazard by duration, stock ageing, scenarios (module 26)
+  src/13_stats_core.js     SEV_STATS: correlation, OLS with robust errors, Shapley R squared, Moran's I and LISA, survival (module 27)
   src/cms/*.js             the CMS layer, identical to ../chrome-app/src/cms except the storage key (sv.cms.v1) and one WordPress hint
   src/20..39_m*.js         modules 01 to 20 (01 to 11 statewide, 12 to 19 metro areas, 20 method)
   src/40..44_m*.js         modules 21 to 25: Site Forge, Publish, Accounts, Competitor Watch, Live Desk
+  src/45..47_m*.js         modules 26 to 28 (rail group Models): Filings Forecast, Evidence, Ground Truth
+                           Modeled divorces are PUMS divorcing adults / 2 (two spouses per divorce) everywhere
   src/99_boot.js           rail (Statewide, Metro areas, Launch), hash routing, theme, firm button
   tests/                   node tests/run.mjs (unit, mock servers); tests/e2e/run.mjs (Playwright: the single file and the extension)
   tools/                   extract.mjs (single file → data), order.mjs (script and stylesheet lists), icons.mjs
@@ -64,6 +68,9 @@ severance/
 | 12, 14 to 18 | dfw, hou, sat, aus, elp, rgv | 31_m12_metros.js | Metro tabs; 19 others |
 | 13 | atlas | 32_m13_atlas.js | Metro Atlas |
 | 20 | method | 39_m20_method.js | Method and Sources (top bar button, not in the rail) |
+| 26 | forecast | 45_m26_forecast.js | Filings Forecast (Models) |
+| 27 | evidence | 46_m27_evidence.js | Evidence (Models) |
+| 28 | ground | 47_m28_ground.js | Ground Truth (Models) |
 | 21 | forge | 40_m21_forge.js | Site Forge |
 | 22 | publish | 41_m22_publish.js | Publish |
 | 23 | accounts | 42_m23_accounts.js | Accounts |

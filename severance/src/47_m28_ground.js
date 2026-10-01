@@ -27,7 +27,8 @@ const GROUND = (() => {
      more and under 10%; C 25 or more and under 20%; D the rest */
   function gradeRule(c) { const n = c.filings.ttm.div || 0, cv = c.acs.married_cv; if (n >= 500 && c.filings.series && cv < 0.05) return 'A'; if (n >= 100 && cv < 0.10) return 'B'; if (n >= 25 && cv < 0.20) return 'C'; return 'D'; }
   /* ---- modeled divorces and the court's capture of them */
-  const modeled = o => o && o.risk && isN(o.risk.haz_pred) && isN(o.acs.married) ? o.risk.haz_pred * o.acs.married / 1000 : null;
+  /* PUMS hazard counts divorcing people per 1,000 married adults; a divorce has two of them, so modeled divorces = adults / 2 (as module 26 calibrates) */
+  const modeled = o => o && o.risk && isN(o.risk.haz_pred) && isN(o.acs.married) ? o.risk.haz_pred * o.acs.married / 1000 / 2 : null;
   const capture = c => { const m = modeled(c); return isN(m) && m > 0 ? (c.filings.ttm.div || 0) / m : null; };
   /* ---- cities: ZIPs grouped by their postal city inside a metro; sums of married adults, allocated filings and law offices, the ZIP
      index and hazard weighted by married adults; a city that spans counties sits in the county holding most of its married adults */
@@ -176,7 +177,7 @@ const GROUND = (() => {
     { k: 'fv', grp: 'obs', l: 'Abuse investigations with family violence, FY2025, per 1,000 children', ramp: 'sage', c: c => rate(c.dfps && c.dfps.inv_fv ? c.dfps.inv_fv['2025'] : null, c.acs.children, 1000), f: v => N(v, 2), src: 'DFPS Data Book; ACS children', vint: 'FY2025', g: 'A', note: 'Investigations where DFPS recorded the family violence indicator.' },
     { k: 'offices', grp: 'obs', l: 'Law offices per 10,000 residents', ramp: 'teal', c: c => rate(offices(c), c.pop2025, 1e4), z: z => rate(z.lawoffices || 0, z.acs.pop, 1e4), f: v => N(v, 2), src: 'Census County and ZIP Business Patterns, NAICS 541110', vint: '2023', g: 'B', note: 'Establishments with paid employees only: a lawyer practicing alone without staff is not counted.' },
     { k: 'haz', grp: 'mod', l: 'Composition hazard: modeled divorces per 1,000 married a year', ramp: 'forest', c: c => c.risk.haz_pred, z: z => z.risk.haz_pred, f: v => N(v, 1), src: 'Severance hazard model on ACS PUMS', vint: META.pums, g: 'B', note: 'Hazards learned from Texas microdata applied to the local married population.' },
-    { k: 'moddiv', grp: 'mod', l: 'Modeled divorces a year (hazard times married adults)', ramp: 'forest', log: true, c: modeled, z: modeled, f: v => N(v, 0), src: 'Severance hazard model', vint: META.pums, g: 'B', note: 'What the married population would produce at the modeled hazard.' },
+    { k: 'moddiv', grp: 'mod', l: 'Modeled divorces a year (hazard times married adults, halved: two spouses per divorce)', ramp: 'forest', log: true, c: modeled, z: modeled, f: v => N(v, 0), src: 'Severance hazard model', vint: META.pums, g: 'B', note: 'What the married population would produce at the modeled hazard.' },
     { k: 'esi', grp: 'mod', l: 'Economic Shock Index (percentile)', ramp: 'leaf', q: false, c: c => c.esi, f: v => N(v, 0), src: 'Severance, module 05', vint: 'claims to ' + fmtDate(META.ui_through), g: 'B', note: 'Six labor measures, each shrunk by county size, ranked across 254 counties.' },
     { k: 'di', grp: 'mod', l: 'Dissolution Index (percentile)', ramp: 'forest', q: false, c: c => c.di, z: z => z.di, f: v => N(v, 0), src: 'Severance, module 01', vint: ttmSpan(), g: 'B', note: 'The county index has seven components with filings at 30%; the ZIP index has six and no filings.' },
     { k: 'alloc', grp: 'mod', l: 'Allocated divorce filings a year', ramp: 'forest', log: true, z: z => z.alloc.div, f: v => N(v, 0), src: 'County filings spread to ZIPs by married adults times hazard', vint: ttmSpan(), g: 'C', note: 'An allocation, not a count: no court reports filings by ZIP.' },
@@ -420,7 +421,7 @@ registerModule({
       const zs = ZC.filter(z => z.county === c.fips); const top = zs.slice().sort((x, y) => (y.paid.eff_pct || 0) - (x.paid.eff_pct || 0))[0]; const L = c.lines || {};
       const mod = [
         ['Composition hazard, per 1,000 married a year', N(c.risk.haz_pred, 1), `survey area observed ${N(c.risk.haz_obs, 1)}`, 'Hazard model on ACS PUMS', META.pums, 'B'],
-        ['Modeled divorces a year', N(G.modeled(c), 0), 'hazard times married adults', 'Hazard model', META.pums, 'B'],
+        ['Modeled divorces a year', N(G.modeled(c), 0), 'hazard times married adults, halved (two spouses per divorce)', 'Hazard model', META.pums, 'B'],
         ['Court capture: filed per modeled divorce', N(G.capture(c), 2), 'observed over modeled', 'Filings over the model', vt, 'B'],
         ['Dissolution Index', N(c.di, 0), `rank ${c.di_rank} of 254`, 'Severance, module 01', vt, c.grade],
         ['Economic Shock Index', N(c.esi, 0), 'percentile of 254', 'Severance, module 05', 'claims to ' + fmtDate(META.ui_through), 'B'],
