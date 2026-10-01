@@ -170,7 +170,7 @@ function mountAtlas(root, mk) {
   <div class="grid2" style="margin-top:14px">
     <div class="panel"><h3>${esc(MN)} in focus</h3><div class="sub">The counties with the most filings, then every ZIP code ranked by expected filings a year. ZIP figures add up the block groups whose largest part lies in each ZIP.</div><div id="atFocus"></div></div>
     <div class="panel"><h3>Where to look first</h3><div class="sub">Block groups ranked by Market Fit inside the area you choose. Click a row to see it on the map. The pin file drops a one mile radius on each for Google Ads or Meta.</div>
-      <div class="atlas-ctl" style="margin:8px 0">${ctl('Area', sel('atArea', areaOpts, st.area))}${ctl('Rows', sel('atTopN', [[25, '25'], [50, '50'], [100, '100'], [250, '250']], st.topN))}<span class="sp"></span><button class="btn" id="atCsvPin">↓ Pin targets CSV</button><button class="btn" id="atCsvZip">↓ ZIP targets CSV</button></div>
+      <div class="atlas-ctl" style="margin:8px 0">${ctl('Area', sel('atArea', areaOpts, st.area))}${ctl('Rows', sel('atTopN', [[25, '25'], [50, '50'], [100, '100'], [250, '250']], st.topN))}<span class="sp"></span><button class="btn" id="atCsvPin">↓ Pin targets CSV</button><button class="btn" id="atCsvZip">↓ ZIP targets CSV</button><button type="button" class="btn" id="atToDesk" title="The ZIPs of the ranked block groups, with the picked county">Campaign Desk ↗</button><button type="button" class="btn" id="atToForge" title="The ZIPs of the ranked block groups, with the picked area's counties">Site Forge ↗</button></div>
       <div id="atTop"></div></div>
   </div>
   ${bycKeys.length ? `<div class="panel" style="margin-top:14px"><h3 id="atByCtyH"></h3><div class="sub" id="atByCtySub"></div>${bycKeys.length > 1 ? `<div class="atlas-ctl" style="margin:8px 0">${ctl('County', sel('atByCtySel', bycKeys.map(f => [f, cName(f) + ' County']), st.byc))}</div>` : ''}<div id="atByCty"></div></div>` : ''}
@@ -357,11 +357,12 @@ function mountAtlas(root, mk) {
   const zipAgg = z => bgAgg(ZIPS[z]);
   if (!A.agg._derived) { A.agg._derived = true; const have = new Set(A.agg.cities.map(c => c.n)); PL.forEach((p, i) => { if ((p.p || 0) < 2500 || have.has(p.n) || !(PLBG[i] || []).length) return; const o = bgAgg(PLBG[i]); const ct = [...new Set(PLBG[i].map(j => CN[B.c[j]]))]; const row = Object.assign({ n: p.n, bgs: PLBG[i].length, cty: ct, derived: true }, o); A.agg.cities.push(row); ct.forEach(cn => { const f = CC[CN.indexOf(cn)]; if (A.agg.bycounty[f]) A.agg.bycounty[f].push(Object.assign({}, row, { part: ct.length > 1 })); }); }); }
   const zipCity = z => { const t = {}; (ZIPS[z] || []).forEach(i => { const n = placeOf(i); t[n] = (t[n] || 0) + (V.pop[i] || 0); }); return Object.keys(t).sort((a, b) => t[b] - t[a])[0] || ''; };
-  const ctyExtra = f => `<div class="part"><b>Venue</b><span>${venueLine(f)}</span></div>` + (gapCty.includes(f) ? `<div class="small" style="margin-top:8px">The clerk reports for ${esc(cName(f))} County show no family cases in the last twelve months, so these figures read zero.</div>` : '');
+  const ctyExtra = f => `<div class="part"><b>Venue</b><span>${venueLine(f)}</span></div>` + (gapCty.includes(f) ? `<div class="small" style="margin-top:8px">The clerk reports for ${esc(cName(f))} County show no family cases in the last twelve months, so these figures read zero.</div>` : '') + `<div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap"><button type="button" class="btn" data-ch="desk">Campaign Desk ↗</button><button type="button" class="btn" data-ch="forge">Site Forge ↗</button><button type="button" class="btn" data-ch="index">Dissolution Index ↗</button></div>`;
   function goCounty(f, scroll) {
     const c = A.counties.find(q => q.f === f); if (!c) return;
     fitBB(c.bb); highlight(c.d); select(-1);
     sideArea(CAG[f], c.n + ' County', 'County', ctyExtra(f));
+    const fips = '48' + f; const go = { desk: () => goModule('desk', { geo: 'cty:' + fips, counties: [fips] }), forge: () => goModule('forge', { counties: [fips] }), index: () => goModule('index', { county: fips }) }; $$('#atSide [data-ch]').forEach(b => b.onclick = () => go[b.dataset.ch]());
     if (scroll) toMap();
   }
   function goCity(id, scroll = true) {
@@ -492,6 +493,12 @@ function mountAtlas(root, mk) {
     exportText(expName('atlas_block_groups', MN), csv(rows, cols));
   };
   $('#atGoMetro').onclick = () => showModule(mk); $('#atGoDesk').onclick = () => goModule('desk', { geo: 'msa:' + A.meta.codes[0] });
+  // hand offs from the ranked block groups: their ZIPs (in the table's order), the picked county or the counties the area spans
+  const rankedZips = () => [...new Set(pinOrder().map(i => B.zip[i]).filter(z => z && ZI[z]))];
+  const areaFips = () => st.area.startsWith('c:') ? ['48' + st.area.slice(2)] : [...new Set(topRows.map(i => '48' + CC[B.c[i]]))].filter(f => CI[f]);
+  const deskGeo = zs => { if (st.area.startsWith('c:')) return 'cty:48' + st.area.slice(2); const n = {}; zs.forEach(z => { const m = ZI[z].msa; if (m) n[m] = (n[m] || 0) + 1; }); const m = Object.keys(n).sort((a, b) => n[b] - n[a])[0]; return 'msa:' + (m || A.meta.codes[0]); };
+  $('#atToDesk').onclick = () => { const zs = rankedZips(); goModule('desk', Object.assign({ geo: deskGeo(zs) }, zs.length ? { zips: zs } : {}, st.area !== 'all' ? { counties: areaFips() } : {})); };
+  $('#atToForge').onclick = () => { const zs = rankedZips(); goModule('forge', Object.assign({}, zs.length ? { zips: zs } : { msa: A.meta.codes[0] }, st.area !== 'all' ? { counties: areaFips() } : {})); };
   const cityCols = [{ k: 'n', l: 'City' }, { k: 'xd', l: 'Divorces a yr', fmt: v => N(v, 0) }, { k: 'xk', l: 'With kids', fmt: v => N(v, 0) }, { k: 'xs', l: 'Custody suits', fmt: v => N(v, 0) }, { k: 'xm', l: 'Mod + enf', fmt: v => N(v, 0) }, { k: 'rate', l: 'Per 1k married', fmt: v => N(v, 1) }, { k: 'sep', l: 'Separated per 1k', fmt: v => N(v, 0) }, { k: 'inc', l: 'Median income', fmt: v => $$$(v) }, { k: 'i150', l: '$150k+', fmt: v => P(v, 0) }, { k: 'kids', l: 'Raising kids', fmt: v => P(v, 0) }];
   const cityRow = o => Object.assign({ _id: o.n }, o);
   function byCounty() {

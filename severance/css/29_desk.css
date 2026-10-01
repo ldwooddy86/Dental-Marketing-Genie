@@ -45,7 +45,7 @@
 #mod-desk .finding .pill{margin-right:4px}
 #mod-desk #dkCounties{min-height:84px}
 #mod-desk .tabs button{cursor:pointer}
-#mod-desk .mapwrap svg{max-height:560px}
+#mod-desk .mapwrap > svg{max-height:560px}
 #mod-desk #dkTiles .tile:first-child .v{font-size:21px;line-height:1.15}
 #mod-desk .dk-scr{max-height:720px;overflow:auto;border:1px solid var(--line);padding:0 8px;background:var(--sunk)}
 @media (max-width:980px){#mod-desk .dk-split{grid-template-columns:1fr}}
@@ -79,3 +79,4 @@
 @media (max-width:640px){#mod-desk tr.dk-tot td:first-child{border-bottom:0}}
 #mod-desk #dkAlloc .tblwrap{max-height:none}
 @media (max-width:640px){#mod-desk table.dk-alloc tr.dk-tot td.dk-empty{display:none}}
+#mod-desk .dk-ad{border-left-color:var(--firm-accent,var(--line-strong))}

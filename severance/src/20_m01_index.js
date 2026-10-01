@@ -173,7 +173,9 @@ function ixPinGo(id, from) { if (id && typeof id === 'object') id = id.id; if (/
 function ixAcctZip(days) { try { return typeof ACCT !== 'undefined' && ACCT.byZip ? ACCT.byZip(days || 90) || [] : []; } catch (e) { return []; } }
 function ixAcctCounty(days) { try { return typeof ACCT !== 'undefined' && ACCT.byCounty ? ACCT.byCounty(days || 90) || [] : []; } catch (e) { return []; } }
 // the watched firms serving a county (roster counties or an office there)
-function ixWatchIn(fips) { try { if (typeof WATCH === 'undefined') return []; const m = WATCH.rosterByCounty ? WATCH.rosterByCounty() : {}; return (m[fips] || []).map(k => WATCH.get(k)).filter(Boolean); } catch (e) { return []; } }
+function ixWatchIn(fips) { try { if (typeof WATCH === 'undefined') return []; if (WATCH.tracked) return WATCH.tracked({ county: fips }) || []; const m = WATCH.rosterByCounty ? WATCH.rosterByCounty() : {}; return (m[fips] || []).map(k => WATCH.get(k)).filter(Boolean); } catch (e) { return []; } }
+// advertisers logged in Competitor Watch whose observations name the county (or ZIP), roster or not: [{key, name, live, n, platforms, last}]
+function ixAdvertisersIn(o) { try { return typeof WATCH !== 'undefined' && WATCH.advertisersIn ? WATCH.advertisersIn(o) || [] : []; } catch (e) { return []; } }
 // a one line ledger of the firm's observed activity in a county, or '' when Accounts holds none there
 function ixAcctLine(fips) { const a = ixAcctCounty(90).find(o => o.county === fips); if (!a) return ''; return `<div class="ix-own"><b>Your accounts, last 90 days.</b> ${$$$(a.spend)} spend · ${N(a.leads)} leads · ${N(a.intake)} intakes · ${N(a.retained)} retained${isN(a.cpl) ? ' · ' + $$$(a.cpl) + ' per lead' : ''} (module 23).</div>`; }
 function countyTipHTML(c, extra) {

@@ -109,7 +109,8 @@ counties, line, lines, bids}, forge {counties, zips, msa}, watch {county, zip, l
   `fit: [ids]` (alias `fitTo`; also a box `[x, y, w, h]`; applied when the list changes), `dim: Set | [ids] | null` (areas outside the set
   fade), `pins: [{x, y, shape: 'circle'|'diamond'|'square', r, fill, label, title, tip, cls}]` (map units; drawn at a constant screen size,
   `r` in px, 6 by default), `onPin(pin, i)` (without it a pin click selects the area under it), `reset: true` (forget the kept zoom),
-  `legend.grade` (a grade chip after the legend title). Zoom, dim and pins survive a redraw of the same geometry and home view (a layer
+  `legend.grade` (a grade chip after the legend title). The map svg is the element's first child (`el > svg`); the zoom buttons hold
+  small svg icons, so module CSS that sizes a map should target `.mapwrap > svg`, not `.mapwrap svg`. Zoom, dim and pins survive a redraw of the same geometry and home view (a layer
   change); a new `view` or geometry starts at home. `drawMap` returns the svg, which carries the handle methods; `mapHandle(el)` returns the
   handle, one per element, valid across redraws: `fit(ids, pad)`, `dim(set|null)`, `pins(list|null)`, `select(id)` (markSel plus the kept
   selection), `reset()`, `zoomBy(f)` (below 1 zooms in), `view()`, `level()`. Pin helpers: `mapXY(geo, lon, lat)` (geo `'state'` or a metro

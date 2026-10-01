@@ -6,7 +6,7 @@
 #mod-forge .fg-kv dd{overflow-wrap:anywhere}
 #mod-forge .fg-miss{margin:8px 0 0;border-left-color:var(--critical)}
 #mod-forge .fg-miss .h{color:var(--critical)}
-#mod-forge .fg-map svg{width:100%;height:auto;max-height:520px;display:block}
+#mod-forge .fg-map > svg{width:100%;height:auto;max-height:520px;display:block}
 #mod-forge .fg-map path{vector-effect:non-scaling-stroke}
 #mod-forge .fg-map path.area.fg-on{stroke:var(--title);stroke-width:1.6;stroke-linejoin:round}
 #mod-forge .fg-chips{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 6px}
@@ -55,7 +55,7 @@
 /* markets: the primary office on both maps, the city map */
 #mod-forge .fg-map .fg-office path{fill:var(--title);stroke:var(--card);stroke-width:1.6;vector-effect:non-scaling-stroke;pointer-events:none}
 #mod-forge #fgMapZ{margin-top:4px}
-#mod-forge #fgMapZ svg{max-height:440px}
+#mod-forge #fgMapZ > svg{max-height:440px}
 #mod-forge #fgMapZN:empty,#mod-forge #fgMiNote:empty{display:none}
 /* the legal review in the studio and the bulk review under the ledger */
 #mod-forge .fg-rev{margin:0}
