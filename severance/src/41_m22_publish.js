@@ -183,9 +183,9 @@ registerModule({
     /* ---------- environment ---------- */
     function env() {
       const host = $('#pbEnv', root); const packBtn = '<div class="btnrow"><button type="button" class="btn" id="pbEnvPack">↓ Pages pack</button></div>';
-      if (ENV === 'viewer') host.innerHTML = callout('judg', 'Inside the hosted viewer: the CMS calls are blocked here', `<p>The viewer blocks every call to another site, so Test, Deploy, Verify links and Publish site fail in this view. Everything else works: load, write, screen and preview the pages, export the ledger, the bridge plugin and the kit. To publish, download the pages pack (every page as a standalone HTML file, the paste in body and its JSON, with the screen results) and paste or upload it, or install the Severance extension, which has no such limit.</p>${packBtn}`);
-      else if (ENV === 'file') host.innerHTML = callout('note', 'Opened from disk or the web: most CMS calls are blocked by CORS', `<p>A page opened from disk has no site permissions, so the browser lets a call through only when the CMS answers with CORS headers for this origin. The FORGE bridge has an allowed origins list for WordPress; the hosted platforms (Wix, Duda, Webflow, Shopify, HubSpot) and most Drupal, Joomla and Ghost installs do not, so Test and Deploy usually fail here with Could not reach. The Severance extension has no such limit. Here you can still write, screen and preview, and download the pages pack to paste or upload by hand.</p>${packBtn}`);
-      else host.innerHTML = callout('note', `Running as ${ENV_LABEL}`, `Deploy runs from this page with the credentials in the cards below. The extension asks once for access to each site you publish to (WordPress, Drupal, Joomla, Ghost) on the first Test or Deploy against it; the hosted platforms (Wix, Duda, Webflow, Shopify, HubSpot) are already permitted in the manifest.${ENV === 'firefox' ? ' Firefox treats host permissions as optional: grant site access in Options if a call is refused.' : ''} Credentials and the ledger stay in extension storage on this machine (sv.cms.v1).`);
+      if (ENV === 'viewer') host.innerHTML = callout('judg', 'Inside the hosted viewer: the CMS calls are blocked here', `<p>The viewer blocks every call to another site, so Test, Deploy, Verify links and Publish site fail in this view. Everything else works: load, write, screen and preview the pages, export the ledger, the bridge plugin and the kit. To publish, download the pages pack (every page as a standalone HTML file, the paste in body and its JSON, with the screen results) and paste or upload it, or install the Severance extension, which has no such limit. Remember credentials starts off on every card here, so nothing typed into a card outlives this session.</p>${packBtn}`);
+      else if (ENV === 'file') host.innerHTML = callout('note', 'Opened from disk or the web: most CMS calls are blocked by CORS', `<p>A page opened from disk has no site permissions, so the browser lets a call through only when the CMS answers with CORS headers for this page (it arrives with the origin <code>null</code>). WordPress does (its REST API names file pages as an allowed origin, and the FORGE bridge's list can add <code>null</code> too); most Drupal, Joomla and Ghost installs do not unless the server is set up for it; the hosted platforms (Wix, Duda, Webflow, Shopify, HubSpot) never do, so Test and Deploy fail here with Could not reach. Each card below says which it is. The Severance extension has no such limit. Here you can still write, screen and preview, and download the pages pack to paste or upload by hand.</p><p><b>Credentials on a page opened from disk.</b> In Chrome, Edge and Brave every page opened from disk (any file:// address) shares one storage, so any other HTML file you open from disk could read what this page saves. That is why Remember credentials on this computer starts off on every card here: passwords, keys and tokens then last only for this tab's session, and only the site address and user name are remembered.</p>${packBtn}`);
+      else host.innerHTML = callout('note', `Running as ${ENV_LABEL}`, `Deploy runs from this page with the credentials in the cards below. The extension asks once for access to each site you publish to (WordPress, Drupal, Joomla, Ghost) on the first Test or Deploy against it; the hosted platforms (Wix, Duda, Webflow, Shopify, HubSpot) are already permitted in the manifest.${ENV === 'firefox' ? ' Firefox treats host permissions as optional: grant site access in Options if a call is refused.' : ''} Credentials stay in extension storage on this machine (sv.cms.v1) when Remember credentials is ticked on a card, and only for this session when it is not; the ledger always stays.`);
       const b = $('#pbEnvPack', root); if (b) b.onclick = pagesPack;
     }
     function renderFirmCallout() {
@@ -209,6 +209,51 @@ registerModule({
         tile('Target', t ? `<span class="pb-tv">${esc(t.name)}</span>` : 'none', t ? esc(CMS.status(t.id).label) : 'choose one in the cards');
     }
     /* ---------- target cards ---------- */
+    /* ---------- credentials: remembered in sv.cms.v1, or kept for this session only ----------
+       A card that does not remember holds its settings in memory as a non enumerable property of CMS.S.cfg, which the CMS layer's
+       storage (JSON in localStorage, chrome.storage.local in the extension) does not serialise, mirrored into this tab's sessionStorage;
+       its non secret fields (site address, user name) are remembered in 'sev.publish.keep' so the card is not blank next time. */
+    const REM_KEY = 'sev.publish.remember', KEEP_KEY = 'sev.publish.keep', SESS_KEY = 'sv.sev.publish.session';
+    const ssGet = () => { try { const v = globalThis.sessionStorage ? sessionStorage.getItem(SESS_KEY) : null; return (v && JSON.parse(v)) || {}; } catch (e) { return {}; } };
+    const ssSet = o => { try { if (globalThis.sessionStorage) { if (Object.keys(o).length) sessionStorage.setItem(SESS_KEY, JSON.stringify(o)); else sessionStorage.removeItem(SESS_KEY); } } catch (e) { } };
+    const secretKs = a => ((a && a.fields) || []).filter(f => f.secret || f.t === 'password').map(f => f.k);
+    const cfgDesc = id => (CMS.S && CMS.S.cfg) ? Object.getOwnPropertyDescriptor(CMS.S.cfg, id) : undefined;
+    const filled = c => !!c && Object.keys(c).some(k => k !== '_tested' && c[k] !== '' && c[k] != null && c[k] !== false);
+    function remembers(id) { const r = store.get(REM_KEY, {}) || {}; if (Object.prototype.hasOwnProperty.call(r, id)) return !!r[id]; const d = cfgDesc(id); if (d && d.enumerable && filled(d.value)) return true; return !blockedEnv; }
+    /* put a card's settings where its Remember choice says, before anything writes them; true when sv.cms.v1 must be rewritten */
+    function applyMode(id) {
+      const S = CMS.S; if (!S || !S.cfg) return false; const d = cfgDesc(id); const cur = d ? d.value : undefined;
+      if (remembers(id)) { if (d && !d.enumerable) { delete S.cfg[id]; S.cfg[id] = cur; return true; } return false; }
+      if (!d || d.enumerable) { if (d) delete S.cfg[id]; Object.defineProperty(S.cfg, id, { value: cur || {}, writable: true, configurable: true, enumerable: false }); return !!d; }
+      return false;
+    }
+    function mirror(id) {
+      const ss = ssGet(); const kp = store.get(KEEP_KEY, {}) || {}; const c = Object.assign({}, CMS.cfg(id));
+      if (remembers(id) || !filled(c)) { let ch = false; if (ss[id]) { delete ss[id]; ssSet(ss); } if (kp[id]) { delete kp[id]; ch = true; } if (ch) store.set(KEEP_KEY, kp); return; }
+      ss[id] = c; ssSet(ss); const sk = new Set(secretKs(CMS.get(id))); const keep = {}; Object.keys(c).forEach(k => { if (!sk.has(k) && k !== '_tested') keep[k] = c[k]; }); kp[id] = keep; store.set(KEEP_KEY, kp);
+    }
+    async function restoreSessions() {
+      if (!CMS.S || !CMS.S.cfg) return; let rewrite = false; const ss = ssGet(); const kp = store.get(KEEP_KEY, {}) || {};
+      A().forEach(a => { const id = a.id; if (remembers(id)) return; const d = cfgDesc(id); const persisted = d && d.enumerable ? d.value : null; if (persisted) rewrite = true;
+        const v = Object.assign({}, kp[id] || {}, d ? d.value : {}, ss[id] || {}); if (d) delete CMS.S.cfg[id];
+        if (filled(v)) Object.defineProperty(CMS.S.cfg, id, { value: v, writable: true, configurable: true, enumerable: false }); });
+      if (rewrite) await CMS.setSettings({});
+    }
+    async function setRemember(id, on) {
+      const r = store.get(REM_KEY, {}) || {}; r[id] = !!on; store.set(REM_KEY, r); applyMode(id); mirror(id); await CMS.setSettings({});
+      const ad = CMS.get(id); log(id, on ? `Remembered: ${ad ? ad.name : id} settings are saved in this browser profile (${RT ? 'extension storage' : 'localStorage'}, sv.cms.v1) until Forget credentials.` : `This session only: the password, key or token is kept in this tab until it closes; the site address and user name are remembered. Nothing is left in sv.cms.v1.`);
+    }
+    /* which CMS routes a page opened from disk can call (the origin is null) */
+    const REACH = { wp_elementor: 'yes', wp_headless: 'yes', drupal: 'cors', joomla: 'cors', ghost: 'cors', wix: 'no', duda: 'no', webflow: 'no', shopify: 'no', hubspot: 'no' };
+    function reachChip(a) {
+      if (ENV !== 'file' && ENV !== 'viewer') return '';
+      if (ENV === 'viewer') return `<div class="pb-reach no">${pill('In the viewer: export only', 'p-block')}<span class="small">The viewer blocks every call to another site. Download the pages pack, or publish from the Severance extension.</span></div>`;
+      const k = REACH[a.id] || (/^wp_/.test(a.id) ? 'yes' : (Array.isArray(a.hosts) && a.hosts.length) ? 'no' : typeof a.dynamicHost === 'function' ? 'cors' : 'cors');
+      const T = { yes: ['From a file: usually reachable', 'p-ok', 'WordPress sends CORS headers to pages opened from disk (origin null), and the FORGE bridge can list null as well. A security plugin or a host firewall can still refuse the call; then the extension or the pages pack does it.'],
+        cors: ['From a file: only with CORS', 'p-warn', 'Reachable from here only when the site sends CORS headers for the origin null, a server setting most installs do not have. Otherwise publish from the Severance extension, or use the pages pack.'],
+        no: ['From a file: extension or export only', 'p-block', 'This platform\'s API does not answer calls from a browser page. Publish from the Severance extension (its host permissions allow the call), or download the pages pack and paste or upload it.'] }[k];
+      return `<div class="pb-reach ${k}">${pill(T[0], T[1])}<span class="small">${esc(T[2])}</span></div>`;
+    }
     function optList(f) { return (f.options || f.opts || []).map(o => (o && typeof o === 'object') ? { v: o.v != null ? o.v : o.value, l: o.l != null ? o.l : (o.label != null ? o.label : o.v) } : { v: o, l: o }); }
     function cmsField(a, f, c) {
       const id = `pbF-${a.id}-${f.k}`; const has = c[f.k] != null && c[f.k] !== ''; const v = has ? c[f.k] : (f.def != null ? f.def : '');
@@ -232,6 +277,7 @@ registerModule({
         <div class="st"><span class="pill" id="pbSt-${id}"></span></div>
         <div class="meta">${esc(modFix(a.blurb || ''))}</div>${capsLine(a)}
         <div class="pb-fields">${(a.fields || []).map(f => cmsField(a, f, c)).join('')}</div>
+        <div class="pb-rem"><label class="chk" for="pbRem-${id}"><input type="checkbox" id="pbRem-${id}" data-rem="${id}" ${remembers(a.id) ? 'checked' : ''}> Remember credentials on this computer</label><span class="hint">${remembers(a.id) ? 'Saved in this browser profile until Forget credentials.' : 'Off: the password, key or token lasts for this tab\'s session only; the site address and user name are remembered.'}${ENV === 'file' ? ' Every page opened from disk shares one storage in Chromium browsers, so leave this off here.' : ''}</span></div>${reachChip(a)}
         <div class="btnrow"><button type="button" class="btn sm" data-a="save">Save</button><button type="button" class="btn sm accent" data-a="test">Test</button>${caps.publishSite && typeof a.publishSite === 'function' ? '<button type="button" class="btn sm" data-a="publishSite">Publish site</button>' : ''}${typeof a.configure === 'function' ? `<button type="button" class="btn sm" data-a="configure">${a.id === 'wp_headless' ? 'Configure bridge for headless' : 'Configure'}</button>` : ''}${caps.headlessKit ? '<button type="button" class="btn sm" data-a="kit">↓ Next.js kit</button>' : ''}${wp ? '<button type="button" class="btn sm" data-a="bridge">↓ Bridge plugin</button>' : ''}</div>
         <details class="pb-det"><summary>Setup</summary>${(a.setup || []).length ? `<ol class="steps">${a.setup.map(s => `<li>${esc(modFix(s))}</li>`).join('')}</ol>` : '<p class="small">No steps listed by this adapter.</p>'}${a.docs ? `<p class="small">Docs: <a href="${esc(a.docs)}" target="_blank" rel="noopener">${esc(a.docs)}</a></p>` : ''}</details>
         <details class="pb-det"><summary>Clear</summary><div class="btnrow"><button type="button" class="btn sm danger" data-a="forget">Forget credentials</button><button type="button" class="btn sm danger" data-a="clearLedger">Clear sent ledger</button></div></details>
@@ -241,7 +287,8 @@ registerModule({
       const host = $('#pbTargets', root); const list = A();
       if (!list.length) { host.innerHTML = callout('judg', 'No CMS adapters are loaded', 'The platform adapters live in <code>src/cms/1x_*.js</code> and app.html loads them before this module. None registered, so there is nowhere to send a page yet. The composer, the import, the screen, the preview and the pages pack still work; reload once the adapter files are in place.'); fillSelects(); return; }
       host.innerHTML = `<div class="pb-cards">${list.map(targetCard).join('')}</div>`;
-      $$('.pb-card', host).forEach(cardEl => { const id = cardEl.dataset.id; $$('button[data-a]', cardEl).forEach(b => b.onclick = () => act(id, b.dataset.a, cardEl)); const r = $('input[name="pbUse"]', cardEl); if (r) r.onchange = () => { if (r.checked) setTarget(id); }; });
+      $$('.pb-card', host).forEach(cardEl => { const id = cardEl.dataset.id; $$('button[data-a]', cardEl).forEach(b => b.onclick = () => act(id, b.dataset.a, cardEl)); const r = $('input[name="pbUse"]', cardEl); if (r) r.onchange = () => { if (r.checked) setTarget(id); };
+        const rm = $('input[data-rem]', cardEl); if (rm) rm.onchange = async () => { await setRemember(id, rm.checked); const h = rm.closest('.pb-rem').querySelector('.hint'); if (h) h.textContent = rm.checked ? 'Saved in this browser profile until Forget credentials.' : 'Off: the password, key or token lasts for this tab\'s session only; the site address and user name are remembered.' + (ENV === 'file' ? ' Every page opened from disk shares one storage in Chromium browsers, so leave this off here.' : ''); toast(rm.checked ? `${CMS.get(id).name}: credentials remembered on this computer` : `${CMS.get(id).name}: credentials kept for this session only`); }; });
       fillSelects(); pills();
     }
     function pills() { A().forEach(a => { const s = CMS.status(a.id); const p = $(`#pbSt-${a.id}`, root); if (p) { p.textContent = s.label; p.className = 'pill' + ({ connected: ' good', configured: ' info' }[s.state] || ''); p.title = s.label; } }); }
