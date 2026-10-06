@@ -1,29 +1,46 @@
 # Leviathan · the unified console
 
-One frame, fourteen dashboards. OmegaWeapon and the Hit Board sit at the core; twelve industry atlases hang off it in three
-wings (legal, home services, healthcare); the Convergence map and the Agency Field read all of them at once.
+One frame, sixteen dashboards. OmegaWeapon and the Hit Board sit at the core; fourteen industry atlases hang off it in
+three wings (legal, home services, healthcare); the Convergence map and the Agency Field read all of them at once.
 
-This build (October 6, 2026) unifies the two dashboards this repository already carried with the Leviathan console and
-adds the attached atlas:
+## This build (October 6, 2026, second build): the Louisiana legal atlases
+
+The legal wing now carries criminal defense and personal injury twice, the way the home wing carries HVAC twice:
 
 | Wing | Atlas | What changed in this build |
+|---|---|---|
+| Legal | **Probable Cause Defense Atlas** (Louisiana edition) | New: the Louisiana criminal defense atlas, sixteen modules, all 64 parishes, 441 residential ZIPs scored on the Defense Demand Index. Registered as `criminal_la` beside the Texas edition and feeds Convergence as the Louisiana criminal defense column. |
+| Legal | **Contraflow Injury Atlas** (Louisiana edition) | New: the Louisiana personal injury atlas, sixteen modules, all 64 parishes, the same 441 ZIPs scored on the Case Flow Index. Registered as `injury_la` beside the Texas edition and feeds Convergence as the Louisiana personal injury column. |
+
+The spine labels the four legal editions by state (Criminal defense · Texas, Criminal defense · Louisiana, Personal
+injury · Texas, Personal injury · Louisiana). Convergence ranks each state's column within that state, so the Louisiana
+matrix gains two verticals and eleven Spearman pairs; the Texas matrix is untouched. The other fourteen dashboards
+carry over byte for byte.
+
+### Previous build (October 6, 2026)
+
+That build unified the two dashboards this repository already carried with the Leviathan console and added the
+attached atlas:
+
+| Wing | Atlas | What changed in that build |
 |---|---|---|
 | Home services | **DFW Thermal Debt Atlas** (build 4, the browser app edition) | New: `dist/DFW_Thermal_Debt_Atlas_4_preview.html` wrapped and registered beside the Louisiana Thermal Debt Atlas. Its 263 scored ZIPs feed Convergence as the HVAC (DFW) vertical. |
 | Legal | **The Termination Exposure Atlas** (v8.2) | New: the employment law atlas, eight modules, every buyable US ZIP scored. Its 1,625 Texas and Louisiana ZIPs feed Convergence as Employment law. |
 | Healthcare | **The Dental Divide Atlas** | Already inside the console; byte for byte the same build as `dental-divide-atlas.html` at the repository root. |
 
 The other eleven dashboards (OmegaWeapon, Hit Board, Probable Cause, Contraflow, Severance, Louisiana Thermal Debt, Uplift,
-Water Hammer, Swarm Front, Oncogene, Ocular Health) carry over unchanged.
+Water Hammer, Swarm Front, Oncogene, Ocular Health) carried over unchanged.
 
 ## Files
 
 | File | Size | Holds |
 |---|---|---|
-| `Leviathan-full.html` | 59 MB | **The whole console in one file**: frame, fonts, registry and all fourteen dashboards inline. Open it anywhere; it needs nothing beside it. Over GitHub's 50 MB warning line but under its 100 MB limit. |
-| `Leviathan.html` | 24 MB | The same console split for hosting that minds file size: the frame, fonts, registry, and the ten smaller atlases packed inline (gzip + base64). |
+| `Leviathan-full.html` | 62 MB | **The whole console in one file**: frame, fonts, registry and all sixteen dashboards inline. Open it anywhere; it needs nothing beside it. Over GitHub's 50 MB warning line but under its 100 MB limit. |
+| `Leviathan.html` | 26 MB | The same console split for hosting that minds file size: the frame, fonts, registry, and the twelve smaller atlases packed inline (gzip + base64). |
 | `Leviathan-data.js` | 26 MB | Severance, Dental Divide and Ocular Health, loaded on demand. |
 | `Leviathan-data-2.js` | 10 MB | The Termination Exposure Atlas, loaded on demand. |
-| `tools/build.py` | | The build script (see below). |
+| `tools/build.py` | | The build script of the previous build (DFW Thermal Debt and Termination Exposure). |
+| `tools/build_louisiana.py` | | The build script of this build (the Louisiana legal atlases); it imports its helpers from `build.py`. |
 
 `Leviathan-full.html` is the one to send around. The split edition keeps every file under GitHub's 50 MB line; keep its
 three files in one folder and open `Leviathan.html`. Either way, use a current Chrome, Edge, Safari or Firefox. Nothing runs on a server: each atlas unpacks in the browser
@@ -31,9 +48,24 @@ when you open it, and the five most recently opened stay live.
 
 ## Rebuilding
 
-The script carries every payload over from a previous console build, wraps the two new atlases with the console's host
+Each script carries every payload over from a previous console build, wraps the new atlases with the console's host
 link and bridge, extends the registry (modules, wings, verticals, Convergence columns, Spearman correlations) and patches
 the frame. Each patch asserts its anchor occurs exactly once, so an upstream change fails loudly instead of silently.
+
+This build reads the previous single file edition (it carries every payload inline) and the two Louisiana atlases as
+they come out of the viewer. The Probable Cause download starts at `<title>` with no document skeleton; the script adds one.
+
+```
+python3 leviathan/tools/build_louisiana.py \
+  --prev-full       <previous Leviathan-full.html> \
+  --probable-cause  <probable-cause-defense-atlas.html>        # Louisiana edition
+  --contraflow      <contraflow-louisiana-injury-atlas.html>   # Louisiana edition
+  --out             leviathan \
+  --single          leviathan/Leviathan-full.html   # the one file edition
+  --online          <folder>      # optional hosted edition: index.html plus m/<id>.txt, fetched on demand
+```
+
+The previous build, from the split edition before it:
 
 ```
 python3 leviathan/tools/build.py \
