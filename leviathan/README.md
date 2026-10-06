@@ -19,13 +19,14 @@ Water Hammer, Swarm Front, Oncogene, Ocular Health) carry over unchanged.
 
 | File | Size | Holds |
 |---|---|---|
-| `Leviathan.html` | 24 MB | The console frame, fonts, registry, and the ten smaller atlases packed inline (gzip + base64). |
+| `Leviathan-full.html` | 59 MB | **The whole console in one file**: frame, fonts, registry and all fourteen dashboards inline. Open it anywhere; it needs nothing beside it. Over GitHub's 50 MB warning line but under its 100 MB limit. |
+| `Leviathan.html` | 24 MB | The same console split for hosting that minds file size: the frame, fonts, registry, and the ten smaller atlases packed inline (gzip + base64). |
 | `Leviathan-data.js` | 26 MB | Severance, Dental Divide and Ocular Health, loaded on demand. |
 | `Leviathan-data-2.js` | 10 MB | The Termination Exposure Atlas, loaded on demand. |
 | `tools/build.py` | | The build script (see below). |
 
-Every file stays under GitHub's 50 MB line; the three together are 60 MB. Keep them in one folder and open
-`Leviathan.html` in a current Chrome, Edge, Safari or Firefox. Nothing runs on a server: each atlas unpacks in the browser
+`Leviathan-full.html` is the one to send around. The split edition keeps every file under GitHub's 50 MB line; keep its
+three files in one folder and open `Leviathan.html`. Either way, use a current Chrome, Edge, Safari or Firefox. Nothing runs on a server: each atlas unpacks in the browser
 when you open it, and the five most recently opened stay live.
 
 ## Rebuilding
@@ -41,6 +42,7 @@ python3 leviathan/tools/build.py \
   --dfw        dist/DFW_Thermal_Debt_Atlas_4_preview.html \
   --termination <termination-exposure-atlas-v8_2.html> \
   --out        leviathan \
+  --single     leviathan/Leviathan-full.html   # the one file edition
   --online     <folder>      # optional hosted edition: a 2 MB index.html plus m/<id>.txt, fetched on demand
 ```
 

@@ -36,7 +36,7 @@ def gunzip_b64(b64):
 
 def gzip_b64(text):
     raw = text.encode('utf-8')
-    gz = gzip.compress(raw, 9)
+    gz = gzip.compress(raw, 9, mtime=0)   # no timestamp in the header, so a rebuild is byte for byte reproducible
     return base64.b64encode(gz).decode('ascii'), len(raw), len(gz)
 
 
@@ -455,6 +455,7 @@ def main():
     ap.add_argument('--out', required=True)
     ap.add_argument('--online')
     ap.add_argument('--page', default='Leviathan.html')
+    ap.add_argument('--single', help='also write one self-contained page with every dashboard inlined (over 50 MB)')
     a = ap.parse_args()
 
     head, lv, inline, ext, frame = read_prev(a.prev_html, a.prev_data)
@@ -503,6 +504,18 @@ def main():
         print(f'  {n:24s} {s / 1048576:7.1f} MB' + ('   OVER 50 MB' if s > 50 * 1048576 else ''))
     if any(s > 50 * 1048576 for s in sizes.values()):
         die('an output file crossed 50 MB')
+
+    # ---- single file edition: everything inline, one page, no companions (crosses 50 MB, under GitHub's 100 MB limit)
+    if a.single:
+        lv_one = dict(lv); lv_one['ext'] = []
+        order = inline_ids + [mid for mid in payloads if mid not in inline_ids]
+        with open(a.single, 'w', encoding='utf-8') as f:
+            f.write(head)
+            f.write('<script type="application/json" id="lv-data">' + json.dumps(lv_one, ensure_ascii=False, separators=(',', ':')) + '</script>\n')
+            for mid in order:
+                f.write(payload_line(mid, payloads[mid]) + '\n')
+            f.write(frame)
+        print(f'  {os.path.basename(a.single):24s} {os.path.getsize(a.single) / 1048576:7.1f} MB   single file, all {len(order)} dashboards inline')
 
     # ---- hosted edition: a small page, every module fetched from m/<id>.txt on demand
     if a.online:
