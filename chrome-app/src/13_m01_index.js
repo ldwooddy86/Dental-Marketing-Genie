@@ -106,7 +106,7 @@ registerModule({
       map.fill(zip => { const z = ZI[zip]; if (!z || z.occ < 200) return null; return sc.f(z[st.layer]); });
       map.dim(st.county ? new Set(Z.filter(z => z.fips === st.county).map(z => z.zip)) : null);
       map.select(st.sel);
-      map.pins(st.comp ? COMP.map((l, i) => ({ id: i, lat: l.lat, lon: l.lon, r: l.tier === 'integrity' ? 7.5 : l.tier === 'top40' ? 4.2 + Math.log10((l.reviews || 0) + 1) : 2.6, fill: l.tier === 'integrity' ? cssv('--bench') : l.tier === 'top40' ? cssv('--s1') : cssv('--ink-3'), shape: l.tier === 'integrity' ? 'diamond' : '', op: l.tier === 'roster' ? .6 : .9 })) : []);
+      map.pins(st.comp ? COMP.map((l, i) => ({ id: i, lat: l.lat, lon: l.lon, r: l.tier === 'bench' ? 7.5 : l.tier === 'top40' ? 4.2 + Math.log10((l.reviews || 0) + 1) : 2.6, fill: l.tier === 'bench' ? cssv('--bench') : l.tier === 'top40' ? cssv('--s1') : cssv('--ink-3'), shape: l.tier === 'bench' ? 'diamond' : '', op: l.tier === 'roster' ? .6 : .9 })) : []);
       const v = vals.filter(isN);
       $('#i1Leg', root).innerHTML = legendHTML({ title: L.l, R: sc.R, lo: L.f(Math.min(...v)), hi: L.f(Math.max(...v)), note: `<b>${L.dir === -1 ? 'Lower values shade darker' : 'Higher values shade darker'}</b> ${L.dir === -1 ? '(older stock reads as more debt). ' : '. '}Eight quantile classes across 263 residential ZIPs; gray means no resident households. ${G(L.g)}<br>${esc(L.note)}` });
       drawTable(); drawDetail();

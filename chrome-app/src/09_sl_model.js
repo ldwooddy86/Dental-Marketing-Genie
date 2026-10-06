@@ -144,7 +144,7 @@ const SLM = (() => {
   const CK = l => l.domain || l.name;                                   // company key
   const COMPS = COMP.map((l, i) => ({ l, i, key: CK(l), svc: new Set((l.services || []).map(s => s.toLowerCase())) }));
   const adSignal = l => !!(l.intel && l.intel.ad_signals && !/^(none|minimal|-|single line|single number|one number)/i.test(l.intel.ad_signals));
-  const NEAR = {}; ZR.forEach(z => { NEAR[z.zip] = COMPS.map(c => ({ c, d: isN(c.l.lat) && isN(z.lat) ? km(z.lat, z.lon, c.l.lat, c.l.lon) : 99 })).filter(x => x.d <= 20 && x.c.l.tier !== 'integrity'); });
+  const NEAR = {}; ZR.forEach(z => { NEAR[z.zip] = COMPS.map(c => ({ c, d: isN(c.l.lat) && isN(z.lat) ? km(z.lat, z.lon, c.l.lat, c.l.lon) : 99 })).filter(x => x.d <= 20 && x.c.l.tier !== 'bench'); });
   let activity = () => ({});                                             // company key -> { [lineId]: n active observed ads } (set by the watch)
   function pressureRaw(z, line) {
     const act = activity(); let p = 0;
@@ -166,7 +166,7 @@ const SLM = (() => {
       rows.forEach(r => { r.cost = (r.z.cpc_rel || 1) * A.lines[line.id].cpcMult; r.eff = r.gp / (r.cost * (0.55 + 0.9 * r.presspct / 100)); });
       const ev = rows.map(r => r.eff), gv = rows.map(r => r.gp); rows.forEach(r => { r.pri = r.gp > 0 ? pctRank(ev, r.eff) : 0; r.gppct = pctRank(gv, r.gp); r.bid = r.pri >= 90 ? 45 : r.pri >= 75 ? 30 : r.pri >= 55 ? 15 : r.pri >= 35 ? 0 : r.pri >= 15 ? -20 : -40; r.quiet = r.gp > 0 && r.presspct <= 45 && r.gppct >= 60; });
       rows.forEach(r => { (SLZ[r.z.zip] = SLZ[r.z.zip] || {})[line.id] = r; r.z['sl_pri_' + line.id] = +r.pri.toFixed(1); r.z['sl_jobs_' + line.id] = +r.jobs.toFixed(1); });
-      AGG[line.id] = { pool: sum(rows.map(r => r.pool)), jobs: sum(rows.map(r => r.jobs)), rev: sum(rows.map(r => r.rev)), gp: sum(rows.map(r => r.gp)), quiet: rows.filter(r => r.quiet).length, ticket: sum(rows.map(r => r.rev)) / Math.max(1, sum(rows.map(r => r.jobs))), compN: COMPS.filter(c => c.l.tier !== 'integrity' && line.svc.some(s => c.svc.has(s.toLowerCase()))).length, compPaid: COMPS.filter(c => c.l.tier !== 'integrity' && (c.l.paid_kw || 0) > 0 && line.svc.some(s => c.svc.has(s.toLowerCase()))).length };
+      AGG[line.id] = { pool: sum(rows.map(r => r.pool)), jobs: sum(rows.map(r => r.jobs)), rev: sum(rows.map(r => r.rev)), gp: sum(rows.map(r => r.gp)), quiet: rows.filter(r => r.quiet).length, ticket: sum(rows.map(r => r.rev)) / Math.max(1, sum(rows.map(r => r.jobs))), compN: COMPS.filter(c => c.l.tier !== 'bench' && line.svc.some(s => c.svc.has(s.toLowerCase()))).length, compPaid: COMPS.filter(c => c.l.tier !== 'bench' && (c.l.paid_kw || 0) > 0 && line.svc.some(s => c.svc.has(s.toLowerCase()))).length };
     });
     ZR.forEach(z => { const top = BASE.map(l => SLZ[z.zip][l.id]).sort((a, b) => b.gp - a.gp); z.sl_top = top[0] ? LINES.find(l => SLZ[z.zip][l.id] === top[0]).id : null; z.sl_top2 = top[1] ? LINES.find(l => SLZ[z.zip][l.id] === top[1]).id : null; const best = LINES.map(l => SLZ[z.zip][l.id]).sort((a, b) => b.pri - a.pri)[0]; z.sl_best = best ? LINES.find(l => SLZ[z.zip][l.id] === best).id : null; z.sl_quiet = BASE.filter(l => SLZ[z.zip][l.id].quiet).length; });
   }

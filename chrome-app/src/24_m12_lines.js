@@ -63,7 +63,7 @@ registerModule({
       else { const vals = rows.map(o.k); const sc = qScale(vals, o.ramp, 1); map.fill(zip => { const r = SLM.SLZ[zip]; return r ? sc.f(o.k(r[st.line])) : null; }); const v = vals.filter(isN); $('#l12Leg', root).innerHTML = legendHTML({ title: `${L().short}: ${o.l}`, R: sc.R, lo: o.f(Math.min(...v)), hi: o.f(Math.max(...v)), note: `Eight quantile classes across ${N(ZR.length)} ZIPs. ${G(o.g)} ${esc(o.note)}` }); }
       map.dim(st.county ? new Set(Z.filter(z => z.fips === st.county).map(z => z.zip)) : null); map.select(st.sel);
       const svc = L().svc.map(s => s.toLowerCase());
-      map.pins($('#l12Comp', root).checked ? COMP.map((l, i) => ({ l, i })).filter(x => x.l.tier !== 'integrity' && (x.l.services || []).some(s => svc.includes(s.toLowerCase()))).map(({ l, i }) => ({ id: i, lat: l.lat, lon: l.lon, r: 2.4 + Math.log10((l.reviews || 0) + 1) * 1.1, fill: (l.paid_kw || 0) > 0 ? cssv('--critical') : cssv('--ink-3'), op: .85 })) : []);
+      map.pins($('#l12Comp', root).checked ? COMP.map((l, i) => ({ l, i })).filter(x => x.l.tier !== 'bench' && (x.l.services || []).some(s => svc.includes(s.toLowerCase()))).map(({ l, i }) => ({ id: i, lat: l.lat, lon: l.lon, r: 2.4 + Math.log10((l.reviews || 0) + 1) * 1.1, fill: (l.paid_kw || 0) > 0 ? cssv('--critical') : cssv('--ink-3'), op: .85 })) : []);
     }
     /* ---------- chips ---------- */
     function chips() {

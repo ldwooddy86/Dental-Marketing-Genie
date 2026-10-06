@@ -3,7 +3,22 @@
 One frame, sixteen dashboards. OmegaWeapon and the Hit Board sit at the core; fourteen industry atlases hang off it in
 three wings (legal, home services, healthcare); the Convergence map and the Agency Field read all of them at once.
 
-## This build (October 6, 2026, second build): the Louisiana legal atlases
+## This build (October 6, 2026, third build): no client or agency names
+
+The console now carries no client or agency names. In the DFW Thermal Debt Atlas the brand defaults are a neutral
+placeholder ("Your HVAC Company", with no phone, address, license, logo, acquisitions or social profiles; the Brand panel
+fills them in and the shell, the Site Forge and the connectors read what it holds), the benchmark location on the
+competitor map is carried as "Client (name withheld)" with its contact details and branded keywords removed and its own
+TDLR license row dropped from the lookup table, the agency credit is gone from the competitive heatmap source rows and
+the house style rule, and the Hit Board's writing gate names no proprietary content skills. The same scrub covers the
+single file preview in `dist/`, the build 3 reference and the browser app.
+
+This build was made in place rather than from a new atlas: the DFW payload was rewrapped from the scrubbed preview with
+`build.py`'s own `wrap_dfw` (which reproduces the previous payload byte for byte from the previous preview), the Hit
+Board text was edited, both were packed again (gzip + base64) and the registry's two payload sizes were updated. Every
+other byte of both editions, including the three companion scripts, is unchanged.
+
+### Previous build (October 6, 2026, second build): the Louisiana legal atlases
 
 The legal wing now carries criminal defense and personal injury twice, the way the home wing carries HVAC twice:
 
@@ -17,7 +32,7 @@ injury · Texas, Personal injury · Louisiana). Convergence ranks each state's c
 matrix gains two verticals and eleven Spearman pairs; the Texas matrix is untouched. The other fourteen dashboards
 carry over byte for byte.
 
-### Previous build (October 6, 2026)
+### First build (October 6, 2026)
 
 That build unified the two dashboards this repository already carried with the Leviathan console and added the
 attached atlas:
@@ -39,8 +54,8 @@ Water Hammer, Swarm Front, Oncogene, Ocular Health) carried over unchanged.
 | `Leviathan.html` | 26 MB | The same console split for hosting that minds file size: the frame, fonts, registry, and the twelve smaller atlases packed inline (gzip + base64). |
 | `Leviathan-data.js` | 26 MB | Severance, Dental Divide and Ocular Health, loaded on demand. |
 | `Leviathan-data-2.js` | 10 MB | The Termination Exposure Atlas, loaded on demand. |
-| `tools/build.py` | | The build script of the previous build (DFW Thermal Debt and Termination Exposure). |
-| `tools/build_louisiana.py` | | The build script of this build (the Louisiana legal atlases); it imports its helpers from `build.py`. |
+| `tools/build.py` | | The build script of the first build (DFW Thermal Debt and Termination Exposure). |
+| `tools/build_louisiana.py` | | The build script of the second build (the Louisiana legal atlases); it imports its helpers from `build.py`. |
 
 `Leviathan-full.html` is the one to send around. The split edition keeps every file under GitHub's 50 MB line; keep its
 three files in one folder and open `Leviathan.html`. Either way, use a current Chrome, Edge, Safari or Firefox. Nothing runs on a server: each atlas unpacks in the browser
@@ -52,7 +67,7 @@ Each script carries every payload over from a previous console build, wraps the 
 link and bridge, extends the registry (modules, wings, verticals, Convergence columns, Spearman correlations) and patches
 the frame. Each patch asserts its anchor occurs exactly once, so an upstream change fails loudly instead of silently.
 
-This build reads the previous single file edition (it carries every payload inline) and the two Louisiana atlases as
+The second build reads the previous single file edition (it carries every payload inline) and the two Louisiana atlases as
 they come out of the viewer. The Probable Cause download starts at `<title>` with no document skeleton; the script adds one.
 
 ```
@@ -65,7 +80,7 @@ python3 leviathan/tools/build_louisiana.py \
   --online          <folder>      # optional hosted edition: index.html plus m/<id>.txt, fetched on demand
 ```
 
-The previous build, from the split edition before it:
+The first build, from the split edition before it:
 
 ```
 python3 leviathan/tools/build.py \

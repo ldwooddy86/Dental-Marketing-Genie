@@ -1,4 +1,4 @@
-# Integrity Air · DFW Thermal Debt Atlas, browser app, build 4
+# DFW Thermal Debt Atlas, browser app, build 4
 
 The atlas as a Chrome and Firefox extension: heating and cooling campaign intelligence for the twelve counties of Dallas Fort Worth, the
 website written from it, and the accounts that run the campaigns. Build 4 adds module 16, Publish, which sends the pages the Site Forge writes

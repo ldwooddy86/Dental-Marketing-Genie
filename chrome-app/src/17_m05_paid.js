@@ -63,7 +63,7 @@ registerModule({
       else { const dir = (st.layer === 'comp_pct' || st.layer === 'cpc_rel') ? 1 : 1; const sc = qScale(ZR.map(z => z[st.layer]), o.ramp, dir); f = z => sc.f(z[st.layer]); const v = ZR.map(z => z[st.layer]).filter(isN); $('#a5Leg', root).innerHTML = legendHTML({ title: o.l, R: sc.R, lo: o.f(Math.min(...v)), hi: o.f(Math.max(...v)), note: `Quantile classes. ${G(o.g)} ${st.layer === 'comp_pct' || st.layer === 'cpc_rel' ? 'Darker blue means more crowded or dearer.' : 'Darker means more to win.'}` }); }
       map.fill(zip => { const z = ZI[zip]; if (!z || z.occ < 200 || !isN(z.effb)) return null; return f(z); });
       const scope = new Set(ZR.filter(inScope).map(z => z.zip)); map.dim(st.county || st.quad !== '' || st.angle ? scope : null); map.select(st.sel);
-      map.pins($('#a5Comp', root).checked ? COMP.map((l, i) => ({ id: i, lat: l.lat, lon: l.lon, r: l.tier === 'integrity' ? 7.5 : l.tier === 'top40' ? 4.2 + Math.log10((l.reviews || 0) + 1) : 2.6, fill: l.tier === 'integrity' ? cssv('--bench') : l.tier === 'top40' ? cssv('--s1') : cssv('--ink-3'), shape: l.tier === 'integrity' ? 'diamond' : '' })) : []);
+      map.pins($('#a5Comp', root).checked ? COMP.map((l, i) => ({ id: i, lat: l.lat, lon: l.lon, r: l.tier === 'bench' ? 7.5 : l.tier === 'top40' ? 4.2 + Math.log10((l.reviews || 0) + 1) : 2.6, fill: l.tier === 'bench' ? cssv('--bench') : l.tier === 'top40' ? cssv('--s1') : cssv('--ink-3'), shape: l.tier === 'bench' ? 'diamond' : '' })) : []);
       kpis(); detail(); table(); budget();
     }
     function kpis() {
@@ -81,7 +81,7 @@ registerModule({
       const pts = ZR.map(z => ({ x: z.comp_pct, y: z.oppb, c: QC()[z.quad], r: 4.2, tip: `<div class="tt">${z.zip} · ${esc(z.city)}</div>${tipRow('Opportunity', D(z.oppb, 0))}${tipRow('Competition', D(z.comp_pct, 0))}${tipRow('Quadrant', QN[z.quad])}`, onClick: () => { st.sel = z.zip; render(); } }));
       scatter($('#a5Sc', root), { pts, x: { label: 'Competition percentile', min: 0, max: 100, fmt: v => D(v, 0) }, y: { label: 'Opportunity percentile', min: 0, max: 100, fmt: v => D(v, 0) }, fit: false, hlines: [{ y: 65 }], vlines: [{ x: 60 }], H: 320 });
     }
-    function nearComp(z, n) { return COMP.map((l, i) => ({ l, i, d: 12742 * Math.asin(Math.sqrt(0.5 - Math.cos((l.lat - z.lat) * Math.PI / 180) / 2 + Math.cos(z.lat * Math.PI / 180) * Math.cos(l.lat * Math.PI / 180) * (1 - Math.cos((l.lon - z.lon) * Math.PI / 180)) / 2)) })).filter(x => x.l.tier !== 'integrity').sort((a, b) => a.d - b.d).slice(0, n); }
+    function nearComp(z, n) { return COMP.map((l, i) => ({ l, i, d: 12742 * Math.asin(Math.sqrt(0.5 - Math.cos((l.lat - z.lat) * Math.PI / 180) / 2 + Math.cos(z.lat * Math.PI / 180) * Math.cos(l.lat * Math.PI / 180) * (1 - Math.cos((l.lon - z.lon) * Math.PI / 180)) / 2)) })).filter(x => x.l.tier !== 'bench').sort((a, b) => a.d - b.d).slice(0, n); }
     function detail() {
       const z = st.sel ? ZI[st.sel] : null; if (!z || z.occ < 200) { $('#a5Name', root).textContent = 'No ZIP selected'; $('#a5Sub', root).textContent = 'Click a ZIP on the map or a row below'; return; }
       $('#a5Name', root).textContent = `${z.zip} · ${z.city}`; $('#a5Sub', root).textContent = `${z.cty} County · ${QN[z.quad]} · tier ${z.tier}`;
@@ -90,7 +90,7 @@ registerModule({
         <div class="dsec">Job mass (a year)</div>
         <div class="rowl"><span>Replacements: owner single-family</span><b>${N(z.rep_ownsf)}</b></div><div class="rowl"><span>Replacements: rented single-family (×0.6)</span><b>${N(z.rep_rentsf)}</b></div><div class="rowl"><span>Replacements: apartments (×0.25)</span><b>${N(z.rep_mf)}</b></div><div class="rowl"><span>Paid repair calls (est.)</span><b>${N(z.repairs)}</b></div><div class="rowl"><span>Job value pool</span><b>${MM(z.opp_usd)}</b></div>
         <div class="dsec">Value and competition</div>
-        <div class="rowl"><span>Ticket here · value index</span><b>${M$(z.ticket)} · ${D(z.value_idx, 0)}</b></div><div class="rowl"><span>Competition percentile · click cost index</span><b>${D(z.comp_pct, 0)} · ${D(z.cpc_rel, 2)}×</b></div><div class="rowl"><span>Mapped competitors within 8 km</span><b>${N(z.comp_n8)} (${N(z.comp_top8)} deep dive)</b></div><div class="rowl"><span>HVAC establishments within 8 km (CBP)</span><b>${N(z.est_8km)}</b></div><div class="rowl"><span>Distance to the benchmark (Mesquite)</span><b>${D(z.km_integrity, 0)} km</b></div>
+        <div class="rowl"><span>Ticket here · value index</span><b>${M$(z.ticket)} · ${D(z.value_idx, 0)}</b></div><div class="rowl"><span>Competition percentile · click cost index</span><b>${D(z.comp_pct, 0)} · ${D(z.cpc_rel, 2)}×</b></div><div class="rowl"><span>Mapped competitors within 8 km</span><b>${N(z.comp_n8)} (${N(z.comp_top8)} deep dive)</b></div><div class="rowl"><span>HVAC establishments within 8 km (CBP)</span><b>${N(z.est_8km)}</b></div><div class="rowl"><span>Distance to the benchmark (Mesquite)</span><b>${D(z.km_bench, 0)} km</b></div>
         <div class="mini" style="margin-top:6px">Nearest: ${nc.map(x => `${esc(x.l.name)} (${D(x.d, 1)} km, ${N(x.l.reviews)} reviews)`).join('; ')}</div>
         <div class="dsec">Angles this ZIP triggers</div><div>${an.map(a => `<span class="tag on" title="${esc(a.why)}">${a.short}</span>`).join('')}${z.span_sh >= 20 ? '<span class="tag on">Spanish build</span>' : ''}</div>
         <div class="dsec">Targeting</div><div class="rowl"><span>Google location</span><b class="mono">${z.zip}, Texas, United States</b></div><div class="rowl"><span>Google criterion ID</span><b class="mono">${z.gid || 'resolve by name'}</b></div><div class="rowl"><span>Meta ZIP key</span><b class="mono">US:${z.zip}</b></div>
@@ -129,7 +129,7 @@ registerModule({
       ['Who decides is weighted, not excluded', 'Rented homes and apartments are real replacements, bought by someone who does not click a homeowner ad. Weights of 0.6 and 0.25 keep them visible without letting apartment corridors dominate.'],
       ['Repair calls ride on age', 'The repair rates by age band are assumptions; the ranking barely moves if they are halved because replacements carry most of the value.'],
       ['Reviews are the competition', 'Google review mass is the best public proxy for Local Pack strength. It misses competitors that only buy ads, which the heatmap flagged as "ad signals".'],
-      ['Integrity is not a competitor to itself', 'The benchmark location is excluded from competition so its own reviews do not push its home ZIPs down.'],
+      ['The benchmark is not a competitor to itself', 'The benchmark location is excluded from competition so its own reviews do not push its home ZIPs down.'],
       ['8 km radius', 'About 5 miles, the service radius most DFW LSA profiles and radius campaigns use inside the loop; exurban contractors often run 25 miles, which would flatten the map.'],
       ['Benchmarks are national', 'LocaliQ\'s CPC and conversion rates average the country and the year. DFW summer CPCs for emergency terms run higher.'],
       ['One ticket curve', 'Ticket scales gently with size and value; premium brands and variable-speed mixes are not modeled by ZIP.']]);

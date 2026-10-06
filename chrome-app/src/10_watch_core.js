@@ -20,7 +20,7 @@ const WATCH = (() => {
     return [...m.values()].sort((a, b) => b.reviews - a.reviews);
   })();
   const CI = {}; COMPANIES.forEach(c => CI[c.key] = c);
-  const isBench = c => c.tier === 'integrity';
+  const isBench = c => c.tier === 'bench';
   /* ---------- taxonomies ---------- */
   const KINDS = { ad: 'Ad', offer: 'Offer or promotion', signal: 'Signal', event: 'Event', reviews: 'Review snapshot' };
   const PLATFORMS = { meta: 'Meta (Facebook, Instagram)', google: 'Google Search', lsa: 'Local Services Ads', youtube: 'YouTube', microsoft: 'Microsoft Advertising', nextdoor: 'Nextdoor', yelp: 'Yelp', site: 'Website', mail: 'Direct mail', tv: 'TV or streaming', radio: 'Radio or podcast', ooh: 'Billboard or vehicle', other: 'Other' };

@@ -13,7 +13,7 @@ const CNAME = f => (COI[f] || {}).name || '';
 Z.forEach(z => { z.fips = z.ci != null ? FIPS[z.ci] : null; z.cty = CNAME(z.fips); });
 const CITIES = DATA.cities;
 const COMP = DATA.comp;
-const BENCH = COMP.find(l => l.tier === 'integrity');
+const BENCH = COMP.find(l => l.tier === 'bench');
 
 /* ============================ helpers ============================ */
 const $ = (s, r) => (r || document).querySelector(s);
