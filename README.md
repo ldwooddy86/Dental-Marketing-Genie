@@ -4,6 +4,7 @@ Marketing intelligence atlases and the browser app that turns them into websites
 
 | Path | What it is |
 |---|---|
+| `leviathan/` | **Leviathan**, the unified console: OmegaWeapon and the Hit Board at the core, twelve industry atlases in three wings (the DFW Thermal Debt Atlas and the Dental Divide Atlas among them, plus the Termination Exposure Atlas added in this build), the Convergence map and the Agency Field. Three files, each under 50 MB; open `leviathan/Leviathan.html`. See `leviathan/README.md`. |
 | `chrome-app/` | The **Thermal Debt Atlas browser app** (Chrome, Edge, Brave; Firefox 128+). Sixteen modules: the DFW heating and cooling demand model, service lines, competitors, the National Weather Service desk, the Site Forge that writes the website, the **Publish** module that sends it to WordPress (headless and Elementor), Drupal, Wix, Duda, Webflow, Shopify, HubSpot, Joomla and Ghost, and the **Accounts** module with Google Ads, Local Services Ads, YouTube, Meta, TikTok, Microsoft and LinkedIn connectors. See `chrome-app/README.md`. |
 | `reference/DFW_Thermal_Debt_Atlas_3.html` | The single file edition of the atlas (build 3) the app was built from. Opens in any browser. |
 | `dental-divide-atlas.html` | The Dental Divide Atlas, the dental market companion (single file). |
