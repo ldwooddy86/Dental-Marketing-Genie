@@ -97,6 +97,7 @@ select.rf-in{width:auto;min-width:200px}
 .rf-rail{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .rf-empty{padding:18px;border:1px dashed var(--rule);border-radius:10px;color:var(--ink-3);font-size:13px}
 .rf-h3{font:600 15px/1.2 var(--f-body);margin-bottom:8px}
+.rf-vh{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
 .rf-vgroup{margin-top:10px}
 .rf-vgroup .eyebrow{margin-bottom:6px}
 #rf-print{display:none}
@@ -123,16 +124,44 @@ select.rf-in{width:auto;min-width:200px}
   /* ---------- state across renders ---------- */
   const S = { draft: null, loaded: false, agency: null, read: null, built: '', lint: null, mirror: null, q: '', wing: null, hb: false, saveT: 0, buildT: 0, ctx: null, paint: null, autoRole: null };
   const E = () => ENGINE();
+  const str = v => (typeof v === 'string' ? v : v == null ? '' : String(v));
+  /* a draft of the right shape from whatever was stored or imported; anything malformed falls back to blank fields */
+  function normDraft(v) {
+    const En = E(); const d = En.blankDraft();
+    if (!v || typeof v !== 'object') return d;
+    const c = v.candidate && typeof v.candidate === 'object' ? v.candidate : {};
+    for (const k of ['name', 'contact', 'years', 'skills', 'results', 'education']) d.candidate[k] = str(c[k]);
+    d.candidate.level = ['junior', 'mid', 'senior', 'manager', 'director'].includes(c.level) ? c.level : null;
+    d.candidate.verticals = Array.isArray(c.verticals) ? c.verticals.filter(k => typeof k === 'string' && En.VERT[k]) : [];
+    d.candidate.exp = (Array.isArray(c.exp) ? c.exp : []).filter(x => x && typeof x === 'object').map(x => ({ title: str(x.title), org: str(x.org), dates: str(x.dates), bullets: str(x.bullets) }));
+    if (!d.candidate.exp.length) d.candidate.exp = [{ title: '', org: '', dates: '', bullets: '' }];
+    const tailor = t => { const o = En.blankTailor(); if (!t || typeof t !== 'object') return o; o.track = typeof t.track === 'string' && En.TRACK[t.track] ? t.track : null; o.industry = typeof t.industry === 'string' && En.INDUSTRY[t.industry] ? t.industry : null; o.role = str(t.role); o.summary = str(t.summary); o.posting = str(t.posting); o.terms = (Array.isArray(t.terms) ? t.terms : []).filter(x => typeof x === 'string' && x.trim()).slice(0, 60); return o; };
+    if (v.tailor && typeof v.tailor === 'object') for (const id of Object.keys(v.tailor)) if (En.agency(id)) d.tailor[id] = tailor(v.tailor[id]);
+    d.general = tailor(v.general);
+    d.last = { agency: v.last && typeof v.last.agency === 'string' && En.agency(v.last.agency) ? v.last.agency : null };
+    return d;
+  }
+  function isBlank(d) {
+    if (!d || !d.candidate) return true;
+    const c = d.candidate;
+    if ([c.name, c.contact, c.years, c.skills, c.results, c.education].some(x => str(x).trim())) return false;
+    if ((c.exp || []).some(x => str(x.title).trim() || str(x.org).trim() || str(x.bullets).trim())) return false;
+    if (Object.values(d.tailor || {}).some(t => t.role || t.summary || (t.terms || []).length || t.posting)) return false;
+    return true;
+  }
   function draft() { if (!S.draft) S.draft = E().blankDraft(); return S.draft; }
   function cand() { const d = draft(); if (!d.candidate) d.candidate = E().blankCandidate(); if (!Array.isArray(d.candidate.exp) || !d.candidate.exp.length) d.candidate.exp = [{ title: '', org: '', dates: '', bullets: '' }]; if (!Array.isArray(d.candidate.verticals)) d.candidate.verticals = []; return d.candidate; }
   function tail() { const d = draft(); if (!S.agency) { if (!d.general) d.general = E().blankTailor(); return d.general; } if (!d.tailor) d.tailor = {}; if (!d.tailor[S.agency.id]) d.tailor[S.agency.id] = E().blankTailor(); const t = d.tailor[S.agency.id]; if (!Array.isArray(t.terms)) t.terms = []; return t; }
-  function save() { clearTimeout(S.saveT); S.saveT = setTimeout(flush, 300); }
-  function flush() { clearTimeout(S.saveT); try { storeSet(draft()); } catch (e) { /* storage off */ } }
-  try { document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') flush(); }); } catch (e) { /* no document */ }
+  function save() { clearTimeout(S.saveT); S.saveT = setTimeout(flush, 250); }
+  function flush() { clearTimeout(S.saveT); if (!S.loaded) return; try { storeSet(draft()); } catch (e) { /* storage off */ } }
+  try {
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') flush(); });
+    window.addEventListener('pagehide', flush);
+  } catch (e) { /* no document */ }
   function setAgency(a) {
     S.agency = a || null;
     S.read = a ? E().read(a) : null;
-    const d = draft(); d.last = { agency: a ? a.id : null };
+    const d = draft(); if (a) d.last = { agency: a.id };
     const t = tail();
     if (a && !t.track && !t.industry) { const top = S.read.tracks.find(x => x.score > 0) || S.read.tracks[0]; t.track = S.read.thin ? null : top.code; t.industry = S.read.thin ? 'marketing' : null; }
     if (!a && !t.track && !t.industry) t.industry = 'marketing';
@@ -148,6 +177,8 @@ select.rf-in{width:auto;min-width:200px}
     S.ctx = ctx;
     const { h, fill, icon, toast } = ctx;
     const root = h('div', { class: 'wrap rf' });
+    root.addEventListener('change', () => flush());
+    root.addEventListener('focusout', () => flush());
     if (!En) { root.append(h('p', { class: 'err', text: 'The Résumé Forge engine did not load (ext/resume-engine.js).' })); return root; }
     const F = En.findings();
     const meta = En.meta() || {};
@@ -307,7 +338,7 @@ select.rf-in{width:auto;min-width:200px}
         gaps.length ? h('div', { class: 'rf-items' }, gaps.map(item)) : h('div', { class: 'rf-empty', text: 'No gap or exposure in the record.' }),
         h('div', { class: 'sec-h', style: { marginTop: '18px' } }, h('h2', { style: { fontSize: '18px' }, text: 'What it sells and who it serves' }), h('p', { text: 'Strengths to mirror: the lines it leads with, what its clients buy, where it is already moving.' })),
         sells.length ? h('div', { class: 'rf-items' }, sells.map(item)) : null,
-        r.brief && r.brief.bluf ? h('details', { class: 'rf-fold' }, h('summary', { text: 'In one paragraph · the Radar’s dossier' }), h('div', { class: 'body', text: r.brief.bluf })) : null,
+        r.brief && En.neutral(r.brief.bluf) ? h('details', { class: 'rf-fold' }, h('summary', { text: 'The Radar’s one-paragraph read' }), h('div', { class: 'body', text: En.neutral(r.brief.bluf) })) : null,
         r.brief && r.brief.openings ? h('details', { class: 'rf-fold' }, h('summary', { text: 'Leviathan’s competitive read · written for a rival; read it as what the agency lacks' }), h('div', { class: 'body', text: r.brief.openings })) : null,
         atlases.length ? h('details', { class: 'rf-fold', open: true }, h('summary', { text: 'Its verticals, and the Leviathan atlases that know them' }), h('div', { class: 'body', style: { whiteSpace: 'normal' } }, h('ul', { class: 'rf-tidy', style: { margin: 0 } }, atlases), h('p', { class: 'tiny mute', style: { marginTop: '8px' }, text: 'Interview material: the atlases hold the market facts the agency sells against. Open one and bring a number.' }))) : null);
     }
@@ -327,11 +358,12 @@ select.rf-in{width:auto;min-width:200px}
       /* experience */
       const expBox = h('div');
       const paintExp = () => fill(expBox, c.exp.map((x, i) => {
-        const inp = (k, ph, rows) => { const el = h(rows ? 'textarea' : 'input', { class: 'rf-in', placeholder: ph, rows: rows || null, 'aria-label': k + ' of role ' + (i + 1), oninput: e => { x[k] = e.target.value; save(); rebuild(); } }); if (rows) el.value = x[k] || ''; else el.setAttribute('value', x[k] || ''); return el; };
+        const inp = (k, label, ph, rows) => { const id = 'rf-exp-' + i + '-' + k; const el = h(rows ? 'textarea' : 'input', { class: 'rf-in', id, placeholder: ph, rows: rows || null, 'aria-label': label + ', role ' + (i + 1), oninput: e => { x[k] = e.target.value; save(); rebuild(); } }); if (rows) el.value = x[k] || ''; else el.setAttribute('value', x[k] || ''); return el; };
+        const f = (label, el, note) => h('div', { class: 'rf-f' }, h('label', { for: el.id }, label, note ? h('span', { class: 'mute', text: ' ' + note }) : null), el);
         return h('div', { class: 'rf-exp' },
-          h('div', { class: 'rf-two' }, h('div', { class: 'rf-f' }, h('label', { text: 'Title' }), inp('title', En.titleFor(code, level))), h('div', { class: 'rf-f' }, h('label', { text: 'Employer' }), inp('org', 'Agency or company, City ST'))),
-          h('div', { class: 'rf-two' }, h('div', { class: 'rf-f' }, h('label', { text: 'Dates' }), inp('dates', 'Jan 2022 – Present')), h('div', { class: 'rf-f', style: { alignContent: 'end' } }, c.exp.length > 1 ? h('button', { class: 'btn', type: 'button', onclick: () => { c.exp.splice(i, 1); save(); paintExp(); rebuild(); } }, 'Remove this role') : null)),
-          h('div', { class: 'rf-f' }, h('label', { text: 'Achievements' }, h('span', { class: 'mute', text: ' (one per line: verb, what, number)' })), inp('bullets', (p.starters || [])[0] || 'Grew organic sessions 40% in 9 months', 4)));
+          h('div', { class: 'rf-two' }, f('Title', inp('title', 'Title', En.titleFor(code, level))), f('Employer', inp('org', 'Employer', 'Agency or company, City ST'))),
+          h('div', { class: 'rf-two' }, f('Dates', inp('dates', 'Dates', 'Jan 2022 – Present')), h('div', { class: 'rf-f', style: { alignContent: 'end' } }, c.exp.length > 1 ? h('button', { class: 'btn', type: 'button', onclick: () => { c.exp.splice(i, 1); save(); paintExp(); rebuild(); } }, 'Remove role ' + (i + 1)) : null)),
+          f('Achievements', inp('bullets', 'Achievements', (p.starters || [])[0] || 'Grew organic sessions 40% in 9 months', 4), '(one per line: verb, what, number)'));
       }));
       paintExp();
       /* skills and the agency's words */
@@ -365,7 +397,7 @@ select.rf-in{width:auto;min-width:200px}
         field('Name', inputFor(c, 'name', 'rf-name', 'Jordan Rivera')),
         field('Contact line', inputFor(c, 'contact', 'rf-contact', 'City, ST · you@email.com · (555) 555-5555 · linkedin.com/in/…'), 'as plain text, not a header'),
         h('div', { class: 'rf-two' }, field('Years of experience', inputFor(c, 'years', 'rf-years', '6 years')), field('Level', levelSel, '(sets the title and the length band)')),
-        field('Title', roleIn, '(a title agencies post for this track)'),
+        field('Title', roleIn, t.industry ? '(a title employers post for this track)' : '(a title agencies post for this track)'),
         h('div', { style: { margin: '-6px 0 12px' } }, titleChips),
         h('div', { class: 'rf-f' }, h('label', { text: 'Verticals you have worked in' }, h('span', { class: 'mute', text: S.agency ? ' (the agency’s first; only what you tick goes into the headline and summary)' : '' })), vertChips),
         field('Professional summary', summary, '(blank = auto-draft)'),
@@ -382,7 +414,7 @@ select.rf-in{width:auto;min-width:200px}
         h('p', { class: 'tiny mute', style: { marginTop: '10px' }, text: 'Add only the terms that are true of you. The agency’s words set the order of the skills block; the facts stay yours.' }),
         h('div', { class: 'rf-rail', style: { marginTop: '16px', paddingTop: '12px', borderTop: '1px solid var(--rule-2)' } },
           h('button', { class: 'btn', type: 'button', onclick: () => { flush(); ctx.saveFile('resume-draft.json', JSON.stringify(draft(), null, 1)); } }, 'Export draft'),
-          h('label', { class: 'btn', style: { cursor: 'pointer' } }, 'Import draft', h('input', { type: 'file', accept: 'application/json,.json', hidden: true, onchange: e => importDraft(e.target.files && e.target.files[0]) })),
+          (() => { const file = h('input', { class: 'rf-vh', type: 'file', id: 'rf-import', accept: 'application/json,.json', 'aria-label': 'Import a draft file', onchange: e => importDraft(e.target.files && e.target.files[0]) }); return [h('button', { class: 'btn', type: 'button', onclick: () => file.click() }, 'Import draft'), file]; })(),
           S.agency ? h('button', { class: 'btn', type: 'button', onclick: () => { if (!confirm('Reset the tailoring for ' + S.agency.name + ' (track, title, summary, added terms, posting)? Your facts stay.')) return; delete draft().tailor[S.agency.id]; setAgency(S.agency); save(); paintAll(); } }, 'Reset this agency’s tailoring') : null,
           h('button', { class: 'btn', type: 'button', onclick: () => { if (!confirm('Clear the whole draft on this device: your facts and every agency’s tailoring?')) return; S.draft = En.blankDraft(); S.built = ''; S.lint = null; if (S.agency) setAgency(S.agency); flush(); paintAll(); } }, 'Clear my draft'))));
       const n = Object.keys(draft().tailor || {}).length; const tl = root.querySelector('#rf-tailored'); if (tl) tl.textContent = n ? 'Tailored for ' + n + ' agenc' + (n === 1 ? 'y' : 'ies') + ' on this device' : '';
@@ -390,7 +422,13 @@ select.rf-in{width:auto;min-width:200px}
     function importDraft(file) {
       if (!file) return;
       const rd = new FileReader();
-      rd.onload = () => { try { const j = JSON.parse(String(rd.result)); if (!j || typeof j !== 'object' || !j.candidate || !Array.isArray(j.candidate.exp)) throw new Error('shape'); S.draft = Object.assign(En.blankDraft(), j); if (S.agency) setAgency(S.agency); flush(); paintAll(); toast('Draft imported'); } catch (e) { toast('That file is not a Forge draft'); } };
+      rd.onload = () => {
+        let j = null; try { j = JSON.parse(String(rd.result)); } catch (e) { j = null; }
+        if (!j || typeof j !== 'object' || !j.candidate || !Array.isArray(j.candidate.exp)) { toast('That file is not a Forge draft'); return; }
+        const before = S.draft;
+        try { S.draft = normDraft(j); if (S.agency) setAgency(S.agency); paintAll(); flush(); toast('Draft imported'); }
+        catch (e) { S.draft = before; try { paintAll(); } catch (x) { /* the previous draft drew before */ } toast('That draft could not be drawn; nothing was changed'); }
+      };
       rd.readAsText(file);
     }
 
@@ -422,7 +460,7 @@ select.rf-in{width:auto;min-width:200px}
       const parts = [];
       parts.push(h('div', { class: 'grid g2' },
         h('div', { class: 'card card-b' },
-          h('div', { class: 'rf-score', role: 'status' }, h('div', { class: 'big ' + cls, id: 'rf-score', text: String(L.score) }),
+          h('div', { class: 'rf-score' }, h('div', { class: 'big ' + cls, id: 'rf-score', text: String(L.score), 'aria-label': (L.ready ? 'ATS readiness ' : 'Not ready to send, capped at ') + L.score }),
             h('div', null, h('h3', { class: 'rf-h3', style: { marginBottom: '2px' }, text: L.ready ? 'ATS readiness, 0 to 100' : 'Not ready to send' }), h('p', { class: 'small mute', text: L.ready ? 'Eight structural checks, weighted the way parsers and the six-second skim weigh them.' : 'A hard gate is open; the score is capped at 40 until it closes.' }))),
           L.gates.map(g => h('div', { class: 'rf-gate' }, h('b', { text: g.label }), g.tip)),
           h('div', { class: 'rf-checks' }, L.checks.map(ck => h('div', { class: 'rf-check ' + (ck.ok ? 'ok' : ck.part ? 'part' : 'no') }, h('span', { class: 'st', text: ck.ok ? 'pass' : ck.part ? 'partly' : 'no' }), h('span', { text: ck.label }), h('span', { class: 'd', text: ck.detail || '' }), ck.ok ? null : h('span', { class: 'tip', text: ck.tip })))),
@@ -482,15 +520,15 @@ select.rf-in{width:auto;min-width:200px}
     /* first paint, then the stored draft when the store is ready */
     paintAll();
     if (!S.loaded) {
-      S.loaded = true;
-      storeReady().then(() => {
-        const v = storeGet();
-        if (v && typeof v === 'object' && v.candidate && Array.isArray(v.candidate.exp)) {
-          S.draft = Object.assign(En.blankDraft(), v);
-          if (S.agency) setAgency(S.agency);
-          if (S.paint === paintAll) paintAll();
-        }
-      }).catch(() => { /* no store */ });
+      const hydrate = v => {
+        if (!v || typeof v !== 'object') return;
+        const before = S.draft;
+        try { S.draft = normDraft(v); if (S.agency) setAgency(S.agency); if (S.paint) S.paint(); }
+        catch (e) { S.draft = before || En.blankDraft(); try { if (S.paint) S.paint(); } catch (x) { /* the blank draft drew before */ } toast('The stored draft could not be drawn; starting from a blank one'); }
+      };
+      storeReady().then(() => { S.loaded = true; hydrate(storeGet()); }).catch(() => { S.loaded = true; });
+      const st = store();
+      if (st && st.onSnapshot) st.onSnapshot(data => { const v = data && data[KEY]; if (v && isBlank(draft())) hydrate(v); else flush(); });
     }
     return root;
   }

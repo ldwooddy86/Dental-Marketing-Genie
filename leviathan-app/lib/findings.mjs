@@ -40,14 +40,28 @@ export function readHitBoard(hbHtml) {
   return out;
 }
 
-/* the Hit Board's rival-voiced wedge text is reduced here to neutral hiring themes; the text itself never ships */
-export const HB_THEMES = [
-  ['retention', /churn|cancel|billing|complaint|collections|underserved|burned/i],
-  ['site-ownership', /website|cms|own(?:s|ership)|hostage|proprietary|migrat/i],
-  ['production-quality', /outsourc|overseas|offshore|white.?label|\bAI\b|layoff/i],
-  ['lead-quality', /junk|fabricated|bot leads?|lead quality|leads? counted/i],
-];
-export function hbThemes(wedge) { const out = HB_THEMES.filter(([, re]) => re.test(String(wedge || ''))).map(([k]) => k); return out.length ? out : ['retention']; }
+/* The Hit Board's rival-voiced wedge and kill texts never ship. What ships is a curated set of neutral hiring themes per
+   target, read by hand from the ten dossiers (a regex over the wedge would read "this is not a churn play" as churn).
+   A target not in this table ships no theme; the engine then names the Hit Board placement and nothing more. */
+export const HB_THEMES = {
+  'localiq.com': ['retention', 'lead-quality'],
+  'hibu.com': ['retention', 'lead-quality', 'site-ownership'],
+  'townsquareinteractive.com': ['production-quality', 'retention'],
+  'scorpion.co': ['site-ownership', 'retention'],
+  'onthemap.com': ['delivery', 'retention'],
+  'thriveagency.com': ['vertical-depth', 'lead-quality'],
+  'rynoss.com': ['account-migration'],
+  'smartsites.com': ['delivery', 'vertical-depth', 'retention'],
+  'webfx.com': ['vertical-depth', 'site-ownership'],
+  'rankings.io': ['paid-depth'],
+};
+export function hbThemes(domain) { return (HB_THEMES[String(domain || '').toLowerCase()] || []).slice(); }
+/* the dossier's one-paragraph read, minus the sentences written for a rival */
+export function neutralBluf(text) {
+  const t = str(text); if (!t) return null;
+  const sentences = t.match(/[^.!?]+[.!?]+(?:\s|$)|[^.!?]+$/g) || [t];
+  return sentences.filter(x => !/\brivals?\b/i.test(x)).join('').trim() || null;
+}
 const str = v => (typeof v === 'string' ? v : v == null ? null : String(v));
 const cap = (s, n) => { s = str(s); if (!s) return null; s = s.trim(); return s.length > n ? s.slice(0, n - 1).trimEnd() + '…' : s; };
 const num = v => (typeof v === 'number' && isFinite(v) ? Math.round(v * 10) / 10 : null);
@@ -87,8 +101,8 @@ function compact(a, lvAgency, hb, dims) {
       onshore: Array.isArray(mo.onshore_claims) ? mo.onshore_claims.length : 0, claims: (mo.onshore_claims || []).slice(0, 2).map(c => cap(c.t, 160)).filter(Boolean),
       hubs: (mo.hub_offices || []).length + (mo.hub_jobs || []).length, cls: str(mo.evidence_class) || 'inferred', verdict: cap(mo.verdict, 300),
     } : { ok: false, reason: cap(mo.reason || mo.verdict, 240) },
-    hb: hb ? { wave: int(hb.wave), soft: int(hb.soft), fit: int(hb.fit), pri: num(hb.pri), arch: cap(hb.arch, 160), themes: hbThemes(hb.wedge), verticals: cap(hb.verticals, 300) } : null,
-    text: { bluf: cap(txt.bluf, TEXT_CAP), openings: cap(txt.openings, TEXT_CAP), written: str(txt.written) },
+    hb: hb ? { wave: int(hb.wave), soft: int(hb.soft), fit: int(hb.fit), pri: num(hb.pri), themes: hbThemes(hb.domain), verticals: cap(hb.verticals, 300) } : null,
+    text: { bluf: cap(neutralBluf(txt.bluf), TEXT_CAP), openings: cap(txt.openings, TEXT_CAP), written: str(txt.written) },
     sources: list(a.sources, 3), deep: !!a.is_deep,
   };
 }
@@ -104,7 +118,7 @@ export function extractFindings(html, opts = {}) {
   const hbBy = {};
   for (const t of (lv.core && lv.core.hitboard) || []) {
     const full = targets.find(x => x.domain === t.domain || x.name === t.name) || {};
-    if (t.radar) hbBy[t.radar] = Object.assign({}, full, { wave: t.wave, soft: t.soft, fit: t.fit, pri: t.pri, arch: t.arch || full.arch });
+    if (t.radar) hbBy[t.radar] = Object.assign({}, full, { domain: t.domain || full.domain, wave: t.wave, soft: t.soft, fit: t.fit, pri: t.pri });
   }
   const agencies = (R.agencies || []).map(a => compact(a, lvBy[a.id], hbBy[a.id] || null, dims)).sort((x, y) => x.name.localeCompare(y.name));
   const gapCodes = {};
@@ -115,17 +129,22 @@ export function extractFindings(html, opts = {}) {
   const mons = agencies.map(a => a.monsoon.index).filter(v => v != null).sort((x, y) => x - y);
   const med = v => (v.length ? v[Math.floor(v.length / 2)] : null);
   const withHorus = agencies.filter(a => a.horus.ok);
+  /* base rates of each move state over the agencies the move applies to; the share it does not apply to is kept beside them */
   const moveRates = {};
   for (const p of ['P1', 'P2', 'P3', 'P4', 'P5', 'P6', 'P7', 'P8']) {
     const states = { making: 0, partial: 0, absent: 0, unknown: 0, na: 0 };
     for (const a of withHorus) { const s = a.horus.moves[p]; if (s in states) states[s]++; else states.unknown++; }
-    const n = Math.max(1, withHorus.length);
-    moveRates[p] = {}; for (const k in states) moveRates[p][k] = Math.round(1000 * states[k] / n) / 1000;
+    const applicable = Math.max(1, withHorus.length - states.na);
+    moveRates[p] = {};
+    for (const k of ['making', 'partial', 'absent', 'unknown']) moveRates[p][k] = Math.round(1000 * states[k] / applicable) / 1000;
+    moveRates[p].na = Math.round(1000 * states.na / Math.max(1, withHorus.length)) / 1000;
+    moveRates[p].applicable = applicable;
   }
   const gapRates = {};
   for (const code in gapCodes) gapRates[code] = Math.round(1000 * agencies.filter(a => a.gaps.some(g => g.code === code)).length / Math.max(1, agencies.length)) / 1000;
   const offsh = ((R.offshore || {}).model || {}).offshorability || {};
-  const offshorability = {}; for (const [k] of dims) if (offsh[k]) offshorability[k] = { off: int(offsh[k].off), labor: num(offsh[k].labor), why: cap(offsh[k].why, 300) };
+  const r3 = v => (typeof v === 'number' && isFinite(v) ? Math.round(v * 1000) / 1000 : null);
+  const offshorability = {}; for (const [k] of dims) if (offsh[k]) offshorability[k] = { off: int(offsh[k].off), labor: r3(offsh[k].labor), why: cap(offsh[k].why, 300) };
   return {
     version: FINDINGS_VERSION, built: opts.built || new Date().toISOString().slice(0, 10), compiled: lv.compiled || null,
     generated: (R.meta && R.meta.generated) || null, edition: str(ed.edition) || (lv.core && lv.core.edition) || null, run_date: str(ed.run_date) || null,
@@ -137,7 +156,7 @@ export function extractFindings(html, opts = {}) {
     gapCodes, offshorability,
     field: {
       strategy: ((R.agg || {}).strategy || []).map(s => ({ key: s.key, label: s.label, mean: num(s.mean), invest_pct: int(s.invest_pct), heavy_pct: int(s.heavy_pct) })),
-      needs: (((R.needs || {}).field || {}).mix || []).map(m => ({ code: m.code, share: num(m.share) })),
+      needs: (((R.needs || {}).field || {}).mix || []).map(m => ({ code: m.code, share: r3(m.share) })),
       hti_median: med(htis), mon_median: med(mons), gaps: ((R.agg || {}).gaps || []).slice(0, 8).map(g => ({ label: g.label, n: int(g.n) })),
       moves: moveRates, gapRates, withHorus: withHorus.length, stalled: agencies.filter(a => a.content.urls && a.content.d90 === 0).length,
     },

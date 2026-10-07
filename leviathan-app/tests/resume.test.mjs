@@ -19,7 +19,7 @@ const E = ctx.__LV_RESUME_ENGINE;
 ok(!!E && typeof E.read === 'function' && typeof E.build === 'function' && typeof E.lint === 'function' && typeof E.mirror === 'function', 'the engine registers as __LV_RESUME_ENGINE without a document');
 ok(E.TRACKS.length === 17 && E.TRACKS.every(t => t.code && t.label && ['junior', 'mid', 'senior', 'manager', 'director'].every(l => t.titles[l]) && t.verbs.length >= 8 && t.keywords.length >= 10 && t.summary.includes('%ROLE%') && t.starters.length >= 3 && t.asks.length >= 1), 'seventeen hiring tracks, each with a title per level, verbs, keywords, starters and questions');
 ok(E.INDUSTRIES.length === 12 && E.INDUSTRIES.every(i => i.id && i.verbs.length === 10 && i.keywords.length === 10 && i.summary && i.titles.mid), 'Clapback’s twelve industry profiles ride along as general tracks');
-ok(Object.keys(E.GAP).length === 7 && Object.keys(E.MOVE).length === 8 && Object.keys(E.HB_THEME).length === 4, 'rules for the seven gap codes, the eight Horus moves and the four Hit Board themes');
+ok(Object.keys(E.GAP).length === 7 && Object.keys(E.MOVE).length === 8 && Object.keys(E.HB_THEME).length === 8, 'rules for the seven gap codes, the eight Horus moves and the eight Hit Board themes');
 ok(Object.values(E.DIM_TRACK).every(t => E.TRACK[t]) && Object.values(E.NEED_TRACK).flat().every(t => E.TRACK[t]) && Object.values(E.KJ_TRACK).flat().every(t => E.TRACK[t]) && Object.values(E.GAP).flatMap(g => g.tracks).every(t => E.TRACK[t]) && Object.values(E.MOVE).flatMap(m => m.tracks).every(t => E.TRACK[t]), 'every mapping points at a real track');
 { let p = true; try { new vm.Script(read('console/ext/resume-forge.js')); } catch (e) { p = false; console.log('   ' + e.message); } ok(p, 'the view script parses'); }
 
@@ -39,7 +39,16 @@ ok(r2.weak.length >= 3, 'weak phrases are flagged', r2.weak.length + ' tips');
 /* ---- titles and levels ---- */
 ok(E.levelFromYears('1 year') === 'junior' && E.levelFromYears('3 years') === 'mid' && E.levelFromYears('7 years') === 'senior' && E.levelFromYears('12 years') === 'manager' && E.levelFromYears('') === 'mid', 'the level is inferred from the years');
 ok(E.titleFor('N2', 'senior') === 'Senior Paid Search Manager' && E.titleFor('N10', 'director') === 'Head of Local' && E.titleFor('marketing', 'mid') === 'Marketing Specialist', 'titleFor composes the posted title for a level');
-ok(E.isAlias('Senior Paid Search Manager', 'N2') && E.isAlias('paid search manager', 'N2') && !E.isAlias('PPC wizard', 'N2'), 'isAlias recognizes the track’s titles');
+ok(E.isAlias('Senior Paid Search Manager', 'N2') && E.isAlias('paid search manager', 'N2') && E.isAlias('PPC Manager', 'N2') && E.isAlias('Senior PPC Specialist', 'N2') && E.isAlias('Registered Nurse', 'healthcare') && E.isAlias('Senior Software Engineer', 'software') && !E.isAlias('PPC wizard', 'N2') && !E.isAlias('Growth wizard', 'N2'), 'isAlias recognizes the track’s titles, the titles the job is also posted under, and real industry titles');
+ok(E.INDUSTRIES.every(i => Object.values(i.titles).every(t => t && !/Specialist Specialist|Coordinator Coordinator/.test(t))) && E.titleFor('software', 'senior') === 'Senior Software Engineer' && E.titleFor('healthcare', 'mid') === 'Registered Nurse', 'the industry profiles carry titles employers post');
+ok(E.hasTerm('server side tagging', 'server-side tagging') && E.hasTerm('first party data', 'first-party data'), 'a hyphen in a term matches the spaced spelling');
+{
+  const c0 = E.blankCandidate(); const t0 = E.blankTailor(); t0.track = 'N1';
+  const s0 = E.autoSummary(c0, t0, null);
+  ok(/\[N\] years/.test(s0) && /\[skill 1\] and \[skill 2\]/.test(s0), 'the auto summary leaves placeholders for years and skills the candidate never entered', s0);
+  const L0 = E.lint(E.build(c0, t0, null), c0, t0, {});
+  ok(!L0.ready && L0.gates.some(g => g.id === 'placeholders'), 'so an untouched draft is not ready');
+}
 
 /* ---- without findings: a general résumé still builds ---- */
 {
@@ -48,14 +57,14 @@ ok(E.isAlias('Senior Paid Search Manager', 'N2') && E.isAlias('paid search manag
   c.skills = 'SEO, content strategy, GA4'; c.exp = [{ title: 'SEO Manager', org: 'Co', dates: 'Jan 2022 – Present', bullets: 'Grew organic sessions 40% in 9 months' }]; c.education = 'B.A. 2016';
   const text = E.build(c, t, null);
   const L = text.split('\n');
-  ok(L[0] === 'PAT LEE' && /^Senior Marketing Specialist \| SEO · content strategy · GA4$/.test(L[1]) && L[2] === c.contact, 'build: name, a headline with the title and top skills, then the contact line', L.slice(0, 3).join(' / '));
+  ok(L[0] === 'PAT LEE' && /^Senior Marketing Manager \| SEO · content strategy · GA4$/.test(L[1]) && L[2] === c.contact, 'build: name, a headline with the title and top skills, then the contact line', L.slice(0, 3).join(' / '));
   ok(text.includes('\nSUMMARY\n') && text.includes('\nSKILLS\nSEO, content strategy, GA4\n') && text.includes('\nEXPERIENCE\nSEO Manager, Co (Jan 2022 – Present)\n- Grew organic sessions 40% in 9 months') && text.includes('\nEDUCATION & CERTIFICATIONS\n'), 'standard headers, ASCII separators, no hard wrapping');
   ok(text.indexOf('SUMMARY') < text.indexOf('SKILLS') && text.indexOf('SKILLS') < text.indexOf('EXPERIENCE') && text.indexOf('EXPERIENCE') < text.indexOf('EDUCATION'), 'section order is Summary, Skills, Experience, Education');
-  ok(/Senior Marketing Specialist with 5 years/.test(text) && /SEO and content strategy/.test(text) && !/channel-agnostic/.test(text), 'the auto summary uses the title, years and top two skills', E.autoSummary(c, t, null));
+  ok(/Senior Marketing Manager with 5 years/.test(text) && /SEO and content strategy/.test(text) && !/channel-agnostic/.test(text), 'the auto summary uses the title, years and top two skills', E.autoSummary(c, t, null));
   const md = E.markdown(c, t, null);
-  ok(md.startsWith('# Pat Lee') && md.includes('**Senior Marketing Specialist |') && md.includes('## Summary') && md.includes('- Grew organic'), 'markdown export mirrors the text build');
+  ok(md.startsWith('# Pat Lee') && md.includes('**Senior Marketing Manager |') && md.includes('## Summary') && md.includes('- Grew organic'), 'markdown export mirrors the text build');
   ok(E.html(c, t, null).includes('<h1>Pat Lee</h1>') && E.html(c, t, null).includes('<li>Grew organic sessions 40% in 9 months</li>'), 'the print HTML carries the same résumé with escaped text');
-  ok(E.fileStem(c, t, null) === 'Pat-Lee-Senior-Marketing-Specialist', 'the file stem is First-Last-Title', E.fileStem(c, t, null));
+  ok(E.fileStem(c, t, null) === 'Pat-Lee-Senior-Marketing-Manager', 'the file stem is First-Last-Title', E.fileStem(c, t, null));
   const lint = E.lint(text, c, t, {});
   ok(lint.ready && lint.checks.length === 8 && lint.checks.find(x => x.id === 'headers').ok && lint.checks.find(x => x.id === 'contact').ok && lint.checks.find(x => x.id === 'dates').ok && lint.checks.find(x => x.id === 'title').ok, 'the lint runs eight structural checks with no gate open', lint.score + ' ' + lint.checks.map(x => x.id + ':' + Math.round(x.v * 100)).join(' '));
   ok(!lint.checks.find(x => x.id === 'length').ok && lint.level === 'senior', 'a one-role draft is flagged short for its level', lint.words + ' words');
@@ -93,7 +102,13 @@ ok(otm.brief.bluf && otm.brief.openings && typeof otm.brief.horus === 'string', 
 
 /* Scorpion: Favored, in-house claim, Hit Board wave 1 with themes, no observed client needs; the field-wide P2 trio does not lead */
 const sc = E.read(E.agency('scorpion'));
-ok(sc.items.some(it => it.kind === 'strength' && /Favored/.test(it.finding)) && sc.items.some(it => it.kind === 'hitboard' && it.tracks.includes('N13') && it.tracks.includes('N4') && /site ownership/.test(it.finding)), 'Scorpion: a Favored strength, and the site-ownership theme points at retention and web tracks', sc.items.filter(it => it.kind === 'hitboard').map(it => it.finding.slice(0, 120)).join(' '));
+ok(sc.items.some(it => it.kind === 'strength' && /Favored/.test(it.finding)) && sc.items.some(it => it.kind === 'hitboard' && it.tracks.includes('N13') && it.tracks.includes('N4') && /site ownership/.test(it.finding) && !/owns your website/.test(it.finding)), 'Scorpion: a Favored strength, and the curated site-ownership theme points at web and retention tracks without the dossier’s own words', sc.items.filter(it => it.kind === 'hitboard').map(it => it.finding.slice(0, 160)).join(' '));
+const wf = E.read(E.agency('webfx'));
+ok(wf.items.some(it => it.kind === 'hitboard' && /vertical depth/.test(it.finding) && !/retention/.test(it.finding)), 'WebFX carries the vertical-depth theme and no retention theme');
+const k2 = E.read(E.agency('k2-internet'));
+ok(k2.items.filter(it => it.code === 'content_stalled' || it.code === 'd90').length === 1, 'a stalled sitemap is one finding, not a gap plus an exposure for the same fact', k2.items.filter(it => it.code === 'content_stalled' || it.code === 'd90').map(it => it.code).join(','));
+const es = E.read(E.agency('elite-sem'));
+ok(es.thin && !es.items.some(it => it.kind === 'hole'), 'a record with no capability scores gets no "does not sell" holes', es.items.map(it => it.kind).join(','));
 ok(sc.items.some(it => it.kind === 'monsoon' && /in-house/.test(it.finding)) && sc.items.some(it => it.kind === 'need' && it.code === 'inferred') && sc.items.some(it => it.kind === 'proof') && sc.items.some(it => it.kind === 'strength' && it.code === 'P3'), 'Scorpion: the in-house claim, the inferred need, the thin proof and a move it is making are read');
 ok(!sc.items.some(it => /wedge|kill|FORGE|OmegaWeapon/i.test(it.finding)) && !JSON.stringify(E.agency('scorpion')).match(/"kill"|"wedge"/), 'no rival-voiced text reaches the findings or the file');
 ok(['N10', 'N9', 'N1', 'N2'].includes(sc.tracks[0].code) && sc.tracks.slice(0, 3).every(t => !['N7', 'N6', 'N8'].includes(t.code)), 'Scorpion ranks on its local, search and AI lines, not on the field-wide absent moves', sc.tracks.slice(0, 3).map(t => t.code).join(','));
@@ -125,7 +140,7 @@ c.exp = [
 c.results = 'Cost per signed case down 31% on $180k a month\n310 booked jobs a month from Local Services Ads';
 c.education = 'B.A. Marketing, Florida State University, 2016 · Google Ads Search Certification · GA4 Certification';
 const summary = E.autoSummary(c, t, otm);
-ok(/Senior Paid Search Manager with 7 years/.test(summary) && /Ready to .* for an agency selling into personal injury, hvac, dental\./.test(summary) && !/Local & SMB/.test(summary), 'the auto summary carries the level title, the pitch and only the ticked verticals, the agency’s first', summary);
+ok(/Senior Paid Search Manager with 7 years/.test(summary) && /Ready to .* for an agency selling into personal injury, hvac, dental\./.test(summary) && !/Local & SMB/.test(summary) && !E.jargon(summary).length && !/not seen|no Google ads|lacks|Transparency Center/.test(summary), 'the auto summary carries the level title, an offer in the candidate’s voice and only the ticked verticals, the agency’s first', summary);
 t.summary = summary;
 const text = E.build(c, t, otm);
 ok(text.split('\n')[1] === 'Senior Paid Search Manager | Law firm SEO · HVAC digital marketing · Local SEO | Personal injury, HVAC, Dental', 'the headline carries the title, the agency’s terms first and the ticked verticals', text.split('\n')[1]);
@@ -141,6 +156,8 @@ ok(M.pts === M.cap && M.present.length >= 8 && M.present.some(p => p.pts === 2 &
   const ts = JSON.parse(JSON.stringify(t)); const txt = E.build(stuffed, ts, otm);
   const Ms = E.mirror(txt + ' Local SEO Local SEO Local SEO', stuffed, E.mirrorTerms(otm.vocab).map(v => v.t), { role: E.roleOf(stuffed, ts) });
   ok(Ms.pts <= Ms.cap && Ms.overused.some(o => /^Local SEO/.test(o)) && !Ms.overused.some(o => /^SEO /.test(o)), 'a stuffed skills block cannot exceed the cap and is called out, while a word inside longer phrases is not', Ms.overused.join(','));
+  const Mr = E.mirror(text + '\nPaid Search. Paid Search. Paid Search. Paid Search. Paid Search. Paid Search.', c, E.mirrorTerms(otm.vocab).map(v => v.t), { role: 'Paid Search Manager' });
+  ok(Mr.overused.some(o => /^Paid Search/.test(o)), 'the role’s own name earns one extra use, not unlimited ones', Mr.overused.join(','));
 }
 {
   const Mp = E.mirror(text, c, E.keywordsFrom('We need a Paid Search Manager for law firms: Google Ads, Local Services Ads, call tracking and GA4 reporting.', 24), { source: 'posting' });
@@ -167,7 +184,7 @@ ok(m.have.includes('google ads') && m.have.includes('local services ads') && m.h
 /* ---- the brief ---- */
 const brief = E.brief(otm, c, t, { lint: L });
 ok(brief.startsWith('# Interview brief: On The Map Marketing') && /## Gaps it shows/.test(brief) && /## What it sells/.test(brief) && /## Role tracks/.test(brief) && /## Questions to ask/.test(brief) && /## Things to verify/.test(brief) && /#core\.a\.on-the-map-marketing/.test(brief) && /Hit Board/.test(brief), 'the brief carries the read, the gaps, the lines, the tracks, questions, things to verify and the dossier route', brief.length + ' chars');
-ok(!/strongest opening/i.test(brief) && !/\bkill\b/i.test(brief) && !/\bwedge\b/i.test(brief) && !/\bFORGE\b/.test(brief) && !/OmegaWeapon/.test(brief), 'the brief carries nothing a rival wrote');
+ok(!/strongest opening/i.test(brief) && !/\bkill\b/i.test(brief) && !/\bwedge\b/i.test(brief) && !/\bFORGE\b/.test(brief) && !/OmegaWeapon/.test(brief) && !/\brivals?\b/i.test(brief.split('## The read')[0]), 'the brief carries nothing a rival wrote, and its one-paragraph read has no sentence for a rival');
 ok(E.brief(E.read(E.agency('ampush')), c, t, {}).includes('Thin record') && E.brief(E.read(E.agency('ampush')), c, t, {}).includes('Status is acquired-rebranded'), 'a thin or merged record is said so in the brief');
 
 /* ---- search ---- */

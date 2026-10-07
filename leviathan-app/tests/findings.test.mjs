@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import vm from 'node:vm';
 import { fileURLToPath } from 'node:url';
-import { extractFindings, findingsScript, readFindingsScript, readRadar, readHitBoard, hbThemes } from '../lib/findings.mjs';
+import { extractFindings, findingsScript, readFindingsScript, readRadar, readHitBoard, hbThemes, neutralBluf, HB_THEMES } from '../lib/findings.mjs';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const read = rel => fs.readFileSync(path.join(ROOT, rel), 'utf8');
 const exists = rel => fs.existsSync(path.join(ROOT, rel));
@@ -20,7 +20,8 @@ const ok = (c, label, extra) => { console.log(`${c ? 'ok  ' : 'FAIL'} ${label}${
   const t = readHitBoard(hb);
   ok(t.length === 2 && t[0].name === 'A' && t[0].arch === 'x [y]' && t[1].wave === 2, 'readHitBoard evaluates the TARGETS literal in a vm', JSON.stringify(t[0]));
   threw = false; try { readHitBoard('const TARGETS=[ {name:"A"} '); } catch (e) { threw = true; } ok(threw, 'readHitBoard throws when the array does not end');
-  ok(hbThemes('Clients churn after billing complaints; the proprietary CMS holds the website hostage').join() === 'retention,site-ownership' && hbThemes('nothing here').join() === 'retention', 'hbThemes reduces a wedge to neutral hiring themes, retention by default');
+  ok(hbThemes('localiq.com').join() === 'retention,lead-quality' && hbThemes('WebFX.com').join() === 'vertical-depth,site-ownership' && hbThemes('nobody.example').length === 0 && Object.keys(HB_THEMES).length === 10, 'hbThemes is a curated table by domain, empty for a target it does not know');
+  ok(neutralBluf('Acme is a Boston agency selling SEO. The one thing a rival should know: it has no pricing. It was founded in 2001.') === 'Acme is a Boston agency selling SEO. It was founded in 2001.' && neutralBluf('') === null, 'neutralBluf drops the sentences written for a rival');
 }
 
 /* ---- the built console ---- */
@@ -43,9 +44,10 @@ ok(idx.join() === F.agencies.map(a => a.id).sort().join(), 'the agencies match t
 const withWv = F.agencies.filter(a => Object.keys(a.wv || {}).length).length;
 ok(withWv === (lv.agencies || []).length, 'vertical reach comes from the Agency Field for exactly its agencies', `${withWv} of ${(lv.agencies || []).length}`);
 const hb = F.agencies.filter(a => a.hb);
-ok(hb.length >= 8 && hb.every(a => a.hb.wave && Array.isArray(a.hb.themes) && a.hb.themes.length && a.hb.arch), 'the Hit Board agencies on the Radar carry wave, arch and neutral themes', hb.map(a => a.name + ':' + a.hb.themes.join('+')).join(', '));
-ok(!/"kill"|"wedge"/.test(JSON.stringify(F)), 'the rival-voiced Hit Board texts never ship');
-ok(['P1', 'P2', 'P3', 'P4', 'P5', 'P6', 'P7', 'P8'].every(p => F.field.moves[p] && typeof F.field.moves[p].absent === 'number') && F.field.moves.P2.absent > 0.6 && typeof F.field.gapRates.ai_no_llms === 'number' && F.field.stalled > 0, 'the field base rates of the moves and the gaps are computed', JSON.stringify(F.field.moves.P2) + ' ' + JSON.stringify(F.field.gapRates));
+ok(hb.length >= 8 && hb.every(a => a.hb.wave && Array.isArray(a.hb.themes) && a.hb.themes.length), 'the Hit Board agencies on the Radar carry wave and curated themes', hb.map(a => a.name + ':' + a.hb.themes.join('+')).join(', '));
+ok(!/"kill"|"wedge"|"arch"/.test(JSON.stringify(F)) && !F.agencies.some(a => /\brivals?\b/i.test(a.text.bluf || '')), 'the rival-voiced Hit Board texts and the dossier sentences written for a rival never ship');
+ok(hb.find(a => a.id === 'webfx').hb.themes.join() === 'vertical-depth,site-ownership' && !hb.find(a => a.id === 'webfx').hb.themes.includes('retention'), 'WebFX, "not a churn play", carries no retention theme');
+ok(['P1', 'P2', 'P3', 'P4', 'P5', 'P6', 'P7', 'P8'].every(p => F.field.moves[p] && typeof F.field.moves[p].absent === 'number' && typeof F.field.moves[p].applicable === 'number') && F.field.moves.P2.absent > 0.6 && F.field.moves.P3.na > 0.5 && F.field.moves.P3.absent > 0.4 && typeof F.field.gapRates.ai_no_llms === 'number' && F.field.stalled > 0, 'the field base rates of the moves (over the agencies they apply to) and the gaps are computed', JSON.stringify(F.field.moves.P3) + ' ' + JSON.stringify(F.field.gapRates));
 for (const a of F.agencies) {
   const bad = [];
   if (!a.id || !a.name || !a.domain) bad.push('identity');

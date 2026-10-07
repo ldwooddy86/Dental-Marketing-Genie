@@ -225,34 +225,54 @@
 
   /* ---------- the store: one snapshot of the wrapper's extension storage, for the scripts beside the console (the Résumé Forge) ----------
      The wrapper answers the bridge's ready signal with the whole snapshot; reads are then synchronous from the cache and every write
-     updates the cache and posts the key to the wrapper, which merges and persists it. Outside the wrapper, localStorage stands in. */
+     updates the cache and posts the key to the wrapper, which merges and persists it. Until the snapshot has arrived no write leaves
+     the page (it is kept and posted once the snapshot is in), so a slow wrapper can never have its draft overwritten by a blank one.
+     If the snapshot is late, it is merged under the local writes and announced to the listeners (store.onSnapshot), so a view can
+     re-read it. Outside the wrapper, localStorage stands in. */
   const storeCache = Object.create(null);
-  let storeReadyFn = null, storeReadyDone = false;
+  const pending = new Set();
+  const snapshotListeners = [];
+  let storeReadyFn = null, storeReadyDone = false, snapshotSeen = false;
   const storeReady = new Promise(res => { storeReadyFn = res; });
-  function settleStore(data) {
-    if (data && typeof data === 'object') for (const k of Object.keys(data)) storeCache[k] = data[k];
-    if (!storeReadyDone) { storeReadyDone = true; storeReadyFn(storeCache); }
+  function settleStore(data, fromWrapper) {
+    if (fromWrapper) {
+      if (snapshotSeen) return;
+      snapshotSeen = true;
+      if (data && typeof data === 'object') for (const k of Object.keys(data)) if (!pending.has(k)) storeCache[k] = data[k];
+    }
+    const first = !storeReadyDone;
+    if (first) { storeReadyDone = true; storeReadyFn(storeCache); }
+    if (fromWrapper) {
+      if (!first) snapshotListeners.forEach(f => { try { f(data && typeof data === 'object' ? data : {}); } catch (e) { /* a listener's problem */ } });
+      for (const k of pending) postKey(k);
+      pending.clear();
+    }
   }
+  function postKey(k) { try { PARENT.postMessage({ lv: 'store', key: String(k), value: storeCache[k] === undefined ? null : storeCache[k] }, '*'); return true; } catch (e) { return false; } }
   window.addEventListener('message', ev => {
     const m = ev.data; if (!m || typeof m !== 'object' || m.lv !== 'wrapper' || m.kind !== 'store' || !PARENT || ev.source !== PARENT) return;
-    settleStore(m.data && typeof m.data === 'object' ? m.data : {});
+    settleStore(m.data && typeof m.data === 'object' ? m.data : {}, true);
   });
   const LS_KEY = 'leviathan.store.v1';
   function localRead() { try { const v = localStorage.getItem(LS_KEY); return v ? JSON.parse(v) : {}; } catch (e) { return {}; } }
   function localWrite() { try { localStorage.setItem(LS_KEY, JSON.stringify(storeCache)); } catch (e) { /* storage off: memory only */ } }
+  function localSettle() { if (!PARENT && !storeReadyDone) { const d = localRead(); for (const k of Object.keys(d)) storeCache[k] = d[k]; settleStore(null, false); } }
   const store = {
     available: () => !!PARENT,
-    ready: () => { if (!PARENT && !storeReadyDone) settleStore(localRead()); return storeReady; },
-    get: key => { if (!PARENT && !storeReadyDone) settleStore(localRead()); const v = storeCache[key]; return v === undefined || v === null ? undefined : v; },
+    settled: () => (PARENT ? snapshotSeen : true),
+    ready: () => { localSettle(); return storeReady; },
+    onSnapshot: f => { if (typeof f === 'function') snapshotListeners.push(f); },
+    get: key => { localSettle(); const v = storeCache[key]; return v === undefined || v === null ? undefined : v; },
     all: () => Object.assign({}, storeCache),
     set: (key, value) => {
       let v = null; try { v = value === undefined ? null : JSON.parse(JSON.stringify(value)); } catch (e) { return false; }
       storeCache[key] = v;
       if (!PARENT) { localWrite(); return true; }
-      try { PARENT.postMessage({ lv: 'store', key: String(key), value: v }, '*'); return true; } catch (e) { return false; }
+      if (!snapshotSeen) { pending.add(String(key)); return true; }
+      return postKey(key);
     },
   };
-  if (PARENT) setTimeout(() => { if (!storeReadyDone) settleStore({}); }, 2500);
+  if (PARENT) setTimeout(() => { if (!storeReadyDone) settleStore(null, false); }, 4000);
 
   window.__LV_EXT = { version: VERSION, loadPrefs, savePrefs, store, wrapAtlas, injectAfterHead, seedFor, atlasShim, INNER_SRC, ATLAS_SRC };
 })();
