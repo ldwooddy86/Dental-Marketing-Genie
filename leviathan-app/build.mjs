@@ -1,19 +1,22 @@
 /* Build the Leviathan browser app. Node 22, no npm packages.
      node build.mjs --from <dir>   rebuild console/ and registry.js from the Leviathan repository: <dir> is its leviathan/ folder or its root
      node build.mjs --fetch        the same, downloading the console files from GitHub (ldwooddy86/Leviathan, main; --branch <name> for another)
+     node build.mjs --findings     regenerate console/ext/resume-findings.js from the console already in this folder
      node build.mjs                validate what is in this folder and run the unit tests
      node build.mjs --zip          also write ../dist/leviathan-extension.zip
      --check  validate only   --no-test  skip the unit tests
-   The console is patched, not rewritten: six anchored edits in its frame script (lib/patch.mjs), the bridge script beside it,
-   the companion data scripts copied as they are. Validation: the manifest and its sandbox CSP, no inline scripts on the extension
-   pages, the patch markers in the built console, the companion payloads the console names, registry.js in step with the console,
-   node --check on every script. */
+   The console is patched, not rewritten: anchored one line edits in its frame script (lib/patch.mjs), the bridge and the Résumé
+   Forge scripts beside it, the companion data scripts copied as they are. The Forge's findings file (console/ext/resume-findings.js)
+   is generated from the console's own OmegaWeapon and Hit Board payloads (lib/findings.mjs). Validation: the manifest and its
+   sandbox CSP, no inline scripts on the extension pages, the patch markers in the built console, the companion payloads the
+   console names, registry.js and the findings in step with the console, node --check on every script. */
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { EXT_VERSION, MARKERS, patchConsole, extractRegistry, registryScript, writeZip } from './lib/patch.mjs';
+import { extractFindings, findingsScript, readFindingsScript } from './lib/findings.mjs';
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
 const OUT = path.resolve(ROOT, '..', 'dist', 'leviathan-extension.zip');
@@ -65,6 +68,21 @@ async function rebuild(src) {
   }
   fs.writeFileSync(path.join(ROOT, 'registry.js'), registryScript(reg));
   info(`registry.js: ${reg.modules.length} dashboards in ${reg.wings.length} wings`);
+  const F = extractFindings(html, { built: reg.built });
+  const fjs = findingsScript(F);
+  fs.mkdirSync(path.join(ROOT, 'console', 'ext'), { recursive: true });
+  fs.writeFileSync(path.join(ROOT, 'console', 'ext', 'resume-findings.js'), fjs);
+  info(`console/ext/resume-findings.js ${MB(Buffer.byteLength(fjs))} (${F.n} agencies, ${F.n_deep} deep dossiers, Radar compiled ${F.generated}, Horus edition ${F.edition})`);
+}
+
+/* ---- 1b. the findings alone, from the console already here ---- */
+function refindings() {
+  console.log('findings from console/Leviathan.html');
+  const c = read('console/Leviathan.html');
+  const F = extractFindings(c, { built: new Date().toISOString().slice(0, 10) });
+  const fjs = findingsScript(F);
+  fs.writeFileSync(path.join(ROOT, 'console', 'ext', 'resume-findings.js'), fjs);
+  info(`console/ext/resume-findings.js ${MB(Buffer.byteLength(fjs))} (${F.n} agencies, ${F.n_deep} deep dossiers, Radar compiled ${F.generated}, Horus edition ${F.edition})`);
 }
 
 /* ---- 2. validation ---- */
@@ -120,9 +138,27 @@ function validate() {
       const total = ['console/Leviathan.html', ...reg.ext.map(x => 'console/' + x.file)].filter(exists).reduce((a, f) => a + fs.statSync(path.join(ROOT, f)).size, 0);
       info(`${reg.modules.length} dashboards, console ${reg.consoleVersion}, compiled ${reg.compiled}, ${MB(total)} of console files`);
     }
+    console.log('résumé forge');
+    for (const f of ['console/ext/resume-engine.js', 'console/ext/resume-forge.js']) if (!exists(f)) bad(`${f} is missing`);
+    if (!exists('console/ext/resume-findings.js')) bad('console/ext/resume-findings.js is missing: run node build.mjs --from <Leviathan repository> (or --fetch)');
+    else {
+      let F = null;
+      try { F = readFindingsScript(read('console/ext/resume-findings.js')); } catch (e) { bad('console/ext/resume-findings.js does not read back: ' + e.message); }
+      if (F) {
+        const lvm = /<script type="application\/json" id="lv-data">([\s\S]*?)<\/script>/.exec(c);
+        const idx = lvm ? (JSON.parse(lvm[1]).agencyIndex || []).map(a => a.id).sort() : [];
+        const got = F.agencies.map(a => a.id).sort();
+        if (idx.length && idx.join() !== got.join()) bad(`console/ext/resume-findings.js lists ${got.length} agencies, the console's agencyIndex ${idx.length}: rebuild`);
+        if (!F.implications.length || !F.kj.length || !Object.keys(F.taxonomy).length) bad('console/ext/resume-findings.js lacks the field context (implications, key judgments, needs taxonomy)');
+        const coreGen = lvm ? (JSON.parse(lvm[1]).core || {}).generated : null;
+        if (coreGen && F.generated !== coreGen) bad(`console/ext/resume-findings.js was read from a Radar compiled ${F.generated}, the console carries ${coreGen}: run node build.mjs --findings`);
+        if (!F.field || !F.field.moves || !F.field.moves.P1) bad('console/ext/resume-findings.js lacks the field base rates: run node build.mjs --findings');
+        info(`${F.n} agencies, ${F.n_deep} deep dossiers, Radar compiled ${F.generated}, Horus edition ${F.edition}, ${MB(fs.statSync(path.join(ROOT, 'console/ext/resume-findings.js')).size)}`);
+      }
+    }
   }
   console.log('syntax');
-  const js = ['background.js', 'popup.js', 'app.js', 'open.js', 'registry.js', 'console/ext/host-bridge.js'].filter(exists);
+  const js = ['background.js', 'popup.js', 'app.js', 'open.js', 'registry.js', 'console/ext/host-bridge.js', 'console/ext/resume-engine.js', 'console/ext/resume-forge.js', 'console/ext/resume-findings.js'].filter(exists);
   for (const f of js) { const r = spawnSync(process.execPath, ['--check', path.join(ROOT, f)], { encoding: 'utf8' }); if (r.status !== 0) bad(`node --check ${f}: ${(r.stderr || '').split('\n').slice(0, 3).join(' ')}`); }
   info(`${js.length} files checked`);
 }
@@ -144,6 +180,7 @@ function zip() {
 try {
   const src = await source();
   if (src) await rebuild(src);
+  else if (flag('--findings')) refindings();
 } catch (e) { console.log('\nBUILD FAILED\n  ' + e.message); process.exit(1); }
 validate();
 if (problems.length) { console.log('\nPROBLEMS\n  ' + problems.join('\n  ')); process.exit(1); }

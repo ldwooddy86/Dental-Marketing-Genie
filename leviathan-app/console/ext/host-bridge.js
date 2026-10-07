@@ -223,5 +223,36 @@
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => relayRoute(true)); else relayRoute(true);
 
-  window.__LV_EXT = { version: VERSION, loadPrefs, savePrefs, wrapAtlas, injectAfterHead, seedFor, atlasShim, INNER_SRC, ATLAS_SRC };
+  /* ---------- the store: one snapshot of the wrapper's extension storage, for the scripts beside the console (the Résumé Forge) ----------
+     The wrapper answers the bridge's ready signal with the whole snapshot; reads are then synchronous from the cache and every write
+     updates the cache and posts the key to the wrapper, which merges and persists it. Outside the wrapper, localStorage stands in. */
+  const storeCache = Object.create(null);
+  let storeReadyFn = null, storeReadyDone = false;
+  const storeReady = new Promise(res => { storeReadyFn = res; });
+  function settleStore(data) {
+    if (data && typeof data === 'object') for (const k of Object.keys(data)) storeCache[k] = data[k];
+    if (!storeReadyDone) { storeReadyDone = true; storeReadyFn(storeCache); }
+  }
+  window.addEventListener('message', ev => {
+    const m = ev.data; if (!m || typeof m !== 'object' || m.lv !== 'wrapper' || m.kind !== 'store' || !PARENT || ev.source !== PARENT) return;
+    settleStore(m.data && typeof m.data === 'object' ? m.data : {});
+  });
+  const LS_KEY = 'leviathan.store.v1';
+  function localRead() { try { const v = localStorage.getItem(LS_KEY); return v ? JSON.parse(v) : {}; } catch (e) { return {}; } }
+  function localWrite() { try { localStorage.setItem(LS_KEY, JSON.stringify(storeCache)); } catch (e) { /* storage off: memory only */ } }
+  const store = {
+    available: () => !!PARENT,
+    ready: () => { if (!PARENT && !storeReadyDone) settleStore(localRead()); return storeReady; },
+    get: key => { if (!PARENT && !storeReadyDone) settleStore(localRead()); const v = storeCache[key]; return v === undefined || v === null ? undefined : v; },
+    all: () => Object.assign({}, storeCache),
+    set: (key, value) => {
+      let v = null; try { v = value === undefined ? null : JSON.parse(JSON.stringify(value)); } catch (e) { return false; }
+      storeCache[key] = v;
+      if (!PARENT) { localWrite(); return true; }
+      try { PARENT.postMessage({ lv: 'store', key: String(key), value: v }, '*'); return true; } catch (e) { return false; }
+    },
+  };
+  if (PARENT) setTimeout(() => { if (!storeReadyDone) settleStore({}); }, 2500);
+
+  window.__LV_EXT = { version: VERSION, loadPrefs, savePrefs, store, wrapAtlas, injectAfterHead, seedFor, atlasShim, INNER_SRC, ATLAS_SRC };
 })();

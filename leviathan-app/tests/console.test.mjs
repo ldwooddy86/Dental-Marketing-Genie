@@ -16,6 +16,11 @@ for (const m of MARKERS) ok(c.split(m).length - 1 === 1, `marker once: ${m}`);
 ok(!c.includes(ANCHORS.srcdoc), 'no unpatched srcdoc assignment remains');
 ok(c.indexOf('<script src="ext/host-bridge.js"></script>') < c.indexOf(ANCHORS.frameStart), 'the bridge script loads before the frame script');
 ok(exists('console/ext/host-bridge.js'), 'console/ext/host-bridge.js is present');
+for (const f of ['console/ext/resume-findings.js', 'console/ext/resume-engine.js', 'console/ext/resume-forge.js']) {
+  ok(exists(f), `${f} is present`);
+  if (exists(f)) { let p = true; try { new vm.Script(read(f)); } catch (e) { p = false; console.log('   ' + e.message); } ok(p, `${f} parses`); }
+}
+ok(c.indexOf('<script src="ext/resume-forge.js"></script>') < c.indexOf(ANCHORS.frameStart), 'the Forge scripts load before the frame script');
 {
   const a = c.indexOf(ANCHORS.frameStart) + '<script>'.length, b = c.indexOf('</script>', a);
   let p = true; try { new vm.Script(c.slice(a, b)); } catch (e) { p = false; console.log('   ' + e.message); }

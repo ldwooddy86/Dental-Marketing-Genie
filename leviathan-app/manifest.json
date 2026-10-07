@@ -2,8 +2,8 @@
   "manifest_version": 3,
   "name": "Leviathan",
   "short_name": "Leviathan",
-  "version": "1.0.0",
-  "description": "The Leviathan marketing intelligence console as a browser app: OmegaWeapon and the Hit Board at the core, fourteen industry atlases in three wings (legal, home services, healthcare), the Convergence map and the Agency Field. Everything runs in the browser; nothing is sent anywhere.",
+  "version": "1.1.0",
+  "description": "The Leviathan marketing intelligence console as a browser app: OmegaWeapon and the Hit Board at the core, fourteen industry atlases in three wings (legal, home services, healthcare), the Convergence map, the Agency Field and the Résumé Forge. Everything runs in the browser; nothing is sent anywhere.",
   "icons": {
     "16": "icons/icon16.png",
     "32": "icons/icon32.png",
