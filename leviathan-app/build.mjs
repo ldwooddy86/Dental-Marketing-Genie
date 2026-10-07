@@ -9,7 +9,8 @@
    Forge scripts beside it, the companion data scripts copied as they are. The Forge's findings file (console/ext/resume-findings.js)
    is generated from the console's own OmegaWeapon and Hit Board payloads (lib/findings.mjs). Validation: the manifest and its
    sandbox CSP, no inline scripts on the extension pages, the patch markers in the built console, the companion payloads the
-   console names, registry.js and the findings in step with the console, node --check on every script. */
+   console names, registry.js and the findings in step with the console, no withheld name anywhere in the repository (every
+   payload inflated, every zip entry read: lib/scrub.mjs), node --check on every script. */
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -17,6 +18,7 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { EXT_VERSION, MARKERS, patchConsole, extractRegistry, registryScript, writeZip } from './lib/patch.mjs';
 import { extractFindings, findingsScript, readFindingsScript } from './lib/findings.mjs';
+import { scrubPayloads, scanTree } from './lib/scrub.mjs';
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
 const OUT = path.resolve(ROOT, '..', 'dist', 'leviathan-extension.zip');
@@ -53,22 +55,26 @@ async function rebuild(src) {
   console.log('console from ' + src);
   const html = fs.readFileSync(path.join(src, 'Leviathan.html'), 'utf8');
   const reg = extractRegistry(html, { version: EXT_VERSION });
-  const patched = patchConsole(html, { version: EXT_VERSION });
+  const sc = scrubPayloads(patchConsole(html, { version: EXT_VERSION }));
+  const patched = sc.text;
   fs.mkdirSync(path.join(ROOT, 'console'), { recursive: true });
   fs.writeFileSync(path.join(ROOT, 'console', 'Leviathan.html'), patched);
+  for (const y of sc.changes) info(`withheld: ${y.removed} row(s) dropped from the ${y.id} payload`);
   info(`console/Leviathan.html ${MB(Buffer.byteLength(patched))} (console ${reg.consoleVersion}, compiled ${reg.compiled})`);
   for (const x of reg.ext) {
     const p = path.join(src, x.file);
     if (!fs.existsSync(p)) throw new Error(`${x.file} is missing beside Leviathan.html (it carries ${x.ids.join(', ')})`);
-    fs.copyFileSync(p, path.join(ROOT, 'console', x.file));
-    info(`console/${x.file} ${MB(fs.statSync(p).size)} (${x.ids.join(', ')})`);
+    const d = scrubPayloads(fs.readFileSync(p, 'utf8'));
+    if (d.changes.length) { fs.writeFileSync(path.join(ROOT, 'console', x.file), d.text); for (const y of d.changes) info(`withheld: ${y.removed} row(s) dropped from the ${y.id} payload`); }
+    else fs.copyFileSync(p, path.join(ROOT, 'console', x.file));
+    info(`console/${x.file} ${MB(fs.statSync(path.join(ROOT, 'console', x.file)).size)} (${x.ids.join(', ')})`);
   }
   for (const f of fs.readdirSync(path.join(ROOT, 'console'))) {
     if (/^Leviathan-data.*\.js$/.test(f) && !reg.ext.some(x => x.file === f)) { fs.unlinkSync(path.join(ROOT, 'console', f)); info(`removed stale console/${f}`); }
   }
   fs.writeFileSync(path.join(ROOT, 'registry.js'), registryScript(reg));
   info(`registry.js: ${reg.modules.length} dashboards in ${reg.wings.length} wings`);
-  const F = extractFindings(html, { built: reg.built });
+  const F = extractFindings(patched, { built: reg.built });
   const fjs = findingsScript(F);
   fs.mkdirSync(path.join(ROOT, 'console', 'ext'), { recursive: true });
   fs.writeFileSync(path.join(ROOT, 'console', 'ext', 'resume-findings.js'), fjs);
@@ -157,6 +163,11 @@ function validate() {
       }
     }
   }
+  console.log('withheld');
+  const repo = fs.existsSync(path.join(ROOT, '..', '.git')) ? path.resolve(ROOT, '..') : ROOT;
+  const sw = scanTree(repo);
+  for (const p of sw.problems) bad(p);
+  info(`${sw.files} files and ${sw.payloads} payloads under ${path.basename(repo)}/: ${sw.problems.length ? sw.problems.length + ' withheld' : 'nothing withheld'}`);
   console.log('syntax');
   const js = ['background.js', 'popup.js', 'app.js', 'open.js', 'registry.js', 'console/ext/host-bridge.js', 'console/ext/resume-engine.js', 'console/ext/resume-forge.js', 'console/ext/resume-findings.js'].filter(exists);
   for (const f of js) { const r = spawnSync(process.execPath, ['--check', path.join(ROOT, f)], { encoding: 'utf8' }); if (r.status !== 0) bad(`node --check ${f}: ${(r.stderr || '').split('\n').slice(0, 3).join(' ')}`); }

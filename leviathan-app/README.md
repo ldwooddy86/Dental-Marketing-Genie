@@ -106,6 +106,7 @@ console/ext/resume-forge.js      the Résumé Forge screen
 icons/                   the console's mark at 16, 32, 48 and 128 pixels (tools/icons.mjs renders them)
 lib/patch.mjs            the anchored patches, the registry extraction, the zip writer (build only, not shipped)
 lib/findings.mjs         the findings extraction from the console's payloads (build only, not shipped)
+lib/scrub.mjs            the withheld list (kept encoded), the payload scrub and the repository scan (build only, not shipped)
 build.mjs                rebuild from the Leviathan repository, validate, test, zip (not shipped)
 tests/                   unit tests and the Playwright end to end run (not shipped)
 ```
@@ -126,6 +127,11 @@ alone from the console already in the folder. Without `--from`, `--fetch` or `--
 (including the findings being in step with the console's Radar compile) and runs the unit tests; `--check` validates only,
 `--no-test` skips the tests.
 
+A rebuild also drops, from every payload, the data rows that carry a name on the withheld list in `lib/scrub.mjs` (the
+entries are kept encoded there, so the names never appear in the repository), and the validation scans the whole repository,
+every payload inflated and every zip entry read, and refuses it while such a name remains anywhere. A rebuild that finds one
+outside a data row fails and says which payload.
+
 ## Tests
 
 Node 22, no npm packages.
@@ -135,11 +141,13 @@ Node 22, no npm packages.
   console (markers, companion payloads, `registry.js` in step), the findings extraction (every agency complete, the Hit Board
   joined, the base rates, the generated script read back), and the Résumé Forge engine (matching, titles and levels, the
   reading of On The Map Marketing, Scorpion, Promodo and a thin record, the build, the readiness gates, the mirror count, the
-  posting match, the brief, the search).
+  posting match, the brief, the search), and the withheld-name scrub and scan (rows dropped, payloads rewritten, zip entries
+  read, the whole repository clean).
 - `node tests/e2e/run.mjs` loads the unpacked extension into headless Chromium with Playwright and checks the whole chain: the
   console starts sandboxed, the Thermal Debt Atlas (inline payload), the Dental Divide Atlas (companion script, nested module
   documents) and OmegaWeapon register over the bridge, the Dark button reaches the atlases and a nested module document, the
-  preference lands in storage and survives a reload, the tab URL follows the console and drives it, the Résumé Forge opens on
+  preference lands in storage and survives a reload, the tab URL follows the console and drives it, the rewritten Dallas Fort
+  Worth payload still inflates, the Résumé Forge opens on
   `#resume.on-the-map-marketing`, draws the findings and the tracks, builds a résumé as the form is typed, adds an agency term
   from a chip, copies, downloads and prints it, keeps the draft in extension storage and brings it back after a reload, and the
   popup lists and finds the dashboards and offers the four views. Screenshots land in `tests/e2e/console.png`,

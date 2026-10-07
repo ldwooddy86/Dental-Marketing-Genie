@@ -122,6 +122,13 @@ try {
   const hv2 = await waitLive(cf, 'hvac');
   ok(hv2 && hv2.state === 'ready' && hv2.cur === 'paid', 'the route in the URL reopens hvac on the paid module', JSON.stringify(hv2));
 
+  /* ---- 3c. dfw: the atlas whose payload the build rewrites (a withheld row dropped, the gzip re-encoded) ---- */
+  await page.evaluate(() => { location.hash = '#dfw'; });
+  const dw = await waitLive(cf, 'dfw', 120000);
+  ok(dw && dw.state === 'ready', 'the Dallas Fort Worth atlas (dfw: a payload the build rewrites) registers through the bridge', JSON.stringify(dw));
+  const wf = await atlasFrame(cf, 'dfw');
+  ok(!!wf && await wf.evaluate(() => typeof window.__ATLAS_DATA__ === 'object' && window.__ATLAS_DATA__ !== null && Object.keys(window.__ATLAS_DATA__).length > 10), 'the rewritten dfw payload inflates in the console and its data parses');
+
   /* ---- 6. the Résumé Forge ---- */
   await page.evaluate(() => { location.hash = '#resume.on-the-map-marketing'; });
   await cf.waitForSelector('#rf-read .rf-item', { timeout: 30000 });
