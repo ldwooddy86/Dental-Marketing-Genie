@@ -120,4 +120,43 @@ for (const f of IW.listeners.message) f({ data: { lv: 'inner', kind: 'theme', t:
 ok(IW.attrs['data-theme'] === 'dark', 'a theme message from another window is ignored');
 ok(IW.kids.filter(k => k.id === 'lv-ext-tweaks').length === 1, 'the tweaks style is added once');
 
+
+/* ---- the store: the wrapper hands the bridge a snapshot on the ready signal; reads are synchronous; writes wait for the snapshot ---- */
+{
+  const sent = [], listeners = {};
+  const parent = { postMessage(m) { sent.push(m); } };
+  const win = {
+    addEventListener(t, f) { (listeners[t] = listeners[t] || []).push(f); },
+    location: { search: '', hash: '#resume' }, history: { replaceState() { }, pushState() { } },
+    document: { readyState: 'complete', querySelector: () => ({ content: '1.1.0' }), addEventListener() { } },
+    __LEVIATHAN: { theme: () => null, railHidden: () => false, initialRoute: () => null },
+    URLSearchParams, console, setTimeout, clearTimeout, JSON, Promise,
+  };
+  win.window = win; win.self = win; win.parent = parent;
+  vm.createContext(win);
+  vm.runInContext(src, win, { filename: 'host-bridge.js' });
+  const ST = win.__LV_EXT.store;
+  ok(ST && ST.available() === true && ST.settled() === false && typeof ST.get === 'function' && typeof ST.set === 'function' && typeof ST.ready === 'function' && typeof ST.onSnapshot === 'function', 'the bridge exposes a store when a wrapper frames the console');
+  ok(sent.some(m => m.lv === 'route' && m.ready === true), 'the bridge announces readiness to the wrapper on load');
+  ok(ST.set('early', { n: 1 }) === true && ST.get('early').n === 1 && !sent.some(m => m.lv === 'store'), 'a write before the snapshot is cached and held, not posted');
+  const deliver = (m, source) => { for (const f of (listeners.message || [])) f({ data: m, source: source === undefined ? parent : source }); };
+  let settled = false; const ready = ST.ready().then(() => { settled = true; });
+  deliver({ lv: 'wrapper', kind: 'store', data: { resume: { candidate: { name: 'Pat' } } } }, {});
+  ok(!settled && ST.get('resume') === undefined && ST.settled() === false, 'a snapshot from another window is ignored');
+  deliver({ lv: 'wrapper', kind: 'store', data: { resume: { candidate: { name: 'Pat' } }, early: { n: 0 } } });
+  await ready;
+  ok(settled && ST.settled() && ST.get('resume') && ST.get('resume').candidate.name === 'Pat' && ST.get('nothing') === undefined, 'the wrapper’s snapshot settles the store and get reads it synchronously', JSON.stringify(ST.get('resume')));
+  ok(ST.get('early').n === 1 && sent.filter(m => m.lv === 'store').length === 1 && sent.find(m => m.lv === 'store').key === 'early' && sent.find(m => m.lv === 'store').value.n === 1, 'the held write wins over the snapshot for its key and is posted once the snapshot is in', JSON.stringify(sent.filter(m => m.lv === 'store')));
+  ok(ST.set('resume', { candidate: { name: 'Sam', exp: [] } }) === true && ST.get('resume').candidate.name === 'Sam', 'set after the snapshot updates the cache at once');
+  const setMsg = sent.filter(m => m.lv === 'store' && m.key === 'resume').pop();
+  ok(setMsg && setMsg.value.candidate.name === 'Sam' && Array.isArray(setMsg.value.candidate.exp), 'and posts the key and a JSON clone of the value to the wrapper', JSON.stringify(setMsg));
+  ok(ST.set('x', undefined) === true && ST.get('x') === undefined && Object.keys(ST.all()).includes('x'), 'an undefined value is stored as null and read back as undefined');
+  const seen = []; ST.onSnapshot(d => seen.push(d));
+  deliver({ lv: 'wrapper', kind: 'store', data: { resume: { candidate: { name: 'Again' } } } });
+  ok(seen.length === 0 && ST.get('resume').candidate.name === 'Sam', 'a second snapshot is ignored: the first one settled the store');
+  const alone = consoleWindow('');
+  ok(alone.__LV_EXT.store.available() === false && alone.__LV_EXT.store.settled() === true, 'without a wrapper the store says so and counts as settled');
+  await alone.__LV_EXT.store.ready().then(() => ok(true, 'and ready resolves at once from the local fallback'));
+}
+
 if (fails) { console.log(`\n${fails} failed`); process.exit(1); }

@@ -8,6 +8,9 @@
       land in extension storage and come back after a reload.
    4. Route: the tab's URL must follow the console (hvac.paid) and a hash set on the tab must drive the console.
    5. The popup lists every dashboard, shows the recent atlases and finds the Dental Divide by search.
+   6. The Résumé Forge: #resume.on-the-map-marketing draws the agency, its weaknesses and needs and the ranked tracks; a
+      draft builds into a plain text résumé with an ATS score; the draft reaches extension storage through the bridge store
+      and comes back after a reload; the Agency Field rows link to it; the popup offers the view.
    Screenshots: tests/e2e/console.png and tests/e2e/popup.png. Exits 1 on a failed assertion or a sandbox, CSP or bridge error.
    Run: node tests/e2e/run.mjs   (Playwright from /opt/node22/lib/node_modules/playwright, browsers under /opt/pw-browsers;
    the default headless shell cannot load extensions, the full chromium channel with the new headless mode can). */
@@ -119,6 +122,69 @@ try {
   const hv2 = await waitLive(cf, 'hvac');
   ok(hv2 && hv2.state === 'ready' && hv2.cur === 'paid', 'the route in the URL reopens hvac on the paid module', JSON.stringify(hv2));
 
+  /* ---- 3c. dfw: the atlas whose payload the build rewrites (a withheld row dropped, the gzip re-encoded) ---- */
+  await page.evaluate(() => { location.hash = '#dfw'; });
+  const dw = await waitLive(cf, 'dfw', 120000);
+  ok(dw && dw.state === 'ready', 'the Dallas Fort Worth atlas (dfw: a payload the build rewrites) registers through the bridge', JSON.stringify(dw));
+  const wf = await atlasFrame(cf, 'dfw');
+  ok(!!wf && await wf.evaluate(() => typeof window.__ATLAS_DATA__ === 'object' && window.__ATLAS_DATA__ !== null && Object.keys(window.__ATLAS_DATA__).length > 10), 'the rewritten dfw payload inflates in the console and its data parses');
+
+  /* ---- 6. the Résumé Forge ---- */
+  await page.evaluate(() => { location.hash = '#resume.on-the-map-marketing'; });
+  await cf.waitForSelector('#rf-read .rf-item', { timeout: 30000 });
+  const rf = await cf.evaluate(() => ({
+    title: document.querySelector('#lv-view h1') && document.querySelector('#lv-view h1').textContent,
+    agency: document.querySelector('.rf-ag h3') && document.querySelector('.rf-ag h3').textContent,
+    items: document.querySelectorAll('#rf-read .rf-item').length,
+    gaps: document.querySelectorAll('#rf-read .rf-badge.s3').length,
+    tracks: document.querySelectorAll('#rf-read .rf-track').length,
+    checked: document.querySelectorAll('#rf-read .rf-track[aria-checked="true"]').length,
+    chips: document.querySelectorAll('#rf-draft .rf-chip').length,
+    crumb: Array.from(document.querySelectorAll('#lv-crumbs .c')).map(e => e.textContent).join(' / '),
+    spine: !!document.querySelector('#lv-nav [data-route="resume"][aria-current="page"]'),
+    engine: !!window.__LV_RESUME_ENGINE, findings: typeof window.LV_FINDINGS_RAW === 'string',
+    out: (document.getElementById('rf-out') || {}).textContent || '',
+  }));
+  ok(rf.title === 'Résumé Forge' && /On The Map Marketing/.test(rf.agency || '') && rf.engine && rf.findings, 'the Forge opens on the agency named in the route with the engine and the findings loaded', JSON.stringify({ title: rf.title, agency: rf.agency }));
+  ok(rf.items >= 8 && rf.gaps >= 1 && rf.tracks === 3 && rf.checked === 1 && rf.chips >= 20, 'it draws the findings, the gaps, three track cards with one chosen, and the vocabulary chips', JSON.stringify({ items: rf.items, gaps: rf.gaps, tracks: rf.tracks, checked: rf.checked, chips: rf.chips }));
+  ok(/On The Map Marketing/.test(rf.crumb) && /Résumé Forge/.test(rf.crumb) && rf.spine, 'the crumbs name the agency and the spine follows the Forge route', rf.crumb);
+  ok(/\nSUMMARY\n/.test(rf.out) && /YOUR NAME/.test(rf.out), 'the preview builds live before anything is typed', rf.out.slice(0, 60));
+  ok(!!(await until(() => tabHash().then(h => h === '#resume.on-the-map-marketing' ? h : null), 5000)), 'the tab URL carries the Forge route', await tabHash());
+  await cf.fill('#rf-name', 'Jordan Rivera');
+  await cf.fill('#rf-contact', 'Miami, FL · jordan@example.com · (555) 555-5555');
+  await cf.fill('#rf-years', '7 years');
+  await cf.fill('#rf-skills', 'Google Ads, Local Services Ads, Local SEO, GA4');
+  await cf.evaluate(() => { const t = document.querySelector('#rf-draft .rf-exp textarea'); t.value = 'Managed $180k a month across Google Ads for 24 law firm accounts, cutting cost per signed case 31%'; t.dispatchEvent(new Event('input', { bubbles: true })); const d = document.querySelectorAll('#rf-draft .rf-exp input')[2]; d.value = 'Jan 2021 – Present'; d.dispatchEvent(new Event('input', { bubbles: true })); });
+  await cf.click('#rf-build');
+  const built = await until(() => cf.evaluate(() => { const o = document.getElementById('rf-out'), s = document.getElementById('rf-score'); return o && s && /JORDAN RIVERA/.test(o.textContent) ? { score: Number(s.textContent), text: o.textContent.slice(0, 600) } : null; }), 10000);
+  ok(built && built.score > 0 && /\nSUMMARY\n/.test(built.text) && /Paid Search Manager|Local SEO Manager|Senior/.test(built.text.split('\n')[1]) && /\nSKILLS\n/.test(built.text), 'the résumé carries the name, a posted title in the headline, the summary and the skills, with an ATS score', JSON.stringify(built));
+  /* a chip adds the agency's term to the front of the skills block */
+  await cf.evaluate(() => { const b = Array.from(document.querySelectorAll('#rf-draft .rf-chip')).find(x => /Law firm SEO/i.test(x.textContent)); if (b) b.click(); });
+  ok(!!(await until(() => cf.evaluate(() => /\nSKILLS\nLaw firm SEO,/.test(document.getElementById('rf-out').textContent)), 5000)), 'a vocabulary chip puts the agency’s term first in the skills block');
+  /* exports: copy, download and print, each stubbed inside the console document */
+  await cf.evaluate(() => { window.__rf = { copied: null, printed: 0, blobs: [] }; navigator.clipboard.writeText = t => { window.__rf.copied = t; return Promise.resolve(); }; window.print = () => { window.__rf.printed++; }; const orig = URL.createObjectURL; URL.createObjectURL = b => { window.__rf.blobs.push(b); return orig.call(URL, b); }; });
+  await cf.click('#rf-check .btn.pri');
+  await cf.click('#rf-dl-txt');
+  await cf.click('#rf-print-btn');
+  const ex = await until(() => cf.evaluate(async () => { const r = window.__rf; if (!r.copied || !r.blobs.length || !r.printed) return null; const t = await r.blobs[0].text(); return { copied: /JORDAN RIVERA/.test(r.copied), blob: /JORDAN RIVERA/.test(t), printed: r.printed, printDoc: !!document.getElementById('rf-print') && /Jordan Rivera/.test(document.getElementById('rf-print').textContent) }; }), 8000);
+  ok(ex && ex.copied && ex.blob && ex.printed === 1 && ex.printDoc, 'copy, the .txt download and print each carry the résumé', JSON.stringify(ex));
+  const stored = await until(() => page.evaluate(() => new Promise(r => chrome.storage.local.get('leviathan.store.v1', v => { const d = v && v['leviathan.store.v1'] && v['leviathan.store.v1'].resume; r(d && d.candidate && d.candidate.name === 'Jordan Rivera' ? d : null); }))), 8000);
+  ok(!!stored && stored.last && stored.last.agency === 'on-the-map-marketing' && stored.tailor && stored.tailor['on-the-map-marketing'] && stored.tailor['on-the-map-marketing'].track, 'the draft reaches extension storage through the bridge store, with the tailoring kept per agency', stored && JSON.stringify({ name: stored.candidate.name, last: stored.last, track: stored.tailor['on-the-map-marketing'].track }));
+  await page.goto('about:blank');
+  await page.goto(`chrome-extension://${id}/app.html#resume`, { waitUntil: 'domcontentloaded' });
+  cf = await consoleFrame(); await cf.waitForSelector('#rf-read .rf-row', { timeout: 60000 });
+  const back = await until(() => cf.evaluate(() => { const n = document.getElementById('rf-name'); const cont = Array.from(document.querySelectorAll('#rf-read .btn.pri')).find(b => /Continue with On The Map Marketing/.test(b.textContent)); return n && n.value === 'Jordan Rivera' && cont ? { name: n.value, cont: true } : null; }), 10000);
+  ok(!!back, 'the draft comes back after a reload and the picker offers the remembered agency', JSON.stringify(back));
+  await cf.evaluate(() => { Array.from(document.querySelectorAll('#rf-read .btn.pri')).find(b => /Continue with/.test(b.textContent)).click(); });
+  ok(!!(await until(() => tabHash().then(h => h === '#resume.on-the-map-marketing' ? h : null), 5000)) && !!(await until(() => cf.evaluate(() => /Law firm SEO,/.test(document.getElementById('rf-out').textContent)), 5000)), 'Continue reopens the agency without a reload and its tailoring is back', await tabHash());
+  await page.evaluate(() => { location.hash = '#agencies'; });
+  await cf.waitForSelector('.tbl.ag a[href^="#resume."]', { timeout: 20000 });
+  ok(true, 'every Agency Field row links to the Forge');
+  await page.evaluate(() => { location.hash = '#resume.on-the-map-marketing'; });
+  await cf.waitForSelector('#rf-read .rf-item', { timeout: 20000 });
+  await sleep(1500);
+  await page.screenshot({ path: path.join(DIR, 'forge.png') }).catch(() => { });
+
   /* ---- 5. the popup ---- */
   const pop = await context.newPage();
   pop.on('pageerror', e => errors.push('popup pageerror: ' + e.message));
@@ -126,6 +192,8 @@ try {
   await pop.waitForSelector('#list .row', { timeout: 15000 });
   const rows = await pop.$$eval('#list .row', els => els.map(e => e.getAttribute('data-route')));
   ok(rows.length >= 16 && rows.includes('dental') && rows.includes('core') && rows.includes('hvac'), 'the popup lists every dashboard', rows.length + ' rows');
+  const views = await pop.$$eval('#views .v', els => els.map(e => e.textContent));
+  ok(views.length === 4 && views.includes('Résumé Forge'), 'the popup offers the Résumé Forge view', views.join(', '));
   const recent = await pop.$$eval('#recentChips .chip', els => els.map(e => e.textContent));
   ok(recent.length >= 1, 'the popup shows the recently opened atlases', recent.join(', '));
   const ver = await pop.$eval('#ver', e => e.textContent);
