@@ -17,6 +17,6 @@ if (B.omnibox) {
   B.omnibox.onInputEntered.addListener((text, disposition) => {
     const route = O.resolve(text);
     if (disposition === 'currentTab') O.openRoute(route, { currentTab: true });
-    else O.openRoute(route, { newTab: true });
+    else O.openRoute(route, { newTab: true, background: disposition === 'newBackgroundTab' });
   });
 }

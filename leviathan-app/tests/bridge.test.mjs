@@ -153,7 +153,7 @@ ok(IW.kids.filter(k => k.id === 'lv-ext-tweaks').length === 1, 'the tweaks style
   ok(ST.set('x', undefined) === true && ST.get('x') === undefined && Object.keys(ST.all()).includes('x'), 'an undefined value is stored as null and read back as undefined');
   const seen = []; ST.onSnapshot(d => seen.push(d));
   deliver({ lv: 'wrapper', kind: 'store', data: { resume: { candidate: { name: 'Again' } } } });
-  ok(seen.length === 0 && ST.get('resume').candidate.name === 'Sam', 'a second snapshot is ignored: the first one settled the store');
+  ok(seen.length === 1 && ST.get('resume').candidate.name === 'Again', 'a later snapshot (another tab wrote) updates the cache and reaches the listeners', JSON.stringify(seen[0]));
   const alone = consoleWindow('');
   ok(alone.__LV_EXT.store.available() === false && alone.__LV_EXT.store.settled() === true, 'without a wrapper the store says so and counts as settled');
   await alone.__LV_EXT.store.ready().then(() => ok(true, 'and ready resolves at once from the local fallback'));

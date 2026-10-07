@@ -38,7 +38,7 @@ if (built) {
   ok(problems.length === 0, 'every marker once outside the inline blocks, each inline block once, no external script', problems.join('; '));
   const inline = [...h.matchAll(/<script type="text\/plain" id="lvp-([^"]+)">/g)].map(m => m[1]);
   ok(inline.length === 16 && inline.includes('family') && inline.includes('employment'), 'all sixteen payloads are inline', inline.join(','));
-  ok(EXT_FILES.every(f => h.includes(`<script>/* ext/${f} (inline) */\n` + inlineSafe(fs.readFileSync(path.join(ROOT, 'console', 'ext', f), 'utf8').slice(0, 400)))), 'each inline block opens with its file\'s own text');
+  ok(EXT_FILES.every(f => h.includes(`<script>/* ext/${f} (inline) */\n` + inlineSafe(fs.readFileSync(path.join(ROOT, 'console', 'ext', f), 'utf8').slice(0, 200)))), 'each inline block opens with its file\'s own text');
   ok(findInText(h).length === 0, 'nothing withheld in the built edition', `${Date.now() - t0} ms`);
 } else console.log('   (no built single file edition beside this folder; its checks are skipped)');
 

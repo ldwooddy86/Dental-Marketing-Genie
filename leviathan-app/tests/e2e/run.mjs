@@ -197,7 +197,7 @@ try {
   const recent = await pop.$$eval('#recentChips .chip', els => els.map(e => e.textContent));
   ok(recent.length >= 1, 'the popup shows the recently opened atlases', recent.join(', '));
   const ver = await pop.$eval('#ver', e => e.textContent);
-  ok(/Console 1\.\d+\.\d+ · compiled \d{4}-\d{2}-\d{2} · app \d+\.\d+\.\d+/.test(ver), 'the popup footer names the console and app versions', ver);
+  ok(/Console 1\.\d+\.\d+ · app \d+\.\d+\.\d+/.test(ver), 'the popup footer names the console and app versions', ver);
   await pop.screenshot({ path: path.join(DIR, 'popup.png') });
   await pop.fill('#q', 'dental divide');
   const found = await until(() => pop.$$eval('#list .row', els => els.map(e => e.getAttribute('data-route'))).then(r => r.length && r[0] === 'dental' ? r : null), 5000);

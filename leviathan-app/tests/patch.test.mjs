@@ -27,11 +27,17 @@ const MINI = `<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\
   /* the Résumé Forge anchors: the spine, the router, the crumbs, the palette, an Agency Field row */
   `function buildSpine() {\n  fill(nav,\n    h('div', { class: 'ng' },\n      navItem('convergence', 'Convergence', 'Where'),\n      ${ANCHORS.spine}));\n}\n` +
   `function paintBar() {\n  if (head === 'command') parts.push(crumb('Command Deck', true));\n${ANCHORS.crumbs}\n}\n` +
-  `function parseRoute(hash) {\n  const parts = t.split('.');\n  const head = parts[0];\n${ANCHORS.parse}\n  return { kind: 'view', view: 'command', tok: 'command' };\n}\n` +
+  `function parseRoute(hash) {\n${ANCHORS.fixParse}\n  const parts = t.split('.');\n  const head = parts[0];\n${ANCHORS.parse}\n  return { kind: 'view', view: 'command', tok: 'command' };\n}\n` +
   `function route() {\n  node = r.view === 'wing' ? viewWing(r.wing) : ${ANCHORS.dispatch}\n}\n` +
   `function agencyTable(list) {\n  return h('td', null, ${ANCHORS.agencyRow} a.hb ? null : null);\n}\n` +
   `${ANCHORS.paletteHead}\nfunction buildIndex() {\n  const items = [];\n${ANCHORS.palette}\n  return items;\n}\n` +
-  `window.__LV_CONSOLE = { live, open: openModule, go, prefs, version: '1.2.0' };\n})();\n</script>\n</body>\n</html>\n`;
+  `function onRegister(id, api) {\n  const p = L.pending;\n  if (p) {\n    try {\n      if (p.payload) api.go(p.key || 'index', p.payload);\n${ANCHORS.fixRegister}\n    } catch (e) { /* the module keeps its own default */ }\n  }\n}\n` +
+  `function syncRouteFromModule(id) {\n  const tok = moduleToken(id);\n${ANCHORS.fixSync}\n}\n` +
+  `function failLoad(L, msg) {\n  fill(card,\n${ANCHORS.fixRetry}\n      h('a', { class: 'btn', href: '#command' }, 'Command Deck'));\n}\n` +
+  `function openModule(id, key, payload) {\n  let L = live[id];\n  if (L) {\n    if (L.state === 'ready') {\n      try {\n        if (key) {\n${ANCHORS.fixCoreGo}\n          else if (L.api.current() !== key) L.api.go(key);\n        }\n      } catch (e) { /* ignore */ }\n${ANCHORS.fixErrorOpen}\n  }\n}\n` +
+  `${ANCHORS.fixGo}\n` +
+  `function viewConvergence() {\n  function recompute() {\n    const keys = [];\n${ANCHORS.fixSort}\n  }\n  function paintSide() {\n    const meta = [];\n    AVERT.forEach(V => {\n${ANCHORS.fixZipLink}\n    });\n  }\n}\n` +
+  `${ANCHORS.fixBoot}\n})();\n</script>\n</body>\n</html>\n`;
 
 /* replaceOnce */
 ok(replaceOnce('a b c', 'b', 'x', 't') === 'a x c', 'replaceOnce replaces a single occurrence');

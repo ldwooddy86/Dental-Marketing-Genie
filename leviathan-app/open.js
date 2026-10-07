@@ -19,6 +19,8 @@
   function entries() {
     const R = REG(); const out = [];
     for (const v of (R.views || [])) out.push({ route: v.route, title: v.title, sub: v.sub, view: true, text: norm(v.title + ' ' + v.sub) });
+    /* the wings are routes too: 'lev legal' opens the Legal wing, not the first atlas whose text mentions it */
+    for (const w of (R.wings || [])) if (w.id !== 'core') out.push({ route: w.id, title: w.label + ' wing', sub: w.mods.length + ' atlases', view: true, wing: w.id, text: norm(w.label + ' ' + w.id + ' wing') });
     for (const m of (R.modules || [])) {
       const title = modTitle(m), sub = modSub(m);
       out.push({ route: m.id, title, sub, id: m.id, wing: m.wing, text: norm([m.short, m.name, m.title, m.vertical, m.navTitle, m.wingLabel, m.scope, m.sub].join(' ')) });
@@ -68,7 +70,7 @@
       }
     }
     if (opts.currentTab) { try { await B.tabs.update({ url: appUrl(route) }); return 'current'; } catch (e) { /* fall through */ } }
-    await B.tabs.create({ url: appUrl(route) });
+    await B.tabs.create(opts.background ? { url: appUrl(route), active: false } : { url: appUrl(route) });
     return 'new';
   }
   globalThis.LV_OPEN = { appUrl, modTitle, modSub, entries, search, resolve, whereIsConsole, openRoute };

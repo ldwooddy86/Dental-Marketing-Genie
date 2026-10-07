@@ -30,6 +30,17 @@ export const ANCHORS = {
   palette: "  items.push({ g: 'Console', t: 'Agency Field', s: 'Core agencies by vertical', r: 'agencies' });",
   paletteHead: '/* ---------------- command palette ---------------- */',
   agencyRow: "h('a', { class: 'agname', href: '#core.a.' + a.id, title: 'Open the dossier in the Core' }, a.name),",
+  /* fixes to the frame script, carried the same way (each anchor exactly once) */
+  fixParse: "  const t = decodeURIComponent(String(hash || '').replace(/^#/, '')) || 'command';",
+  fixGo: "function go(tok) { if (decodeURIComponent(location.hash.slice(1)) === tok) route(); else location.hash = tok; }",
+  fixSync: "  if (decodeURIComponent(location.hash.slice(1)) !== tok) { try { history.replaceState(null, '', '#' + tok); } catch (e) { /* ignore */ } }",
+  fixCoreGo: "          if (id === 'core') { if (decodeURIComponent(L.api.route() || '') !== key) L.api.go(key); }",
+  fixRegister: "      else if (p.key && id !== 'core' && api.current() !== p.key) api.go(p.key);",
+  fixRetry: "      h('button', { class: 'btn pri', type: 'button', onclick: () => { unload(L.id); openModule(L.id, null); } }, 'Try again'),",
+  fixErrorOpen: "    } else if (L.state === 'loading') {\n      L.pending = { key: key || (L.pending && L.pending.key) || null, payload: payload || null };\n    }",
+  fixBoot: "route();\nwindow.__LV_CONSOLE = { live, open: openModule, go, prefs, version: '1.2.0' };",
+  fixZipLink: "        meta.push(h('a', { href: '#' + V.mod + (MOD[V.mod].scope === 'national' ? '.paid' : '.index'), onclick: ev => { ev.preventDefault(); const pl = { zip: CV.sel }; if (MOD[V.mod].scope === 'national') pl.st = C.st[ZIDX.get(CV.sel)]; openModule(V.mod, MOD[V.mod].scope === 'national' ? 'paid' : 'index', pl); } }, 'Open in ' + MOD[V.mod].short));",
+  fixSort: "    S = scoreAll(CV.st, keys, CV.minPop);\n    S.keys = keys;",
 };
 
 /* the view hook the frame script gains: the Forge draws with the console's own helpers, handed over as a context */
@@ -63,6 +74,22 @@ export const PATCHES = [
   ['palette', ANCHORS.palette, () => `${ANCHORS.palette}\n  items.push({ g: 'Console', t: 'Résumé Forge', s: 'Resume builder aimed at an agency’s weaknesses and needs', r: 'resume' });`],
   ['agency row', ANCHORS.agencyRow, () => `${ANCHORS.agencyRow} h('a', { class: 'hbtag', href: '#resume.' + a.id, title: 'Build a résumé aimed at this agency' }, 'Résumé'),`],
   ['view hook', ANCHORS.paletteHead, () => VIEW_HOOK + ANCHORS.paletteHead],
+  /* fixes: a malformed percent sequence in the hash no longer throws out of the router, the boot or a module sync */
+  ['fix: safe decode in parseRoute', ANCHORS.fixParse, () => "  const t = lvDecode(String(hash || '').replace(/^#/, '')) || 'command';"],
+  ['fix: safe decode in go', ANCHORS.fixGo, () => "function lvDecode(s) { try { return decodeURIComponent(s); } catch (e) { return String(s == null ? '' : s); } }\nfunction go(tok) { if (lvDecode(location.hash.slice(1)) === tok) route(); else location.hash = tok; }"],
+  ['fix: safe decode in syncRouteFromModule', ANCHORS.fixSync, () => "  if (lvDecode(location.hash.slice(1)) !== tok) { try { history.replaceState(null, '', '#' + tok); } catch (e) { /* ignore */ } }"],
+  ['fix: safe decode for a core route', ANCHORS.fixCoreGo, () => "          if (id === 'core') { if (lvDecode(L.api.route() || '') !== key) L.api.go(key); }"],
+  /* fix: a core route chosen while OmegaWeapon boots is applied when it registers, like any other atlas */
+  ['fix: a pending core route', ANCHORS.fixRegister, () => "      else if (p.key && (id === 'core' ? lvDecode(api.route() || '') !== p.key : api.current() !== p.key)) api.go(p.key);"],
+  /* fix: Try again, and a route to an atlas that failed, reopen it on the route that was asked for */
+  ['fix: Try again keeps the route', ANCHORS.fixRetry, () => "      h('button', { class: 'btn pri', type: 'button', onclick: () => { const p = L.pending; unload(L.id); openModule(L.id, p && p.key, p && p.payload); } }, 'Try again'),"],
+  ['fix: a failed atlas retries on navigation', ANCHORS.fixErrorOpen, () => ANCHORS.fixErrorOpen + " else if (L.state === 'error') { const p = L.pending; unload(id); openModule(id, key || (p && p.key) || null, payload || (p && p.payload) || null); return; }"],
+  /* fix: the console object exists even when the first route throws, so the bridge can still register atlases */
+  ['fix: boot survives a bad first route', ANCHORS.fixBoot, () => "window.__LV_CONSOLE = { live, open: openModule, go, prefs, version: '1.2.0' };\ntry { route(); } catch (e) { console.error(e); }"],
+  /* fix: Convergence hands the ZIP to a module that takes it (the Probable Cause index modules ignore a ZIP; their paid modules select it) */
+  ['fix: Convergence ZIP link', ANCHORS.fixZipLink, () => "        meta.push(h('a', { href: '#' + V.mod + '.' + ((MOD[V.mod].scope === 'national' || /^criminal(_la)?$/.test(V.mod)) ? 'paid' : 'index'), onclick: ev => { ev.preventDefault(); const pl = { zip: CV.sel }; if (MOD[V.mod].scope === 'national') pl.st = C.st[ZIDX.get(CV.sel)]; openModule(V.mod, (MOD[V.mod].scope === 'national' || /^criminal(_la)?$/.test(V.mod)) ? 'paid' : 'index', pl); } }, 'Open in ' + MOD[V.mod].short));"],
+  /* fix: a sort column that left the lens falls back to the score, instead of a silent sort by residents */
+  ['fix: sort column follows the lens', ANCHORS.fixSort, () => ANCHORS.fixSort + "\n    if (!['rank', 'zip', 'city', 'pop', 'score', 'hot'].includes(CV.sort.k) && !keys.includes(CV.sort.k)) CV.sort = { k: 'score', dir: -1 };"],
 ];
 
 /* Text the tests expect in the built console, each exactly once. */
@@ -83,6 +110,9 @@ export const MARKERS = [
   "t: 'Résumé Forge'",
   "href: '#resume.' + a.id",
   'function viewResume(agency)',
+  'function lvDecode(',
+  'openModule(L.id, p && p.key, p && p.payload)',
+  'try { route(); } catch (e) { console.error(e); }',
 ];
 
 /* the inline blocks the single file edition carries in place of the four script tags (lib/full.mjs writes them) */

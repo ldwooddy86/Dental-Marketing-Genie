@@ -24,7 +24,10 @@
   E.findings = function () { if (!F && typeof G.LV_FINDINGS_RAW === 'string') { try { E.load(G.LV_FINDINGS_RAW); } catch (e) { F = null; } } return F; };
   E.agency = id => { const f = E.findings(); return f && id ? (BY[id] || null) : null; };
   E.agencies = () => { const f = E.findings(); return f ? f.agencies : []; };
-  E.byName = name => { const n = String(name || '').trim().toLowerCase(); if (!n) return null; return E.agencies().find(a => a.name.toLowerCase() === n) || E.agencies().find(a => a.name.toLowerCase().startsWith(n)) || null; };
+  /* accent-insensitive lowercase: 'krakow' finds Kraków */
+  const fold = s => String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  E.fold = fold;
+  E.byName = name => { const n = fold(name).trim(); if (!n) return null; return E.agencies().find(a => fold(a.name) === n) || E.agencies().find(a => fold(a.name).startsWith(n)) || null; };
   E.meta = () => { const f = E.findings(); return f ? { built: f.built, generated: f.generated, edition: f.edition, compiled: f.compiled, n: f.n, n_deep: f.n_deep } : (G.LV_FINDINGS_META || null); };
 
   /* ---------- vocabulary of the field ---------- */
@@ -230,7 +233,13 @@
     const bare = r.replace(/^(?:senior|sr\.?|junior|jr\.?|lead|principal|associate|head of|director of|vp of)\s+/, '').replace(/\s+(?:lead|ii|iii|i)$/, '');
     return names.some(t => t === bare || t.replace(/^(?:senior|junior|lead|head of|director of)\s+/, '') === bare);
   };
-  E.levelFromYears = function (years) { const m = String(years || '').match(/(\d+)/); if (!m) return 'mid'; const y = Number(m[1]); return y < 2 ? 'junior' : y < 5 ? 'mid' : y < 9 ? 'senior' : 'manager'; };
+  E.levelFromYears = function (years) {
+    const m = String(years || '').match(/(\d+(?:[.,]\d+)?)\s*(months?|mos?\b|years?|yrs?)?/i); if (!m) return 'mid';
+    let y = parseFloat(m[1].replace(',', '.'));
+    if (m[2] && /^mo/i.test(m[2])) y = y / 12;   /* '18 months' is a year and a half, not eighteen years */
+    if (!isFinite(y) || y > 60) return 'mid';     /* '2022 - present' is a date, not a count */
+    return y < 2 ? 'junior' : y < 5 ? 'mid' : y < 9 ? 'senior' : 'manager';
+  };
 
   /* ---------- the rules: what a finding means for a hire ---------- */
   const GAP = {
@@ -438,11 +447,12 @@
     { re: /\bhard[- ]working\b/gi, tip: '‘hard-working’ is filler → let an achievement demonstrate it.' },
   ];
   /* Leviathan's own vocabulary has no place in a résumé */
-  const JARGON = [/\bHorus\b/i, /\bMonsoon\b/i, /\bLandfall\b/i, /\bOnshore wind\b/i, /\bDoldrums\b/i, /\bHit Board\b/i, /\bsay\s*\/\s*do\b/i, /\bOmegaWeapon\b/i, /\bLeviathan\b/i, /\bAgency Radar\b/i, /\bRadar dossier\b/i, /\bKJ\d{1,2}\b/, /\bP[1-8]\b(?= (?:absent|partial|making|move))/i, /\bSolar Arc\b/i, /\bThe Walled Oasis\b/i, /\bBazaar of Agents\b/i, /\bToll Road\b/i, /\bCommons Rebuilt\b/i, /\bwedge\b/i, /\bkill list\b/i];
+  /* Leviathan's vocabulary; the common nouns (Monsoon, Landfall, wedge) only in Leviathan's own phrasing, so an employer or place named so is not flagged */
+  const JARGON = [/\bHorus\b/i, /\bMonsoon\b(?=\s+(?:reads?|band|index|Landfall|Doldrums|Breeze|Onshore|offshor))/i, /\bMonsoon\s+(?:Landfall|Doldrums|Breeze|Onshore wind)\b|\b(?:Landfall|Doldrums|Onshore wind|Breeze)\s+band\b/i, /\bHit Board\b/i, /\bsay\s*\/\s*do\b/i, /\bOmegaWeapon\b/i, /\bLeviathan\b/i, /\bAgency Radar\b/i, /\bRadar dossier\b/i, /\bKJ\d{1,2}\b/, /\bP[1-8]\b(?= (?:absent|partial|making|move))/i, /\bSolar Arc\b/i, /\bThe Walled Oasis\b/i, /\bBazaar of Agents\b/i, /\bCommons Rebuilt\b/i, /\bwedge (?:text|play)\b/i, /\bkill list\b/i];
   E.JARGON = JARGON;
   E.jargon = text => { const t = String(text || ''); const hits = []; for (const re of JARGON) { const m = t.match(re); if (m) hits.push(m[0]); } return hits; };
   /* a paragraph minus the sentences written for a rival or in Leviathan's vocabulary */
-  E.neutral = text => { const t = String(text || '').trim(); if (!t) return ''; const parts = t.match(/[^.!?]+[.!?]+(?:\s|$)|[^.!?]+$/g) || [t]; return parts.filter(x => !/\brivals?\b/i.test(x) && !E.jargon(x).length).join('').trim(); };
+  E.neutral = text => { const t = String(text || '').trim(); if (!t) return ''; const parts = t.split(/(?<=[.!?])\s+/); return parts.filter(x => !/\brivals?\b/i.test(x) && !E.jargon(x).length).join(' ').trim(); };
   function syllables(word) {
     word = word.toLowerCase().replace(/[^a-z]/g, '');
     if (word.length <= 3) return word.length ? 1 : 0;
@@ -470,14 +480,15 @@
   /* the posting's own words: phrases from the lexicon first, then single tokens, by frequency */
   E.keywordsFrom = function (text, topN) {
     const t = String(text || '').toLowerCase();
-    const found = [];
-    for (const p of PHRASES) { const n = (t.match(countRe(p)) || []).length; if (n) found.push([p, n + (p.includes(' ') ? 0.5 : 0)]); }
-    const covered = new Set(); found.forEach(([p]) => p.split(/[\s-]+/).forEach(w => covered.add(w)));
+    const found = new Map();
+    for (const p of PHRASES) { const n = (t.match(countRe(p)) || []).length; if (n) found.set(p, n + (p.includes(' ') ? 0.5 : 0)); }
+    /* a phrase covers its words, itself and its hyphen-free spelling, so 'multi-location' is never listed twice */
+    const covered = new Set(); for (const p of found.keys()) { covered.add(p); covered.add(p.replace(/-/g, '')); p.split(/[\s-]+/).forEach(w => covered.add(w)); }
     const words = (t.match(/[a-z][a-z+.#-]{2,}/g) || []);
     const freq = {};
-    words.forEach(w => { w = w.replace(/[.,;:]+$/, ''); if (!STOP.has(w) && w.length > 2 && !covered.has(w)) freq[w] = (freq[w] || 0) + 1; });
-    Object.entries(freq).forEach(([w, n]) => found.push([w, n]));
-    return found.sort((a, b) => b[1] - a[1] || (a[0] < b[0] ? -1 : 1)).slice(0, topN || 20).map(x => x[0]);
+    words.forEach(w => { w = w.replace(/[.,;:+#-]+$/, ''); if (!STOP.has(w) && w.length > 2 && !covered.has(w) && !covered.has(w.replace(/-/g, ''))) freq[w] = (freq[w] || 0) + 1; });
+    Object.entries(freq).forEach(([w, n]) => { if (!found.has(w)) found.set(w, n); });
+    return Array.from(found.entries()).sort((a, b) => b[1] - a[1] || (a[0] < b[0] ? -1 : 1)).slice(0, topN || 20).map(x => x[0]);
   };
 
   /* ---------- the draft: the candidate's facts, and one tailoring per agency ---------- */
@@ -512,7 +523,8 @@
       const agencyVerts = (read.verticals || []).map(v => v.key);
       const first = ticked.filter(k => agencyVerts.includes(k)).concat(ticked.filter(k => !agencyVerts.includes(k))).map(k => VERT[k].label.toLowerCase());
       const who = first.length ? 'an agency selling into ' + first.slice(0, 3).join(', ') : 'the agency';
-      s += ' Ready to ' + (top ? top.pitch : 'deliver on the lines its clients buy') + ' for ' + who + '.';
+      const pitch = top ? top.pitch : 'deliver on the lines its clients buy';
+      s += ' Ready to ' + pitch + (who === 'the agency' && /\bthe agency\b/i.test(pitch) ? '' : ' for ' + who) + '.';
       /* the sentence is an offer in the candidate's voice: each rule's pitch is written so, and never names what the agency lacks */
     }
     return s;
@@ -598,7 +610,8 @@
   /* ---------- the ATS readiness: structure only, with hard gates; what the agency's words add is a separate readout ---------- */
   const VERBS = (() => { const s = new Set(); TRACKS.forEach(t => t.verbs.forEach(v => s.add(v.toLowerCase()))); INDUSTRIES.forEach(i => i.verbs.forEach(v => s.add(v.toLowerCase()))); ['achieved', 'created', 'developed', 'drove', 'established', 'generated', 'implemented', 'improved', 'increased', 'led', 'owned', 'ran', 'saved', 'won', 'wrote', 'raised', 'secured', 'trained', 'turned', 'doubled', 'tripled', 'halved', 'coached', 'hired', 'opened', 'closed', 'moved', 'rebuilt', 'restored', 'planned', 'negotiated', 'presented', 'reported'].forEach(v => s.add(v)); return s; })();
   E.VERBS = VERBS;
-  const yearsIn = s => (String(s || '').match(/\b(19|20)\d{2}\b/g) || []).map(Number);
+  /* the years a date range names: 2021, '21, FY21, FY2021 */
+  const yearsIn = s => { const out = []; String(s || '').replace(/\b((?:19|20)\d{2})\b|['\u2019](\d{2})\b|\bFY((?:19|20)?\d{2})\b/gi, (m, four, two, fy) => { out.push(four ? Number(four) : two ? 2000 + Number(two) : fy.length === 2 ? 2000 + Number(fy) : Number(fy)); return m; }); return out; };
   function endYear(dates) { if (/present|current|now|today/i.test(dates || '')) return 9999; const y = yearsIn(dates); return y.length ? Math.max.apply(null, y) : null; }
   const LENGTH = { junior: [250, 500], mid: [300, 700], senior: [380, 850], manager: [400, 900], director: [450, 1000] };
   E.LENGTH = LENGTH;
@@ -709,7 +722,7 @@
     if (a.monsoon && a.monsoon.ok) L.push('- Offshore exposure (Monsoon): ' + a.monsoon.band + ' ' + Math.round(a.monsoon.index) + (a.monsoon.top && a.monsoon.top.length ? '; the movable hours sit in ' + a.monsoon.top.slice(0, 2).map(c => c.label).join(' and ') : '') + (a.monsoon.onshore ? '; claims in-house delivery' : ''));
     if (a.prom != null) L.push('- Prominence ' + pct(a.prom) + '/100' + (a.clients ? ' · ' + a.clients.n + ' clients on record, ' + a.clients.observed + ' with an observed need' : ''));
     if (a.paid) L.push('- Paid: Google ads ' + (a.paid.g || 'not checked') + (a.paid.g30 ? ' (' + a.paid.g30 + ' in the last 30 days)' : '') + ' · LinkedIn ads ' + (a.paid.li || 'not checked'));
-    if (a.content) L.push('- Content: ' + (a.content.urls || 0) + ' sitemap URLs, ' + (a.content.d90 || 0) + ' updated in 90 days, llms.txt ' + (a.content.llms === true ? 'yes' : a.content.llms === false ? 'no' : 'not checked'));
+    if (a.content) L.push('- Content: ' + (a.content.urls == null ? 'sitemap not checked' : a.content.urls + ' sitemap URLs, ' + (a.content.d90 == null ? 'updates not checked' : a.content.d90 + ' updated in 90 days')) + ', llms.txt ' + (a.content.llms === true ? 'yes' : a.content.llms === false ? 'no' : 'not checked'));
     L.push('');
     L.push('## Role tracks', '');
     read.tracks.filter(t => t.score > 0).slice(0, 3).forEach((t, i) => L.push((i + 1) + '. **' + t.label + '** (' + Object.values(t.titles).slice(0, 3).join(' / ') + ') · demand ' + t.demand + ', angle ' + t.angle + (t.why.length ? '\n   ' + t.why.slice(0, 3).join('; ') : '')));
@@ -740,7 +753,7 @@
   E.search = function (q, opts) {
     opts = opts || {};
     const all = E.agencies();
-    const words = String(q || '').toLowerCase().split(/\s+/).filter(Boolean);
+    const words = fold(q).split(/\s+/).filter(Boolean);
     const list = all.filter(a => {
       if (opts.wing && !Object.keys(a.wv || {}).some(k => VERT[k] && VERT[k].wing === opts.wing)) return false;
       if (opts.hb && !a.hb) return false;
@@ -749,7 +762,7 @@
       return true;
     }).map(a => {
       if (!words.length) return { a, s: (a.hb ? 3 : 0) + (a.prom || 0) };
-      const name = a.name.toLowerCase(), hay = [a.name, a.domain, a.hq, a.segment, a.archetype, (a.verticals || []).join(' '), (a.services || []).join(' ')].filter(Boolean).join(' ').toLowerCase();
+      const name = fold(a.name), hay = fold([a.name, a.domain, a.hq, a.segment, a.archetype, (a.verticals || []).join(' '), (a.services || []).join(' ')].filter(Boolean).join(' '));
       let s = 0;
       for (const w of words) { if (!hay.includes(w)) return null; s += name === w ? 6 : name.startsWith(w) ? 4 : name.includes(w) ? 3 : (a.domain || '').includes(w) ? 2 : 1; }
       return { a, s: s + (a.prom || 0) };

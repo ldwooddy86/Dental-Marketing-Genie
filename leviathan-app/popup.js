@@ -40,7 +40,7 @@
       return;
     }
     for (const w of (R.wings || [])) {
-      list.appendChild(h('div', { class: 'wing ' + w.id }, h('span', { class: 'eyebrow', text: w.label }), h('span', { class: 'n', text: w.mods.length + (w.mods.length === 1 ? ' atlas' : ' atlases') })));
+      list.appendChild(h('div', { class: 'wing ' + w.id }, h('span', { class: 'eyebrow', text: w.label }), h('span', { class: 'n', text: w.mods.length + (w.id === 'core' ? ' dashboards' : w.mods.length === 1 ? ' atlas' : ' atlases') })));
       for (const id of w.mods) { const m = modOf(id); if (m) list.appendChild(row(O.modTitle(m), O.modSub(m), m.id, m.wing)); }
     }
   }
@@ -49,13 +49,14 @@
     $('#newTab').checked = newTab;
     $('#newTab').addEventListener('change', e => { newTab = !!e.target.checked; try { B.storage.local.set({ [SETTINGS]: { newTab } }); } catch (err) { /* ignore */ } });
     const man = B.runtime.getManifest ? B.runtime.getManifest() : {};
-    $('#ver').textContent = ['Console ' + (R.consoleVersion || '?'), R.compiled ? 'compiled ' + R.compiled : null, 'app ' + (man.version || '?')].filter(Boolean).join(' · ');
+    $('#ver').textContent = ['Console ' + (R.consoleVersion || '?'), 'app ' + (man.version || '?')].join(' · ');
+    $('#ver').title = [R.compiled ? 'Console compiled ' + R.compiled : null, R.built ? 'app built ' + R.built : null].filter(Boolean).join(' · ');
     $('#sub').textContent = R.modules.length + ' dashboards · ' + (R.wings || []).filter(w => w.id !== 'core').length + ' wings';
     renderViews(); renderRecent(); renderList('');
     const q = $('#q');
     q.addEventListener('input', () => renderList(q.value));
     q.addEventListener('keydown', e => {
-      if (e.key === 'Enter') { const first = $('#list .row'); if (first) { e.preventDefault(); open(first.getAttribute('data-route')); } }
+      if (e.key === 'Enter') { if (!q.value.trim()) return; const first = $('#list .row'); if (first) { e.preventDefault(); open(first.getAttribute('data-route')); } }
       else if (e.key === 'Escape') { if (q.value) { e.preventDefault(); q.value = ''; renderList(''); } }
       else if (e.key === 'ArrowDown') { const first = $('#list .row'); if (first) { e.preventDefault(); first.focus(); } }
     });

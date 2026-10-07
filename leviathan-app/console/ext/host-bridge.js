@@ -105,11 +105,22 @@
     if (api) post('state', snap());
   });
   /* module documents nested in this atlas: give them the theme and the chrome tweaks the atlas used to apply through contentDocument */
+  /* a module that reads this document's data blocks through window.parent.document (Ocular Health: __atlasData) cannot, cross origin:
+     carry the blocks it names into its document and let it read them locally first */
+  function shellData(html) {
+    if (html.indexOf('window.parent.document.getElementById(') < 0) return { html: html, blocks: '' };
+    var ids = {}, re = /__atlasData\\('([^']+)'\\)/g, mm, blocks = '';
+    while ((mm = re.exec(html))) ids[mm[1]] = 1;
+    for (var id in ids) { var el = document.getElementById(id); if (el && el.textContent) blocks += '<script type="' + (el.type || 'application/json') + '" id="' + id + '">' + el.textContent.replace(/<\\//g, '<\\\\/') + '</' + 'script>'; }
+    html = html.split('window.parent.document.getElementById(').join('(function (x) { return document.getElementById(x) || window.parent.document.getElementById(x); })(');
+    return { html: html, blocks: blocks };
+  }
   function inject(html) {
+    var sd = shellData(html); html = sd.html;
     var m = /<meta charset="utf-8">/i.exec(html) || /<head[^>]*>/i.exec(html);
-    if (!m) return INNER + html;
+    if (!m) return INNER + sd.blocks + html;
     var at = m.index + m[0].length;
-    return html.slice(0, at) + INNER + html.slice(at);
+    return html.slice(0, at) + INNER + sd.blocks + html.slice(at);
   }
   try {
     var d = Object.getOwnPropertyDescriptor(HTMLIFrameElement.prototype, 'srcdoc');
@@ -200,7 +211,9 @@
   /* ---------- preferences and route, to and from the wrapper page ---------- */
   function loadPrefs(d) {
     let p = null;
-    try { const q = new URLSearchParams(location.search).get('lvp'); if (q) p = JSON.parse(q); } catch (e) { p = null; }
+    /* outside the wrapper (the single file edition from disk or a host) the console's own localStorage copy is the record */
+    if (!PARENT) { try { const s = JSON.parse(localStorage.getItem('leviathan.prefs.v1') || 'null'); if (s && typeof s === 'object') p = s; } catch (e) { p = null; } }
+    try { const q = new URLSearchParams(location.search).get('lvp'); if (q) p = Object.assign(p || {}, JSON.parse(q)); } catch (e) { /* a bad query: keep what localStorage gave */ }
     if (p && typeof p === 'object') for (const k of Object.keys(p)) if (typeof p[k] === 'string') d[k] = p[k];
     return d;
   }
@@ -216,12 +229,15 @@
     lastHash = hash;
     try { PARENT.postMessage({ lv: 'route', hash, ready: !!ready }, '*'); } catch (e) { /* ignore */ }
   }
+  /* the document title follows the route; the wrapper mirrors it into the tab, so tabs, history and bookmarks name the view */
+  function relayTitle() { if (!PARENT) return; try { PARENT.postMessage({ lv: 'title', title: String(document.title || '') }, '*'); } catch (e) { /* ignore */ } }
+  try { const te = document.querySelector('title'); if (te) new MutationObserver(relayTitle).observe(te, { childList: true, characterData: true, subtree: true }); } catch (e) { /* older engines */ }
   window.addEventListener('hashchange', () => relayRoute(false));
   for (const k of ['replaceState', 'pushState']) {
     const orig = history[k];
     if (typeof orig === 'function') history[k] = function () { const r = orig.apply(this, arguments); try { relayRoute(false); } catch (e) { /* ignore */ } return r; };
   }
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => relayRoute(true)); else relayRoute(true);
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => { relayRoute(true); relayTitle(); }); else { relayRoute(true); relayTitle(); }
 
   /* ---------- the store: one snapshot of the wrapper's extension storage, for the scripts beside the console (the Résumé Forge) ----------
      The wrapper answers the bridge's ready signal with the whole snapshot; reads are then synchronous from the cache and every write
@@ -235,8 +251,13 @@
   let storeReadyFn = null, storeReadyDone = false, snapshotSeen = false;
   const storeReady = new Promise(res => { storeReadyFn = res; });
   function settleStore(data, fromWrapper) {
+    if (fromWrapper && snapshotSeen) {
+      /* a later snapshot (another tab wrote): merge under the keys still pending and tell the listeners */
+      if (data && typeof data === 'object') for (const k of Object.keys(data)) if (!pending.has(k)) storeCache[k] = data[k];
+      snapshotListeners.forEach(f => { try { f(data && typeof data === 'object' ? data : {}); } catch (e) { /* a listener's problem */ } });
+      return;
+    }
     if (fromWrapper) {
-      if (snapshotSeen) return;
       snapshotSeen = true;
       if (data && typeof data === 'object') for (const k of Object.keys(data)) if (!pending.has(k)) storeCache[k] = data[k];
     }

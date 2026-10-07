@@ -21,7 +21,8 @@
 
   const REG = () => globalThis.LV_REGISTRY || { modules: [] };
   async function recordRecent(hash) {
-    const tok = decodeURIComponent(String(hash || '').replace(/^#/, ''));
+    let tok = String(hash || '').replace(/^#/, '');
+    try { tok = decodeURIComponent(tok); } catch (e) { /* a malformed hash: keep it as typed */ }
     const id = tok.split('.')[0];
     if (!id || !REG().modules.some(m => m.id === id)) return;
     const list = (await get(RECENT, [])).filter(r => r && r.id !== id);
@@ -37,16 +38,23 @@
       /* one key of the snapshot the scripts beside the console keep (the Résumé Forge draft): merge and persist */
       storeWrite = storeWrite.then(async () => { const data = await get(STORE, {}); const next = data && typeof data === 'object' ? data : {}; next[m.key] = m.value === undefined ? null : m.value; await set(STORE, next); });
     }
+    else if (m.lv === 'title' && typeof m.title === 'string') document.title = m.title.slice(0, 200) || 'Leviathan';
     else if (m.lv === 'route' && typeof m.hash === 'string') {
       const hash = m.hash || '#command';
-      if (location.hash !== hash) { try { history.replaceState(null, '', location.pathname + hash); } catch (e) { /* ignore */ } }
-      recordRecent(hash);
+      /* a route set on the tab while the console was still loading wins over the route it booted with */
+      if (m.ready && location.hash && location.hash !== '#' && location.hash !== hash) { post({ lv: 'wrapper', kind: 'go', hash: location.hash }); }
+      else {
+        if (location.hash !== hash) { try { history.replaceState(null, '', location.pathname + hash); } catch (e) { /* ignore */ } }
+        recordRecent(hash);
+      }
       /* the console's first route is its ready signal: hand it the store snapshot */
       if (m.ready) storeWrite.then(() => get(STORE, {})).then(data => post({ lv: 'wrapper', kind: 'store', data: data && typeof data === 'object' ? data : {} }));
     }
   });
   /* the tab's hash changed from outside (typed, a bookmark, the popup): hand it to the console */
-  window.addEventListener('hashchange', () => post({ lv: 'wrapper', kind: 'go', hash: location.hash }));
+  window.addEventListener('hashchange', ev => { let h = location.hash; try { if (ev && ev.newURL) h = new URL(ev.newURL).hash; } catch (e) { /* keep location.hash */ } post({ lv: 'wrapper', kind: 'go', hash: h }); });
+  /* another console tab wrote the store: hand every tab the new snapshot (the bridge merges it under its own pending writes) */
+  try { B.storage.onChanged.addListener((ch, area) => { if (area === 'local' && ch && ch[STORE] && ch[STORE].newValue && typeof ch[STORE].newValue === 'object') post({ lv: 'wrapper', kind: 'store', data: ch[STORE].newValue }); }); } catch (e) { /* no storage events */ }
 
   B.runtime.onMessage.addListener((m, sender, respond) => {
     if (!m || typeof m !== 'object') return false;

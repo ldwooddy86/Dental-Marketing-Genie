@@ -59,8 +59,9 @@ export function hbThemes(domain) { return (HB_THEMES[String(domain || '').toLowe
 /* the dossier's one-paragraph read, minus the sentences written for a rival */
 export function neutralBluf(text) {
   const t = str(text); if (!t) return null;
-  const sentences = t.match(/[^.!?]+[.!?]+(?:\s|$)|[^.!?]+$/g) || [t];
-  return sentences.filter(x => !/\brivals?\b/i.test(x)).join('').trim() || null;
+  /* split on the whitespace after a terminator, so decimals (23.2), domains (talon.one) and abbreviations keep their text */
+  const sentences = t.split(/(?<=[.!?])\s+/);
+  return sentences.filter(x => !/\brivals?\b/i.test(x)).join(' ').trim() || null;
 }
 const str = v => (typeof v === 'string' ? v : v == null ? null : String(v));
 const cap = (s, n) => { s = str(s); if (!s) return null; s = s.trim(); return s.length > n ? s.slice(0, n - 1).trimEnd() + '…' : s; };

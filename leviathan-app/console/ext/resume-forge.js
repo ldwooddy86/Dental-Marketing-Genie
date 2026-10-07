@@ -102,9 +102,9 @@ select.rf-in{width:auto;min-width:200px}
 .rf-vgroup .eyebrow{margin-bottom:6px}
 #rf-print{display:none}
 @media print{
-  body>*:not(#rf-print){display:none!important}
+  body.rf-printing>*:not(#rf-print){display:none!important}
   body{overflow:visible!important;background:#fff!important}
-  #rf-print{display:block!important;position:static;padding:0;margin:0;color:#000;font:11pt/1.4 Arial,Helvetica,sans-serif;max-width:7.5in}
+  body.rf-printing #rf-print{display:block!important;position:static;padding:0;margin:0;color:#000;font:11pt/1.4 Arial,Helvetica,sans-serif;max-width:7.5in}
   #rf-print h1{font:bold 20pt/1.1 Arial,Helvetica,sans-serif;margin:0 0 4pt}
   #rf-print h2{font:bold 11.5pt/1.2 Arial,Helvetica,sans-serif;text-transform:uppercase;letter-spacing:.04em;margin:12pt 0 4pt;border-bottom:1px solid #000;padding-bottom:2pt}
   #rf-print p{margin:0 0 4pt} #rf-print .hl{font-weight:bold} #rf-print .ct{color:#333}
@@ -116,7 +116,7 @@ select.rf-in{width:auto;min-width:200px}
 
   /* ---------- storage: the bridge's snapshot store, else localStorage inside the bridge's fallback ---------- */
   const store = () => (G.__LV_EXT && G.__LV_EXT.store) || null;
-  let memDraft = null;
+  let memDraft = null, dirty = false;   /* dirty: the draft has edits the store has not seen; a flush with nothing new never overwrites another tab's draft */
   function storeReady() { const st = store(); return st ? st.ready() : Promise.resolve(); }
   function storeGet() { const st = store(); if (st) return st.get(KEY); return memDraft; }
   function storeSet(v) { memDraft = v; const st = store(); if (st) st.set(KEY, v); }
@@ -152,8 +152,8 @@ select.rf-in{width:auto;min-width:200px}
   function draft() { if (!S.draft) S.draft = E().blankDraft(); return S.draft; }
   function cand() { const d = draft(); if (!d.candidate) d.candidate = E().blankCandidate(); if (!Array.isArray(d.candidate.exp) || !d.candidate.exp.length) d.candidate.exp = [{ title: '', org: '', dates: '', bullets: '' }]; if (!Array.isArray(d.candidate.verticals)) d.candidate.verticals = []; return d.candidate; }
   function tail() { const d = draft(); if (!S.agency) { if (!d.general) d.general = E().blankTailor(); return d.general; } if (!d.tailor) d.tailor = {}; if (!d.tailor[S.agency.id]) d.tailor[S.agency.id] = E().blankTailor(); const t = d.tailor[S.agency.id]; if (!Array.isArray(t.terms)) t.terms = []; return t; }
-  function save() { clearTimeout(S.saveT); S.saveT = setTimeout(flush, 250); }
-  function flush() { clearTimeout(S.saveT); if (!S.loaded) return; try { storeSet(draft()); } catch (e) { /* storage off */ } }
+  function save() { dirty = true; clearTimeout(S.saveT); S.saveT = setTimeout(flush, 250); }
+  function flush() { clearTimeout(S.saveT); if (!S.loaded || !dirty) return; try { storeSet(draft()); dirty = false; } catch (e) { /* storage off */ } }
   try {
     document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') flush(); });
     window.addEventListener('pagehide', flush);
@@ -187,7 +187,7 @@ select.rf-in{width:auto;min-width:200px}
     else if (S.agency) setAgency(null);
 
     const pickBox = h('div'), agBox = h('div'), trackBox = h('div'), findBox = h('div'), formBox = h('div'), prevBox = h('div'), checkBox = h('div'), matchBox = h('div');
-    const paintAll = () => { paintPick(); paintAgency(); paintTracks(); paintFindings(); paintForm(); rebuild(true); };
+    const paintAll = () => { paintPick(); paintAgency(); paintTracks(); paintFindings(); paintForm(); paintMatch(); rebuild(true); };
     S.paint = paintAll;
 
     root.append(
@@ -307,7 +307,7 @@ select.rf-in{width:auto;min-width:200px}
         h('div', { class: 'small dim', text: 'Posted as ' + En.titleFor(x.code, level) + ' at your level' }),
         r ? h('div', { class: 'bars' }, h('span', { text: 'demand ' + x.demand + ' · what it sells and buys' }), h('div', { class: 'bar' }, h('i', { style: { width: Math.round(100 * x.demand / max) + '%' } })), h('span', { text: 'angle ' + x.angle + ' · the gaps a hire would close' }), h('div', { class: 'bar' }, h('i', { class: 'a', style: { width: Math.round(100 * x.angle / max) + '%' } }))) : null,
         x.why.length ? h('ul', null, x.why.slice(0, 3).map(w => h('li', { text: w }))) : h('p', { class: 'tiny mute', text: r ? 'Ranked on what it sells.' : 'Pick an agency to see why.' }))));
-      const sel = h('select', { class: 'rf-in', id: 'rf-track-sel', 'aria-label': 'All agency tracks', onchange: e => choose(e.target.value) },
+      const sel = h('select', { class: 'rf-in', id: 'rf-track-sel', 'aria-label': 'All agency tracks', onchange: e => { if (e.target.value) choose(e.target.value); } },
         h('option', { value: '', selected: !t.track ? true : null }, 'Pick a track'),
         ranked.map(x => h('option', { value: x.code, selected: t.track === x.code ? true : null }, x.label + (x.score ? ' · ' + x.score : ''))));
       const general = h('div', { class: 'rf-chips' }, En.INDUSTRIES.map(ind => h('button', { class: 'rf-chip', type: 'button', 'aria-pressed': String(t.industry === ind.id), onclick: () => { setTrack(ind.id, true); paintTracks(); paintForm(); rebuild(); } }, ind.label)));
@@ -494,14 +494,18 @@ select.rf-in{width:auto;min-width:200px}
       let box = document.getElementById('rf-print');
       if (!box) { box = document.createElement('div'); box.id = 'rf-print'; box.setAttribute('aria-hidden', 'true'); document.body.appendChild(box); }
       box.innerHTML = En.html(cand(), tail(), S.read);
+      /* the print rules apply only while the Forge prints: any other view prints as itself */
+      document.body.classList.add('rf-printing');
+      const done = () => { document.body.classList.remove('rf-printing'); };
+      try { window.addEventListener('afterprint', done, { once: true }); } catch (e) { /* ignore */ }
       try { window.print(); } catch (e) { toast('The browser blocked printing; use the .md export'); }
+      setTimeout(done, 1000);
     }
 
     /* ---- match a posting ---- */
-    (function paintMatch() {
-      const t = tail();
-      const jd = h('textarea', { class: 'rf-in', id: 'rf-jd', rows: 5, placeholder: 'Paste the job posting text here…', 'aria-label': 'Job posting', oninput: e => { t.posting = e.target.value; save(); rebuild(); } });
-      jd.value = t.posting || '';
+    function paintMatch() {
+      const jd = h('textarea', { class: 'rf-in', id: 'rf-jd', rows: 5, placeholder: 'Paste the job posting text here…', 'aria-label': 'Job posting', oninput: e => { tail().posting = e.target.value; save(); rebuild(); } });
+      jd.value = tail().posting || '';
       const outM = h('div');
       const run = () => {
         const text = jd.value.trim(); if (!text) { fill(outM, h('p', { class: 'small mute', text: 'Paste a posting first.' })); return; }
@@ -514,8 +518,8 @@ select.rf-in{width:auto;min-width:200px}
           h('p', { class: 'tiny mute', style: { marginTop: '10px' }, text: 'Add the missing terms that honestly describe you; do not keyword-stuff. These are the posting’s own words, which is what an ATS scores against. While a posting is pasted, the “mirrors” count above reads from it.' }));
       };
       fill(matchBox, h('div', { class: 'card card-b', style: { marginTop: '14px' } }, h('h3', { class: 'rf-h3', text: 'Match a posting' }), h('p', { class: 'small mute', style: { marginBottom: '8px' }, text: 'Paste a job description you are applying to. The Forge pulls its skill phrases and words, shows which are already in your résumé, and marks the agency’s own terms the posting uses. It analyses the text you paste; it identifies no one.' }), jd, h('div', { class: 'row', style: { marginTop: '10px' } }, h('button', { class: 'btn', type: 'button', onclick: run }, 'Compare to my résumé')), outM));
-      if (t.posting) run();
-    })();
+      if (tail().posting) run();
+    }
 
     /* first paint, then the stored draft when the store is ready */
     paintAll();
@@ -528,7 +532,8 @@ select.rf-in{width:auto;min-width:200px}
       };
       storeReady().then(() => { S.loaded = true; hydrate(storeGet()); }).catch(() => { S.loaded = true; });
       const st = store();
-      if (st && st.onSnapshot) st.onSnapshot(data => { const v = data && data[KEY]; if (v && isBlank(draft())) hydrate(v); else flush(); });
+      /* a later snapshot (another tab wrote, or the wrapper was slow): take it unless this tab has unsaved edits; the tab's own write comes back identical and is skipped */
+      if (st && st.onSnapshot) st.onSnapshot(data => { const v = data && data[KEY]; if (!v || typeof v !== 'object') return; let same = false; try { same = JSON.stringify(v) === JSON.stringify(draft()); } catch (e) { same = false; } if (same) return; if (!dirty || isBlank(draft())) hydrate(v); });
     }
     return root;
   }
