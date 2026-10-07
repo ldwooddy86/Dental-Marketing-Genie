@@ -2,6 +2,8 @@
      node build.mjs --from <dir>   rebuild console/ and registry.js from the Leviathan repository: <dir> is its leviathan/ folder or its root
      node build.mjs --fetch        the same, downloading the console files from GitHub (ldwooddy86/Leviathan, main; --branch <name> for another)
      node build.mjs --findings     regenerate console/ext/resume-findings.js from the console already in this folder
+     node build.mjs --full <file> --from <dir>   also write the single file edition: the repository's Leviathan-full.html with the
+                                   patches and the Forge scripts inline (nothing beside it); --fetch downloads it too
      node build.mjs                validate what is in this folder and run the unit tests
      node build.mjs --zip          also write ../dist/leviathan-extension.zip
      --check  validate only   --no-test  skip the unit tests
@@ -19,6 +21,7 @@ import { fileURLToPath } from 'node:url';
 import { EXT_VERSION, MARKERS, patchConsole, extractRegistry, registryScript, writeZip } from './lib/patch.mjs';
 import { extractFindings, findingsScript, readFindingsScript } from './lib/findings.mjs';
 import { scrubPayloads, scanTree } from './lib/scrub.mjs';
+import { fullEdition } from './lib/full.mjs';
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
 const OUT = path.resolve(ROOT, '..', 'dist', 'leviathan-extension.zip');
@@ -44,6 +47,7 @@ async function source() {
     await get('Leviathan.html');
     const reg = extractRegistry(fs.readFileSync(path.join(dir, 'Leviathan.html'), 'utf8'));
     for (const x of reg.ext) await get(x.file);
+    if (opt('--full')) await get('Leviathan-full.html');
     return dir;
   }
   const from = opt('--from');
@@ -79,6 +83,18 @@ async function rebuild(src) {
   fs.mkdirSync(path.join(ROOT, 'console', 'ext'), { recursive: true });
   fs.writeFileSync(path.join(ROOT, 'console', 'ext', 'resume-findings.js'), fjs);
   info(`console/ext/resume-findings.js ${MB(Buffer.byteLength(fjs))} (${F.n} agencies, ${F.n_deep} deep dossiers, Radar compiled ${F.generated}, Horus edition ${F.edition})`);
+}
+
+/* ---- 1a. the single file edition, from the repository's Leviathan-full.html ---- */
+function full(src, out) {
+  const p = path.join(src, 'Leviathan-full.html');
+  if (!fs.existsSync(p)) throw new Error(`Leviathan-full.html is missing beside Leviathan.html in ${src} (the single file edition is built from it)`);
+  console.log('single file edition from ' + p);
+  const r = fullEdition(fs.readFileSync(p, 'utf8'), { extDir: path.join(ROOT, 'console', 'ext'), version: EXT_VERSION });
+  for (const y of r.changes) info(`withheld: ${y.removed} row(s) dropped from the ${y.id} payload`);
+  fs.mkdirSync(path.dirname(path.resolve(out)), { recursive: true });
+  fs.writeFileSync(path.resolve(out), r.html);
+  info(`${out} ${MB(Buffer.byteLength(r.html))}: every payload and the Forge scripts inline, nothing beside it`);
 }
 
 /* ---- 1b. the findings alone, from the console already here ---- */
@@ -192,6 +208,7 @@ try {
   const src = await source();
   if (src) await rebuild(src);
   else if (flag('--findings')) refindings();
+  if (opt('--full')) { if (!src) throw new Error('--full needs --from <dir> or --fetch (the single file edition is built from the repository\'s Leviathan-full.html)'); full(src, opt('--full')); }
 } catch (e) { console.log('\nBUILD FAILED\n  ' + e.message); process.exit(1); }
 validate();
 if (problems.length) { console.log('\nPROBLEMS\n  ' + problems.join('\n  ')); process.exit(1); }

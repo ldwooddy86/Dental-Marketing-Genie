@@ -107,6 +107,7 @@ icons/                   the console's mark at 16, 32, 48 and 128 pixels (tools/
 lib/patch.mjs            the anchored patches, the registry extraction, the zip writer (build only, not shipped)
 lib/findings.mjs         the findings extraction from the console's payloads (build only, not shipped)
 lib/scrub.mjs            the withheld list (kept encoded), the payload scrub and the repository scan (build only, not shipped)
+lib/full.mjs             the single file edition: patches plus the ext scripts inline (build only, not shipped)
 build.mjs                rebuild from the Leviathan repository, validate, test, zip (not shipped)
 tests/                   unit tests and the Playwright end to end run (not shipped)
 ```
@@ -119,6 +120,7 @@ When the Leviathan repository publishes a new console build, rebuild `console/` 
 node build.mjs --from ../../Leviathan          # the Leviathan repository checkout (its root or its leviathan/ folder)
 node build.mjs --fetch                         # or download the three files from GitHub (main; --branch <name> for another)
 node build.mjs --zip                           # also write ../dist/leviathan-extension.zip
+node build.mjs --from ../../Leviathan --full ../dist/Leviathan-full.html   # also the single file edition (see below)
 ```
 
 The build fails loudly if an anchor in the frame script has moved; the fix is in `lib/patch.mjs`. Then click Reload on
@@ -126,6 +128,11 @@ The build fails loudly if an anchor in the frame script has moved; the fix is in
 alone from the console already in the folder. Without `--from`, `--fetch` or `--findings`, `node build.mjs` validates the folder
 (including the findings being in step with the console's Radar compile) and runs the unit tests; `--check` validates only,
 `--no-test` skips the tests.
+
+`--full <file>` also writes the **single file edition**: the repository's `Leviathan-full.html` (every payload inline) with
+the same patches and the four `ext/` scripts written inline in place of their tags (`lib/full.mjs`), so the file needs nothing
+beside it: it opens from disk, from any static host and inside the extension alike, Résumé Forge included. It is over 60 MB,
+so it stays out of this repository (`dist/` is ignored); `--fetch --full` downloads `Leviathan-full.html` too.
 
 A rebuild also drops, from every payload, the data rows that carry a name on the withheld list in `lib/scrub.mjs` (the
 entries are kept encoded there, so the names never appear in the repository), and the validation scans the whole repository,
