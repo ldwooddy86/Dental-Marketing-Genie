@@ -28,8 +28,9 @@ threw = null; try { inlineExt(html, path.join(tmp, 'nowhere')); } catch (e) { th
 ok(threw && /is missing/.test(threw), 'a missing ext file fails loudly', threw);
 fs.rmSync(tmp, { recursive: true, force: true });
 
-const built = path.join(ROOT, '..', 'dist', 'Leviathan-full.html');
-if (fs.existsSync(built)) {
+/* the built edition: in place beside the console in the Leviathan repository, else under ../dist */
+const built = [path.join(ROOT, '..', 'leviathan', 'Leviathan-full.html'), path.join(ROOT, '..', 'dist', 'Leviathan-full.html')].find(f => fs.existsSync(f) && /<meta name="lv-ext"/.test(fs.readFileSync(f, 'latin1').slice(0, 4000)));
+if (built) {
   const t0 = Date.now();
   const h = fs.readFileSync(built, 'utf8');
   ok(h.length > 60 * 1024 * 1024, 'the built single file edition is over 60 MB', (h.length / 1048576).toFixed(1) + ' MB');
@@ -39,6 +40,6 @@ if (fs.existsSync(built)) {
   ok(inline.length === 16 && inline.includes('family') && inline.includes('employment'), 'all sixteen payloads are inline', inline.join(','));
   ok(EXT_FILES.every(f => h.includes(`<script>/* ext/${f} (inline) */\n` + inlineSafe(fs.readFileSync(path.join(ROOT, 'console', 'ext', f), 'utf8').slice(0, 400)))), 'each inline block opens with its file\'s own text');
   ok(findInText(h).length === 0, 'nothing withheld in the built edition', `${Date.now() - t0} ms`);
-} else console.log('   (no ../dist/Leviathan-full.html; the built edition checks are skipped)');
+} else console.log('   (no built single file edition beside this folder; its checks are skipped)');
 
 if (fails) { console.log(`\n${fails} failed`); process.exit(1); }

@@ -4,7 +4,7 @@
    withheld rows like every other build. */
 import fs from 'node:fs';
 import path from 'node:path';
-import { patchConsole, MARKERS } from './patch.mjs';
+import { patchConsole, stripInline, MARKERS } from './patch.mjs';
 import { scrubPayloads } from './scrub.mjs';
 
 export const EXT_FILES = ['host-bridge.js', 'resume-findings.js', 'resume-engine.js', 'resume-forge.js'];
@@ -28,7 +28,7 @@ export function inlineExt(html, extDir) {
 /* the heads of the inline blocks, and the edition with those blocks cut out (the patch markers are counted on that, since
    the Forge script itself repeats some of them) */
 export const INLINE_HEADS = EXT_FILES.map(f => `<script>/* ext/${f} (inline) */`);
-export const withoutInline = html => html.replace(/<script>\/\* ext\/[a-z-]+\.js \(inline\) \*\/[\s\S]*?\n<\/script>/g, '');
+export const withoutInline = stripInline;
 
 /* checks a single file edition: every patch marker once outside the inline blocks, each inline block once, no <script src> */
 export function checkFull(html) {
@@ -40,7 +40,8 @@ export function checkFull(html) {
   return problems;
 }
 
-/* builds the single file edition from the repository's Leviathan-full.html: {html, changes} */
+/* builds the single file edition from the repository's Leviathan-full.html, patched or not (an edition this build wrote
+   earlier is unpatched first, so the file can be rebuilt in place): {html, changes} */
 export function fullEdition(fullHtml, { extDir, version }) {
   const sc = scrubPayloads(patchConsole(fullHtml, { version }));
   const html = inlineExt(sc.text, extDir);

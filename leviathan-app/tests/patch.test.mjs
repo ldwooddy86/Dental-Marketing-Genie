@@ -4,7 +4,7 @@ import os from 'node:os';
 import path from 'node:path';
 import vm from 'node:vm';
 import { spawnSync } from 'node:child_process';
-import { ANCHORS, MARKERS, patchConsole, replaceOnce, extractRegistry, registryScript, writeZip, crc32, EXT_VERSION } from '../lib/patch.mjs';
+import { ANCHORS, MARKERS, patchConsole, unpatchConsole, patchedVersion, stripInline, replaceOnce, extractRegistry, registryScript, writeZip, crc32, EXT_VERSION } from '../lib/patch.mjs';
 let fails = 0;
 const ok = (c, label, extra) => { console.log(`${c ? 'ok  ' : 'FAIL'} ${label}${extra !== undefined ? '  (' + String(extra).slice(0, 220) + ')' : ''}`); if (!c) fails++; };
 const throws = (fn, re) => { try { fn(); return false; } catch (e) { return re ? re.test(e.message) : true; } };
@@ -55,7 +55,16 @@ ok(out.includes("h('a', { class: 'hbtag', href: '#resume.' + a.id, title: 'Build
 ok(throws(() => patchConsole(MINI.replace(ANCHORS.spine, ANCHORS.spine + ' ' + ANCHORS.spine)), /spine: the anchor occurs 2 times/), 'a moved spine anchor fails the build by name');
 ok(out.includes(`<meta name="lv-ext" content="${EXT_VERSION}">`), 'the head carries the app version marker');
 ok(patchConsole(MINI, { version: '9.9.9' }).includes('content="9.9.9"'), 'the marker takes the version passed in');
-ok(throws(() => patchConsole(out), /already carries/), 'a patched console is not patched twice');
+ok(patchConsole(out) === out, 'patching a patched console is a no-op: the patch is removed and applied again');
+ok(unpatchConsole(out) === MINI, 'unpatchConsole gives the original back, byte for byte');
+ok(patchedVersion(out) === EXT_VERSION && patchedVersion(MINI) === null, 'patchedVersion reads the marker');
+ok(patchConsole(patchConsole(MINI, { version: '1.0.0' })) === out, 'a console patched by another version of the same patches is re-patched to this one');
+{
+  const blocks = ['host-bridge.js', 'resume-findings.js', 'resume-engine.js', 'resume-forge.js'].map(f => `<script>/* ext/${f} (inline) */\nvar x = "<\\/script>";\n</script>\n`).join('');
+  const inlineEd = out.replace(/(?:<script src="ext\/[a-z-]+\.js"><\/script>\n)+/, blocks);
+  ok(stripInline(inlineEd) === out.replace(/(?:<script src="ext\/[a-z-]+\.js"><\/script>\n)+/, '') && patchConsole(inlineEd) === out, 'a single file edition with the scripts inline is unpatched by shape and patched again');
+}
+ok(throws(() => unpatchConsole(out.replace("viewResume(r.agency)", "viewResume(r.agency) /* edited */")), /cannot remove/), 'an edited patch the build does not know fails the unpatch loudly');
 ok(throws(() => patchConsole(MINI + ANCHORS.isFramed), /isFramed: the anchor occurs 2 times/), 'a duplicated anchor fails the build by name');
 ok(throws(() => patchConsole(MINI.replace(ANCHORS.prefsSave, '')), /prefs save: the anchor occurs 0 times/), 'a missing anchor fails the build by name');
 {

@@ -15,7 +15,7 @@ Forge's draft (the candidate's facts and the tailoring per agency), all in the e
 ## Install
 
 1. `chrome://extensions` (Edge: `edge://extensions`, Brave: `brave://extensions`), turn on Developer mode.
-2. **Load unpacked**, choose this folder (`leviathan-app/`). The console opens in a tab on the first install.
+2. **Load unpacked**, choose this folder (or the `leviathan-browser-app/` folder from the zip at the repository root). The console opens in a tab on the first install.
 3. Pin the icon. The popup is the launcher: the four console views, the wings with their atlases, the recent atlases, and a search
    over atlases and modules (Enter opens the first match).
 
@@ -117,22 +117,30 @@ tests/                   unit tests and the Playwright end to end run (not shipp
 When the Leviathan repository publishes a new console build, rebuild `console/` and `registry.js` from it:
 
 ```
-node build.mjs --from ../../Leviathan          # the Leviathan repository checkout (its root or its leviathan/ folder)
+node build.mjs                                 # in the Leviathan repository: rebuild from ../leviathan, validate, run the unit tests
+node build.mjs --from <dir>                    # from a Leviathan checkout elsewhere (its root or its leviathan/ folder)
 node build.mjs --fetch                         # or download the three files from GitHub (main; --branch <name> for another)
-node build.mjs --zip                           # also write ../dist/leviathan-extension.zip
-node build.mjs --from ../../Leviathan --full ../dist/Leviathan-full.html   # also the single file edition (see below)
+node build.mjs --zip ../Leviathan-browser-app.zip   # also write the install zip (default ../dist/leviathan-extension.zip): unzip, Load unpacked
+node build.mjs --full                          # also the single file edition: in place as ../leviathan/Leviathan-full.html, else ../dist/
 ```
 
 The build fails loudly if an anchor in the frame script has moved; the fix is in `lib/patch.mjs`. Then click Reload on
 `chrome://extensions`. A rebuild also regenerates `console/ext/resume-findings.js`; `node build.mjs --findings` regenerates it
-alone from the console already in the folder. Without `--from`, `--fetch` or `--findings`, `node build.mjs` validates the folder
-(including the findings being in step with the console's Radar compile) and runs the unit tests; `--check` validates only,
-`--no-test` skips the tests.
+alone from the console already in the folder. Without `--from` or `--fetch`, `node build.mjs` rebuilds from `../leviathan` when
+the console sits beside this folder (the Leviathan repository) and otherwise validates the folder (including the findings being
+in step with the console's Radar compile); then it runs the unit tests. `--check` validates only and reports when `console/` is
+out of step with `../leviathan`; `--no-test` skips the tests.
 
-`--full <file>` also writes the **single file edition**: the repository's `Leviathan-full.html` (every payload inline) with
-the same patches and the four `ext/` scripts written inline in place of their tags (`lib/full.mjs`), so the file needs nothing
-beside it: it opens from disk, from any static host and inside the extension alike, Résumé Forge included. It is over 60 MB,
-so it stays out of this repository (`dist/` is ignored); `--fetch --full` downloads `Leviathan-full.html` too.
+`--full [file]` also writes the **single file edition**: the source's `Leviathan-full.html` (every payload inline) with the
+same patches and the four `ext/` scripts written inline in place of their tags (`lib/full.mjs`), so the file needs nothing
+beside it: it opens from disk, from any static host and inside the extension alike, Résumé Forge included. In the Leviathan
+repository it is written in place as `../leviathan/Leviathan-full.html`; elsewhere to `../dist/Leviathan-full.html` or the
+file given; `--fetch --full` downloads `Leviathan-full.html` too. Patching is idempotent: a console or edition this build
+wrote earlier is unpatched first (`unpatchConsole` in `lib/patch.mjs`), so an edition can be rebuilt in place and fed back
+into the next console build.
+
+`--zip [file]` writes the install zip: the app under one folder, `leviathan-browser-app/`; unzip it and Load unpacked on that
+folder.
 
 A rebuild also drops, from every payload, the data rows that carry a name on the withheld list in `lib/scrub.mjs` (the
 entries are kept encoded there, so the names never appear in the repository), and the validation scans the whole repository,

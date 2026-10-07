@@ -1,12 +1,14 @@
 /* Build the Leviathan browser app. Node 22, no npm packages.
-     node build.mjs --from <dir>   rebuild console/ and registry.js from the Leviathan repository: <dir> is its leviathan/ folder or its root
+     node build.mjs                rebuild console/ and registry.js from ../leviathan when the console sits beside this folder (the
+                                   Leviathan repository), else validate what is here; then run the unit tests
+     node build.mjs --from <dir>   rebuild from another source: a Leviathan repository checkout (its leviathan/ folder or its root)
      node build.mjs --fetch        the same, downloading the console files from GitHub (ldwooddy86/Leviathan, main; --branch <name> for another)
      node build.mjs --findings     regenerate console/ext/resume-findings.js from the console already in this folder
-     node build.mjs --full <file> --from <dir>   also write the single file edition: the repository's Leviathan-full.html with the
-                                   patches and the Forge scripts inline (nothing beside it); --fetch downloads it too
-     node build.mjs                validate what is in this folder and run the unit tests
-     node build.mjs --zip          also write ../dist/leviathan-extension.zip
-     --check  validate only   --no-test  skip the unit tests
+     node build.mjs --full [file]  also write the single file edition: the source's Leviathan-full.html with the patches and the Forge
+                                   scripts inline (nothing beside it); in place when the source is ../leviathan, else to
+                                   ../dist/Leviathan-full.html or the file given; --fetch downloads Leviathan-full.html too
+     node build.mjs --zip [file]   also write the extension zip (default ../dist/leviathan-extension.zip): unzip, then Load unpacked
+     --check  validate only, no rebuild (reports when console/ is out of step with ../leviathan)   --no-test  skip the unit tests
    The console is patched, not rewritten: anchored one line edits in its frame script (lib/patch.mjs), the bridge and the Résumé
    Forge scripts beside it, the companion data scripts copied as they are. The Forge's findings file (console/ext/resume-findings.js)
    is generated from the console's own OmegaWeapon and Hit Board payloads (lib/findings.mjs). Validation: the manifest and its
@@ -24,7 +26,13 @@ import { scrubPayloads, scanTree } from './lib/scrub.mjs';
 import { fullEdition } from './lib/full.mjs';
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
-const OUT = path.resolve(ROOT, '..', 'dist', 'leviathan-extension.zip');
+const SIBLING = path.resolve(ROOT, '..', 'leviathan');   /* the console in the Leviathan repository, beside this folder */
+const sibling = () => fs.existsSync(path.join(SIBLING, 'Leviathan.html')) ? SIBLING : null;
+const srcName = src => src === SIBLING ? '../leviathan' : src;
+let tmpDir = null;   /* --fetch downloads here; removed on exit, whichever way the build ends */
+process.on('exit', () => { if (tmpDir) { try { fs.rmSync(tmpDir, { recursive: true, force: true }); } catch (e) { /* ignore */ } } });
+const ZIP_ROOT = 'leviathan-browser-app';   /* the folder inside the zip: unzip, then Load unpacked on it */
+const zipOut = () => { const v = opt('--zip'); return path.resolve(v && !v.startsWith('--') ? v : path.join(ROOT, '..', 'dist', 'leviathan-extension.zip')); };
 const RAW = 'https://raw.githubusercontent.com/ldwooddy86/Leviathan/';
 const argv = process.argv.slice(2);
 const flag = n => argv.includes(n);
@@ -38,7 +46,7 @@ const MB = n => (n / 1024 / 1024).toFixed(1) + ' MB';
 async function source() {
   if (flag('--fetch')) {
     const branch = opt('--branch') || 'main';
-    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'leviathan-src-'));
+    const dir = tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'leviathan-src-'));
     const get = async name => {
       const url = RAW + branch + '/leviathan/' + name; info('fetching ' + url);
       const r = await fetch(url); if (!r.ok) throw new Error(url + ' answered HTTP ' + r.status);
@@ -47,16 +55,16 @@ async function source() {
     await get('Leviathan.html');
     const reg = extractRegistry(fs.readFileSync(path.join(dir, 'Leviathan.html'), 'utf8'));
     for (const x of reg.ext) await get(x.file);
-    if (opt('--full')) await get('Leviathan-full.html');
+    if (flag('--full')) await get('Leviathan-full.html');
     return dir;
   }
   const from = opt('--from');
-  if (!from) return null;
+  if (!from) return flag('--check') || flag('--findings') ? null : sibling();
   for (const d of [from, path.join(from, 'leviathan')]) if (fs.existsSync(path.join(d, 'Leviathan.html'))) return path.resolve(d);
   throw new Error(`${from} holds no Leviathan.html (pass the Leviathan repository's leviathan/ folder or its root)`);
 }
 async function rebuild(src) {
-  console.log('console from ' + src);
+  console.log('console from ' + srcName(src));
   const html = fs.readFileSync(path.join(src, 'Leviathan.html'), 'utf8');
   const reg = extractRegistry(html, { version: EXT_VERSION });
   const sc = scrubPayloads(patchConsole(html, { version: EXT_VERSION }));
@@ -89,7 +97,7 @@ async function rebuild(src) {
 function full(src, out) {
   const p = path.join(src, 'Leviathan-full.html');
   if (!fs.existsSync(p)) throw new Error(`Leviathan-full.html is missing beside Leviathan.html in ${src} (the single file edition is built from it)`);
-  console.log('single file edition from ' + p);
+  console.log('single file edition from ' + srcName(src) + '/Leviathan-full.html');
   const r = fullEdition(fs.readFileSync(p, 'utf8'), { extDir: path.join(ROOT, 'console', 'ext'), version: EXT_VERSION });
   for (const y of r.changes) info(`withheld: ${y.removed} row(s) dropped from the ${y.id} payload`);
   fs.mkdirSync(path.dirname(path.resolve(out)), { recursive: true });
@@ -108,7 +116,8 @@ function refindings() {
 }
 
 /* ---- 2. validation ---- */
-function validate() {
+function validate(src) {
+  const SRC = src || sibling();   /* the console to compare console/ with */
   console.log('manifest');
   let man = null;
   try { man = JSON.parse(read('manifest.json')); } catch (e) { bad('manifest.json does not parse: ' + e.message); }
@@ -159,6 +168,12 @@ function validate() {
       }
       const total = ['console/Leviathan.html', ...reg.ext.map(x => 'console/' + x.file)].filter(exists).reduce((a, f) => a + fs.statSync(path.join(ROOT, f)).size, 0);
       info(`${reg.modules.length} dashboards, console ${reg.consoleVersion}, compiled ${reg.compiled}, ${MB(total)} of console files`);
+      if (SRC && fs.existsSync(path.join(SRC, 'Leviathan.html'))) {
+        const want = scrubPayloads(patchConsole(fs.readFileSync(path.join(SRC, 'Leviathan.html'), 'utf8'), { version: EXT_VERSION })).text;
+        if (want !== c) bad(`console/Leviathan.html is out of step with ${srcName(SRC)}: run node build.mjs${SRC === SIBLING ? '' : ' --from ' + SRC}`);
+        for (const x of reg.ext) if (fs.existsSync(path.join(SRC, x.file)) && exists('console/' + x.file) && scrubPayloads(fs.readFileSync(path.join(SRC, x.file), 'utf8')).text !== read('console/' + x.file)) bad(`console/${x.file} is out of step with ${srcName(SRC)}/${x.file}: run node build.mjs`);
+        info(`console/ compared with ${srcName(SRC)}: ${problems.some(p => /out of step/.test(p)) ? 'OUT OF STEP' : 'in step, byte for byte'}`);
+      }
     }
     console.log('résumé forge');
     for (const f of ['console/ext/resume-engine.js', 'console/ext/resume-forge.js']) if (!exists(f)) bad(`${f} is missing`);
@@ -195,27 +210,30 @@ function zip() {
   console.log('zip');
   const skip = rel => /^(tests|lib|tools|node_modules|dist)(\/|$)/.test(rel) || rel === 'build.mjs' || /(^|\/)(\.DS_Store|Thumbs\.db|\.git.*|.*\.swp|.*~)$/.test(rel);
   const walk = (d, acc) => { for (const e of fs.readdirSync(path.join(ROOT, d), { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name))) { const rel = d ? d + '/' + e.name : e.name; if (skip(rel)) continue; if (e.isDirectory()) walk(rel, acc); else if (e.isFile()) acc.push(rel); } return acc; };
-  const entries = walk('', []).map(rel => ({ name: rel, data: fs.readFileSync(path.join(ROOT, rel)) }));
+  const entries = walk('', []).map(rel => ({ name: ZIP_ROOT + '/' + rel, data: fs.readFileSync(path.join(ROOT, rel)) }));
   const buf = writeZip(entries);
+  const OUT = zipOut();
   fs.mkdirSync(path.dirname(OUT), { recursive: true });
   fs.writeFileSync(OUT, buf);
-  info(`${entries.length} files, ${MB(entries.reduce((a, e) => a + e.data.length, 0))} raw, ${MB(buf.length)} zipped`);
+  info(`${entries.length} files under ${ZIP_ROOT}/, ${MB(entries.reduce((a, e) => a + e.data.length, 0))} raw, ${MB(buf.length)} zipped`);
   console.log(`\nwrote ${OUT}`);
 }
 
 /* ---- main ---- */
+const fullOut = src => { const v = opt('--full'); if (v && !v.startsWith('--')) return path.resolve(v); return src === SIBLING ? path.join(SIBLING, 'Leviathan-full.html') : path.resolve(ROOT, '..', 'dist', 'Leviathan-full.html'); };
+let src = null;
 try {
-  const src = await source();
+  src = await source();
   if (src) await rebuild(src);
   else if (flag('--findings')) refindings();
-  if (opt('--full')) { if (!src) throw new Error('--full needs --from <dir> or --fetch (the single file edition is built from the repository\'s Leviathan-full.html)'); full(src, opt('--full')); }
+  if (flag('--full')) { if (!src) throw new Error('--full needs a console source: ../leviathan beside this folder, --from <dir> or --fetch (the single file edition is built from its Leviathan-full.html)'); full(src, fullOut(src)); }
 } catch (e) { console.log('\nBUILD FAILED\n  ' + e.message); process.exit(1); }
-validate();
+validate(src);
 if (problems.length) { console.log('\nPROBLEMS\n  ' + problems.join('\n  ')); process.exit(1); }
 if (flag('--check')) { console.log('\nvalidation ok'); process.exit(0); }
 if (!flag('--no-test')) {
   console.log('unit tests');
-  const r = spawnSync(process.execPath, [path.join(ROOT, 'tests', 'run.mjs')], { encoding: 'utf8', timeout: 600000 });
+  const r = spawnSync(process.execPath, [path.join(ROOT, 'tests', 'run.mjs')], { encoding: 'utf8', timeout: 600000, env: Object.assign({}, process.env, (src || sibling()) ? { LV_CONSOLE_SRC: src || sibling() } : {}) });
   process.stdout.write((r.stdout || '').split('\n').map(l => l ? '  ' + l : l).join('\n'));
   if (r.status !== 0) { console.log('\nunit tests failed' + (flag('--zip') ? '; no zip written' : '')); process.exit(1); }
 }

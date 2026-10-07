@@ -3,7 +3,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import vm from 'node:vm';
 import { fileURLToPath } from 'node:url';
-import { ANCHORS, MARKERS, extractRegistry } from '../lib/patch.mjs';
+import { ANCHORS, MARKERS, extractRegistry, patchConsole, EXT_VERSION } from '../lib/patch.mjs';
+import { scrubPayloads } from '../lib/scrub.mjs';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const read = rel => fs.readFileSync(path.join(ROOT, rel), 'utf8');
 const exists = rel => fs.existsSync(path.join(ROOT, rel));
@@ -28,6 +29,13 @@ ok(c.indexOf('<script src="ext/resume-forge.js"></script>') < c.indexOf(ANCHORS.
 }
 const reg = extractRegistry(c);
 ok(reg.modules.length >= 16 && reg.consoleVersion, 'the console registry reads', `${reg.modules.length} dashboards, console ${reg.consoleVersion}, compiled ${reg.compiled}`);
+/* the console this copy was built from: LV_CONSOLE_SRC when build.mjs ran us with --from or --fetch, else ../leviathan beside this folder */
+const SIB = process.env.LV_CONSOLE_SRC || path.resolve(ROOT, '..', 'leviathan');
+const SIBN = process.env.LV_CONSOLE_SRC ? SIB : '../leviathan';
+if (fs.existsSync(path.join(SIB, 'Leviathan.html'))) {
+  ok(scrubPayloads(patchConsole(fs.readFileSync(path.join(SIB, 'Leviathan.html'), 'utf8'), { version: EXT_VERSION })).text === c, `console/Leviathan.html is ${SIBN}/Leviathan.html plus the patch and the scrub, byte for byte`);
+  for (const x of reg.ext) if (fs.existsSync(path.join(SIB, x.file)) && exists('console/' + x.file)) ok(scrubPayloads(fs.readFileSync(path.join(SIB, x.file), 'utf8')).text === read('console/' + x.file), `console/${x.file} is ${SIBN}/${x.file} (scrubbed), byte for byte`);
+} else console.log(`   (no console source at ${SIBN}; the byte for byte comparison is skipped)`);
 for (const x of reg.ext) {
   ok(exists('console/' + x.file), `companion present: console/${x.file}`);
   if (exists('console/' + x.file)) { const d = read('console/' + x.file); for (const id of x.ids) ok(d.includes(`window.__LVP["${id}"]=`), `${x.file} carries ${id}`); }

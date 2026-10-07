@@ -85,10 +85,30 @@ export const MARKERS = [
   'function viewResume(agency)',
 ];
 
+/* the inline blocks the single file edition carries in place of the four script tags (lib/full.mjs writes them) */
+const INLINE_BLOCK = /<script>\/\* ext\/[a-z-]+\.js \(inline\) \*\/[\s\S]*?\n<\/script>\n?/g;
+export const stripInline = html => html.replace(INLINE_BLOCK, '');
+/* the app version a patched console carries, or null */
+export function patchedVersion(html) { const m = new RegExp(`<meta name="${MARK}" content="([^"]*)">`).exec(html); return m ? m[1] : null; }
+
+/* Removes the browser app patch from a console that carries it, so the console can be patched again (a single file
+   edition fed back into a console build, or the app's own console rebuilt in place). The version-bound meta, the script
+   tags or inline blocks and the view hook are removed by shape; every other patch by its exact text. A patch this build
+   does not know (an older or newer app wrote it) leaves its marker behind and the unpatch fails loudly. */
+export function unpatchConsole(html) {
+  let out = stripInline(html);
+  out = out.replace(new RegExp(`\\n<meta name="${MARK}" content="[^"]*">`), '');
+  out = out.replace(/(?:<script src="ext\/[a-z-]+\.js"><\/script>\n)+(?=<script>\n\/\* Leviathan console: )/, '');
+  out = out.replace(/\/\* -{16} view: Résumé Forge[\s\S]*?(?=\/\* -{16} command palette -{16} \*\/)/, '');
+  for (const [, anchor, repl] of PATCHES) { const r = repl(EXT_VERSION); if (r !== anchor && out.includes(r)) out = out.replace(r, () => anchor); }
+  for (const m of MARKERS) if (out.includes(m)) throw new Error(`unpatch: "${m}" remains: the console carries a patch this build cannot remove; start from the file in the Leviathan repository`);
+  return out;
+}
+
+/* applies the patch; a console that already carries one (any edition) is unpatched first, so patching is idempotent */
 export function patchConsole(html, opts = {}) {
   const version = opts.version || EXT_VERSION;
-  if (html.includes(`<meta name="${MARK}"`)) throw new Error('this console already carries the browser app patch; start from the file in the Leviathan repository');
-  let out = html;
+  let out = html.includes(`<meta name="${MARK}"`) ? unpatchConsole(html) : html;
   for (const [label, anchor, repl] of PATCHES) out = replaceOnce(out, anchor, repl(version), label);
   return out;
 }
