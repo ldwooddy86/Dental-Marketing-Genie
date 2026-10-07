@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Leviathan</title>
+<style>
+:root{
+  color-scheme:light;
+  --ground:#EEF0ED; --surface:#FFFFFF; --surface-2:#F6F7F5; --ink:#121A1F; --ink-2:#44515A; --ink-3:#66727A; --rule:#CBD3CF; --rule-2:#E0E5E2;
+  --sun:#8F5C06; --sun-bar:#BC8216; --legal:#3b62c4; --home:#b8641c; --health:#12866f; --core:#BC8216;
+  --spine:#0A1317; --spine-ink:#DCE4E1; --spine-mute:#8A9A98; --spine-gold:#E6AE48;
+  --f-display:"Zilla Slab",Rockwell,"Roboto Slab","DejaVu Serif",Georgia,serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root{color-scheme:dark;--ground:#0B1114;--surface:#121A1E;--surface-2:#172125;--ink:#E3E9E7;--ink-2:#A9B4B4;--ink-3:#83908F;--rule:#2B373C;--rule-2:#202A2F;--sun:#E6AE48;--sun-bar:#BD8A2E;--legal:#6a88df;--home:#c77a35;--health:#28a387}}
+*{box-sizing:border-box}
+body{margin:0;width:380px;font:13px/1.45 var(--f-body);color:var(--ink);background:var(--ground)}
+header{background:var(--spine);color:var(--spine-ink);padding:12px 14px;display:flex;gap:11px;align-items:center}
+header img{width:32px;height:32px;border-radius:8px}
+header .nm{font-family:var(--f-display);font-weight:600;font-size:17px;letter-spacing:.14em;line-height:1.1}
+header .sb{font-size:11px;color:var(--spine-mute);margin-top:2px}
+main{padding:10px 12px 8px;display:flex;flex-direction:column;gap:9px;max-height:520px;overflow:auto}
+.q{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--rule);border-radius:9px;padding:0 10px}
+.q svg{width:15px;height:15px;color:var(--ink-3);flex:none}
+.q input{flex:1;border:0;background:none;color:inherit;font:inherit;padding:8px 0;outline:none;min-width:0}
+.q input::placeholder{color:var(--ink-3)}
+.views{display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:6px}
+button{font:inherit;color:inherit;cursor:pointer}
+.v{border:1px solid var(--rule);background:var(--surface);border-radius:9px;padding:8px 8px;font-weight:600;font-size:12px;text-align:center;line-height:1.2}
+.v.p{background:var(--spine);color:var(--spine-ink);border-color:var(--spine)}
+.v:hover{filter:brightness(1.05)}
+.eyebrow{font:500 10.5px/1.3 var(--f-mono);letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3)}
+.wing{display:flex;justify-content:space-between;align-items:baseline;padding:6px 2px 2px}
+.wing .n{font-size:11px;color:var(--ink-3)}
+.wing.legal .eyebrow{color:var(--legal)} .wing.home .eyebrow{color:var(--home)} .wing.health .eyebrow{color:var(--health)} .wing.core .eyebrow{color:var(--sun)}
+.row{display:grid;grid-template-columns:8px 1fr auto;gap:10px;align-items:center;width:100%;text-align:left;background:var(--surface);border:1px solid var(--rule-2);border-radius:9px;padding:7px 10px;margin-top:4px}
+.row:hover,.row:focus-visible{border-color:var(--sun-bar);outline:none}
+.row i{display:block;width:8px;height:8px;border-radius:50%;background:var(--ink-3)}
+.row.legal i{background:var(--legal)} .row.home i{background:var(--home)} .row.health i{background:var(--health)} .row.core i{background:var(--sun)}
+.row .t{font-weight:600;font-size:13px;line-height:1.25}
+.row .s{font-size:11.5px;color:var(--ink-2);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row .k{font:500 10.5px/1 var(--f-mono);color:var(--ink-3);background:var(--surface-2);border-radius:5px;padding:4px 6px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.chip{border:1px solid var(--rule);background:var(--surface);border-radius:999px;padding:4px 10px;font-size:12px}
+.chip:hover{border-color:var(--sun-bar)}
+.empty{color:var(--ink-3);padding:8px 2px;margin:0}
+footer{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 12px 10px;border-top:1px solid var(--rule-2);font-size:11px;color:var(--ink-3)}
+footer label{display:flex;align-items:center;gap:6px;color:var(--ink-2);cursor:pointer;white-space:nowrap}
+footer #ver{text-align:right}
+footer input{margin:0}
+</style>
+</head>
+<body>
+<header><img src="icons/icon48.png" alt=""><div><div class="nm">LEVIATHAN</div><div class="sb" id="sub">Marketing intelligence console</div></div></header>
+<main>
+  <div class="q"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg><input id="q" type="search" placeholder="Find an atlas or a module" autocomplete="off" aria-label="Find an atlas or a module"></div>
+  <div class="views" id="views"></div>
+  <section id="recent" hidden><div class="eyebrow">Recent</div><div class="chips" id="recentChips"></div></section>
+  <div id="list" role="list"></div>
+</main>
+<footer><label><input type="checkbox" id="newTab"> Open in a new tab</label><span id="ver"></span></footer>
+<script src="registry.js"></script>
+<script src="open.js"></script>
+<script src="popup.js"></script>
+</body>
+</html>
